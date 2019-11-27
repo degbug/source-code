@@ -1,0 +1,403 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/bcel/internal/util/BCELFactory.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7863.html'>bcel</a>/<a href='../files/7864.html'>internal</a>/<a href='../files/7867.html'>util</a>/BCELFactory.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L345'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L87' title='Defined at 87.'>start</a></li>
+<li><a href='#L116' title='Defined at 116.'>visitInstruction</a></li>
+<li><a href='#L130' title='Defined at 130.'>visitLocalVariableInstruction</a></li>
+<li><a href='#L145' title='Defined at 145.'>visitArrayInstruction</a></li>
+<li><a href='#L154' title='Defined at 154.'>visitFieldInstruction</a></li>
+<li><a href='#L168' title='Defined at 168.'>visitInvokeInstruction</a></li>
+<li><a href='#L183' title='Defined at 183.'>visitAllocationInstruction</a></li>
+<li><a href='#L215' title='Defined at 215.'>createConstant</a></li>
+<li><a href='#L226' title='Defined at 226.'>visitLDC</a></li>
+<li><a href='#L230' title='Defined at 230.'>visitLDC2_W</a></li>
+<li><a href='#L234' title='Defined at 234.'>visitConstantPushInstruction</a></li>
+<li><a href='#L238' title='Defined at 238.'>visitINSTANCEOF</a></li>
+<li><a href='#L245' title='Defined at 245.'>visitCHECKCAST</a></li>
+<li><a href='#L252' title='Defined at 252.'>visitReturnInstruction</a></li>
+<li><a href='#L262' title='Defined at 262.'>visitBranchInstruction</a></li>
+<li><a href='#L318' title='Defined at 318.'>visitRET</a></li>
+<li><a href='#L322' title='Defined at 322.'>updateBranchTargets</a></li>
+<li><a href='#L345' title='Defined at 345.'>updateExceptionHandlers</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <strong class='reserved'>package</strong> com.sun.org.apache.bcel.internal.util;
+<a id='L6' name='L6'></a>   6 
+<a id='L7' name='L7'></a>   7 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.*;
+<a id='L8' name='L8'></a>   8 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.classfile.Utility;
+<a id='L9' name='L9'></a>   9 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.Constants;
+<a id='L10' name='L10'></a>  10 <strong class='reserved'>import</strong> java.io.PrintWriter;
+<a id='L11' name='L11'></a>  11 <strong class='reserved'>import</strong> java.util.*;
+<a id='L12' name='L12'></a>  12 
+<a id='L13' name='L13'></a>  13 <em class='comment'>/* ====================================================================</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * The Apache Software License, Version 1.1</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * Copyright (c) 2002 The Apache Software Foundation.  All rights</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * reserved.</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> * Redistribution and use in source and binary forms, with or without</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> * modification, are permitted provided that the following conditions</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * are met:</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> * 1. Redistributions of source code must retain the above copyright</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> *    notice, this list of conditions and the following disclaimer.</em>
+<a id='L25' name='L25'></a>  25 <em class='comment'> *</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'> * 2. Redistributions in binary form must reproduce the above copyright</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> *    notice, this list of conditions and the following disclaimer in</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> *    the documentation and/or other materials provided with the</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> *    distribution.</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * 3. The end-user documentation included with the redistribution,</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> *    if any, must include the following acknowledgment:</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> *       "This product includes software developed by the</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> *        Apache Software Foundation (http://www.apache.org/)."</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> *    Alternately, this acknowledgment may appear in the software itself,</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> *    if and wherever such third-party acknowledgments normally appear.</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> *</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * 4. The names "Apache" and "Apache Software Foundation" and</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> *    "Apache BCEL" must not be used to endorse or promote products</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> *    derived from this software without prior written permission. For</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> *    written permission, please contact apache@apache.org.</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> *</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * 5. Products derived from this software may not be called "Apache",</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *    "Apache BCEL", nor may "Apache" appear in their name, without</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> *    prior written permission of the Apache Software Foundation.</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> *</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * SUCH DAMAGE.</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * ====================================================================</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * This software consists of voluntary contributions made by many</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * individuals on behalf of the Apache Software Foundation.  For more</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * information on the Apache Software Foundation, please see</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * &lt;http://www.apache.org/&gt;.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> */</em>
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67 <em class='comment'>/**</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * Factory creates il.append() statements, and sets instruction targets.</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * A helper class for BCELifier.</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> *</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * @see BCELifier</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * @author  &lt;A HREF="mailto:markus.dahm@berlin.de"&gt;M. Dahm&lt;/A&gt;</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> */</em>
+<a id='L74' name='L74'></a>  74 <strong class='reserved'>class</strong> <a href='../S/4558.html#L219' title='Referred from 219 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELFactory</a> <strong class='reserved'>extends</strong> <a href='../D/2858.html' title='Multiple defined in 2 places.'>EmptyVisitor</a> <em class='brace'>{</em>
+<a id='L75' name='L75'></a>  75   <strong class='reserved'>private</strong> <a href='../S/4802.html#L80' title='Defined at 80 in src/com/sun/org/apache/bcel/internal/generic/MethodGen.java.'>MethodGen</a>       _mg;
+<a id='L76' name='L76'></a>  76   <strong class='reserved'>private</strong> <a href='../S/1445.html#L56' title='Defined at 56 in src/java/io/PrintWriter.java.'>PrintWriter</a>     _out;
+<a id='L77' name='L77'></a>  77   <strong class='reserved'>private</strong> <a href='../S/4764.html#L78' title='Defined at 78 in src/com/sun/org/apache/bcel/internal/generic/ConstantPoolGen.java.'>ConstantPoolGen</a> _cp;
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79   BCELFactory(<a href='../S/4802.html#L80' title='Defined at 80 in src/com/sun/org/apache/bcel/internal/generic/MethodGen.java.'>MethodGen</a> mg, <a href='../S/1445.html#L56' title='Defined at 56 in src/java/io/PrintWriter.java.'>PrintWriter</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>) <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80     _mg  = mg;
+<a id='L81' name='L81'></a>  81     _cp  = mg.<a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>();
+<a id='L82' name='L82'></a>  82     _out = <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>;
+<a id='L83' name='L83'></a>  83   <em class='brace'>}</em>
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85   <strong class='reserved'>private</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a> branch_map = <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>(); <em class='comment'>// Map&lt;Instruction, InstructionHandle&gt;</em>
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28780.html' title='Multiple referred from 2027 places.'>start</a>() <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>if</strong>(!_mg.<a href='../D/25144.html' title='Multiple defined in 6 places.'>isAbstract</a>() &amp;&amp; !_mg.<a href='../D/25926.html' title='Multiple defined in 5 places.'>isNative</a>()) <em class='brace'>{</em>
+<a id='L89' name='L89'></a>  89       <strong class='reserved'>for</strong>(<a href='../S/4625.html#L83' title='Defined at 83 in src/com/sun/org/apache/bcel/internal/generic/InstructionHandle.java.'>InstructionHandle</a> ih = _mg.<a href='../D/19776.html' title='Multiple defined in 7 places.'>getInstructionList</a>().<a href='../D/22714.html' title='Multiple defined in 6 places.'>getStart</a>();
+<a id='L90' name='L90'></a>  90           ih != <strong class='reserved'>null</strong>; ih = ih.<a href='../D/20885.html' title='Multiple defined in 8 places.'>getNext</a>()) <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91         <a href='../D/4259.html' title='Multiple defined in 2 places.'>Instruction</a> i = ih.<a href='../D/19773.html' title='Multiple defined in 4 places.'>getInstruction</a>();
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93         <strong class='reserved'>if</strong>(i <strong class='reserved'>instanceof</strong> <a href='../S/4732.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchInstruction.java.'>BranchInstruction</a>) <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94           branch_map.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(i, ih); <em class='comment'>// memorize container</em>
+<a id='L95' name='L95'></a>  95         <em class='brace'>}</em>
+<a id='L96' name='L96'></a>  96 
+<a id='L97' name='L97'></a>  97         <strong class='reserved'>if</strong>(ih.<a href='../S/4625.html#L214' title='Defined at 214 in src/com/sun/org/apache/bcel/internal/generic/InstructionHandle.java.'>hasTargeters</a>()) <em class='brace'>{</em>
+<a id='L98' name='L98'></a>  98           <strong class='reserved'>if</strong>(i <strong class='reserved'>instanceof</strong> <a href='../S/4732.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchInstruction.java.'>BranchInstruction</a>) <em class='brace'>{</em>
+<a id='L99' name='L99'></a>  99             _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    InstructionHandle ih_" + ih.<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>() + ";");
+<a id='L100' name='L100'></a> 100           <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L101' name='L101'></a> 101             _out.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>("    InstructionHandle ih_" + ih.<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>() + " = ");
+<a id='L102' name='L102'></a> 102           <em class='brace'>}</em>
+<a id='L103' name='L103'></a> 103         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104           _out.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>("    ");
+<a id='L105' name='L105'></a> 105         <em class='brace'>}</em>
+<a id='L106' name='L106'></a> 106 
+<a id='L107' name='L107'></a> 107         <strong class='reserved'>if</strong>(!<a href='../S/4548.html#L116' title='Defined at 116 in src/com/sun/org/apache/bcel/internal/util/BCELFactory.java.'>visitInstruction</a>(i))
+<a id='L108' name='L108'></a> 108           i.<a href='../D/10537.html' title='Multiple defined in 327 places.'>accept</a>(<strong class='reserved'>this</strong>);
+<a id='L109' name='L109'></a> 109       <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111       <a href='../S/4548.html#L322' title='Defined at 322 in src/com/sun/org/apache/bcel/internal/util/BCELFactory.java.'>updateBranchTargets</a>();
+<a id='L112' name='L112'></a> 112       <a href='../S/4548.html#L345' title='Defined at 345 in src/com/sun/org/apache/bcel/internal/util/BCELFactory.java.'>updateExceptionHandlers</a>();
+<a id='L113' name='L113'></a> 113     <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114   <em class='brace'>}</em>
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116   <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../S/4548.html#L107' title='Referred from 107 in src/com/sun/org/apache/bcel/internal/util/BCELFactory.java.'>visitInstruction</a>(<a href='../D/4259.html' title='Multiple defined in 2 places.'>Instruction</a> i) <em class='brace'>{</em>
+<a id='L117' name='L117'></a> 117     <strong class='reserved'>short</strong> opcode = i.<a href='../S/4799.html#L264' title='Defined at 264 in src/com/sun/org/apache/bcel/internal/generic/Instruction.java.'>getOpcode</a>();
+<a id='L118' name='L118'></a> 118 
+<a id='L119' name='L119'></a> 119     <strong class='reserved'>if</strong>((<a href='../S/4651.html#L79' title='Defined at 79 in src/com/sun/org/apache/bcel/internal/generic/InstructionConstants.java.'>InstructionConstants</a>.INSTRUCTIONS[opcode] != <strong class='reserved'>null</strong>) &amp;&amp;
+<a id='L120' name='L120'></a> 120        !(i <strong class='reserved'>instanceof</strong> <a href='../S/4715.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/ConstantPushInstruction.java.'>ConstantPushInstruction</a>) &amp;&amp;
+<a id='L121' name='L121'></a> 121        !(i <strong class='reserved'>instanceof</strong> <a href='../S/4650.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/ReturnInstruction.java.'>ReturnInstruction</a>)) <em class='brace'>{</em> <em class='comment'>// Handled below</em>
+<a id='L122' name='L122'></a> 122       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(InstructionConstants." +
+<a id='L123' name='L123'></a> 123                    i.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/35514.html' title='Multiple defined in 18 places.'>toUpperCase</a>() + ");");
+<a id='L124' name='L124'></a> 124       <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L125' name='L125'></a> 125     <em class='brace'>}</em>
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L128' name='L128'></a> 128   <em class='brace'>}</em>
+<a id='L129' name='L129'></a> 129 
+<a id='L130' name='L130'></a> 130   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30329.html' title='Multiple referred from 3 places.'>visitLocalVariableInstruction</a>(<a href='../S/4711.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/LocalVariableInstruction.java.'>LocalVariableInstruction</a> i) <em class='brace'>{</em>
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>short</strong>  opcode = i.<a href='../S/4799.html#L264' title='Defined at 264 in src/com/sun/org/apache/bcel/internal/generic/Instruction.java.'>getOpcode</a>();
+<a id='L132' name='L132'></a> 132     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>   <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>   = i.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(_cp);
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>if</strong>(opcode == <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4677.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/IINC.java.'>IINC</a>) <em class='brace'>{</em>
+<a id='L135' name='L135'></a> 135       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(new IINC(" + i.<a href='../D/19664.html' title='Multiple defined in 76 places.'>getIndex</a>() + ", " +
+<a id='L136' name='L136'></a> 136                    ((<a href='../S/4677.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/IINC.java.'>IINC</a>)i).<a href='../S/4677.html#L158' title='Defined at 158 in src/com/sun/org/apache/bcel/internal/generic/IINC.java.'>getIncrement</a>() + "));");
+<a id='L137' name='L137'></a> 137     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138       <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>   = (opcode &lt; <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4787.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ISTORE.java.'>ISTORE</a>)? "Load" : "Store";
+<a id='L139' name='L139'></a> 139       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.create" + <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> + "(" +
+<a id='L140' name='L140'></a> 140                    <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + ", " +
+<a id='L141' name='L141'></a> 141                    i.<a href='../D/19664.html' title='Multiple defined in 76 places.'>getIndex</a>() + "));");
+<a id='L142' name='L142'></a> 142     <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143   <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30155.html' title='Multiple referred from 16 places.'>visitArrayInstruction</a>(<a href='../S/4776.html#L66' title='Defined at 66 in src/com/sun/org/apache/bcel/internal/generic/ArrayInstruction.java.'>ArrayInstruction</a> i) <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>short</strong>  opcode = i.<a href='../S/4799.html#L264' title='Defined at 264 in src/com/sun/org/apache/bcel/internal/generic/Instruction.java.'>getOpcode</a>();
+<a id='L147' name='L147'></a> 147     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>   <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>   = i.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(_cp);
+<a id='L148' name='L148'></a> 148     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>   = (opcode &lt; <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4713.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/IASTORE.java.'>IASTORE</a>)? "Load" : "Store";
+<a id='L149' name='L149'></a> 149 
+<a id='L150' name='L150'></a> 150     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createArray" + <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> + "(" +
+<a id='L151' name='L151'></a> 151                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + "));");
+<a id='L152' name='L152'></a> 152   <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30232.html' title='Multiple referred from 4 places.'>visitFieldInstruction</a>(<a href='../S/4627.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/FieldInstruction.java.'>FieldInstruction</a> i) <em class='brace'>{</em>
+<a id='L155' name='L155'></a> 155     <strong class='reserved'>short</strong>  opcode = i.<a href='../S/4799.html#L264' title='Defined at 264 in src/com/sun/org/apache/bcel/internal/generic/Instruction.java.'>getOpcode</a>();
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> class_name = i.<a href='../D/17698.html' title='Multiple defined in 41 places.'>getClassName</a>(_cp);
+<a id='L158' name='L158'></a> 158     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> field_name = i.<a href='../D/19028.html' title='Multiple defined in 6 places.'>getFieldName</a>(_cp);
+<a id='L159' name='L159'></a> 159     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>   <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>       = i.<a href='../D/19034.html' title='Multiple defined in 2 places.'>getFieldType</a>(_cp);
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createFieldAccess(\"" +
+<a id='L162' name='L162'></a> 162                  class_name + "\", \"" + field_name + "\", " +
+<a id='L163' name='L163'></a> 163                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + ", " +
+<a id='L164' name='L164'></a> 164                  "Constants." + <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.OPCODE_NAMES[opcode].<a href='../D/35514.html' title='Multiple defined in 18 places.'>toUpperCase</a>() +
+<a id='L165' name='L165'></a> 165                  "));");
+<a id='L166' name='L166'></a> 166   <em class='brace'>}</em>
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30294.html' title='Multiple referred from 4 places.'>visitInvokeInstruction</a>(<a href='../S/4736.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/InvokeInstruction.java.'>InvokeInstruction</a> i) <em class='brace'>{</em>
+<a id='L169' name='L169'></a> 169     <strong class='reserved'>short</strong>  opcode      = i.<a href='../S/4799.html#L264' title='Defined at 264 in src/com/sun/org/apache/bcel/internal/generic/Instruction.java.'>getOpcode</a>();
+<a id='L170' name='L170'></a> 170     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> class_name  = i.<a href='../D/17698.html' title='Multiple defined in 41 places.'>getClassName</a>(_cp);
+<a id='L171' name='L171'></a> 171     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> method_name = i.<a href='../D/20592.html' title='Multiple defined in 5 places.'>getMethodName</a>(_cp);
+<a id='L172' name='L172'></a> 172     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>   <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>        = i.<a href='../D/22080.html' title='Multiple defined in 12 places.'>getReturnType</a>(_cp);
+<a id='L173' name='L173'></a> 173     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] arg_types   = i.<a href='../D/17026.html' title='Multiple defined in 4 places.'>getArgumentTypes</a>(_cp);
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createInvoke(\"" +
+<a id='L176' name='L176'></a> 176                  class_name + "\", \"" + method_name + "\", " +
+<a id='L177' name='L177'></a> 177                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + ", " +
+<a id='L178' name='L178'></a> 178                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../S/4558.html#L252' title='Defined at 252 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>printArgumentTypes</a>(arg_types) + ", " +
+<a id='L179' name='L179'></a> 179                  "Constants." + <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.OPCODE_NAMES[opcode].<a href='../D/35514.html' title='Multiple defined in 18 places.'>toUpperCase</a>() +
+<a id='L180' name='L180'></a> 180                  "));");
+<a id='L181' name='L181'></a> 181   <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30152.html' title='Multiple referred from 4 places.'>visitAllocationInstruction</a>(<a href='../S/4727.html#L66' title='Defined at 66 in src/com/sun/org/apache/bcel/internal/generic/AllocationInstruction.java.'>AllocationInstruction</a> i) <em class='brace'>{</em>
+<a id='L184' name='L184'></a> 184     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>;
+<a id='L185' name='L185'></a> 185 
+<a id='L186' name='L186'></a> 186     <strong class='reserved'>if</strong>(i <strong class='reserved'>instanceof</strong> <a href='../S/4710.html#L76' title='Defined at 76 in src/com/sun/org/apache/bcel/internal/generic/CPInstruction.java.'>CPInstruction</a>) <em class='brace'>{</em>
+<a id='L187' name='L187'></a> 187       <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = ((<a href='../S/4710.html#L76' title='Defined at 76 in src/com/sun/org/apache/bcel/internal/generic/CPInstruction.java.'>CPInstruction</a>)i).<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(_cp);
+<a id='L188' name='L188'></a> 188     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L189' name='L189'></a> 189       <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = ((<a href='../S/4709.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/NEWARRAY.java.'>NEWARRAY</a>)i).<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>();
+<a id='L190' name='L190'></a> 190     <em class='brace'>}</em>
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192     <strong class='reserved'>short</strong> opcode = ((<a href='../D/4259.html' title='Multiple defined in 2 places.'>Instruction</a>)i).<a href='../S/4799.html#L264' title='Defined at 264 in src/com/sun/org/apache/bcel/internal/generic/Instruction.java.'>getOpcode</a>();
+<a id='L193' name='L193'></a> 193     <strong class='reserved'>int</strong>   dim    = 1;
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195     <strong class='reserved'>switch</strong>(opcode) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196     <strong class='reserved'>case</strong> <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>:
+<a id='L197' name='L197'></a> 197       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createNew(\"" +
+<a id='L198' name='L198'></a> 198                    ((<a href='../D/6335.html' title='Multiple defined in 2 places.'>ObjectType</a>)<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>).<a href='../D/17698.html' title='Multiple defined in 41 places.'>getClassName</a>() + "\"));");
+<a id='L199' name='L199'></a> 199       <strong class='reserved'>break</strong>;
+<a id='L200' name='L200'></a> 200 
+<a id='L201' name='L201'></a> 201     <strong class='reserved'>case</strong> <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4748.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/MULTIANEWARRAY.java.'>MULTIANEWARRAY</a>:
+<a id='L202' name='L202'></a> 202       dim = ((<a href='../S/4748.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/MULTIANEWARRAY.java.'>MULTIANEWARRAY</a>)i).<a href='../D/18481.html' title='Multiple defined in 3 places.'>getDimensions</a>();
+<a id='L203' name='L203'></a> 203 
+<a id='L204' name='L204'></a> 204     <strong class='reserved'>case</strong> <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4730.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/ANEWARRAY.java.'>ANEWARRAY</a>:
+<a id='L205' name='L205'></a> 205     <strong class='reserved'>case</strong> <a href='../D/1829.html' title='Multiple defined in 9 places.'>Constants</a>.<a href='../S/4709.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/NEWARRAY.java.'>NEWARRAY</a>:
+<a id='L206' name='L206'></a> 206       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createNewArray(" +
+<a id='L207' name='L207'></a> 207                    <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + ", (short) " + dim + "));");
+<a id='L208' name='L208'></a> 208       <strong class='reserved'>break</strong>;
+<a id='L209' name='L209'></a> 209 
+<a id='L210' name='L210'></a> 210     <strong class='reserved'>default</strong>:
+<a id='L211' name='L211'></a> 211       <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>("Oops: " + opcode);
+<a id='L212' name='L212'></a> 212     <em class='brace'>}</em>
+<a id='L213' name='L213'></a> 213   <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/12301.html' title='Multiple referred from 26 places.'>createConstant</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) <em class='brace'>{</em>
+<a id='L216' name='L216'></a> 216     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> embed = <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218     <strong class='reserved'>if</strong>(<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> <strong class='reserved'>instanceof</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)
+<a id='L219' name='L219'></a> 219       embed = '"' + <a href='../D/9444.html' title='Multiple defined in 3 places.'>Utility</a>.<a href='../S/4606.html#L1374' title='Defined at 1374 in src/com/sun/org/apache/bcel/internal/classfile/Utility.java.'>convertString</a>(<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>()) + '"';
+<a id='L220' name='L220'></a> 220     <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> <strong class='reserved'>instanceof</strong> <a href='../S/1732.html#L123' title='Defined at 123 in src/java/lang/Character.java.'>Character</a>)
+<a id='L221' name='L221'></a> 221       embed = "(char)0x" + <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35410.html' title='Multiple defined in 5 places.'>toHexString</a>(((<a href='../S/1732.html#L123' title='Defined at 123 in src/java/lang/Character.java.'>Character</a>)<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>).<a href='../S/1732.html#L4581' title='Defined at 4581 in src/java/lang/Character.java.'>charValue</a>());
+<a id='L222' name='L222'></a> 222 
+<a id='L223' name='L223'></a> 223     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(new PUSH(_cp, " + embed + "));");
+<a id='L224' name='L224'></a> 224   <em class='brace'>}</em>
+<a id='L225' name='L225'></a> 225 
+<a id='L226' name='L226'></a> 226   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/4783.html#L173' title='Referred from 173 in src/com/sun/org/apache/bcel/internal/generic/LDC.java.'>visitLDC</a>(<a href='../S/4783.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/LDC.java.'>LDC</a> i) <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227     <a href='../D/13721.html' title='Multiple defined in 5 places.'>createConstant</a>(i.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>(_cp));
+<a id='L228' name='L228'></a> 228   <em class='brace'>}</em>
+<a id='L229' name='L229'></a> 229 
+<a id='L230' name='L230'></a> 230   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/4781.html#L117' title='Referred from 117 in src/com/sun/org/apache/bcel/internal/generic/LDC2_W.java.'>visitLDC2_W</a>(<a href='../S/4781.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/LDC2_W.java.'>LDC2_W</a> i) <em class='brace'>{</em>
+<a id='L231' name='L231'></a> 231     <a href='../D/13721.html' title='Multiple defined in 5 places.'>createConstant</a>(i.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>(_cp));
+<a id='L232' name='L232'></a> 232   <em class='brace'>}</em>
+<a id='L233' name='L233'></a> 233 
+<a id='L234' name='L234'></a> 234   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30179.html' title='Multiple referred from 6 places.'>visitConstantPushInstruction</a>(<a href='../S/4715.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/ConstantPushInstruction.java.'>ConstantPushInstruction</a> i) <em class='brace'>{</em>
+<a id='L235' name='L235'></a> 235     <a href='../D/13721.html' title='Multiple defined in 5 places.'>createConstant</a>(i.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>());
+<a id='L236' name='L236'></a> 236   <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/4733.html#L107' title='Referred from 107 in src/com/sun/org/apache/bcel/internal/generic/INSTANCEOF.java.'>visitINSTANCEOF</a>(<a href='../S/4733.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/INSTANCEOF.java.'>INSTANCEOF</a> i) <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = i.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(_cp);
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(new INSTANCEOF(_cp.addClass(" +
+<a id='L242' name='L242'></a> 242                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + ")));");
+<a id='L243' name='L243'></a> 243   <em class='brace'>}</em>
+<a id='L244' name='L244'></a> 244 
+<a id='L245' name='L245'></a> 245   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/4791.html#L118' title='Referred from 118 in src/com/sun/org/apache/bcel/internal/generic/CHECKCAST.java.'>visitCHECKCAST</a>(<a href='../S/4791.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/CHECKCAST.java.'>CHECKCAST</a> i) <em class='brace'>{</em>
+<a id='L246' name='L246'></a> 246     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = i.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(_cp);
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createCheckCast(" +
+<a id='L249' name='L249'></a> 249                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + "));");
+<a id='L250' name='L250'></a> 250   <em class='brace'>}</em>
+<a id='L251' name='L251'></a> 251 
+<a id='L252' name='L252'></a> 252   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30363.html' title='Multiple referred from 6 places.'>visitReturnInstruction</a>(<a href='../S/4650.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/ReturnInstruction.java.'>ReturnInstruction</a> i) <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = i.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(_cp);
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(_factory.createReturn(" +
+<a id='L256' name='L256'></a> 256                  <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) + "));");
+<a id='L257' name='L257'></a> 257   <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258 
+<a id='L259' name='L259'></a> 259   <em class='comment'>// Memorize BranchInstructions that need an update</em>
+<a id='L260' name='L260'></a> 260   <strong class='reserved'>private</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a> branches = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L261' name='L261'></a> 261 
+<a id='L262' name='L262'></a> 262   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30162.html' title='Multiple referred from 22 places.'>visitBranchInstruction</a>(<a href='../S/4732.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchInstruction.java.'>BranchInstruction</a> bi) <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263     <a href='../S/4742.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchHandle.java.'>BranchHandle</a> bh   = (<a href='../S/4742.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchHandle.java.'>BranchHandle</a>)branch_map.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(bi);
+<a id='L264' name='L264'></a> 264     <strong class='reserved'>int</strong>          pos  = bh.<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>();
+<a id='L265' name='L265'></a> 265     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>       <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = bi.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() + "_" + pos;
+<a id='L266' name='L266'></a> 266 
+<a id='L267' name='L267'></a> 267     <strong class='reserved'>if</strong>(bi <strong class='reserved'>instanceof</strong> <a href='../S/4618.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/Select.java.'>Select</a>) <em class='brace'>{</em>
+<a id='L268' name='L268'></a> 268       <a href='../S/4618.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/Select.java.'>Select</a> s = (<a href='../S/4618.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/Select.java.'>Select</a>)bi;
+<a id='L269' name='L269'></a> 269       branches.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(bi);
+<a id='L270' name='L270'></a> 270 
+<a id='L271' name='L271'></a> 271       <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> args   = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>("new int[] { ");
+<a id='L272' name='L272'></a> 272       <strong class='reserved'>int</strong>[]        matchs = s.<a href='../S/4618.html#L256' title='Defined at 256 in src/com/sun/org/apache/bcel/internal/generic/Select.java.'>getMatchs</a>();
+<a id='L273' name='L273'></a> 273 
+<a id='L274' name='L274'></a> 274       <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i &lt; matchs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L275' name='L275'></a> 275         args.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(matchs[i]);
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277         <strong class='reserved'>if</strong>(i &lt; matchs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1)
+<a id='L278' name='L278'></a> 278           args.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(", ");
+<a id='L279' name='L279'></a> 279       <em class='brace'>}</em>
+<a id='L280' name='L280'></a> 280 
+<a id='L281' name='L281'></a> 281       args.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" }");
+<a id='L282' name='L282'></a> 282 
+<a id='L283' name='L283'></a> 283       _out.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>("    Select " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + " = new " +
+<a id='L284' name='L284'></a> 284                  bi.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/35514.html' title='Multiple defined in 18 places.'>toUpperCase</a>() + "(" + args +
+<a id='L285' name='L285'></a> 285                  ", new InstructionHandle[] { ");
+<a id='L286' name='L286'></a> 286 
+<a id='L287' name='L287'></a> 287       <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i &lt; matchs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L288' name='L288'></a> 288         _out.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>("null");
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290         <strong class='reserved'>if</strong>(i &lt; matchs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1)
+<a id='L291' name='L291'></a> 291           _out.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>(", ");
+<a id='L292' name='L292'></a> 292       <em class='brace'>}</em>
+<a id='L293' name='L293'></a> 293 
+<a id='L294' name='L294'></a> 294       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>(");");
+<a id='L295' name='L295'></a> 295     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296       <strong class='reserved'>int</strong>    t_pos  = bh.<a href='../D/22997.html' title='Multiple defined in 36 places.'>getTarget</a>().<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>();
+<a id='L297' name='L297'></a> 297       <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>;
+<a id='L298' name='L298'></a> 298 
+<a id='L299' name='L299'></a> 299       <strong class='reserved'>if</strong>(pos &gt; t_pos) <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300         <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a> = "ih_" + t_pos;
+<a id='L301' name='L301'></a> 301       <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302         branches.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(bi);
+<a id='L303' name='L303'></a> 303         <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a> = "null";
+<a id='L304' name='L304'></a> 304       <em class='brace'>}</em>
+<a id='L305' name='L305'></a> 305 
+<a id='L306' name='L306'></a> 306       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    BranchInstruction " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> +
+<a id='L307' name='L307'></a> 307                    " = _factory.createBranchInstruction(" +
+<a id='L308' name='L308'></a> 308                    "Constants." + bi.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/35514.html' title='Multiple defined in 18 places.'>toUpperCase</a>() + ", " +
+<a id='L309' name='L309'></a> 309                    <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a> + ");");
+<a id='L310' name='L310'></a> 310     <em class='brace'>}</em>
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312     <strong class='reserved'>if</strong>(bh.<a href='../S/4625.html#L214' title='Defined at 214 in src/com/sun/org/apache/bcel/internal/generic/InstructionHandle.java.'>hasTargeters</a>())
+<a id='L313' name='L313'></a> 313       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    ih_" + pos + " = il.append(" + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + ");");
+<a id='L314' name='L314'></a> 314     <strong class='reserved'>else</strong>
+<a id='L315' name='L315'></a> 315       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    il.append(" + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + ");");
+<a id='L316' name='L316'></a> 316   <em class='brace'>}</em>
+<a id='L317' name='L317'></a> 317 
+<a id='L318' name='L318'></a> 318   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/4716.html#L162' title='Referred from 162 in src/com/sun/org/apache/bcel/internal/generic/RET.java.'>visitRET</a>(<a href='../S/4716.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/RET.java.'>RET</a> i) <em class='brace'>{</em>
+<a id='L319' name='L319'></a> 319     _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("il.append(new RET(" + i.<a href='../D/19664.html' title='Multiple defined in 76 places.'>getIndex</a>() + ")));");
+<a id='L320' name='L320'></a> 320   <em class='brace'>}</em>
+<a id='L321' name='L321'></a> 321 
+<a id='L322' name='L322'></a> 322   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/4548.html#L111' title='Referred from 111 in src/com/sun/org/apache/bcel/internal/util/BCELFactory.java.'>updateBranchTargets</a>() <em class='brace'>{</em>
+<a id='L323' name='L323'></a> 323     <strong class='reserved'>for</strong>(<a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> i = branches.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>(); i.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>(); ) <em class='brace'>{</em>
+<a id='L324' name='L324'></a> 324       <a href='../S/4732.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchInstruction.java.'>BranchInstruction</a> bi    = (<a href='../S/4732.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchInstruction.java.'>BranchInstruction</a>)i.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L325' name='L325'></a> 325       <a href='../S/4742.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchHandle.java.'>BranchHandle</a>      bh    = (<a href='../S/4742.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/BranchHandle.java.'>BranchHandle</a>)branch_map.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(bi);
+<a id='L326' name='L326'></a> 326       <strong class='reserved'>int</strong>               pos   = bh.<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>();
+<a id='L327' name='L327'></a> 327       <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>            <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>  = bi.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() + "_" + pos;
+<a id='L328' name='L328'></a> 328       <strong class='reserved'>int</strong>               t_pos = bh.<a href='../D/22997.html' title='Multiple defined in 36 places.'>getTarget</a>().<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>();
+<a id='L329' name='L329'></a> 329 
+<a id='L330' name='L330'></a> 330       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + ".setTarget(ih_" + t_pos + ");");
+<a id='L331' name='L331'></a> 331 
+<a id='L332' name='L332'></a> 332       <strong class='reserved'>if</strong>(bi <strong class='reserved'>instanceof</strong> <a href='../S/4618.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/Select.java.'>Select</a>) <em class='brace'>{</em>
+<a id='L333' name='L333'></a> 333         <a href='../S/4625.html#L83' title='Defined at 83 in src/com/sun/org/apache/bcel/internal/generic/InstructionHandle.java.'>InstructionHandle</a>[] ihs = ((<a href='../S/4618.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/Select.java.'>Select</a>)bi).<a href='../D/23024.html' title='Multiple defined in 2 places.'>getTargets</a>();
+<a id='L334' name='L334'></a> 334 
+<a id='L335' name='L335'></a> 335         <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> j = 0; j &lt; ihs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; j++) <em class='brace'>{</em>
+<a id='L336' name='L336'></a> 336           t_pos = ihs[j].<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>();
+<a id='L337' name='L337'></a> 337 
+<a id='L338' name='L338'></a> 338           _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + ".setTarget(" + j +
+<a id='L339' name='L339'></a> 339                        ", ih_" + t_pos + ");");
+<a id='L340' name='L340'></a> 340         <em class='brace'>}</em>
+<a id='L341' name='L341'></a> 341       <em class='brace'>}</em>
+<a id='L342' name='L342'></a> 342     <em class='brace'>}</em>
+<a id='L343' name='L343'></a> 343   <em class='brace'>}</em>
+<a id='L344' name='L344'></a> 344 
+<a id='L345' name='L345'></a> 345   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/4548.html#L112' title='Referred from 112 in src/com/sun/org/apache/bcel/internal/util/BCELFactory.java.'>updateExceptionHandlers</a>() <em class='brace'>{</em>
+<a id='L346' name='L346'></a> 346     <a href='../S/4654.html#L77' title='Defined at 77 in src/com/sun/org/apache/bcel/internal/generic/CodeExceptionGen.java.'>CodeExceptionGen</a>[] handlers = _mg.<a href='../S/4802.html#L605' title='Defined at 605 in src/com/sun/org/apache/bcel/internal/generic/MethodGen.java.'>getExceptionHandlers</a>();
+<a id='L347' name='L347'></a> 347 
+<a id='L348' name='L348'></a> 348     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i &lt; handlers.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L349' name='L349'></a> 349       <a href='../S/4654.html#L77' title='Defined at 77 in src/com/sun/org/apache/bcel/internal/generic/CodeExceptionGen.java.'>CodeExceptionGen</a> h    = handlers[i];
+<a id='L350' name='L350'></a> 350       <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>           <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = (h.<a href='../D/17521.html' title='Multiple defined in 2 places.'>getCatchType</a>() == <strong class='reserved'>null</strong>)?
+<a id='L351' name='L351'></a> 351         "null" : <a href='../S/4558.html#L75' title='Defined at 75 in src/com/sun/org/apache/bcel/internal/util/BCELifier.java.'>BCELifier</a>.<a href='../D/29714.html' title='Multiple defined in 2 places.'>printType</a>(h.<a href='../D/17521.html' title='Multiple defined in 2 places.'>getCatchType</a>());
+<a id='L352' name='L352'></a> 352 
+<a id='L353' name='L353'></a> 353       _out.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("    method.addExceptionHandler(" +
+<a id='L354' name='L354'></a> 354                    "ih_" + h.<a href='../D/22719.html' title='Multiple defined in 4 places.'>getStartPC</a>().<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>() + ", " +
+<a id='L355' name='L355'></a> 355                    "ih_" + h.<a href='../D/18772.html' title='Multiple defined in 2 places.'>getEndPC</a>().<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>() + ", " +
+<a id='L356' name='L356'></a> 356                    "ih_" + h.<a href='../D/19412.html' title='Multiple defined in 2 places.'>getHandlerPC</a>().<a href='../D/21546.html' title='Multiple defined in 41 places.'>getPosition</a>() + ", " +
+<a id='L357' name='L357'></a> 357                    <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> + ");");
+<a id='L358' name='L358'></a> 358     <em class='brace'>}</em>
+<a id='L359' name='L359'></a> 359   <em class='brace'>}</em>
+<a id='L360' name='L360'></a> 360 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L345'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

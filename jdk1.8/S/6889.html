@@ -1,0 +1,307 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/transport/CorbaConnectionCacheBase.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7770.html'>transport</a>/CorbaConnectionCacheBase.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L73'>[^]</a><a href='#L262'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L73' title='Defined at 73.'>getCacheType</a></li>
+<li><a href='#L78' title='Defined at 78.'>stampTime</a></li>
+<li><a href='#L84' title='Defined at 84.'>numberOfConnections</a></li>
+<li><a href='#L91' title='Defined at 91.'>close</a></li>
+<li><a href='#L99' title='Defined at 99.'>numberOfIdleConnections</a></li>
+<li><a href='#L113' title='Defined at 113.'>numberOfBusyConnections</a></li>
+<li><a href='#L144' title='Defined at 144.'>reclaim</a></li>
+<li><a href='#L222' title='Defined at 222.'>getMonitoringName</a></li>
+<li><a href='#L233' title='Defined at 233.'>values</a></li>
+<li><a href='#L235' title='Defined at 235.'>backingStore</a></li>
+<li><a href='#L237' title='Defined at 237.'>registerWithMonitoring</a></li>
+<li><a href='#L239' title='Defined at 239.'>dprintCreation</a></li>
+<li><a href='#L247' title='Defined at 247.'>dprintStatistics</a></li>
+<li><a href='#L262' title='Defined at 262.'>dprint</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.transport;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Collection;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.corba.se.pept.broker.Broker;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.Connection;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.ConnectionCache;
+<a id='L34' name='L34'></a>  34 
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaConnection;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaConnectionCache;
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <em class='comment'>/**</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * @author Harold Carr</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> */</em>
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/1758.html' title='Multiple referred from 2 places.'>CorbaConnectionCacheBase</a>
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>implements</strong>
+<a id='L48' name='L48'></a>  48         <a href='../S/7278.html#L31' title='Defined at 31 in src/com/sun/corba/se/pept/transport/ConnectionCache.java.'>ConnectionCache</a>,
+<a id='L49' name='L49'></a>  49         <a href='../S/7321.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/transport/CorbaConnectionCache.java.'>CorbaConnectionCache</a>
+<a id='L50' name='L50'></a>  50 <em class='brace'>{</em>
+<a id='L51' name='L51'></a>  51     <strong class='reserved'>protected</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L52' name='L52'></a>  52     <strong class='reserved'>protected</strong> <strong class='reserved'>long</strong> <a href='../D/35339.html' title='Multiple defined in 2 places.'>timestamp</a> = 0;
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> cacheType;
+<a id='L54' name='L54'></a>  54     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> monitoringName;
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>protected</strong> <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> wrapper;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>protected</strong> CorbaConnectionCacheBase(<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> cacheType,
+<a id='L58' name='L58'></a>  58                                        <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> monitoringName)
+<a id='L59' name='L59'></a>  59     <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L61' name='L61'></a>  61         <strong class='reserved'>this</strong>.cacheType = cacheType;
+<a id='L62' name='L62'></a>  62         <strong class='reserved'>this</strong>.monitoringName = monitoringName;
+<a id='L63' name='L63'></a>  63         wrapper =<a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,<a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_TRANSPORT);
+<a id='L64' name='L64'></a>  64         <a href='../D/30610.html' title='Multiple defined in 3 places.'>registerWithMonitoring</a>();
+<a id='L65' name='L65'></a>  65         <a href='../S/6889.html#L239' title='Defined at 239 in src/com/sun/corba/se/impl/transport/CorbaConnectionCacheBase.java.'>dprintCreation</a>();
+<a id='L66' name='L66'></a>  66     <em class='brace'>}</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     <em class='comment'>////////////////////////////////////////////////////</em>
+<a id='L69' name='L69'></a>  69     <em class='comment'>//</em>
+<a id='L70' name='L70'></a>  70     <em class='comment'>// pept.transport.ConnectionCache</em>
+<a id='L71' name='L71'></a>  71     <em class='comment'>//</em>
+<a id='L72' name='L72'></a>  72 
+<a id='L73' name='L73'></a>  73     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6889.html#L242' title='Referred from 242 in src/com/sun/corba/se/impl/transport/CorbaConnectionCacheBase.java.'>getCacheType</a>()
+<a id='L74' name='L74'></a>  74     <em class='brace'>{</em>
+<a id='L75' name='L75'></a>  75         <strong class='reserved'>return</strong> cacheType;
+<a id='L76' name='L76'></a>  76     <em class='brace'>}</em>
+<a id='L77' name='L77'></a>  77 
+<a id='L78' name='L78'></a>  78     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/28773.html' title='Multiple referred from 5 places.'>stampTime</a>(<a href='../D/1801.html' title='Multiple defined in 3 places.'>Connection</a> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>)
+<a id='L79' name='L79'></a>  79     <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80         <em class='comment'>// _REVISIT_ Need to worry about wrap around some day</em>
+<a id='L81' name='L81'></a>  81         <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/34141.html' title='Multiple defined in 3 places.'>setTimeStamp</a>(<a href='../D/35339.html' title='Multiple defined in 2 places.'>timestamp</a>++);
+<a id='L82' name='L82'></a>  82     <em class='brace'>}</em>
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/23858.html' title='Multiple referred from 9 places.'>numberOfConnections</a>()
+<a id='L85' name='L85'></a>  85     <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86         <strong class='reserved'>synchronized</strong> (<a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a>()) <em class='brace'>{</em>
+<a id='L87' name='L87'></a>  87             <strong class='reserved'>return</strong> <a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>().<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L88' name='L88'></a>  88         <em class='brace'>}</em>
+<a id='L89' name='L89'></a>  89     <em class='brace'>}</em>
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>() <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92         <strong class='reserved'>synchronized</strong> (<a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a>()) <em class='brace'>{</em>
+<a id='L93' name='L93'></a>  93             <strong class='reserved'>for</strong> (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj : <a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>()) <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94                 ((<a href='../S/7324.html#L53' title='Defined at 53 in src/com/sun/corba/se/spi/transport/CorbaConnection.java.'>CorbaConnection</a>)obj).<a href='../D/12927.html' title='Multiple defined in 2 places.'>closeConnectionResources</a>() ;
+<a id='L95' name='L95'></a>  95             <em class='brace'>}</em>
+<a id='L96' name='L96'></a>  96         <em class='brace'>}</em>
+<a id='L97' name='L97'></a>  97     <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/23859.html' title='Multiple referred from 3 places.'>numberOfIdleConnections</a>()
+<a id='L100' name='L100'></a> 100     <em class='brace'>{</em>
+<a id='L101' name='L101'></a> 101         <strong class='reserved'>long</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = 0;
+<a id='L102' name='L102'></a> 102         <strong class='reserved'>synchronized</strong> (<a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a>()) <em class='brace'>{</em>
+<a id='L103' name='L103'></a> 103             <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> connections = <a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>().<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L104' name='L104'></a> 104             <strong class='reserved'>while</strong> (connections.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L105' name='L105'></a> 105                 <strong class='reserved'>if</strong> (! ((<a href='../D/1801.html' title='Multiple defined in 3 places.'>Connection</a>)connections.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>()).<a href='../D/25265.html' title='Multiple defined in 2 places.'>isBusy</a>()) <em class='brace'>{</em>
+<a id='L106' name='L106'></a> 106                     <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>++;
+<a id='L107' name='L107'></a> 107                 <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108             <em class='brace'>}</em>
+<a id='L109' name='L109'></a> 109         <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110         <strong class='reserved'>return</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>;
+<a id='L111' name='L111'></a> 111     <em class='brace'>}</em>
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/23856.html' title='Multiple referred from 3 places.'>numberOfBusyConnections</a>()
+<a id='L114' name='L114'></a> 114     <em class='brace'>{</em>
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>long</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = 0;
+<a id='L116' name='L116'></a> 116         <strong class='reserved'>synchronized</strong> (<a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a>()) <em class='brace'>{</em>
+<a id='L117' name='L117'></a> 117             <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> connections = <a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>().<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L118' name='L118'></a> 118             <strong class='reserved'>while</strong> (connections.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119                 <strong class='reserved'>if</strong> (((<a href='../D/1801.html' title='Multiple defined in 3 places.'>Connection</a>)connections.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>()).<a href='../D/25265.html' title='Multiple defined in 2 places.'>isBusy</a>()) <em class='brace'>{</em>
+<a id='L120' name='L120'></a> 120                     <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>++;
+<a id='L121' name='L121'></a> 121                 <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122             <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123         <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124         <strong class='reserved'>return</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>;
+<a id='L125' name='L125'></a> 125     <em class='brace'>}</em>
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127     <em class='comment'>/**</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * Discarding least recently used Connections that are not busy</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     *</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * This method must be synchronized since one WorkerThread could</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * be reclaming connections inside the synchronized backingStore</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * block and a second WorkerThread (or a SelectorThread) could have</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * already executed the if (numberOfConnections &lt;= .... ). As a</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * result the second thread would also attempt to reclaim connections.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     *</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * If connection reclamation becomes a performance issue, the connection</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * reclamation could make its own task and consequently executed in</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * a separate thread.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * Currently, the accept &amp; reclaim are done in the same thread, WorkerThread</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * by default. It could be changed such that the SelectorThread would do</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * it for SocketChannels and WorkerThreads for Sockets by updating the</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * ParserTable.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     */</em>
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>synchronized</strong> <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/25653.html' title='Multiple referred from 7 places.'>reclaim</a>()
+<a id='L145' name='L145'></a> 145     <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>long</strong> <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a> = <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a>();
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".reclaim-&gt;: " + <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a>
+<a id='L151' name='L151'></a> 151                         + " ("
+<a id='L152' name='L152'></a> 152                         + <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/19462.html' title='Multiple defined in 3 places.'>getHighWaterMark</a>()
+<a id='L153' name='L153'></a> 153                         + "/"
+<a id='L154' name='L154'></a> 154                         + <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/20298.html' title='Multiple defined in 3 places.'>getLowWaterMark</a>()
+<a id='L155' name='L155'></a> 155                         + "/"
+<a id='L156' name='L156'></a> 156                         + <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21091.html' title='Multiple defined in 3 places.'>getNumberToReclaim</a>()
+<a id='L157' name='L157'></a> 157                         + ")");
+<a id='L158' name='L158'></a> 158             <em class='brace'>}</em>
+<a id='L159' name='L159'></a> 159 
+<a id='L160' name='L160'></a> 160             <strong class='reserved'>if</strong> (<a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a> &lt;= <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/19462.html' title='Multiple defined in 3 places.'>getHighWaterMark</a>() ||
+<a id='L161' name='L161'></a> 161                 <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a> &lt; <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/20298.html' title='Multiple defined in 3 places.'>getLowWaterMark</a>()) <em class='brace'>{</em>
+<a id='L162' name='L162'></a> 162                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L163' name='L163'></a> 163             <em class='brace'>}</em>
+<a id='L164' name='L164'></a> 164 
+<a id='L165' name='L165'></a> 165             <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a> = <a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a>();
+<a id='L166' name='L166'></a> 166             <strong class='reserved'>synchronized</strong> (<a href='../D/11689.html' title='Multiple defined in 3 places.'>backingStore</a>) <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168                  <em class='comment'>// REVISIT - A less expensive alternative connection reclaiming</em>
+<a id='L169' name='L169'></a> 169                  <em class='comment'>//           algorithm could be investigated.</em>
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i &lt; <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21091.html' title='Multiple defined in 3 places.'>getNumberToReclaim</a>(); i++) <em class='brace'>{</em>
+<a id='L172' name='L172'></a> 172                     <a href='../D/1801.html' title='Multiple defined in 3 places.'>Connection</a> toClose = <strong class='reserved'>null</strong>;
+<a id='L173' name='L173'></a> 173                     <strong class='reserved'>long</strong> lru = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>.MAX_VALUE;
+<a id='L174' name='L174'></a> 174                     <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a> = <a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>().<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L175' name='L175'></a> 175 
+<a id='L176' name='L176'></a> 176                     <em class='comment'>// Find least recently used and not busy connection in cache</em>
+<a id='L177' name='L177'></a> 177                     <strong class='reserved'>while</strong> ( <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>() ) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178                         <a href='../D/1801.html' title='Multiple defined in 3 places.'>Connection</a> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = (<a href='../D/1801.html' title='Multiple defined in 3 places.'>Connection</a>) <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L179' name='L179'></a> 179                         <strong class='reserved'>if</strong> ( !<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/25265.html' title='Multiple defined in 2 places.'>isBusy</a>() &amp;&amp; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/23149.html' title='Multiple defined in 5 places.'>getTimeStamp</a>() &lt; lru ) <em class='brace'>{</em>
+<a id='L180' name='L180'></a> 180                             toClose = <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>;
+<a id='L181' name='L181'></a> 181                             lru = <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/23149.html' title='Multiple defined in 5 places.'>getTimeStamp</a>();
+<a id='L182' name='L182'></a> 182                         <em class='brace'>}</em>
+<a id='L183' name='L183'></a> 183                     <em class='brace'>}</em>
+<a id='L184' name='L184'></a> 184 
+<a id='L185' name='L185'></a> 185                     <strong class='reserved'>if</strong> ( toClose == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L186' name='L186'></a> 186                         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L187' name='L187'></a> 187                     <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189                     <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190                         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191                             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".reclaim: closing: " + toClose);
+<a id='L192' name='L192'></a> 192                         <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193                         toClose.<a href='../D/12922.html' title='Multiple defined in 218 places.'>close</a>();
+<a id='L194' name='L194'></a> 194                     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195                         <em class='comment'>// REVISIT - log</em>
+<a id='L196' name='L196'></a> 196                     <em class='brace'>}</em>
+<a id='L197' name='L197'></a> 197                 <em class='brace'>}</em>
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199                 <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200                     <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".reclaim: connections reclaimed ("
+<a id='L201' name='L201'></a> 201                             + (<a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a> - <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a>()) + ")");
+<a id='L202' name='L202'></a> 202                 <em class='brace'>}</em>
+<a id='L203' name='L203'></a> 203             <em class='brace'>}</em>
+<a id='L204' name='L204'></a> 204 
+<a id='L205' name='L205'></a> 205             <em class='comment'>// XXX is necessary to do a GC to reclaim</em>
+<a id='L206' name='L206'></a> 206             <em class='comment'>// closed network connections ??</em>
+<a id='L207' name='L207'></a> 207             <em class='comment'>// java.lang.System.gc();</em>
+<a id='L208' name='L208'></a> 208 
+<a id='L209' name='L209'></a> 209             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L210' name='L210'></a> 210         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L211' name='L211'></a> 211             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L212' name='L212'></a> 212                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".reclaim&lt;-: " + <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a>());
+<a id='L213' name='L213'></a> 213             <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214         <em class='brace'>}</em>
+<a id='L215' name='L215'></a> 215     <em class='brace'>}</em>
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217     <em class='comment'>////////////////////////////////////////////////////</em>
+<a id='L218' name='L218'></a> 218     <em class='comment'>//</em>
+<a id='L219' name='L219'></a> 219     <em class='comment'>// spi.transport.ConnectionCache</em>
+<a id='L220' name='L220'></a> 220     <em class='comment'>//</em>
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/17790.html' title='Multiple referred from 7 places.'>getMonitoringName</a>()
+<a id='L223' name='L223'></a> 223     <em class='brace'>{</em>
+<a id='L224' name='L224'></a> 224         <strong class='reserved'>return</strong> monitoringName;
+<a id='L225' name='L225'></a> 225     <em class='brace'>}</em>
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227     <em class='comment'>////////////////////////////////////////////////////</em>
+<a id='L228' name='L228'></a> 228     <em class='comment'>//</em>
+<a id='L229' name='L229'></a> 229     <em class='comment'>// Implementation</em>
+<a id='L230' name='L230'></a> 230     <em class='comment'>//</em>
+<a id='L231' name='L231'></a> 231 
+<a id='L232' name='L232'></a> 232     <em class='comment'>// This is public so folb.Server test can access it.</em>
+<a id='L233' name='L233'></a> 233     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/875.html#L144' title='Defined at 144 in src/java/util/Collection.java.'>Collection</a> <a href='../R/30107.html' title='Multiple referred from 933 places.'>values</a>();
+<a id='L234' name='L234'></a> 234 
+<a id='L235' name='L235'></a> 235     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/10447.html' title='Multiple referred from 14 places.'>backingStore</a>();
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../S/6889.html#L64' title='Referred from 64 in src/com/sun/corba/se/impl/transport/CorbaConnectionCacheBase.java.'>registerWithMonitoring</a>();
+<a id='L238' name='L238'></a> 238 
+<a id='L239' name='L239'></a> 239     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../S/6889.html#L65' title='Referred from 65 in src/com/sun/corba/se/impl/transport/CorbaConnectionCacheBase.java.'>dprintCreation</a>()
+<a id='L240' name='L240'></a> 240     <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L242' name='L242'></a> 242             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".constructor: cacheType: " + <a href='../D/17444.html' title='Multiple defined in 2 places.'>getCacheType</a>()
+<a id='L243' name='L243'></a> 243                    + " monitoringName: " + <a href='../D/20727.html' title='Multiple defined in 7 places.'>getMonitoringName</a>());
+<a id='L244' name='L244'></a> 244         <em class='brace'>}</em>
+<a id='L245' name='L245'></a> 245     <em class='brace'>}</em>
+<a id='L246' name='L246'></a> 246 
+<a id='L247' name='L247'></a> 247     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13498.html' title='Multiple referred from 5 places.'>dprintStatistics</a>()
+<a id='L248' name='L248'></a> 248     <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L250' name='L250'></a> 250             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".stats: "
+<a id='L251' name='L251'></a> 251                    + <a href='../D/28376.html' title='Multiple defined in 2 places.'>numberOfConnections</a>() + "/total "
+<a id='L252' name='L252'></a> 252                    + <a href='../D/28374.html' title='Multiple defined in 2 places.'>numberOfBusyConnections</a>() + "/busy "
+<a id='L253' name='L253'></a> 253                    + <a href='../D/28377.html' title='Multiple defined in 2 places.'>numberOfIdleConnections</a>() + "/idle"
+<a id='L254' name='L254'></a> 254                    + " ("
+<a id='L255' name='L255'></a> 255                    + <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/19462.html' title='Multiple defined in 3 places.'>getHighWaterMark</a>() + "/"
+<a id='L256' name='L256'></a> 256                    + <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/20298.html' title='Multiple defined in 3 places.'>getLowWaterMark</a>() + "/"
+<a id='L257' name='L257'></a> 257                    + <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21091.html' title='Multiple defined in 3 places.'>getNumberToReclaim</a>()
+<a id='L258' name='L258'></a> 258                    + ")");
+<a id='L259' name='L259'></a> 259         <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260     <em class='brace'>}</em>
+<a id='L261' name='L261'></a> 261 
+<a id='L262' name='L262'></a> 262     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13496.html' title='Multiple referred from 536 places.'>dprint</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>)
+<a id='L263' name='L263'></a> 263     <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264         <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>("CorbaConnectionCacheBase", <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L265' name='L265'></a> 265     <em class='brace'>}</em>
+<a id='L266' name='L266'></a> 266 <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268 <em class='comment'>// End of file.</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L73'>[^]</a><a href='#L262'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

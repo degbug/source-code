@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/naming/cosnaming/BindingIteratorImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7751.html'>naming</a>/<a href='../files/7752.html'>cosnaming</a>/BindingIteratorImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L85'>[^]</a><a href='#L184'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L85' title='Defined at 85.'>next_one</a></li>
+<li><a href='#L101' title='Defined at 101.'>next_n</a></li>
+<li><a href='#L120' title='Defined at 120.'>list</a></li>
+<li><a href='#L157' title='Defined at 157.'>destroy</a></li>
+<li><a href='#L171' title='Defined at 171.'>NextOne</a></li>
+<li><a href='#L178' title='Defined at 178.'>Destroy</a></li>
+<li><a href='#L184' title='Defined at 184.'>RemainingElements</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.naming.cosnaming;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <em class='comment'>// Import general CORBA classes</em>
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> org.omg.CORBA.ORB;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.CORBA.Object;
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <em class='comment'>// Import org.omg.CosNaming classes</em>
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.omg.CosNaming.Binding;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.omg.CosNaming.BindingType;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.omg.CosNaming.BindingHolder;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.omg.CosNaming.BindingListHolder;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.CosNaming.BindingIteratorHolder;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> org.omg.CosNaming.BindingIteratorPOA;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_PARAM;
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41 <em class='comment'>/**</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * Class BindingIteratorImpl implements the org.omg.CosNaming::BindingIterator</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * interface, but does not implement the method to retrieve the next</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * binding in the NamingContext for which it was created. This is left</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * to a subclass, which is why this class is abstract; BindingIteratorImpl</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * provides an implementation of the interface operations on top of two</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * subclass methods, allowing multiple implementations of iterators that</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * differ in storage and access to the contents of a NamingContext</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * implementation.</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * &lt;p&gt;</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * The operation next_one() is implemented by the subclass, whereas</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * next_n() is implemented on top of the next_one() implementation.</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * Destroy must also be implemented by the subclass.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * &lt;p&gt;</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * A subclass must implement NextOne() and Destroy(); these</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * methods are invoked from synchronized methods and need therefore</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * not be synchronized themselves.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> */</em>
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/812.html' title='Multiple referred from 3 places.'>BindingIteratorImpl</a> <strong class='reserved'>extends</strong> <a href='../S/562.html#L20' title='Defined at 20 in src/org/omg/CosNaming/BindingIteratorPOA.java.'>BindingIteratorPOA</a>
+<a id='L60' name='L60'></a>  60 <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>protected</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63     <em class='comment'>/**</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * Create a binding iterator servant.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * runs the super constructor.</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * @param orb an ORB object.</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * @exception java.lang.Exception a Java exception.</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     */</em>
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>public</strong> BindingIteratorImpl(<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L70' name='L70'></a>  70         <strong class='reserved'>throws</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>
+<a id='L71' name='L71'></a>  71     <em class='brace'>{</em>
+<a id='L72' name='L72'></a>  72         <strong class='reserved'>super</strong>();
+<a id='L73' name='L73'></a>  73         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ;
+<a id='L74' name='L74'></a>  74     <em class='brace'>}</em>
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>/**</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * Return the next binding. It also returns true or false, indicating</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * whether there were more bindings.</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * @param b The Binding as an out parameter.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * @return true if there were more bindings.</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * @exception org.omg.CORBA.SystemException One of a fixed set of CORBA</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * system exceptions.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * @see NextOne</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     */</em>
+<a id='L85' name='L85'></a>  85     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>boolean</strong> <a href='../R/23708.html' title='Multiple referred from 3 places.'>next_one</a>(org.omg.CosNaming.<a href='../S/523.html#L10' title='Defined at 10 in src/org/omg/CosNaming/BindingHolder.java.'>BindingHolder</a> b)
+<a id='L86' name='L86'></a>  86     <em class='brace'>{</em>
+<a id='L87' name='L87'></a>  87         <em class='comment'>// NextOne actually returns the next one</em>
+<a id='L88' name='L88'></a>  88         <strong class='reserved'>return</strong> <a href='../D/6038.html' title='Multiple defined in 3 places.'>NextOne</a>(b);
+<a id='L89' name='L89'></a>  89     <em class='brace'>}</em>
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <em class='comment'>/**</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * Return the next n bindings. It also returns true or false, indicating</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * whether there were more bindings.</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * @param how_many The number of requested bindings in the BindingList.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * @param bl The BindingList as an out parameter.</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * @return true if there were more bindings.</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * @exception org.omg.CORBA.SystemException One of a fixed set of CORBA</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * system exceptions.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * @see NextOne</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     */</em>
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>boolean</strong> <a href='../R/23707.html' title='Multiple referred from 3 places.'>next_n</a>(<strong class='reserved'>int</strong> how_many,
+<a id='L102' name='L102'></a> 102         org.omg.CosNaming.<a href='../S/512.html#L15' title='Defined at 15 in src/org/omg/CosNaming/BindingListHolder.java.'>BindingListHolder</a> blh)
+<a id='L103' name='L103'></a> 103     <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104         <strong class='reserved'>if</strong>( how_many == 0 ) <em class='brace'>{</em>
+<a id='L105' name='L105'></a> 105             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/432.html#L47' title='Defined at 47 in src/org/omg/CORBA/BAD_PARAM.java.'>BAD_PARAM</a>( " 'how_many' parameter is set to 0 which is" +
+<a id='L106' name='L106'></a> 106             " invalid" );
+<a id='L107' name='L107'></a> 107         <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108         <strong class='reserved'>return</strong> <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>( how_many, blh );
+<a id='L109' name='L109'></a> 109     <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111     <em class='comment'>/**</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * lists next n bindings. It returns true or false, indicating</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * whether there were more bindings. This method has the package private</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * scope, It will be called from NamingContext.list() operation or</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * this.next_n().</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * @param how_many The number of requested bindings in the BindingList.</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * @param bl The BindingList as an out parameter.</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * @return true if there were more bindings.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     */</em>
+<a id='L120' name='L120'></a> 120     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/22527.html' title='Multiple referred from 1488 places.'>list</a>( <strong class='reserved'>int</strong> how_many, org.omg.CosNaming.<a href='../S/512.html#L15' title='Defined at 15 in src/org/omg/CosNaming/BindingListHolder.java.'>BindingListHolder</a> blh)
+<a id='L121' name='L121'></a> 121     <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122         <em class='comment'>// Take the smallest of what's left and what's being asked for</em>
+<a id='L123' name='L123'></a> 123         <strong class='reserved'>int</strong> numberToGet = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(<a href='../D/7236.html' title='Multiple defined in 3 places.'>RemainingElements</a>(),how_many);
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125         <em class='comment'>// Create a resulting BindingList</em>
+<a id='L126' name='L126'></a> 126         <a href='../D/886.html' title='Multiple defined in 3 places.'>Binding</a>[] bl = <strong class='reserved'>new</strong> <a href='../D/886.html' title='Multiple defined in 3 places.'>Binding</a>[numberToGet];
+<a id='L127' name='L127'></a> 127         <a href='../S/523.html#L10' title='Defined at 10 in src/org/omg/CosNaming/BindingHolder.java.'>BindingHolder</a> bh = <strong class='reserved'>new</strong> <a href='../S/523.html#L10' title='Defined at 10 in src/org/omg/CosNaming/BindingHolder.java.'>BindingHolder</a>();
+<a id='L128' name='L128'></a> 128         <strong class='reserved'>int</strong> i = 0;
+<a id='L129' name='L129'></a> 129         <em class='comment'>// Keep iterating as long as there are entries</em>
+<a id='L130' name='L130'></a> 130         <strong class='reserved'>while</strong> (i &lt; numberToGet &amp;&amp; <strong class='reserved'>this</strong>.<a href='../D/6038.html' title='Multiple defined in 3 places.'>NextOne</a>(bh) == <strong class='reserved'>true</strong>) <em class='brace'>{</em>
+<a id='L131' name='L131'></a> 131             bl[i] = bh.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L132' name='L132'></a> 132             i++;
+<a id='L133' name='L133'></a> 133         <em class='brace'>}</em>
+<a id='L134' name='L134'></a> 134         <em class='comment'>// Found any at all?</em>
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>if</strong> (i == 0) <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136             <em class='comment'>// No</em>
+<a id='L137' name='L137'></a> 137             blh.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <strong class='reserved'>new</strong> <a href='../D/886.html' title='Multiple defined in 3 places.'>Binding</a>[0];
+<a id='L138' name='L138'></a> 138             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140 
+<a id='L141' name='L141'></a> 141         <em class='comment'>// Set into holder</em>
+<a id='L142' name='L142'></a> 142         blh.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = bl;
+<a id='L143' name='L143'></a> 143 
+<a id='L144' name='L144'></a> 144         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149 
+<a id='L150' name='L150'></a> 150     <em class='comment'>/**</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * Destroy this BindingIterator object. The object corresponding to this</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * object reference is destroyed.</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * @exception org.omg.CORBA.SystemException One of a fixed set of CORBA</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * system exceptions.</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * @see Destroy</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     */</em>
+<a id='L157' name='L157'></a> 157     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/13259.html' title='Multiple referred from 100 places.'>destroy</a>()
+<a id='L158' name='L158'></a> 158     <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159         <em class='comment'>// Destroy actually destroys</em>
+<a id='L160' name='L160'></a> 160         <strong class='reserved'>this</strong>.<a href='../D/2424.html' title='Multiple defined in 6 places.'>Destroy</a>();
+<a id='L161' name='L161'></a> 161     <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163     <em class='comment'>/**</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * Abstract method for returning the next binding in the NamingContext</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * for which this BindingIterator was created.</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * @param b The Binding as an out parameter.</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * @return true if there were more bindings.</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     * @exception org.omg.CORBA.SystemException One of a fixed set of CORBA</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * system exceptions.</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     */</em>
+<a id='L171' name='L171'></a> 171     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/5508.html' title='Multiple referred from 2 places.'>NextOne</a>(org.omg.CosNaming.<a href='../S/523.html#L10' title='Defined at 10 in src/org/omg/CosNaming/BindingHolder.java.'>BindingHolder</a> b);
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173     <em class='comment'>/**</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * Abstract method for destroying this BindingIterator.</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * @exception org.omg.CORBA.SystemException One of a fixed set of CORBA</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * system exceptions.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     */</em>
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/2232.html' title='Multiple referred from 3 places.'>Destroy</a>();
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180     <em class='comment'>/**</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * Abstract method for returning the remaining number of elements.</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * @return the remaining number of elements in the iterator.</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     */</em>
+<a id='L184' name='L184'></a> 184     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../S/7176.html#L123' title='Referred from 123 in src/com/sun/corba/se/impl/naming/cosnaming/BindingIteratorImpl.java.'>RemainingElements</a>();
+<a id='L185' name='L185'></a> 185 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L85'>[^]</a><a href='#L184'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

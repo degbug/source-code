@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/lang/invoke/InfoFromMemberName.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8003.html'>lang</a>/<a href='../files/8006.html'>invoke</a>/InfoFromMemberName.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L51'>[^]</a><a href='#L133'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L51' title='Defined at 51.'>getDeclaringClass</a></li>
+<li><a href='#L56' title='Defined at 56.'>getName</a></li>
+<li><a href='#L61' title='Defined at 61.'>getMethodType</a></li>
+<li><a href='#L66' title='Defined at 66.'>getModifiers</a></li>
+<li><a href='#L71' title='Defined at 71.'>getReferenceKind</a></li>
+<li><a href='#L76' title='Defined at 76.'>toString</a></li>
+<li><a href='#L81' title='Defined at 81.'>reflectAs</a></li>
+<li><a href='#L109' title='Defined at 109.'>reflectUnchecked</a></li>
+<li><a href='#L133' title='Defined at 133.'>convertToMemberName</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.security.*;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.lang.reflect.*;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.lang.invoke.MethodHandleNatives.Constants;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.lang.invoke.MethodHandles.Lookup;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> static java.lang.invoke.MethodHandleStatics.*;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <em class='comment'>/*</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * Auxiliary to MethodHandleInfo, wants to nest in MethodHandleInfo but must be non-public.</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> */</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'>/*non-public*/</em>
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>final</strong>
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>class</strong> <a href='../S/1619.html#L1364' title='Referred from 1364 in src/java/lang/invoke/MethodHandles.java.'>InfoFromMemberName</a> <strong class='reserved'>implements</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a> <em class='brace'>{</em>
+<a id='L40' name='L40'></a>  40     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1611.html#L72' title='Defined at 72 in src/java/lang/invoke/MemberName.java.'>MemberName</a> <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>;
+<a id='L41' name='L41'></a>  41     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> referenceKind;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43     InfoFromMemberName(<a href='../S/1619.html#L512' title='Defined at 512 in src/java/lang/invoke/MethodHandles.java.'>Lookup</a> <a href='../D/27095.html' title='Multiple defined in 22 places.'>lookup</a>, <a href='../S/1611.html#L72' title='Defined at 72 in src/java/lang/invoke/MemberName.java.'>MemberName</a> <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>, <strong class='reserved'>byte</strong> referenceKind) <em class='brace'>{</em>
+<a id='L44' name='L44'></a>  44         <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a>(<a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../S/1611.html#L775' title='Defined at 775 in src/java/lang/invoke/MemberName.java.'>isResolved</a>() || <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../S/1611.html#L346' title='Defined at 346 in src/java/lang/invoke/MemberName.java.'>isMethodHandleInvoke</a>());
+<a id='L45' name='L45'></a>  45         <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a>(<a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../S/1611.html#L284' title='Defined at 284 in src/java/lang/invoke/MemberName.java.'>referenceKindIsConsistentWith</a>(referenceKind));
+<a id='L46' name='L46'></a>  46         <strong class='reserved'>this</strong>.<a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a> = <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>;
+<a id='L47' name='L47'></a>  47         <strong class='reserved'>this</strong>.referenceKind = referenceKind;
+<a id='L48' name='L48'></a>  48     <em class='brace'>}</em>
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L51' name='L51'></a>  51     <strong class='reserved'>public</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../R/15996.html' title='Multiple referred from 151 places.'>getDeclaringClass</a>() <em class='brace'>{</em>
+<a id='L52' name='L52'></a>  52         <strong class='reserved'>return</strong> <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>();
+<a id='L53' name='L53'></a>  53     <em class='brace'>}</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L56' name='L56'></a>  56     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/17826.html' title='Multiple referred from 2652 places.'>getName</a>() <em class='brace'>{</em>
+<a id='L57' name='L57'></a>  57         <strong class='reserved'>return</strong> <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L58' name='L58'></a>  58     <em class='brace'>}</em>
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>public</strong> <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> <a href='../R/17691.html' title='Multiple referred from 24 places.'>getMethodType</a>() <em class='brace'>{</em>
+<a id='L62' name='L62'></a>  62         <strong class='reserved'>return</strong> <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../S/1611.html#L108' title='Defined at 108 in src/java/lang/invoke/MemberName.java.'>getMethodOrFieldType</a>();
+<a id='L63' name='L63'></a>  63     <em class='brace'>}</em>
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L66' name='L66'></a>  66     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/17775.html' title='Multiple referred from 223 places.'>getModifiers</a>() <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67         <strong class='reserved'>return</strong> <a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>();
+<a id='L68' name='L68'></a>  68     <em class='brace'>}</em>
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L71' name='L71'></a>  71     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/18639.html' title='Multiple referred from 41 places.'>getReferenceKind</a>() <em class='brace'>{</em>
+<a id='L72' name='L72'></a>  72         <strong class='reserved'>return</strong> referenceKind;
+<a id='L73' name='L73'></a>  73     <em class='brace'>}</em>
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L76' name='L76'></a>  76     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
+<a id='L77' name='L77'></a>  77         <strong class='reserved'>return</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(<a href='../D/21916.html' title='Multiple defined in 3 places.'>getReferenceKind</a>(), <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>(), <a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(), <a href='../D/20598.html' title='Multiple defined in 3 places.'>getMethodType</a>());
+<a id='L78' name='L78'></a>  78     <em class='brace'>}</em>
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L81' name='L81'></a>  81     <strong class='reserved'>public</strong> &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <strong class='reserved'>extends</strong> <a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a>&gt; <a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <a href='../S/1619.html#L147' title='Referred from 147 in src/java/lang/invoke/MethodHandles.java.'>reflectAs</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; expected, <a href='../S/1619.html#L512' title='Defined at 512 in src/java/lang/invoke/MethodHandles.java.'>Lookup</a> <a href='../D/27095.html' title='Multiple defined in 22 places.'>lookup</a>) <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82         <strong class='reserved'>if</strong> (<a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../S/1611.html#L346' title='Defined at 346 in src/java/lang/invoke/MemberName.java.'>isMethodHandleInvoke</a>() &amp;&amp; !<a href='../D/27605.html' title='Multiple defined in 5 places.'>member</a>.<a href='../S/1611.html#L416' title='Defined at 416 in src/java/lang/invoke/MemberName.java.'>isVarargs</a>()) <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83             <em class='comment'>// This member is an instance of a signature-polymorphic method, which cannot be reflected</em>
+<a id='L84' name='L84'></a>  84             <em class='comment'>// A method handle invoker can come in either of two forms:</em>
+<a id='L85' name='L85'></a>  85             <em class='comment'>// A generic placeholder (present in the source code, and varargs)</em>
+<a id='L86' name='L86'></a>  86             <em class='comment'>// and a signature-polymorphic instance (synthetic and not varargs).</em>
+<a id='L87' name='L87'></a>  87             <em class='comment'>// For more information see comments on {@link MethodHandleNatives#linkMethod}.</em>
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("cannot reflect signature polymorphic method");
+<a id='L89' name='L89'></a>  89         <em class='brace'>}</em>
+<a id='L90' name='L90'></a>  90         <a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a> mem = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a>&gt;() <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91                 <strong class='reserved'>public</strong> <a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92                     <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L93' name='L93'></a>  93                         <strong class='reserved'>return</strong> <a href='../S/1636.html#L109' title='Defined at 109 in src/java/lang/invoke/InfoFromMemberName.java.'>reflectUnchecked</a>();
+<a id='L94' name='L94'></a>  94                     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1731.html#L35' title='Defined at 35 in src/java/lang/ReflectiveOperationException.java.'>ReflectiveOperationException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95                         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L96' name='L96'></a>  96                     <em class='brace'>}</em>
+<a id='L97' name='L97'></a>  97                 <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98             <em class='brace'>}</em>);
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L100' name='L100'></a> 100             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; defc = <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>();
+<a id='L101' name='L101'></a> 101             <strong class='reserved'>byte</strong> refKind = (<strong class='reserved'>byte</strong>) <a href='../D/21916.html' title='Multiple defined in 3 places.'>getReferenceKind</a>();
+<a id='L102' name='L102'></a> 102             <a href='../D/27095.html' title='Multiple defined in 22 places.'>lookup</a>.<a href='../D/12351.html' title='Multiple defined in 20 places.'>checkAccess</a>(refKind, defc, <a href='../S/1636.html#L133' title='Defined at 133 in src/java/lang/invoke/InfoFromMemberName.java.'>convertToMemberName</a>(refKind, mem));
+<a id='L103' name='L103'></a> 103         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L105' name='L105'></a> 105         <em class='brace'>}</em>
+<a id='L106' name='L106'></a> 106         <strong class='reserved'>return</strong> expected.<a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(mem);
+<a id='L107' name='L107'></a> 107     <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108 
+<a id='L109' name='L109'></a> 109     <strong class='reserved'>private</strong> <a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a> <a href='../S/1636.html#L93' title='Referred from 93 in src/java/lang/invoke/InfoFromMemberName.java.'>reflectUnchecked</a>() <strong class='reserved'>throws</strong> <a href='../S/1731.html#L35' title='Defined at 35 in src/java/lang/ReflectiveOperationException.java.'>ReflectiveOperationException</a> <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110         <strong class='reserved'>byte</strong> refKind = (<strong class='reserved'>byte</strong>) <a href='../D/21916.html' title='Multiple defined in 3 places.'>getReferenceKind</a>();
+<a id='L111' name='L111'></a> 111         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; defc = <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>();
+<a id='L112' name='L112'></a> 112         <strong class='reserved'>boolean</strong> <a href='../D/26117.html' title='Multiple defined in 5 places.'>isPublic</a> = <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26117.html' title='Multiple defined in 5 places.'>isPublic</a>(<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>());
+<a id='L113' name='L113'></a> 113         <strong class='reserved'>if</strong> (<a href='../S/1603.html#L40' title='Defined at 40 in src/java/lang/invoke/MethodHandleNatives.java.'>MethodHandleNatives</a>.<a href='../S/1603.html#L205' title='Defined at 205 in src/java/lang/invoke/MethodHandleNatives.java.'>refKindIsMethod</a>(refKind)) <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114             <strong class='reserved'>if</strong> (<a href='../D/26117.html' title='Multiple defined in 5 places.'>isPublic</a>)
+<a id='L115' name='L115'></a> 115                 <strong class='reserved'>return</strong> defc.<a href='../D/20584.html' title='Multiple defined in 21 places.'>getMethod</a>(<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(), <a href='../D/20598.html' title='Multiple defined in 3 places.'>getMethodType</a>().<a href='../S/1616.html#L742' title='Defined at 742 in src/java/lang/invoke/MethodType.java.'>parameterArray</a>());
+<a id='L116' name='L116'></a> 116             <strong class='reserved'>else</strong>
+<a id='L117' name='L117'></a> 117                 <strong class='reserved'>return</strong> defc.<a href='../D/18255.html' title='Multiple defined in 2 places.'>getDeclaredMethod</a>(<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(), <a href='../D/20598.html' title='Multiple defined in 3 places.'>getMethodType</a>().<a href='../S/1616.html#L742' title='Defined at 742 in src/java/lang/invoke/MethodType.java.'>parameterArray</a>());
+<a id='L118' name='L118'></a> 118         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/1603.html#L40' title='Defined at 40 in src/java/lang/invoke/MethodHandleNatives.java.'>MethodHandleNatives</a>.<a href='../S/1603.html#L208' title='Defined at 208 in src/java/lang/invoke/MethodHandleNatives.java.'>refKindIsConstructor</a>(refKind)) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119             <strong class='reserved'>if</strong> (<a href='../D/26117.html' title='Multiple defined in 5 places.'>isPublic</a>)
+<a id='L120' name='L120'></a> 120                 <strong class='reserved'>return</strong> defc.<a href='../D/17932.html' title='Multiple defined in 2 places.'>getConstructor</a>(<a href='../D/20598.html' title='Multiple defined in 3 places.'>getMethodType</a>().<a href='../S/1616.html#L742' title='Defined at 742 in src/java/lang/invoke/MethodType.java.'>parameterArray</a>());
+<a id='L121' name='L121'></a> 121             <strong class='reserved'>else</strong>
+<a id='L122' name='L122'></a> 122                 <strong class='reserved'>return</strong> defc.<a href='../S/1722.html#L2175' title='Defined at 2175 in src/java/lang/Class.java.'>getDeclaredConstructor</a>(<a href='../D/20598.html' title='Multiple defined in 3 places.'>getMethodType</a>().<a href='../S/1616.html#L742' title='Defined at 742 in src/java/lang/invoke/MethodType.java.'>parameterArray</a>());
+<a id='L123' name='L123'></a> 123         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/1603.html#L40' title='Defined at 40 in src/java/lang/invoke/MethodHandleNatives.java.'>MethodHandleNatives</a>.<a href='../S/1603.html#L194' title='Defined at 194 in src/java/lang/invoke/MethodHandleNatives.java.'>refKindIsField</a>(refKind)) <em class='brace'>{</em>
+<a id='L124' name='L124'></a> 124             <strong class='reserved'>if</strong> (<a href='../D/26117.html' title='Multiple defined in 5 places.'>isPublic</a>)
+<a id='L125' name='L125'></a> 125                 <strong class='reserved'>return</strong> defc.<a href='../D/19018.html' title='Multiple defined in 13 places.'>getField</a>(<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L126' name='L126'></a> 126             <strong class='reserved'>else</strong>
+<a id='L127' name='L127'></a> 127                 <strong class='reserved'>return</strong> defc.<a href='../S/1722.html#L2065' title='Defined at 2065 in src/java/lang/Class.java.'>getDeclaredField</a>(<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L128' name='L128'></a> 128         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("referenceKind="+refKind);
+<a id='L130' name='L130'></a> 130         <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131     <em class='brace'>}</em>
+<a id='L132' name='L132'></a> 132 
+<a id='L133' name='L133'></a> 133     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/1611.html#L72' title='Defined at 72 in src/java/lang/invoke/MemberName.java.'>MemberName</a> <a href='../S/1636.html#L102' title='Referred from 102 in src/java/lang/invoke/InfoFromMemberName.java.'>convertToMemberName</a>(<strong class='reserved'>byte</strong> refKind, <a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a> mem) <strong class='reserved'>throws</strong> <a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a> <em class='brace'>{</em>
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>if</strong> (mem <strong class='reserved'>instanceof</strong> <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a>) <em class='brace'>{</em>
+<a id='L135' name='L135'></a> 135             <strong class='reserved'>boolean</strong> wantSpecial = (refKind == REF_invokeSpecial);
+<a id='L136' name='L136'></a> 136             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1611.html#L72' title='Defined at 72 in src/java/lang/invoke/MemberName.java.'>MemberName</a>((<a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a>) mem, wantSpecial);
+<a id='L137' name='L137'></a> 137         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (mem <strong class='reserved'>instanceof</strong> <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a>) <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1611.html#L72' title='Defined at 72 in src/java/lang/invoke/MemberName.java.'>MemberName</a>((<a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a>) mem);
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (mem <strong class='reserved'>instanceof</strong> <a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a>) <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140             <strong class='reserved'>boolean</strong> <a href='../S/1611.html#L634' title='Defined at 634 in src/java/lang/invoke/MemberName.java.'>isSetter</a> = (refKind == REF_putField || refKind == REF_putStatic);
+<a id='L141' name='L141'></a> 141             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1611.html#L72' title='Defined at 72 in src/java/lang/invoke/MemberName.java.'>MemberName</a>((<a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a>) mem, <a href='../S/1611.html#L634' title='Defined at 634 in src/java/lang/invoke/MemberName.java.'>isSetter</a>);
+<a id='L142' name='L142'></a> 142         <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4325.html' title='Multiple defined in 2 places.'>InternalError</a>(mem.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L144' name='L144'></a> 144     <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L51'>[^]</a><a href='#L133'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

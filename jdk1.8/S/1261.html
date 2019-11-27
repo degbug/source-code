@@ -1,0 +1,368 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/security/SecurityPermission.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8025.html'>security</a>/SecurityPermission.java</h2>
+<em class='comment'>/* [&lt;][&gt;][^][v][top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.security.*;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Enumeration;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.Hashtable;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.StringTokenizer;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <em class='comment'>/**</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * This class is for security permissions.</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * A SecurityPermission contains a name (also referred to as a "target name")</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * but no actions list; you either have the named permission</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * or you don't.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * &lt;P&gt;</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * The target name is the name of a security configuration parameter (see below).</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * Currently the SecurityPermission object is used to guard access</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * to the Policy, Security, Provider, Signer, and Identity</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * objects.</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * &lt;P&gt;</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * The following table lists all the possible SecurityPermission target names,</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * and for each provides a description of what the permission allows</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * and a discussion of the risks of granting code the permission.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * &lt;table border=1 cellpadding=5 summary="target name,what the permission allows, and associated risks"&gt;</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * &lt;th&gt;Permission Target Name&lt;/th&gt;</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;th&gt;What the Permission Allows&lt;/th&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * &lt;th&gt;Risks of Allowing this Permission&lt;/th&gt;</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> *</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> *   &lt;td&gt;createAccessControlContext&lt;/td&gt;</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *   &lt;td&gt;Creation of an AccessControlContext&lt;/td&gt;</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *   &lt;td&gt;This allows someone to instantiate an AccessControlContext</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * with a {@code DomainCombiner}.  Extreme care must be taken when</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * granting this permission. Malicious code could create a DomainCombiner</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * that augments the set of permissions granted to code, and even grant the</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * code {@link java.security.AllPermission}.&lt;/td&gt;</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> *</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> *   &lt;td&gt;getDomainCombiner&lt;/td&gt;</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> *   &lt;td&gt;Retrieval of an AccessControlContext's DomainCombiner&lt;/td&gt;</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> *   &lt;td&gt;This allows someone to retrieve an AccessControlContext's</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * {@code DomainCombiner}.  Since DomainCombiners may contain</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * sensitive information, this could potentially lead to a privacy leak.&lt;/td&gt;</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> *</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> *   &lt;td&gt;getPolicy&lt;/td&gt;</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *   &lt;td&gt;Retrieval of the system-wide security policy (specifically, of the</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * currently-installed Policy object)&lt;/td&gt;</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> *   &lt;td&gt;This allows someone to query the policy via the</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> * {@code getPermissions} call,</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * which discloses which permissions would be granted to a given CodeSource.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> * While revealing the policy does not compromise the security of</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * the system, it does provide malicious code with additional information</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * which it may use to better aim an attack. It is wise</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * not to divulge more information than necessary.&lt;/td&gt;</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> *</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> *   &lt;td&gt;setPolicy&lt;/td&gt;</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> *   &lt;td&gt;Setting of the system-wide security policy (specifically,</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> * the Policy object)&lt;/td&gt;</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> *   &lt;td&gt;Granting this permission is extremely dangerous, as malicious</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> * code may grant itself all the necessary permissions it needs</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> * to successfully mount an attack on the system.&lt;/td&gt;</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> *</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> *   &lt;td&gt;createPolicy.{policy type}&lt;/td&gt;</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> *   &lt;td&gt;Getting an instance of a Policy implementation from a provider&lt;/td&gt;</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> *   &lt;td&gt;Granting this permission enables code to obtain a Policy object.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'> * Malicious code may query the Policy object to determine what permissions</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'> * have been granted to code other than itself. &lt;/td&gt;</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'> *</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'> *   &lt;td&gt;getProperty.{key}&lt;/td&gt;</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'> *   &lt;td&gt;Retrieval of the security property with the specified key&lt;/td&gt;</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'> *   &lt;td&gt;Depending on the particular key for which access has</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'> * been granted, the code may have access to the list of security</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'> * providers, as well as the location of the system-wide and user</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'> * security policies.  while revealing this information does not</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'> * compromise the security of the system, it does provide malicious</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'> * code with additional information which it may use to better aim</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'> * an attack.</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>&lt;/td&gt;</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'> *</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'> *   &lt;td&gt;setProperty.{key}&lt;/td&gt;</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'> *   &lt;td&gt;Setting of the security property with the specified key&lt;/td&gt;</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'> *   &lt;td&gt;This could include setting a security provider or defining</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'> * the location of the system-wide security policy.  Malicious</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'> * code that has permission to set a new security provider may</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'> * set a rogue provider that steals confidential information such</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'> * as cryptographic private keys. In addition, malicious code with</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'> * permission to set the location of the system-wide security policy</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'> * may point it to a security policy that grants the attacker</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'> * all the necessary permissions it requires to successfully mount</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'> * an attack on the system.</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>&lt;/td&gt;</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'> *</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'> *   &lt;td&gt;insertProvider&lt;/td&gt;</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'> *   &lt;td&gt;Addition of a new provider&lt;/td&gt;</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'> *   &lt;td&gt;This would allow somebody to introduce a possibly</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'> * malicious provider (e.g., one that discloses the private keys passed</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'> * to it) as the highest-priority provider. This would be possible</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'> * because the Security object (which manages the installed providers)</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'> * currently does not check the integrity or authenticity of a provider</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'> * before attaching it. The "insertProvider" permission subsumes the</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'> * "insertProvider.{provider name}" permission (see the section below for</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'> * more information).</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'> * &lt;/td&gt;</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'> *</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'> *   &lt;td&gt;removeProvider.{provider name}&lt;/td&gt;</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'> *   &lt;td&gt;Removal of the specified provider&lt;/td&gt;</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'> *   &lt;td&gt;This may change the behavior or disable execution of other</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'> * parts of the program. If a provider subsequently requested by the</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'> * program has been removed, execution may fail. Also, if the removed</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'> * provider is not explicitly requested by the rest of the program, but</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'> * it would normally be the provider chosen when a cryptography service</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'> * is requested (due to its previous order in the list of providers),</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'> * a different provider will be chosen instead, or no suitable provider</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'> * will be found, thereby resulting in program failure.&lt;/td&gt;</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'> *</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'> *   &lt;td&gt;clearProviderProperties.{provider name}&lt;/td&gt;</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'> *   &lt;td&gt;"Clearing" of a Provider so that it no longer contains the properties</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'> * used to look up services implemented by the provider&lt;/td&gt;</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'> *   &lt;td&gt;This disables the lookup of services implemented by the provider.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'> * This may thus change the behavior or disable execution of other</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'> * parts of the program that would normally utilize the Provider, as</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'> * described under the "removeProvider.{provider name}" permission.&lt;/td&gt;</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'> *</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'> *   &lt;td&gt;putProviderProperty.{provider name}&lt;/td&gt;</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'> *   &lt;td&gt;Setting of properties for the specified Provider&lt;/td&gt;</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'> *   &lt;td&gt;The provider properties each specify the name and location</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'> * of a particular service implemented by the provider. By granting</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'> * this permission, you let code replace the service specification</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'> * with another one, thereby specifying a different implementation.&lt;/td&gt;</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'> *</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'> *   &lt;td&gt;removeProviderProperty.{provider name}&lt;/td&gt;</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'> *   &lt;td&gt;Removal of properties from the specified Provider&lt;/td&gt;</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'> *   &lt;td&gt;This disables the lookup of services implemented by the</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'> * provider. They are no longer accessible due to removal of the properties</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'> * specifying their names and locations. This</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'> * may change the behavior or disable execution of other</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'> * parts of the program that would normally utilize the Provider, as</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'> * described under the "removeProvider.{provider name}" permission.&lt;/td&gt;</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'> *</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'> * &lt;/table&gt;</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'> *</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'> * &lt;P&gt;</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'> * The following permissions have been superseded by newer permissions or are</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'> * associated with classes that have been deprecated: {@link Identity},</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'> * {@link IdentityScope}, {@link Signer}. Use of them is discouraged. See the</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'> * applicable classes for more information.</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'> *</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'> * &lt;table border=1 cellpadding=5 summary="target name,what the permission allows, and associated risks"&gt;</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'> * &lt;th&gt;Permission Target Name&lt;/th&gt;</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'> * &lt;th&gt;What the Permission Allows&lt;/th&gt;</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'> * &lt;th&gt;Risks of Allowing this Permission&lt;/th&gt;</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'> *</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'> *   &lt;td&gt;insertProvider.{provider name}&lt;/td&gt;</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'> *   &lt;td&gt;Addition of a new provider, with the specified name&lt;/td&gt;</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'> *   &lt;td&gt;Use of this permission is discouraged from further use because it is</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'> * possible to circumvent the name restrictions by overriding the</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'> * {@link java.security.Provider#getName} method. Also, there is an equivalent</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'> * level of risk associated with granting code permission to insert a provider</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'> * with a specific name, or any name it chooses. Users should use the</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'> * "insertProvider" permission instead.</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'> * &lt;p&gt;This would allow somebody to introduce a possibly</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'> * malicious provider (e.g., one that discloses the private keys passed</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'> * to it) as the highest-priority provider. This would be possible</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'> * because the Security object (which manages the installed providers)</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'> * currently does not check the integrity or authenticity of a provider</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'> * before attaching it.&lt;/td&gt;</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'> *</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'> *   &lt;td&gt;setSystemScope&lt;/td&gt;</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'> *   &lt;td&gt;Setting of the system identity scope&lt;/td&gt;</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'> *   &lt;td&gt;This would allow an attacker to configure the system identity scope with</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'> * certificates that should not be trusted, thereby granting applet or</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'> * application code signed with those certificates privileges that</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'> * would have been denied by the system's original identity scope.&lt;/td&gt;</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'> *</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'> *   &lt;td&gt;setIdentityPublicKey&lt;/td&gt;</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'> *   &lt;td&gt;Setting of the public key for an Identity&lt;/td&gt;</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'> *   &lt;td&gt;If the identity is marked as "trusted", this allows an attacker to</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'> * introduce a different public key (e.g., its own) that is not trusted</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'> * by the system's identity scope, thereby granting applet or</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'> * application code signed with that public key privileges that</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'> * would have been denied otherwise.&lt;/td&gt;</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'> *</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'> *   &lt;td&gt;setIdentityInfo&lt;/td&gt;</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'> *   &lt;td&gt;Setting of a general information string for an Identity&lt;/td&gt;</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'> *   &lt;td&gt;This allows attackers to set the general description for</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'> * an identity.  This may trick applications into using a different</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'> * identity than intended or may prevent applications from finding a</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'> * particular identity.&lt;/td&gt;</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'> *</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'> *   &lt;td&gt;addIdentityCertificate&lt;/td&gt;</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'> *   &lt;td&gt;Addition of a certificate for an Identity&lt;/td&gt;</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'> *   &lt;td&gt;This allows attackers to set a certificate for</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'> * an identity's public key.  This is dangerous because it affects</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'> * the trust relationship across the system. This public key suddenly</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'> * becomes trusted to a wider audience than it otherwise would be.&lt;/td&gt;</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'> *</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'> *   &lt;td&gt;removeIdentityCertificate&lt;/td&gt;</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'> *   &lt;td&gt;Removal of a certificate for an Identity&lt;/td&gt;</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'> *   &lt;td&gt;This allows attackers to remove a certificate for</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'> * an identity's public key. This is dangerous because it affects</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'> * the trust relationship across the system. This public key suddenly</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'> * becomes considered less trustworthy than it otherwise would be.&lt;/td&gt;</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'> *</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'> *  &lt;td&gt;printIdentity&lt;/td&gt;</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'> *  &lt;td&gt;Viewing the name of a principal</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'> * and optionally the scope in which it is used, and whether</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'> * or not it is considered "trusted" in that scope&lt;/td&gt;</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'> *  &lt;td&gt;The scope that is printed out may be a filename, in which case</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'> * it may convey local system information. For example, here's a sample</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'> * printout of an identity named "carol", who is</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'> * marked not trusted in the user's identity database:&lt;br&gt;</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'> *   carol[/home/luehe/identitydb.obj][not trusted]&lt;/td&gt;</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'> *&lt;/tr&gt;</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'> *</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'> *   &lt;td&gt;getSignerPrivateKey&lt;/td&gt;</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'> *   &lt;td&gt;Retrieval of a Signer's private key&lt;/td&gt;</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'> *   &lt;td&gt;It is very dangerous to allow access to a private key; private</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'> * keys are supposed to be kept secret. Otherwise, code can use the</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'> * private key to sign various files and claim the signature came from</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'> * the Signer.&lt;/td&gt;</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'> *</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'> *   &lt;td&gt;setSignerKeyPair&lt;/td&gt;</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'> *   &lt;td&gt;Setting of the key pair (public key and private key) for a Signer&lt;/td&gt;</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'> *   &lt;td&gt;This would allow an attacker to replace somebody else's (the "target's")</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'> * keypair with a possibly weaker keypair (e.g., a keypair of a smaller</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'> * keysize).  This also would allow the attacker to listen in on encrypted</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'> * communication between the target and its peers. The target's peers</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'> * might wrap an encryption session key under the target's "new" public</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'> * key, which would allow the attacker (who possesses the corresponding</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'> * private key) to unwrap the session key and decipher the communication</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'> * data encrypted under that session key.&lt;/td&gt;</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'> *</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'> * &lt;/table&gt;</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'> *</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'> * @see java.security.BasicPermission</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'> * @see java.security.Permission</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'> * @see java.security.Permissions</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'> * @see java.security.PermissionCollection</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'> * @see java.lang.SecurityManager</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'> *</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'> *</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'> * @author Marianne Mueller</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'> * @author Roland Schemers</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'> */</em>
+<a id='L312' name='L312'></a> 312 
+<a id='L313' name='L313'></a> 313 <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/6993.html' title='Multiple referred from 7 places.'>SecurityPermission</a> <strong class='reserved'>extends</strong> <a href='../S/1204.html#L69' title='Defined at 69 in src/java/security/BasicPermission.java.'>BasicPermission</a> <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314 
+<a id='L315' name='L315'></a> 315     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> serialVersionUID = 5236109936224050470L;
+<a id='L316' name='L316'></a> 316 
+<a id='L317' name='L317'></a> 317     <em class='comment'>/**</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>     * Creates a new SecurityPermission with the specified name.</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     * The name is the symbolic name of the SecurityPermission. An asterisk</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>     * may appear at the end of the name, following a ".", or by itself, to</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     * signify a wildcard match.</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     *</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     * @param name the name of the SecurityPermission</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>     *</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     * @throws NullPointerException if {@code name} is {@code null}.</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     * @throws IllegalArgumentException if {@code name} is empty.</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     */</em>
+<a id='L328' name='L328'></a> 328     <strong class='reserved'>public</strong> SecurityPermission(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>)
+<a id='L329' name='L329'></a> 329     <em class='brace'>{</em>
+<a id='L330' name='L330'></a> 330         <strong class='reserved'>super</strong>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L331' name='L331'></a> 331     <em class='brace'>}</em>
+<a id='L332' name='L332'></a> 332 
+<a id='L333' name='L333'></a> 333     <em class='comment'>/**</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     * Creates a new SecurityPermission object with the specified name.</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>     * The name is the symbolic name of the SecurityPermission, and the</em>
+<a id='L336' name='L336'></a> 336 <em class='comment'>     * actions String is currently unused and should be null.</em>
+<a id='L337' name='L337'></a> 337 <em class='comment'>     *</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * @param name the name of the SecurityPermission</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     * @param actions should be null.</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     *</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     * @throws NullPointerException if {@code name} is {@code null}.</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * @throws IllegalArgumentException if {@code name} is empty.</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     */</em>
+<a id='L344' name='L344'></a> 344     <strong class='reserved'>public</strong> SecurityPermission(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>)
+<a id='L345' name='L345'></a> 345     <em class='brace'>{</em>
+<a id='L346' name='L346'></a> 346         <strong class='reserved'>super</strong>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>);
+<a id='L347' name='L347'></a> 347     <em class='brace'>}</em>
+<a id='L348' name='L348'></a> 348 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;][^][v]<a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

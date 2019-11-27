@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7851.html'>snmp</a>/<a href='../files/7854.html'>daemon</a>/SnmpResponseHandler.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L47'>[^]</a>[v][top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L47' title='Defined at 47.'>processDatagram</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> *</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> */</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'>// Copyright (c) 1995-96 by Cisco Systems, Inc.</em>
+<a id='L7' name='L7'></a>   7 
+<a id='L8' name='L8'></a>   8 <strong class='reserved'>package</strong> com.sun.jmx.snmp.daemon;
+<a id='L9' name='L9'></a>   9 
+<a id='L10' name='L10'></a>  10 <em class='comment'>// JAVA imports</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'>//</em>
+<a id='L12' name='L12'></a>  12 <strong class='reserved'>import</strong> java.net.DatagramPacket;
+<a id='L13' name='L13'></a>  13 <strong class='reserved'>import</strong> java.util.logging.Level;
+<a id='L14' name='L14'></a>  14 
+<a id='L15' name='L15'></a>  15 <em class='comment'>// JMX imports</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'>//</em>
+<a id='L17' name='L17'></a>  17 <strong class='reserved'>import</strong> static com.sun.jmx.defaults.JmxProperties.SNMP_ADAPTOR_LOGGER;
+<a id='L18' name='L18'></a>  18 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpMessage;
+<a id='L19' name='L19'></a>  19 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpPduFactory;
+<a id='L20' name='L20'></a>  20 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpPduPacket;
+<a id='L21' name='L21'></a>  21 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpPduRequest;
+<a id='L22' name='L22'></a>  22 
+<a id='L23' name='L23'></a>  23 <em class='comment'>/**</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> * This class is used to handle received inform request responses.</em>
+<a id='L25' name='L25'></a>  25 <em class='comment'> * This classes parses the SNMP inform response packet to obtain the corresponding inform request.</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'> */</em>
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>class</strong> <a href='../R/7402.html' title='Multiple referred from 10 places.'>SnmpResponseHandler</a> <em class='brace'>{</em>
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30     <em class='comment'>// VARIABLES</em>
+<a id='L31' name='L31'></a>  31     <em class='comment'>//----------</em>
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33     <a href='../S/6449.html#L130' title='Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.'>SnmpAdaptorServer</a> adaptor = <strong class='reserved'>null</strong>;
+<a id='L34' name='L34'></a>  34     <a href='../S/6461.html#L22' title='Defined at 22 in src/com/sun/jmx/snmp/daemon/SnmpQManager.java.'>SnmpQManager</a> snmpq = <strong class='reserved'>null</strong>;
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36     <em class='comment'>// CONSTRUCTORS</em>
+<a id='L37' name='L37'></a>  37     <em class='comment'>//-------------</em>
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39     <strong class='reserved'>public</strong> SnmpResponseHandler(<a href='../S/6449.html#L130' title='Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.'>SnmpAdaptorServer</a> adp, <a href='../S/6461.html#L22' title='Defined at 22 in src/com/sun/jmx/snmp/daemon/SnmpQManager.java.'>SnmpQManager</a> s) <em class='brace'>{</em>
+<a id='L40' name='L40'></a>  40         adaptor = adp;
+<a id='L41' name='L41'></a>  41         snmpq = s;
+<a id='L42' name='L42'></a>  42     <em class='brace'>}</em>
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44     <em class='comment'>// PUBLIC METHODS</em>
+<a id='L45' name='L45'></a>  45     <em class='comment'>//---------------</em>
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../S/6459.html#L295' title='Referred from 295 in src/com/sun/jmx/snmp/daemon/SnmpSocket.java.'>processDatagram</a>(<a href='../S/748.html#L43' title='Defined at 43 in src/java/net/DatagramPacket.java.'>DatagramPacket</a> dgrm) <em class='brace'>{</em>
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49         <strong class='reserved'>byte</strong> []<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dgrm.<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L50' name='L50'></a>  50         <strong class='reserved'>int</strong> datalen = dgrm.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52         <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53             SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6453.html#L28' title='Defined at 28 in src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java.'>SnmpResponseHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L54' name='L54'></a>  54                 "action", "processDatagram", "Received from " + dgrm.<a href='../D/16826.html' title='Multiple defined in 18 places.'>getAddress</a>().<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>() +
+<a id='L55' name='L55'></a>  55                  " Length = " + datalen + "\nDump : \n" + <a href='../S/6372.html#L64' title='Defined at 64 in src/com/sun/jmx/snmp/SnmpMessage.java.'>SnmpMessage</a>.<a href='../S/6364.html#L183' title='Defined at 183 in src/com/sun/jmx/snmp/SnmpMsg.java.'>dumpHexBuffer</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, 0, datalen));
+<a id='L56' name='L56'></a>  56         <em class='brace'>}</em>
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L59' name='L59'></a>  59             <a href='../S/6372.html#L64' title='Defined at 64 in src/com/sun/jmx/snmp/SnmpMessage.java.'>SnmpMessage</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> = <strong class='reserved'>new</strong> <a href='../S/6372.html#L64' title='Defined at 64 in src/com/sun/jmx/snmp/SnmpMessage.java.'>SnmpMessage</a>();
+<a id='L60' name='L60'></a>  60             <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>.<a href='../D/14581.html' title='Multiple defined in 5 places.'>decodeMessage</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, datalen);
+<a id='L61' name='L61'></a>  61             <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>.<a href='../D/11204.html' title='Multiple defined in 16 places.'>address</a> = dgrm.<a href='../D/16826.html' title='Multiple defined in 18 places.'>getAddress</a>();
+<a id='L62' name='L62'></a>  62             <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>.port = dgrm.<a href='../D/21541.html' title='Multiple defined in 42 places.'>getPort</a>();
+<a id='L63' name='L63'></a>  63 
+<a id='L64' name='L64'></a>  64             <em class='comment'>// Retreive the PDU factory of the SNMP adaptor to decode the received inform response.</em>
+<a id='L65' name='L65'></a>  65             <em class='comment'>//</em>
+<a id='L66' name='L66'></a>  66             <a href='../S/6382.html#L59' title='Defined at 59 in src/com/sun/jmx/snmp/SnmpPduFactory.java.'>SnmpPduFactory</a> pduFactory = adaptor.<a href='../D/21462.html' title='Multiple defined in 2 places.'>getPduFactory</a>();
+<a id='L67' name='L67'></a>  67             <strong class='reserved'>if</strong> (pduFactory == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L69' name='L69'></a>  69                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6453.html#L28' title='Defined at 28 in src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java.'>SnmpResponseHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L70' name='L70'></a>  70                         "processDatagram", "Dropping packet. Unable to find the pdu factory of the SNMP adaptor server");
+<a id='L71' name='L71'></a>  71                 <em class='brace'>}</em>
+<a id='L72' name='L72'></a>  72             <em class='brace'>}</em>
+<a id='L73' name='L73'></a>  73             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L74' name='L74'></a>  74                 <a href='../S/6474.html#L36' title='Defined at 36 in src/com/sun/jmx/snmp/SnmpPduPacket.java.'>SnmpPduPacket</a> snmpProt = (<a href='../S/6474.html#L36' title='Defined at 36 in src/com/sun/jmx/snmp/SnmpPduPacket.java.'>SnmpPduPacket</a>)pduFactory.<a href='../D/14688.html' title='Multiple defined in 7 places.'>decodeSnmpPdu</a>(<a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76                 <strong class='reserved'>if</strong> (snmpProt == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L77' name='L77'></a>  77                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L78' name='L78'></a>  78                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6453.html#L28' title='Defined at 28 in src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java.'>SnmpResponseHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L79' name='L79'></a>  79                             "processDatagram", "Dropping packet. Pdu factory returned a null value");
+<a id='L80' name='L80'></a>  80                     <em class='brace'>}</em>
+<a id='L81' name='L81'></a>  81                 <em class='brace'>}</em>
+<a id='L82' name='L82'></a>  82                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (snmpProt <strong class='reserved'>instanceof</strong> <a href='../S/6472.html#L43' title='Defined at 43 in src/com/sun/jmx/snmp/SnmpPduRequest.java.'>SnmpPduRequest</a>) <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84                     <a href='../S/6472.html#L43' title='Defined at 43 in src/com/sun/jmx/snmp/SnmpPduRequest.java.'>SnmpPduRequest</a> pduReq = (<a href='../S/6472.html#L43' title='Defined at 43 in src/com/sun/jmx/snmp/SnmpPduRequest.java.'>SnmpPduRequest</a>)snmpProt;
+<a id='L85' name='L85'></a>  85                     <a href='../S/6457.html#L72' title='Defined at 72 in src/com/sun/jmx/snmp/daemon/SnmpInformRequest.java.'>SnmpInformRequest</a> req = snmpq.<a href='../D/30935.html' title='Multiple defined in 4 places.'>removeRequest</a>(pduReq.requestId) ;
+<a id='L86' name='L86'></a>  86                     <strong class='reserved'>if</strong> (req != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L87' name='L87'></a>  87                         req.<a href='../S/6457.html#L1000' title='Defined at 1000 in src/com/sun/jmx/snmp/daemon/SnmpInformRequest.java.'>invokeOnResponse</a>(pduReq);
+<a id='L88' name='L88'></a>  88                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L89' name='L89'></a>  89                         <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90                             SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6453.html#L28' title='Defined at 28 in src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java.'>SnmpResponseHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L91' name='L91'></a>  91                                 "processDatagram", "Dropping packet. Unable to find corresponding for InformRequestId = " + pduReq.requestId);
+<a id='L92' name='L92'></a>  92                         <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93                     <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94                 <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95                 <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6453.html#L28' title='Defined at 28 in src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java.'>SnmpResponseHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L98' name='L98'></a>  98                             "processDatagram", "Dropping packet. The packet does not contain an inform response");
+<a id='L99' name='L99'></a>  99                     <em class='brace'>}</em>
+<a id='L100' name='L100'></a> 100                 <em class='brace'>}</em>
+<a id='L101' name='L101'></a> 101                 snmpProt = <strong class='reserved'>null</strong> ;
+<a id='L102' name='L102'></a> 102             <em class='brace'>}</em>
+<a id='L103' name='L103'></a> 103         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104             <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L105' name='L105'></a> 105                 SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6453.html#L28' title='Defined at 28 in src/com/sun/jmx/snmp/daemon/SnmpResponseHandler.java.'>SnmpResponseHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L106' name='L106'></a> 106                     "processDatagram", "Exception while processsing", e);
+<a id='L107' name='L107'></a> 107             <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108         <em class='brace'>}</em>
+<a id='L109' name='L109'></a> 109     <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;][^]<a href='#L47'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

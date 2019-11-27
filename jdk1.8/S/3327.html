@@ -1,0 +1,831 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/swing/text/DefaultFormatter.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8107.html'>swing</a>/<a href='../files/8119.html'>text</a>/DefaultFormatter.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L124'>[^]</a><a href='#L753'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L124' title='Defined at 124.'>install</a></li>
+<li><a href='#L143' title='Defined at 143.'>setCommitsOnValidEdit</a></li>
+<li><a href='#L153' title='Defined at 153.'>getCommitsOnValidEdit</a></li>
+<li><a href='#L164' title='Defined at 164.'>setOverwriteMode</a></li>
+<li><a href='#L173' title='Defined at 173.'>getOverwriteMode</a></li>
+<li><a href='#L187' title='Defined at 187.'>setAllowsInvalid</a></li>
+<li><a href='#L197' title='Defined at 197.'>getAllowsInvalid</a></li>
+<li><a href='#L209' title='Defined at 209.'>setValueClass</a></li>
+<li><a href='#L218' title='Defined at 218.'>getValueClass</a></li>
+<li><a href='#L236' title='Defined at 236.'>stringToValue</a></li>
+<li><a href='#L279' title='Defined at 279.'>valueToString</a></li>
+<li><a href='#L292' title='Defined at 292.'>getDocumentFilter</a></li>
+<li><a href='#L305' title='Defined at 305.'>getNavigationFilter</a></li>
+<li><a href='#L317' title='Defined at 317.'>clone</a></li>
+<li><a href='#L330' title='Defined at 330.'>positionCursorAtInitialLocation</a></li>
+<li><a href='#L341' title='Defined at 341.'>getInitialVisualPosition</a></li>
+<li><a href='#L351' title='Defined at 351.'>isNavigatable</a></li>
+<li><a href='#L360' title='Defined at 360.'>isLegalInsertText</a></li>
+<li><a href='#L368' title='Defined at 368.'>getNextNavigatableChar</a></li>
+<li><a href='#L386' title='Defined at 386.'>getReplaceString</a></li>
+<li><a href='#L406' title='Defined at 406.'>isValidEdit</a></li>
+<li><a href='#L424' title='Defined at 424.'>commitEdit</a></li>
+<li><a href='#L437' title='Defined at 437.'>updateValue</a></li>
+<li><a href='#L446' title='Defined at 446.'>updateValue</a></li>
+<li><a href='#L469' title='Defined at 469.'>getNextCursorPosition</a></li>
+<li><a href='#L496' title='Defined at 496.'>repositionCursor</a></li>
+<li><a href='#L505' title='Defined at 505.'>getNextVisualPositionFrom</a></li>
+<li><a href='#L544' title='Defined at 544.'>canReplace</a></li>
+<li><a href='#L551' title='Defined at 551.'>replace</a></li>
+<li><a href='#L569' title='Defined at 569.'>replace</a></li>
+<li><a href='#L614' title='Defined at 614.'>setDot</a></li>
+<li><a href='#L622' title='Defined at 622.'>moveDot</a></li>
+<li><a href='#L632' title='Defined at 632.'>getReplaceHolder</a></li>
+<li><a href='#L667' title='Defined at 667.'>reset</a></li>
+<li><a href='#L686' title='Defined at 686.'>setDot</a></li>
+<li><a href='#L696' title='Defined at 696.'>moveDot</a></li>
+<li><a href='#L706' title='Defined at 706.'>getNextVisualPositionFrom</a></li>
+<li><a href='#L729' title='Defined at 729.'>remove</a></li>
+<li><a href='#L740' title='Defined at 740.'>insertString</a></li>
+<li><a href='#L753' title='Defined at 753.'>replace</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.swing.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>;
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> sun.reflect.misc.ReflectUtil;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> sun.swing.SwingUtilities2;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.io.Serializable;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.lang.reflect.*;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.text.ParseException;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> javax.swing.*;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> javax.swing.text.*;
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <em class='comment'>/**</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * &lt;code&gt;DefaultFormatter&lt;/code&gt; formats arbitrary objects. Formatting is done</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * by invoking the &lt;code&gt;toString&lt;/code&gt; method. In order to convert the</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * value back to a String, your class must provide a constructor that</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * takes a String argument. If no single argument constructor that takes a</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * String is found, the returned value will be the String passed into</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * &lt;code&gt;stringToValue&lt;/code&gt;.</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * &lt;p&gt;</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * Instances of &lt;code&gt;DefaultFormatter&lt;/code&gt; can not be used in multiple</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * instances of &lt;code&gt;JFormattedTextField&lt;/code&gt;. To obtain a copy of</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * an already configured &lt;code&gt;DefaultFormatter&lt;/code&gt;, use the</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * &lt;code&gt;clone&lt;/code&gt; method.</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * &lt;p&gt;</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;strong&gt;Warning:&lt;/strong&gt;</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * Serialized objects of this class will not be compatible with</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * future Swing releases. The current serialization support is</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * appropriate for short term storage or RMI between applications running</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * the same version of Swing.  As of 1.4, support for long term storage</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * of all JavaBeans&amp;trade;</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * has been added to the &lt;code&gt;java.beans&lt;/code&gt; package.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * Please see {@link java.beans.XMLEncoder}.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * @see javax.swing.JFormattedTextField.AbstractFormatter</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> *</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * @since 1.4</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> */</em>
+<a id='L62' name='L62'></a>  62 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/2094.html' title='Multiple referred from 15 places.'>DefaultFormatter</a> <strong class='reserved'>extends</strong> <a href='../S/3126.html#L179' title='Defined at 179 in src/javax/swing/JFormattedTextField.java.'>JFormattedTextField</a>.<a href='../S/3126.html#L905' title='Defined at 905 in src/javax/swing/JFormattedTextField.java.'>AbstractFormatter</a>
+<a id='L63' name='L63'></a>  63                     <strong class='reserved'>implements</strong> <a href='../S/1744.html#L53' title='Defined at 53 in src/java/lang/Cloneable.java.'>Cloneable</a>, <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> <em class='brace'>{</em>
+<a id='L64' name='L64'></a>  64     <em class='comment'>/** Indicates if the value being edited must match the mask. */</em>
+<a id='L65' name='L65'></a>  65     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> allowsInvalid;
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67     <em class='comment'>/** If true, editing mode is in overwrite (or strikethough). */</em>
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> overwriteMode;
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70     <em class='comment'>/** If true, any time a valid edit happens commitEdit is invoked. */</em>
+<a id='L71' name='L71'></a>  71     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> commitOnEdit;
+<a id='L72' name='L72'></a>  72 
+<a id='L73' name='L73'></a>  73     <em class='comment'>/** Class used to create new instances. */</em>
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>private</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; valueClass;
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>/** NavigationFilter that forwards calls back to DefaultFormatter. */</em>
+<a id='L77' name='L77'></a>  77     <strong class='reserved'>private</strong> <a href='../S/3347.html#L51' title='Defined at 51 in src/javax/swing/text/NavigationFilter.java.'>NavigationFilter</a> navigationFilter;
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <em class='comment'>/** DocumentFilter that forwards calls back to DefaultFormatter. */</em>
+<a id='L80' name='L80'></a>  80     <strong class='reserved'>private</strong> <a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a> documentFilter;
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <em class='comment'>/** Used during replace to track the region to replace. */</em>
+<a id='L83' name='L83'></a>  83     <strong class='reserved'>transient</strong> <a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a> replaceHolder;
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86     <em class='comment'>/**</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * Creates a DefaultFormatter.</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     */</em>
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>public</strong> DefaultFormatter() <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90         overwriteMode = <strong class='reserved'>true</strong>;
+<a id='L91' name='L91'></a>  91         allowsInvalid = <strong class='reserved'>true</strong>;
+<a id='L92' name='L92'></a>  92     <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <em class='comment'>/**</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * Installs the &lt;code&gt;DefaultFormatter&lt;/code&gt; onto a particular</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * This will invoke &lt;code&gt;valueToString&lt;/code&gt; to convert the</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * current value from the &lt;code&gt;JFormattedTextField&lt;/code&gt; to</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * a String. This will then install the &lt;code&gt;Action&lt;/code&gt;s from</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * &lt;code&gt;getActions&lt;/code&gt;, the &lt;code&gt;DocumentFilter&lt;/code&gt;</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * returned from &lt;code&gt;getDocumentFilter&lt;/code&gt; and the</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * &lt;code&gt;NavigationFilter&lt;/code&gt; returned from</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * &lt;code&gt;getNavigationFilter&lt;/code&gt; onto the</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * Subclasses will typically only need to override this if they</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * wish to install additional listeners on the</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * If there is a &lt;code&gt;ParseException&lt;/code&gt; in converting the</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * current value to a String, this will set the text to an empty</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * String, and mark the &lt;code&gt;JFormattedTextField&lt;/code&gt; as being</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * in an invalid state.</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * While this is a public method, this is typically only useful</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * for subclassers of &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt; will invoke this method at</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * the appropriate times when the value changes, or its internal</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * state changes.</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     *</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * @param ftf JFormattedTextField to format for, may be null indicating</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     *            uninstall from current JFormattedTextField.</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     */</em>
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20832.html' title='Multiple referred from 32 places.'>install</a>(<a href='../S/3126.html#L179' title='Defined at 179 in src/javax/swing/JFormattedTextField.java.'>JFormattedTextField</a> ftf) <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125         <strong class='reserved'>super</strong>.<a href='../D/24817.html' title='Multiple defined in 32 places.'>install</a>(ftf);
+<a id='L126' name='L126'></a> 126         <a href='../S/3327.html#L330' title='Defined at 330 in src/javax/swing/text/DefaultFormatter.java.'>positionCursorAtInitialLocation</a>();
+<a id='L127' name='L127'></a> 127     <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <em class='comment'>/**</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * Sets when edits are published back to the</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt;. If true, &lt;code&gt;commitEdit&lt;/code&gt;</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * is invoked after every valid edit (any time the text is edited). On</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * the other hand, if this is false than the &lt;code&gt;DefaultFormatter&lt;/code&gt;</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * does not publish edits back to the &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     * As such, the only time the value of the &lt;code&gt;JFormattedTextField&lt;/code&gt;</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * will change is when &lt;code&gt;commitEdit&lt;/code&gt; is invoked on</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt;, typically when enter is pressed</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * or focus leaves the &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     *</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * @param commit Used to indicate when edits are committed back to the</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     *               JTextComponent</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     */</em>
+<a id='L143' name='L143'></a> 143     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/3265.html#L116' title='Referred from 116 in src/javax/swing/text/NumberFormatter.java.'>setCommitsOnValidEdit</a>(<strong class='reserved'>boolean</strong> <a href='../D/13015.html' title='Multiple defined in 14 places.'>commit</a>) <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144         commitOnEdit = <a href='../D/13015.html' title='Multiple defined in 14 places.'>commit</a>;
+<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147     <em class='comment'>/**</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * Returns when edits are published back to the</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     *</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * @return true if edits are committed after every valid edit</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     */</em>
+<a id='L153' name='L153'></a> 153     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../S/3327.html#L454' title='Referred from 454 in src/javax/swing/text/DefaultFormatter.java.'>getCommitsOnValidEdit</a>() <em class='brace'>{</em>
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>return</strong> commitOnEdit;
+<a id='L155' name='L155'></a> 155     <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157     <em class='comment'>/**</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * Configures the behavior when inserting characters. If</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * &lt;code&gt;overwriteMode&lt;/code&gt; is true (the default), new characters</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * overwrite existing characters in the model.</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     *</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * @param overwriteMode Indicates if overwrite or overstrike mode is used</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     */</em>
+<a id='L164' name='L164'></a> 164     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27884.html' title='Multiple referred from 2 places.'>setOverwriteMode</a>(<strong class='reserved'>boolean</strong> overwriteMode) <em class='brace'>{</em>
+<a id='L165' name='L165'></a> 165         <strong class='reserved'>this</strong>.overwriteMode = overwriteMode;
+<a id='L166' name='L166'></a> 166     <em class='brace'>}</em>
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168     <em class='comment'>/**</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * Returns the behavior when inserting characters.</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     *</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * @return true if newly inserted characters overwrite existing characters</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     */</em>
+<a id='L173' name='L173'></a> 173     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/18197.html' title='Multiple referred from 3 places.'>getOverwriteMode</a>() <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174         <strong class='reserved'>return</strong> overwriteMode;
+<a id='L175' name='L175'></a> 175     <em class='brace'>}</em>
+<a id='L176' name='L176'></a> 176 
+<a id='L177' name='L177'></a> 177     <em class='comment'>/**</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * Sets whether or not the value being edited is allowed to be invalid</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * for a length of time (that is, &lt;code&gt;stringToValue&lt;/code&gt; throws</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * a &lt;code&gt;ParseException&lt;/code&gt;).</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * It is often convenient to allow the user to temporarily input an</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * invalid value.</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     *</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * @param allowsInvalid Used to indicate if the edited value must always</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     *        be valid</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     */</em>
+<a id='L187' name='L187'></a> 187     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26889.html' title='Multiple referred from 2 places.'>setAllowsInvalid</a>(<strong class='reserved'>boolean</strong> allowsInvalid) <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188         <strong class='reserved'>this</strong>.allowsInvalid = allowsInvalid;
+<a id='L189' name='L189'></a> 189     <em class='brace'>}</em>
+<a id='L190' name='L190'></a> 190 
+<a id='L191' name='L191'></a> 191     <em class='comment'>/**</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     * Returns whether or not the value being edited is allowed to be invalid</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>     * for a length of time.</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     *</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * @return false if the edited value must always be valid</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     */</em>
+<a id='L197' name='L197'></a> 197     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/15033.html' title='Multiple referred from 14 places.'>getAllowsInvalid</a>() <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198         <strong class='reserved'>return</strong> allowsInvalid;
+<a id='L199' name='L199'></a> 199     <em class='brace'>}</em>
+<a id='L200' name='L200'></a> 200 
+<a id='L201' name='L201'></a> 201     <em class='comment'>/**</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * Sets that class that is used to create new Objects. If the</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * passed in class does not have a single argument constructor that</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * takes a String, String values will be used.</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     *</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * @param valueClass Class used to construct return value from</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     *        stringToValue</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     */</em>
+<a id='L209' name='L209'></a> 209     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28373.html' title='Multiple referred from 5 places.'>setValueClass</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; valueClass) <em class='brace'>{</em>
+<a id='L210' name='L210'></a> 210         <strong class='reserved'>this</strong>.valueClass = valueClass;
+<a id='L211' name='L211'></a> 211     <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213     <em class='comment'>/**</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * Returns that class that is used to create new Objects.</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     *</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * @return Class used to construct return value from stringToValue</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     */</em>
+<a id='L218' name='L218'></a> 218     <strong class='reserved'>public</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../R/19757.html' title='Multiple referred from 7 places.'>getValueClass</a>() <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219         <strong class='reserved'>return</strong> valueClass;
+<a id='L220' name='L220'></a> 220     <em class='brace'>}</em>
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222     <em class='comment'>/**</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * Converts the passed in String into an instance of</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * &lt;code&gt;getValueClass&lt;/code&gt; by way of the constructor that</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * takes a String argument. If &lt;code&gt;getValueClass&lt;/code&gt;</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * returns null, the Class of the current value in the</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * &lt;code&gt;JFormattedTextField&lt;/code&gt; will be used. If this is null, a</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * String will be returned. If the constructor throws an exception, a</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * &lt;code&gt;ParseException&lt;/code&gt; will be thrown. If there is no single</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * argument String constructor, &lt;code&gt;string&lt;/code&gt; will be returned.</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     *</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * @throws ParseException if there is an error in the conversion</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * @param string String to convert</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @return Object representation of text</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     */</em>
+<a id='L236' name='L236'></a> 236     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/28956.html' title='Multiple referred from 13 places.'>stringToValue</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>) <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L237' name='L237'></a> 237         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; vc = <a href='../S/3327.html#L218' title='Defined at 218 in src/javax/swing/text/DefaultFormatter.java.'>getValueClass</a>();
+<a id='L238' name='L238'></a> 238         <a href='../S/3126.html#L179' title='Defined at 179 in src/javax/swing/JFormattedTextField.java.'>JFormattedTextField</a> ftf = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L239' name='L239'></a> 239 
+<a id='L240' name='L240'></a> 240         <strong class='reserved'>if</strong> (vc == <strong class='reserved'>null</strong> &amp;&amp; ftf != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241             <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = ftf.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>();
+<a id='L242' name='L242'></a> 242 
+<a id='L243' name='L243'></a> 243             <strong class='reserved'>if</strong> (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L244' name='L244'></a> 244                 vc = <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>();
+<a id='L245' name='L245'></a> 245             <em class='brace'>}</em>
+<a id='L246' name='L246'></a> 246         <em class='brace'>}</em>
+<a id='L247' name='L247'></a> 247         <strong class='reserved'>if</strong> (vc != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248             <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a> cons;
+<a id='L249' name='L249'></a> 249 
+<a id='L250' name='L250'></a> 250             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251                 ReflectUtil.<a href='../D/12578.html' title='Multiple defined in 3 places.'>checkPackageAccess</a>(vc);
+<a id='L252' name='L252'></a> 252                 SwingUtilities2.<a href='../D/12351.html' title='Multiple defined in 20 places.'>checkAccess</a>(vc.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>());
+<a id='L253' name='L253'></a> 253                 cons = vc.<a href='../D/17932.html' title='Multiple defined in 2 places.'>getConstructor</a>(<strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[]<em class='brace'>{</em><a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong><em class='brace'>}</em>);
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1776.html#L35' title='Defined at 35 in src/java/lang/NoSuchMethodException.java.'>NoSuchMethodException</a> nsme) <em class='brace'>{</em>
+<a id='L256' name='L256'></a> 256                 cons = <strong class='reserved'>null</strong>;
+<a id='L257' name='L257'></a> 257             <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258 
+<a id='L259' name='L259'></a> 259             <strong class='reserved'>if</strong> (cons != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L260' name='L260'></a> 260                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261                     SwingUtilities2.<a href='../D/12351.html' title='Multiple defined in 20 places.'>checkAccess</a>(cons.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>());
+<a id='L262' name='L262'></a> 262                     <strong class='reserved'>return</strong> cons.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>(<strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a> <em class='brace'>}</em>);
+<a id='L263' name='L263'></a> 263                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a>("Error creating instance", 0);
+<a id='L265' name='L265'></a> 265                 <em class='brace'>}</em>
+<a id='L266' name='L266'></a> 266             <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267         <em class='brace'>}</em>
+<a id='L268' name='L268'></a> 268         <strong class='reserved'>return</strong> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>;
+<a id='L269' name='L269'></a> 269     <em class='brace'>}</em>
+<a id='L270' name='L270'></a> 270 
+<a id='L271' name='L271'></a> 271     <em class='comment'>/**</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * Converts the passed in Object into a String by way of the</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     * &lt;code&gt;toString&lt;/code&gt; method.</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     *</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * @throws ParseException if there is an error in the conversion</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * @param value Value to convert</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * @return String representation of value</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     */</em>
+<a id='L279' name='L279'></a> 279     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/30103.html' title='Multiple referred from 9 places.'>valueToString</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L280' name='L280'></a> 280         <strong class='reserved'>if</strong> (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L281' name='L281'></a> 281             <strong class='reserved'>return</strong> "";
+<a id='L282' name='L282'></a> 282         <em class='brace'>}</em>
+<a id='L283' name='L283'></a> 283         <strong class='reserved'>return</strong> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L284' name='L284'></a> 284     <em class='brace'>}</em>
+<a id='L285' name='L285'></a> 285 
+<a id='L286' name='L286'></a> 286     <em class='comment'>/**</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * Returns the &lt;code&gt;DocumentFilter&lt;/code&gt; used to restrict the characters</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * that can be input into the &lt;code&gt;JFormattedTextField&lt;/code&gt;.</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     *</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * @return DocumentFilter to restrict edits</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     */</em>
+<a id='L292' name='L292'></a> 292     <strong class='reserved'>protected</strong> <a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a> <a href='../R/16220.html' title='Multiple referred from 4 places.'>getDocumentFilter</a>() <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293         <strong class='reserved'>if</strong> (documentFilter == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L294' name='L294'></a> 294             documentFilter = <strong class='reserved'>new</strong> <a href='../S/3327.html#L727' title='Defined at 727 in src/javax/swing/text/DefaultFormatter.java.'>DefaultDocumentFilter</a>();
+<a id='L295' name='L295'></a> 295         <em class='brace'>}</em>
+<a id='L296' name='L296'></a> 296         <strong class='reserved'>return</strong> documentFilter;
+<a id='L297' name='L297'></a> 297     <em class='brace'>}</em>
+<a id='L298' name='L298'></a> 298 
+<a id='L299' name='L299'></a> 299     <em class='comment'>/**</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * Returns the &lt;code&gt;NavigationFilter&lt;/code&gt; used to restrict where the</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     * cursor can be placed.</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     *</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     * @return NavigationFilter to restrict navigation</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     */</em>
+<a id='L305' name='L305'></a> 305     <strong class='reserved'>protected</strong> <a href='../S/3347.html#L51' title='Defined at 51 in src/javax/swing/text/NavigationFilter.java.'>NavigationFilter</a> <a href='../R/17879.html' title='Multiple referred from 4 places.'>getNavigationFilter</a>() <em class='brace'>{</em>
+<a id='L306' name='L306'></a> 306         <strong class='reserved'>if</strong> (navigationFilter == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L307' name='L307'></a> 307             navigationFilter = <strong class='reserved'>new</strong> <a href='../S/3327.html#L684' title='Defined at 684 in src/javax/swing/text/DefaultFormatter.java.'>DefaultNavigationFilter</a>();
+<a id='L308' name='L308'></a> 308         <em class='brace'>}</em>
+<a id='L309' name='L309'></a> 309         <strong class='reserved'>return</strong> navigationFilter;
+<a id='L310' name='L310'></a> 310     <em class='brace'>}</em>
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312     <em class='comment'>/**</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>     * Creates a copy of the DefaultFormatter.</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>     *</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>     * @return copy of the DefaultFormatter</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>     */</em>
+<a id='L317' name='L317'></a> 317     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/11555.html' title='Multiple referred from 1378 places.'>clone</a>() <strong class='reserved'>throws</strong> <a href='../S/1725.html#L45' title='Defined at 45 in src/java/lang/CloneNotSupportedException.java.'>CloneNotSupportedException</a> <em class='brace'>{</em>
+<a id='L318' name='L318'></a> 318         <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a> <a href='../S/1537.html#L4367' title='Defined at 4367 in src/java/time/format/DateTimeFormatterBuilder.java.'>formatter</a> = (<a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>)<strong class='reserved'>super</strong>.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L319' name='L319'></a> 319 
+<a id='L320' name='L320'></a> 320         <a href='../S/1537.html#L4367' title='Defined at 4367 in src/java/time/format/DateTimeFormatterBuilder.java.'>formatter</a>.navigationFilter = <strong class='reserved'>null</strong>;
+<a id='L321' name='L321'></a> 321         <a href='../S/1537.html#L4367' title='Defined at 4367 in src/java/time/format/DateTimeFormatterBuilder.java.'>formatter</a>.documentFilter = <strong class='reserved'>null</strong>;
+<a id='L322' name='L322'></a> 322         <a href='../S/1537.html#L4367' title='Defined at 4367 in src/java/time/format/DateTimeFormatterBuilder.java.'>formatter</a>.replaceHolder = <strong class='reserved'>null</strong>;
+<a id='L323' name='L323'></a> 323         <strong class='reserved'>return</strong> <a href='../S/1537.html#L4367' title='Defined at 4367 in src/java/time/format/DateTimeFormatterBuilder.java.'>formatter</a>;
+<a id='L324' name='L324'></a> 324     <em class='brace'>}</em>
+<a id='L325' name='L325'></a> 325 
+<a id='L326' name='L326'></a> 326 
+<a id='L327' name='L327'></a> 327     <em class='comment'>/**</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     * Positions the cursor at the initial location.</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     */</em>
+<a id='L330' name='L330'></a> 330     <strong class='reserved'>void</strong> <a href='../R/24843.html' title='Multiple referred from 2 places.'>positionCursorAtInitialLocation</a>() <em class='brace'>{</em>
+<a id='L331' name='L331'></a> 331         <a href='../S/3126.html#L179' title='Defined at 179 in src/javax/swing/JFormattedTextField.java.'>JFormattedTextField</a> ftf = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L332' name='L332'></a> 332         <strong class='reserved'>if</strong> (ftf != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L333' name='L333'></a> 333             ftf.<a href='../D/32097.html' title='Multiple defined in 3 places.'>setCaretPosition</a>(<a href='../S/3327.html#L341' title='Defined at 341 in src/javax/swing/text/DefaultFormatter.java.'>getInitialVisualPosition</a>());
+<a id='L334' name='L334'></a> 334         <em class='brace'>}</em>
+<a id='L335' name='L335'></a> 335     <em class='brace'>}</em>
+<a id='L336' name='L336'></a> 336 
+<a id='L337' name='L337'></a> 337     <em class='comment'>/**</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * Returns the initial location to position the cursor at. This forwards</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     * the call to &lt;code&gt;getNextNavigatableChar&lt;/code&gt;.</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     */</em>
+<a id='L341' name='L341'></a> 341     <strong class='reserved'>int</strong> <a href='../R/17079.html' title='Multiple referred from 2 places.'>getInitialVisualPosition</a>() <em class='brace'>{</em>
+<a id='L342' name='L342'></a> 342         <strong class='reserved'>return</strong> <a href='../S/3327.html#L368' title='Defined at 368 in src/javax/swing/text/DefaultFormatter.java.'>getNextNavigatableChar</a>(0, 1);
+<a id='L343' name='L343'></a> 343     <em class='brace'>}</em>
+<a id='L344' name='L344'></a> 344 
+<a id='L345' name='L345'></a> 345     <em class='comment'>/**</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     * Subclasses should override this if they want cursor navigation</em>
+<a id='L347' name='L347'></a> 347 <em class='comment'>     * to skip certain characters. A return value of false indicates</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>     * the character at &lt;code&gt;offset&lt;/code&gt; should be skipped when</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * navigating throught the field.</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     */</em>
+<a id='L351' name='L351'></a> 351     <strong class='reserved'>boolean</strong> <a href='../R/21771.html' title='Multiple referred from 3 places.'>isNavigatable</a>(<strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>) <em class='brace'>{</em>
+<a id='L352' name='L352'></a> 352         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L353' name='L353'></a> 353     <em class='brace'>}</em>
+<a id='L354' name='L354'></a> 354 
+<a id='L355' name='L355'></a> 355     <em class='comment'>/**</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>     * Returns true if the text in &lt;code&gt;text&lt;/code&gt; can be inserted.  This</em>
+<a id='L357' name='L357'></a> 357 <em class='comment'>     * does not mean the text will ultimately be inserted, it is used if</em>
+<a id='L358' name='L358'></a> 358 <em class='comment'>     * text can trivially reject certain characters.</em>
+<a id='L359' name='L359'></a> 359 <em class='comment'>     */</em>
+<a id='L360' name='L360'></a> 360     <strong class='reserved'>boolean</strong> <a href='../S/3327.html#L585' title='Referred from 585 in src/javax/swing/text/DefaultFormatter.java.'>isLegalInsertText</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>) <em class='brace'>{</em>
+<a id='L361' name='L361'></a> 361         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L362' name='L362'></a> 362     <em class='brace'>}</em>
+<a id='L363' name='L363'></a> 363 
+<a id='L364' name='L364'></a> 364     <em class='comment'>/**</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     * Returns the next editable character starting at offset incrementing</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * the offset by &lt;code&gt;direction&lt;/code&gt;.</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     */</em>
+<a id='L368' name='L368'></a> 368     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/17933.html' title='Multiple referred from 5 places.'>getNextNavigatableChar</a>(<strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> direction) <em class='brace'>{</em>
+<a id='L369' name='L369'></a> 369         <strong class='reserved'>int</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/18553.html' title='Multiple defined in 33 places.'>getDocument</a>().<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L370' name='L370'></a> 370 
+<a id='L371' name='L371'></a> 371         <strong class='reserved'>while</strong> (<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> &gt;= 0 &amp;&amp; <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> &lt; <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L372' name='L372'></a> 372             <strong class='reserved'>if</strong> (<a href='../D/25931.html' title='Multiple defined in 4 places.'>isNavigatable</a>(<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>)) <em class='brace'>{</em>
+<a id='L373' name='L373'></a> 373                 <strong class='reserved'>return</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L374' name='L374'></a> 374             <em class='brace'>}</em>
+<a id='L375' name='L375'></a> 375             <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += direction;
+<a id='L376' name='L376'></a> 376         <em class='brace'>}</em>
+<a id='L377' name='L377'></a> 377         <strong class='reserved'>return</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L378' name='L378'></a> 378     <em class='brace'>}</em>
+<a id='L379' name='L379'></a> 379 
+<a id='L380' name='L380'></a> 380     <em class='comment'>/**</em>
+<a id='L381' name='L381'></a> 381 <em class='comment'>     * A convenience methods to return the result of deleting</em>
+<a id='L382' name='L382'></a> 382 <em class='comment'>     * &lt;code&gt;deleteLength&lt;/code&gt; characters at &lt;code&gt;offset&lt;/code&gt;</em>
+<a id='L383' name='L383'></a> 383 <em class='comment'>     * and inserting &lt;code&gt;replaceString&lt;/code&gt; at &lt;code&gt;offset&lt;/code&gt;</em>
+<a id='L384' name='L384'></a> 384 <em class='comment'>     * in the current text field.</em>
+<a id='L385' name='L385'></a> 385 <em class='comment'>     */</em>
+<a id='L386' name='L386'></a> 386     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18677.html' title='Multiple referred from 4 places.'>getReplaceString</a>(<strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> deleteLength,
+<a id='L387' name='L387'></a> 387                             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> replaceString) <em class='brace'>{</em>
+<a id='L388' name='L388'></a> 388         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a> = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/23044.html' title='Multiple defined in 43 places.'>getText</a>();
+<a id='L389' name='L389'></a> 389         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L390' name='L390'></a> 390 
+<a id='L391' name='L391'></a> 391         <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(0, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L392' name='L392'></a> 392         <strong class='reserved'>if</strong> (replaceString != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L393' name='L393'></a> 393             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> += replaceString;
+<a id='L394' name='L394'></a> 394         <em class='brace'>}</em>
+<a id='L395' name='L395'></a> 395         <strong class='reserved'>if</strong> (<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> + deleteLength &lt; <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>()) <em class='brace'>{</em>
+<a id='L396' name='L396'></a> 396             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> += <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> + deleteLength);
+<a id='L397' name='L397'></a> 397         <em class='brace'>}</em>
+<a id='L398' name='L398'></a> 398         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L399' name='L399'></a> 399     <em class='brace'>}</em>
+<a id='L400' name='L400'></a> 400 
+<a id='L401' name='L401'></a> 401     <em class='comment'>/*</em>
+<a id='L402' name='L402'></a> 402 <em class='comment'>     * Returns true if the operation described by &lt;code&gt;rh&lt;/code&gt; will</em>
+<a id='L403' name='L403'></a> 403 <em class='comment'>     * result in a legal edit.  This may set the &lt;code&gt;value&lt;/code&gt;</em>
+<a id='L404' name='L404'></a> 404 <em class='comment'>     * field of &lt;code&gt;rh&lt;/code&gt;.</em>
+<a id='L405' name='L405'></a> 405 <em class='comment'>     */</em>
+<a id='L406' name='L406'></a> 406     <strong class='reserved'>boolean</strong> <a href='../S/3327.html#L545' title='Referred from 545 in src/javax/swing/text/DefaultFormatter.java.'>isValidEdit</a>(<a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a> rh) <em class='brace'>{</em>
+<a id='L407' name='L407'></a> 407         <strong class='reserved'>if</strong> (!<a href='../S/3327.html#L197' title='Defined at 197 in src/javax/swing/text/DefaultFormatter.java.'>getAllowsInvalid</a>()) <em class='brace'>{</em>
+<a id='L408' name='L408'></a> 408             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> newString = <a href='../S/3327.html#L386' title='Defined at 386 in src/javax/swing/text/DefaultFormatter.java.'>getReplaceString</a>(rh.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>);
+<a id='L409' name='L409'></a> 409 
+<a id='L410' name='L410'></a> 410             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L411' name='L411'></a> 411                 rh.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/34943.html' title='Multiple defined in 9 places.'>stringToValue</a>(newString);
+<a id='L412' name='L412'></a> 412 
+<a id='L413' name='L413'></a> 413                 <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L414' name='L414'></a> 414             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> pe) <em class='brace'>{</em>
+<a id='L415' name='L415'></a> 415                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L416' name='L416'></a> 416             <em class='brace'>}</em>
+<a id='L417' name='L417'></a> 417         <em class='brace'>}</em>
+<a id='L418' name='L418'></a> 418         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L419' name='L419'></a> 419     <em class='brace'>}</em>
+<a id='L420' name='L420'></a> 420 
+<a id='L421' name='L421'></a> 421     <em class='comment'>/**</em>
+<a id='L422' name='L422'></a> 422 <em class='comment'>     * Invokes &lt;code&gt;commitEdit&lt;/code&gt; on the JFormattedTextField.</em>
+<a id='L423' name='L423'></a> 423 <em class='comment'>     */</em>
+<a id='L424' name='L424'></a> 424     <strong class='reserved'>void</strong> <a href='../R/11675.html' title='Multiple referred from 7 places.'>commitEdit</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L425' name='L425'></a> 425         <a href='../S/3126.html#L179' title='Defined at 179 in src/javax/swing/JFormattedTextField.java.'>JFormattedTextField</a> ftf = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L426' name='L426'></a> 426 
+<a id='L427' name='L427'></a> 427         <strong class='reserved'>if</strong> (ftf != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L428' name='L428'></a> 428             ftf.<a href='../D/13016.html' title='Multiple defined in 4 places.'>commitEdit</a>();
+<a id='L429' name='L429'></a> 429         <em class='brace'>}</em>
+<a id='L430' name='L430'></a> 430     <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431 
+<a id='L432' name='L432'></a> 432     <em class='comment'>/**</em>
+<a id='L433' name='L433'></a> 433 <em class='comment'>     * Pushes the value to the JFormattedTextField if the current value</em>
+<a id='L434' name='L434'></a> 434 <em class='comment'>     * is valid and invokes &lt;code&gt;setEditValid&lt;/code&gt; based on the</em>
+<a id='L435' name='L435'></a> 435 <em class='comment'>     * validity of the value.</em>
+<a id='L436' name='L436'></a> 436 <em class='comment'>     */</em>
+<a id='L437' name='L437'></a> 437     <strong class='reserved'>void</strong> <a href='../R/29985.html' title='Multiple referred from 5 places.'>updateValue</a>() <em class='brace'>{</em>
+<a id='L438' name='L438'></a> 438         <a href='../D/36242.html' title='Multiple defined in 3 places.'>updateValue</a>(<strong class='reserved'>null</strong>);
+<a id='L439' name='L439'></a> 439     <em class='brace'>}</em>
+<a id='L440' name='L440'></a> 440 
+<a id='L441' name='L441'></a> 441     <em class='comment'>/**</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'>     * Pushes the &lt;code&gt;value&lt;/code&gt; to the editor if we are to</em>
+<a id='L443' name='L443'></a> 443 <em class='comment'>     * commit on edits. If &lt;code&gt;value&lt;/code&gt; is null, the current value</em>
+<a id='L444' name='L444'></a> 444 <em class='comment'>     * will be obtained from the text component.</em>
+<a id='L445' name='L445'></a> 445 <em class='comment'>     */</em>
+<a id='L446' name='L446'></a> 446     <strong class='reserved'>void</strong> <a href='../R/29985.html' title='Multiple referred from 5 places.'>updateValue</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) <em class='brace'>{</em>
+<a id='L447' name='L447'></a> 447         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L448' name='L448'></a> 448             <strong class='reserved'>if</strong> (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L449' name='L449'></a> 449                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a> = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/23044.html' title='Multiple defined in 43 places.'>getText</a>();
+<a id='L450' name='L450'></a> 450 
+<a id='L451' name='L451'></a> 451                 <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/34943.html' title='Multiple defined in 9 places.'>stringToValue</a>(<a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>);
+<a id='L452' name='L452'></a> 452             <em class='brace'>}</em>
+<a id='L453' name='L453'></a> 453 
+<a id='L454' name='L454'></a> 454             <strong class='reserved'>if</strong> (<a href='../S/3327.html#L153' title='Defined at 153 in src/javax/swing/text/DefaultFormatter.java.'>getCommitsOnValidEdit</a>()) <em class='brace'>{</em>
+<a id='L455' name='L455'></a> 455                 <a href='../D/13016.html' title='Multiple defined in 4 places.'>commitEdit</a>();
+<a id='L456' name='L456'></a> 456             <em class='brace'>}</em>
+<a id='L457' name='L457'></a> 457             <a href='../D/32537.html' title='Multiple defined in 2 places.'>setEditValid</a>(<strong class='reserved'>true</strong>);
+<a id='L458' name='L458'></a> 458         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> pe) <em class='brace'>{</em>
+<a id='L459' name='L459'></a> 459             <a href='../D/32537.html' title='Multiple defined in 2 places.'>setEditValid</a>(<strong class='reserved'>false</strong>);
+<a id='L460' name='L460'></a> 460         <em class='brace'>}</em>
+<a id='L461' name='L461'></a> 461     <em class='brace'>}</em>
+<a id='L462' name='L462'></a> 462 
+<a id='L463' name='L463'></a> 463     <em class='comment'>/**</em>
+<a id='L464' name='L464'></a> 464 <em class='comment'>     * Returns the next cursor position from offset by incrementing</em>
+<a id='L465' name='L465'></a> 465 <em class='comment'>     * &lt;code&gt;direction&lt;/code&gt;. This uses</em>
+<a id='L466' name='L466'></a> 466 <em class='comment'>     * &lt;code&gt;getNextNavigatableChar&lt;/code&gt;</em>
+<a id='L467' name='L467'></a> 467 <em class='comment'>     * as well as constraining the location to the max position.</em>
+<a id='L468' name='L468'></a> 468 <em class='comment'>     */</em>
+<a id='L469' name='L469'></a> 469     <strong class='reserved'>int</strong> <a href='../S/3327.html#L497' title='Referred from 497 in src/javax/swing/text/DefaultFormatter.java.'>getNextCursorPosition</a>(<strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> direction) <em class='brace'>{</em>
+<a id='L470' name='L470'></a> 470         <strong class='reserved'>int</strong> newOffset = <a href='../S/3327.html#L368' title='Defined at 368 in src/javax/swing/text/DefaultFormatter.java.'>getNextNavigatableChar</a>(<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, direction);
+<a id='L471' name='L471'></a> 471         <strong class='reserved'>int</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/18553.html' title='Multiple defined in 33 places.'>getDocument</a>().<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L472' name='L472'></a> 472 
+<a id='L473' name='L473'></a> 473         <strong class='reserved'>if</strong> (!<a href='../S/3327.html#L197' title='Defined at 197 in src/javax/swing/text/DefaultFormatter.java.'>getAllowsInvalid</a>()) <em class='brace'>{</em>
+<a id='L474' name='L474'></a> 474             <strong class='reserved'>if</strong> (direction == -1 &amp;&amp; <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> == newOffset) <em class='brace'>{</em>
+<a id='L475' name='L475'></a> 475                 <em class='comment'>// Case where hit backspace and only characters before</em>
+<a id='L476' name='L476'></a> 476                 <em class='comment'>// offset are fixed.</em>
+<a id='L477' name='L477'></a> 477                 newOffset = <a href='../S/3327.html#L368' title='Defined at 368 in src/javax/swing/text/DefaultFormatter.java.'>getNextNavigatableChar</a>(newOffset, 1);
+<a id='L478' name='L478'></a> 478                 <strong class='reserved'>if</strong> (newOffset &gt;= <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L479' name='L479'></a> 479                     newOffset = <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L480' name='L480'></a> 480                 <em class='brace'>}</em>
+<a id='L481' name='L481'></a> 481             <em class='brace'>}</em>
+<a id='L482' name='L482'></a> 482             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (direction == 1 &amp;&amp; newOffset &gt;= <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L483' name='L483'></a> 483                 <em class='comment'>// Don't go beyond last editable character.</em>
+<a id='L484' name='L484'></a> 484                 newOffset = <a href='../S/3327.html#L368' title='Defined at 368 in src/javax/swing/text/DefaultFormatter.java.'>getNextNavigatableChar</a>(<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> - 1, -1);
+<a id='L485' name='L485'></a> 485                 <strong class='reserved'>if</strong> (newOffset &lt; <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L486' name='L486'></a> 486                     newOffset++;
+<a id='L487' name='L487'></a> 487                 <em class='brace'>}</em>
+<a id='L488' name='L488'></a> 488             <em class='brace'>}</em>
+<a id='L489' name='L489'></a> 489         <em class='brace'>}</em>
+<a id='L490' name='L490'></a> 490         <strong class='reserved'>return</strong> newOffset;
+<a id='L491' name='L491'></a> 491     <em class='brace'>}</em>
+<a id='L492' name='L492'></a> 492 
+<a id='L493' name='L493'></a> 493     <em class='comment'>/**</em>
+<a id='L494' name='L494'></a> 494 <em class='comment'>     * Resets the cursor by using getNextCursorPosition.</em>
+<a id='L495' name='L495'></a> 495 <em class='comment'>     */</em>
+<a id='L496' name='L496'></a> 496     <strong class='reserved'>void</strong> <a href='../R/26205.html' title='Multiple referred from 5 places.'>repositionCursor</a>(<strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> direction) <em class='brace'>{</em>
+<a id='L497' name='L497'></a> 497         <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/17495.html' title='Multiple defined in 4 places.'>getCaret</a>().<a href='../D/32508.html' title='Multiple defined in 8 places.'>setDot</a>(<a href='../S/3327.html#L469' title='Defined at 469 in src/javax/swing/text/DefaultFormatter.java.'>getNextCursorPosition</a>
+<a id='L498' name='L498'></a> 498                                                   (<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, direction));
+<a id='L499' name='L499'></a> 499     <em class='brace'>}</em>
+<a id='L500' name='L500'></a> 500 
+<a id='L501' name='L501'></a> 501 
+<a id='L502' name='L502'></a> 502     <em class='comment'>/**</em>
+<a id='L503' name='L503'></a> 503 <em class='comment'>     * Finds the next navigable character.</em>
+<a id='L504' name='L504'></a> 504 <em class='comment'>     */</em>
+<a id='L505' name='L505'></a> 505     <strong class='reserved'>int</strong> <a href='../R/17962.html' title='Multiple referred from 24 places.'>getNextVisualPositionFrom</a>(<a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <strong class='reserved'>int</strong> pos,
+<a id='L506' name='L506'></a> 506                                   <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a> bias, <strong class='reserved'>int</strong> direction,
+<a id='L507' name='L507'></a> 507                                   <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a>[] biasRet)
+<a id='L508' name='L508'></a> 508                                            <strong class='reserved'>throws</strong> <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L509' name='L509'></a> 509         <strong class='reserved'>int</strong> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/23358.html' title='Multiple defined in 33 places.'>getUI</a>().<a href='../D/20952.html' title='Multiple defined in 14 places.'>getNextVisualPositionFrom</a>(<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, pos, bias,
+<a id='L510' name='L510'></a> 510                                                            direction, biasRet);
+<a id='L511' name='L511'></a> 511 
+<a id='L512' name='L512'></a> 512         <strong class='reserved'>if</strong> (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == -1) <em class='brace'>{</em>
+<a id='L513' name='L513'></a> 513             <strong class='reserved'>return</strong> -1;
+<a id='L514' name='L514'></a> 514         <em class='brace'>}</em>
+<a id='L515' name='L515'></a> 515         <strong class='reserved'>if</strong> (!<a href='../S/3327.html#L197' title='Defined at 197 in src/javax/swing/text/DefaultFormatter.java.'>getAllowsInvalid</a>() &amp;&amp; (direction == <a href='../S/2750.html#L35' title='Defined at 35 in src/javax/swing/SwingConstants.java.'>SwingConstants</a>.EAST ||
+<a id='L516' name='L516'></a> 516                                     direction == <a href='../S/2750.html#L35' title='Defined at 35 in src/javax/swing/SwingConstants.java.'>SwingConstants</a>.WEST)) <em class='brace'>{</em>
+<a id='L517' name='L517'></a> 517             <strong class='reserved'>int</strong> <a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a> = -1;
+<a id='L518' name='L518'></a> 518 
+<a id='L519' name='L519'></a> 519             <strong class='reserved'>while</strong> (!<a href='../D/25931.html' title='Multiple defined in 4 places.'>isNavigatable</a>(<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) &amp;&amp; <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> != <a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a>) <em class='brace'>{</em>
+<a id='L520' name='L520'></a> 520                 <a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a> = <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L521' name='L521'></a> 521                 <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/23358.html' title='Multiple defined in 33 places.'>getUI</a>().<a href='../D/20952.html' title='Multiple defined in 14 places.'>getNextVisualPositionFrom</a>(
+<a id='L522' name='L522'></a> 522                               <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, bias, direction,biasRet);
+<a id='L523' name='L523'></a> 523             <em class='brace'>}</em>
+<a id='L524' name='L524'></a> 524             <strong class='reserved'>int</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> = <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/18553.html' title='Multiple defined in 33 places.'>getDocument</a>().<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L525' name='L525'></a> 525             <strong class='reserved'>if</strong> (<a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a> == <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> || <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L526' name='L526'></a> 526                 <strong class='reserved'>if</strong> (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == 0) <em class='brace'>{</em>
+<a id='L527' name='L527'></a> 527                     biasRet[0] = <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a>.Forward;
+<a id='L528' name='L528'></a> 528                     <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../S/3327.html#L341' title='Defined at 341 in src/javax/swing/text/DefaultFormatter.java.'>getInitialVisualPosition</a>();
+<a id='L529' name='L529'></a> 529                 <em class='brace'>}</em>
+<a id='L530' name='L530'></a> 530                 <strong class='reserved'>if</strong> (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> &gt;= <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> &amp;&amp; <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> &gt; 0) <em class='brace'>{</em>
+<a id='L531' name='L531'></a> 531                     <em class='comment'>// Pending: should not assume forward!</em>
+<a id='L532' name='L532'></a> 532                     biasRet[0] = <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a>.Forward;
+<a id='L533' name='L533'></a> 533                     <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../S/3327.html#L368' title='Defined at 368 in src/javax/swing/text/DefaultFormatter.java.'>getNextNavigatableChar</a>(<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> - 1, -1) + 1;
+<a id='L534' name='L534'></a> 534                 <em class='brace'>}</em>
+<a id='L535' name='L535'></a> 535             <em class='brace'>}</em>
+<a id='L536' name='L536'></a> 536         <em class='brace'>}</em>
+<a id='L537' name='L537'></a> 537         <strong class='reserved'>return</strong> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L538' name='L538'></a> 538     <em class='brace'>}</em>
+<a id='L539' name='L539'></a> 539 
+<a id='L540' name='L540'></a> 540     <em class='comment'>/**</em>
+<a id='L541' name='L541'></a> 541 <em class='comment'>     * Returns true if the edit described by &lt;code&gt;rh&lt;/code&gt; will result</em>
+<a id='L542' name='L542'></a> 542 <em class='comment'>     * in a legal value.</em>
+<a id='L543' name='L543'></a> 543 <em class='comment'>     */</em>
+<a id='L544' name='L544'></a> 544     <strong class='reserved'>boolean</strong> <a href='../R/10900.html' title='Multiple referred from 3 places.'>canReplace</a>(<a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a> rh) <em class='brace'>{</em>
+<a id='L545' name='L545'></a> 545         <strong class='reserved'>return</strong> <a href='../D/26437.html' title='Multiple defined in 2 places.'>isValidEdit</a>(rh);
+<a id='L546' name='L546'></a> 546     <em class='brace'>}</em>
+<a id='L547' name='L547'></a> 547 
+<a id='L548' name='L548'></a> 548     <em class='comment'>/**</em>
+<a id='L549' name='L549'></a> 549 <em class='comment'>     * DocumentFilter method, funnels into &lt;code&gt;replace&lt;/code&gt;.</em>
+<a id='L550' name='L550'></a> 550 <em class='comment'>     */</em>
+<a id='L551' name='L551'></a> 551     <strong class='reserved'>void</strong> <a href='../R/26140.html' title='Multiple referred from 310 places.'>replace</a>(<a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a>.<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L552' name='L552'></a> 552                      <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>,
+<a id='L553' name='L553'></a> 553                      <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> attrs) <strong class='reserved'>throws</strong> <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L554' name='L554'></a> 554         <a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a> rh = <a href='../D/21983.html' title='Multiple defined in 2 places.'>getReplaceHolder</a>(fb, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, attrs);
+<a id='L555' name='L555'></a> 555 
+<a id='L556' name='L556'></a> 556         <a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>(rh);
+<a id='L557' name='L557'></a> 557     <em class='brace'>}</em>
+<a id='L558' name='L558'></a> 558 
+<a id='L559' name='L559'></a> 559     <em class='comment'>/**</em>
+<a id='L560' name='L560'></a> 560 <em class='comment'>     * If the edit described by &lt;code&gt;rh&lt;/code&gt; is legal, this will</em>
+<a id='L561' name='L561'></a> 561 <em class='comment'>     * return true, commit the edit (if necessary) and update the cursor</em>
+<a id='L562' name='L562'></a> 562 <em class='comment'>     * position.  This forwards to &lt;code&gt;canReplace&lt;/code&gt; and</em>
+<a id='L563' name='L563'></a> 563 <em class='comment'>     * &lt;code&gt;isLegalInsertText&lt;/code&gt; as necessary to determine if</em>
+<a id='L564' name='L564'></a> 564 <em class='comment'>     * the edit is in fact legal.</em>
+<a id='L565' name='L565'></a> 565 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L566' name='L566'></a> 566 <em class='comment'>     * All of the DocumentFilter methods funnel into here, you should</em>
+<a id='L567' name='L567'></a> 567 <em class='comment'>     * generally only have to override this.</em>
+<a id='L568' name='L568'></a> 568 <em class='comment'>     */</em>
+<a id='L569' name='L569'></a> 569     <strong class='reserved'>boolean</strong> <a href='../R/26140.html' title='Multiple referred from 310 places.'>replace</a>(<a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a> rh) <strong class='reserved'>throws</strong> <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L570' name='L570'></a> 570         <strong class='reserved'>boolean</strong> <a href='../D/36305.html' title='Multiple defined in 2 places.'>valid</a> = <strong class='reserved'>true</strong>;
+<a id='L571' name='L571'></a> 571         <strong class='reserved'>int</strong> direction = 1;
+<a id='L572' name='L572'></a> 572 
+<a id='L573' name='L573'></a> 573         <strong class='reserved'>if</strong> (rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0 &amp;&amp; (rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> == <strong class='reserved'>null</strong> || rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() == 0) &amp;&amp;
+<a id='L574' name='L574'></a> 574                (<a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/22380.html' title='Multiple defined in 11 places.'>getSelectionStart</a>() != rh.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> ||
+<a id='L575' name='L575'></a> 575                    rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 1)) <em class='brace'>{</em>
+<a id='L576' name='L576'></a> 576             direction = -1;
+<a id='L577' name='L577'></a> 577         <em class='brace'>}</em>
+<a id='L578' name='L578'></a> 578 
+<a id='L579' name='L579'></a> 579         <strong class='reserved'>if</strong> (<a href='../S/3327.html#L173' title='Defined at 173 in src/javax/swing/text/DefaultFormatter.java.'>getOverwriteMode</a>() &amp;&amp; rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> != <strong class='reserved'>null</strong> &amp;&amp;
+<a id='L580' name='L580'></a> 580             <a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>().<a href='../D/22360.html' title='Multiple defined in 12 places.'>getSelectedText</a>() == <strong class='reserved'>null</strong>)
+<a id='L581' name='L581'></a> 581         <em class='brace'>{</em>
+<a id='L582' name='L582'></a> 582             rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(<a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>()),
+<a id='L583' name='L583'></a> 583                                  rh.fb.<a href='../D/18553.html' title='Multiple defined in 33 places.'>getDocument</a>().<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>() - rh.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L584' name='L584'></a> 584         <em class='brace'>}</em>
+<a id='L585' name='L585'></a> 585         <strong class='reserved'>if</strong> ((rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> != <strong class='reserved'>null</strong> &amp;&amp; !<a href='../D/25789.html' title='Multiple defined in 2 places.'>isLegalInsertText</a>(rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>)) ||
+<a id='L586' name='L586'></a> 586             !<a href='../D/12163.html' title='Multiple defined in 3 places.'>canReplace</a>(rh) ||
+<a id='L587' name='L587'></a> 587             (rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 0 &amp;&amp; (rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> == <strong class='reserved'>null</strong> || rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() == 0))) <em class='brace'>{</em>
+<a id='L588' name='L588'></a> 588             <a href='../D/36305.html' title='Multiple defined in 2 places.'>valid</a> = <strong class='reserved'>false</strong>;
+<a id='L589' name='L589'></a> 589         <em class='brace'>}</em>
+<a id='L590' name='L590'></a> 590         <strong class='reserved'>if</strong> (<a href='../D/36305.html' title='Multiple defined in 2 places.'>valid</a>) <em class='brace'>{</em>
+<a id='L591' name='L591'></a> 591             <strong class='reserved'>int</strong> <a href='../S/986.html#L3222' title='Defined at 3222 in src/java/util/regex/Pattern.java.'>cursor</a> = rh.cursorPosition;
+<a id='L592' name='L592'></a> 592 
+<a id='L593' name='L593'></a> 593             rh.fb.<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>(rh.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, rh.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, rh.attrs);
+<a id='L594' name='L594'></a> 594             <strong class='reserved'>if</strong> (<a href='../S/986.html#L3222' title='Defined at 3222 in src/java/util/regex/Pattern.java.'>cursor</a> == -1) <em class='brace'>{</em>
+<a id='L595' name='L595'></a> 595                 <a href='../S/986.html#L3222' title='Defined at 3222 in src/java/util/regex/Pattern.java.'>cursor</a> = rh.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L596' name='L596'></a> 596                 <strong class='reserved'>if</strong> (direction == 1 &amp;&amp; rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L597' name='L597'></a> 597                     <a href='../S/986.html#L3222' title='Defined at 3222 in src/java/util/regex/Pattern.java.'>cursor</a> = rh.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> + rh.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>();
+<a id='L598' name='L598'></a> 598                 <em class='brace'>}</em>
+<a id='L599' name='L599'></a> 599             <em class='brace'>}</em>
+<a id='L600' name='L600'></a> 600             <a href='../D/36242.html' title='Multiple defined in 3 places.'>updateValue</a>(rh.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L601' name='L601'></a> 601             <a href='../D/31108.html' title='Multiple defined in 2 places.'>repositionCursor</a>(<a href='../S/986.html#L3222' title='Defined at 3222 in src/java/util/regex/Pattern.java.'>cursor</a>, direction);
+<a id='L602' name='L602'></a> 602             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L603' name='L603'></a> 603         <em class='brace'>}</em>
+<a id='L604' name='L604'></a> 604         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L605' name='L605'></a> 605             <a href='../D/24999.html' title='Multiple defined in 2 places.'>invalidEdit</a>();
+<a id='L606' name='L606'></a> 606         <em class='brace'>}</em>
+<a id='L607' name='L607'></a> 607         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L608' name='L608'></a> 608     <em class='brace'>}</em>
+<a id='L609' name='L609'></a> 609 
+<a id='L610' name='L610'></a> 610     <em class='comment'>/**</em>
+<a id='L611' name='L611'></a> 611 <em class='comment'>     * NavigationFilter method, subclasses that wish finer control should</em>
+<a id='L612' name='L612'></a> 612 <em class='comment'>     * override this.</em>
+<a id='L613' name='L613'></a> 613 <em class='comment'>     */</em>
+<a id='L614' name='L614'></a> 614     <strong class='reserved'>void</strong> <a href='../R/27277.html' title='Multiple referred from 29 places.'>setDot</a>(<a href='../S/3347.html#L51' title='Defined at 51 in src/javax/swing/text/NavigationFilter.java.'>NavigationFilter</a>.<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> dot, <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a> bias)<em class='brace'>{</em>
+<a id='L615' name='L615'></a> 615         fb.<a href='../D/32508.html' title='Multiple defined in 8 places.'>setDot</a>(dot, bias);
+<a id='L616' name='L616'></a> 616     <em class='brace'>}</em>
+<a id='L617' name='L617'></a> 617 
+<a id='L618' name='L618'></a> 618     <em class='comment'>/**</em>
+<a id='L619' name='L619'></a> 619 <em class='comment'>     * NavigationFilter method, subclasses that wish finer control should</em>
+<a id='L620' name='L620'></a> 620 <em class='comment'>     * override this.</em>
+<a id='L621' name='L621'></a> 621 <em class='comment'>     */</em>
+<a id='L622' name='L622'></a> 622     <strong class='reserved'>void</strong> <a href='../R/23379.html' title='Multiple referred from 15 places.'>moveDot</a>(<a href='../S/3347.html#L51' title='Defined at 51 in src/javax/swing/text/NavigationFilter.java.'>NavigationFilter</a>.<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> dot,
+<a id='L623' name='L623'></a> 623                  <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a> bias) <em class='brace'>{</em>
+<a id='L624' name='L624'></a> 624         fb.<a href='../D/27808.html' title='Multiple defined in 8 places.'>moveDot</a>(dot, bias);
+<a id='L625' name='L625'></a> 625     <em class='brace'>}</em>
+<a id='L626' name='L626'></a> 626 
+<a id='L627' name='L627'></a> 627 
+<a id='L628' name='L628'></a> 628     <em class='comment'>/**</em>
+<a id='L629' name='L629'></a> 629 <em class='comment'>     * Returns the ReplaceHolder to track the replace of the specified</em>
+<a id='L630' name='L630'></a> 630 <em class='comment'>     * text.</em>
+<a id='L631' name='L631'></a> 631 <em class='comment'>     */</em>
+<a id='L632' name='L632'></a> 632     <a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a> <a href='../R/18676.html' title='Multiple referred from 2 places.'>getReplaceHolder</a>(<a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a>.<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L633' name='L633'></a> 633                                    <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>,
+<a id='L634' name='L634'></a> 634                                    <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> attrs) <em class='brace'>{</em>
+<a id='L635' name='L635'></a> 635         <strong class='reserved'>if</strong> (replaceHolder == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L636' name='L636'></a> 636             replaceHolder = <strong class='reserved'>new</strong> <a href='../S/3327.html#L647' title='Defined at 647 in src/javax/swing/text/DefaultFormatter.java.'>ReplaceHolder</a>();
+<a id='L637' name='L637'></a> 637         <em class='brace'>}</em>
+<a id='L638' name='L638'></a> 638         replaceHolder.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>(fb, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, attrs);
+<a id='L639' name='L639'></a> 639         <strong class='reserved'>return</strong> replaceHolder;
+<a id='L640' name='L640'></a> 640     <em class='brace'>}</em>
+<a id='L641' name='L641'></a> 641 
+<a id='L642' name='L642'></a> 642 
+<a id='L643' name='L643'></a> 643     <em class='comment'>/**</em>
+<a id='L644' name='L644'></a> 644 <em class='comment'>     * ReplaceHolder is used to track where insert/remove/replace is</em>
+<a id='L645' name='L645'></a> 645 <em class='comment'>     * going to happen.</em>
+<a id='L646' name='L646'></a> 646 <em class='comment'>     */</em>
+<a id='L647' name='L647'></a> 647     <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/6621.html' title='Multiple referred from 13 places.'>ReplaceHolder</a> <em class='brace'>{</em>
+<a id='L648' name='L648'></a> 648         <em class='comment'>/** The FilterBypass that was passed to the DocumentFilter method. */</em>
+<a id='L649' name='L649'></a> 649         <a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a>.<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb;
+<a id='L650' name='L650'></a> 650         <em class='comment'>/** Offset where the remove/insert is going to occur. */</em>
+<a id='L651' name='L651'></a> 651         <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L652' name='L652'></a> 652         <em class='comment'>/** Length of text to remove. */</em>
+<a id='L653' name='L653'></a> 653         <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L654' name='L654'></a> 654         <em class='comment'>/** The text to insert, may be null. */</em>
+<a id='L655' name='L655'></a> 655         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>;
+<a id='L656' name='L656'></a> 656         <em class='comment'>/** AttributeSet to attach to text, may be null. */</em>
+<a id='L657' name='L657'></a> 657         <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> attrs;
+<a id='L658' name='L658'></a> 658         <em class='comment'>/** The resulting value, this may never be set. */</em>
+<a id='L659' name='L659'></a> 659         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L660' name='L660'></a> 660         <em class='comment'>/** Position the cursor should be adjusted from.  If this is -1</em>
+<a id='L661' name='L661'></a> 661 <em class='comment'>         * the cursor position will be adjusted based on the direction of</em>
+<a id='L662' name='L662'></a> 662 <em class='comment'>         * the replace (-1: offset, 1: offset + text.length()), otherwise</em>
+<a id='L663' name='L663'></a> 663 <em class='comment'>         * the cursor position is adusted from this position.</em>
+<a id='L664' name='L664'></a> 664 <em class='comment'>         */</em>
+<a id='L665' name='L665'></a> 665         <strong class='reserved'>int</strong> cursorPosition;
+<a id='L666' name='L666'></a> 666 
+<a id='L667' name='L667'></a> 667         <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>(<a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a>.<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>,
+<a id='L668' name='L668'></a> 668                    <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> attrs) <em class='brace'>{</em>
+<a id='L669' name='L669'></a> 669             <strong class='reserved'>this</strong>.fb = fb;
+<a id='L670' name='L670'></a> 670             <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L671' name='L671'></a> 671             <strong class='reserved'>this</strong>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L672' name='L672'></a> 672             <strong class='reserved'>this</strong>.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> = <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>;
+<a id='L673' name='L673'></a> 673             <strong class='reserved'>this</strong>.attrs = attrs;
+<a id='L674' name='L674'></a> 674             <strong class='reserved'>this</strong>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <strong class='reserved'>null</strong>;
+<a id='L675' name='L675'></a> 675             cursorPosition = -1;
+<a id='L676' name='L676'></a> 676         <em class='brace'>}</em>
+<a id='L677' name='L677'></a> 677     <em class='brace'>}</em>
+<a id='L678' name='L678'></a> 678 
+<a id='L679' name='L679'></a> 679 
+<a id='L680' name='L680'></a> 680     <em class='comment'>/**</em>
+<a id='L681' name='L681'></a> 681 <em class='comment'>     * NavigationFilter implementation that calls back to methods with</em>
+<a id='L682' name='L682'></a> 682 <em class='comment'>     * same name in DefaultFormatter.</em>
+<a id='L683' name='L683'></a> 683 <em class='comment'>     */</em>
+<a id='L684' name='L684'></a> 684     <strong class='reserved'>private</strong> <strong class='reserved'>class</strong> <a href='../S/3327.html#L307' title='Referred from 307 in src/javax/swing/text/DefaultFormatter.java.'>DefaultNavigationFilter</a> <strong class='reserved'>extends</strong> <a href='../S/3347.html#L51' title='Defined at 51 in src/javax/swing/text/NavigationFilter.java.'>NavigationFilter</a>
+<a id='L685' name='L685'></a> 685                              <strong class='reserved'>implements</strong> <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> <em class='brace'>{</em>
+<a id='L686' name='L686'></a> 686         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27277.html' title='Multiple referred from 29 places.'>setDot</a>(<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> dot, <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a> bias) <em class='brace'>{</em>
+<a id='L687' name='L687'></a> 687             <a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> tc = <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L688' name='L688'></a> 688             <strong class='reserved'>if</strong> (tc.<a href='../S/3351.html#L4936' title='Defined at 4936 in src/javax/swing/text/JTextComponent.java.'>composedTextExists</a>()) <em class='brace'>{</em>
+<a id='L689' name='L689'></a> 689                 <em class='comment'>// bypass the filter</em>
+<a id='L690' name='L690'></a> 690                 fb.<a href='../D/32508.html' title='Multiple defined in 8 places.'>setDot</a>(dot, bias);
+<a id='L691' name='L691'></a> 691             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L692' name='L692'></a> 692                 <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../D/32508.html' title='Multiple defined in 8 places.'>setDot</a>(fb, dot, bias);
+<a id='L693' name='L693'></a> 693             <em class='brace'>}</em>
+<a id='L694' name='L694'></a> 694         <em class='brace'>}</em>
+<a id='L695' name='L695'></a> 695 
+<a id='L696' name='L696'></a> 696         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/23379.html' title='Multiple referred from 15 places.'>moveDot</a>(<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> dot, <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a> bias) <em class='brace'>{</em>
+<a id='L697' name='L697'></a> 697             <a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> tc = <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L698' name='L698'></a> 698             <strong class='reserved'>if</strong> (tc.<a href='../S/3351.html#L4936' title='Defined at 4936 in src/javax/swing/text/JTextComponent.java.'>composedTextExists</a>()) <em class='brace'>{</em>
+<a id='L699' name='L699'></a> 699                 <em class='comment'>// bypass the filter</em>
+<a id='L700' name='L700'></a> 700                 fb.<a href='../D/27808.html' title='Multiple defined in 8 places.'>moveDot</a>(dot, bias);
+<a id='L701' name='L701'></a> 701             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L702' name='L702'></a> 702                 <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../D/27808.html' title='Multiple defined in 8 places.'>moveDot</a>(fb, dot, bias);
+<a id='L703' name='L703'></a> 703             <em class='brace'>}</em>
+<a id='L704' name='L704'></a> 704         <em class='brace'>}</em>
+<a id='L705' name='L705'></a> 705 
+<a id='L706' name='L706'></a> 706         <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/17962.html' title='Multiple referred from 24 places.'>getNextVisualPositionFrom</a>(<a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <strong class='reserved'>int</strong> pos,
+<a id='L707' name='L707'></a> 707                                              <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a> bias,
+<a id='L708' name='L708'></a> 708                                              <strong class='reserved'>int</strong> direction,
+<a id='L709' name='L709'></a> 709                                              <a href='../S/3329.html#L49' title='Defined at 49 in src/javax/swing/text/Position.java.'>Position</a>.<a href='../S/3329.html#L66' title='Defined at 66 in src/javax/swing/text/Position.java.'>Bias</a>[] biasRet)
+<a id='L710' name='L710'></a> 710                                            <strong class='reserved'>throws</strong> <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L711' name='L711'></a> 711             <strong class='reserved'>if</strong> (<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../S/3351.html#L4936' title='Defined at 4936 in src/javax/swing/text/JTextComponent.java.'>composedTextExists</a>()) <em class='brace'>{</em>
+<a id='L712' name='L712'></a> 712                 <em class='comment'>// forward the call to the UI directly</em>
+<a id='L713' name='L713'></a> 713                 <strong class='reserved'>return</strong> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/23358.html' title='Multiple defined in 33 places.'>getUI</a>().<a href='../D/20952.html' title='Multiple defined in 14 places.'>getNextVisualPositionFrom</a>(
+<a id='L714' name='L714'></a> 714                         <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, pos, bias, direction, biasRet);
+<a id='L715' name='L715'></a> 715             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L716' name='L716'></a> 716                 <strong class='reserved'>return</strong> <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../D/20952.html' title='Multiple defined in 14 places.'>getNextVisualPositionFrom</a>(
+<a id='L717' name='L717'></a> 717                         <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, pos, bias, direction, biasRet);
+<a id='L718' name='L718'></a> 718             <em class='brace'>}</em>
+<a id='L719' name='L719'></a> 719         <em class='brace'>}</em>
+<a id='L720' name='L720'></a> 720     <em class='brace'>}</em>
+<a id='L721' name='L721'></a> 721 
+<a id='L722' name='L722'></a> 722 
+<a id='L723' name='L723'></a> 723     <em class='comment'>/**</em>
+<a id='L724' name='L724'></a> 724 <em class='comment'>     * DocumentFilter implementation that calls back to the replace</em>
+<a id='L725' name='L725'></a> 725 <em class='comment'>     * method of DefaultFormatter.</em>
+<a id='L726' name='L726'></a> 726 <em class='comment'>     */</em>
+<a id='L727' name='L727'></a> 727     <strong class='reserved'>private</strong> <strong class='reserved'>class</strong> <a href='../S/3327.html#L294' title='Referred from 294 in src/javax/swing/text/DefaultFormatter.java.'>DefaultDocumentFilter</a> <strong class='reserved'>extends</strong> <a href='../S/3353.html#L62' title='Defined at 62 in src/javax/swing/text/DocumentFilter.java.'>DocumentFilter</a> <strong class='reserved'>implements</strong>
+<a id='L728' name='L728'></a> 728                              <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> <em class='brace'>{</em>
+<a id='L729' name='L729'></a> 729         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25882.html' title='Multiple referred from 1115 places.'>remove</a>(<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <strong class='reserved'>throws</strong>
+<a id='L730' name='L730'></a> 730                               <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L731' name='L731'></a> 731             <a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> tc = <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L732' name='L732'></a> 732             <strong class='reserved'>if</strong> (tc.<a href='../S/3351.html#L4936' title='Defined at 4936 in src/javax/swing/text/JTextComponent.java.'>composedTextExists</a>()) <em class='brace'>{</em>
+<a id='L733' name='L733'></a> 733                 <em class='comment'>// bypass the filter</em>
+<a id='L734' name='L734'></a> 734                 fb.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L735' name='L735'></a> 735             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L736' name='L736'></a> 736                 <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>(fb, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);
+<a id='L737' name='L737'></a> 737             <em class='brace'>}</em>
+<a id='L738' name='L738'></a> 738         <em class='brace'>}</em>
+<a id='L739' name='L739'></a> 739 
+<a id='L740' name='L740'></a> 740         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20792.html' title='Multiple referred from 41 places.'>insertString</a>(<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L741' name='L741'></a> 741                                  <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>, <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>) <strong class='reserved'>throws</strong>
+<a id='L742' name='L742'></a> 742                               <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L743' name='L743'></a> 743             <a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> tc = <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L744' name='L744'></a> 744             <strong class='reserved'>if</strong> (tc.<a href='../S/3351.html#L4936' title='Defined at 4936 in src/javax/swing/text/JTextComponent.java.'>composedTextExists</a>() ||
+<a id='L745' name='L745'></a> 745                 <a href='../S/3270.html#L52' title='Defined at 52 in src/javax/swing/text/Utilities.java.'>Utilities</a>.<a href='../S/3270.html#L874' title='Defined at 874 in src/javax/swing/text/Utilities.java.'>isComposedTextAttributeDefined</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>)) <em class='brace'>{</em>
+<a id='L746' name='L746'></a> 746                 <em class='comment'>// bypass the filter</em>
+<a id='L747' name='L747'></a> 747                 fb.<a href='../D/24774.html' title='Multiple defined in 12 places.'>insertString</a>(<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>, <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>);
+<a id='L748' name='L748'></a> 748             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L749' name='L749'></a> 749                 <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>(fb, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, 0, <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>, <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>);
+<a id='L750' name='L750'></a> 750             <em class='brace'>}</em>
+<a id='L751' name='L751'></a> 751         <em class='brace'>}</em>
+<a id='L752' name='L752'></a> 752 
+<a id='L753' name='L753'></a> 753         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26140.html' title='Multiple referred from 310 places.'>replace</a>(<a href='../D/3245.html' title='Multiple defined in 2 places.'>FilterBypass</a> fb, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>,
+<a id='L754' name='L754'></a> 754                                  <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>) <strong class='reserved'>throws</strong>
+<a id='L755' name='L755'></a> 755                               <a href='../S/3359.html#L43' title='Defined at 43 in src/javax/swing/text/BadLocationException.java.'>BadLocationException</a> <em class='brace'>{</em>
+<a id='L756' name='L756'></a> 756             <a href='../S/3351.html#L293' title='Defined at 293 in src/javax/swing/text/JTextComponent.java.'>JTextComponent</a> tc = <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../S/3126.html#L1001' title='Defined at 1001 in src/javax/swing/JFormattedTextField.java.'>getFormattedTextField</a>();
+<a id='L757' name='L757'></a> 757             <strong class='reserved'>if</strong> (tc.<a href='../S/3351.html#L4936' title='Defined at 4936 in src/javax/swing/text/JTextComponent.java.'>composedTextExists</a>() ||
+<a id='L758' name='L758'></a> 758                 <a href='../S/3270.html#L52' title='Defined at 52 in src/javax/swing/text/Utilities.java.'>Utilities</a>.<a href='../S/3270.html#L874' title='Defined at 874 in src/javax/swing/text/Utilities.java.'>isComposedTextAttributeDefined</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>)) <em class='brace'>{</em>
+<a id='L759' name='L759'></a> 759                 <em class='comment'>// bypass the filter</em>
+<a id='L760' name='L760'></a> 760                 fb.<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>(<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>);
+<a id='L761' name='L761'></a> 761             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L762' name='L762'></a> 762                 <a href='../S/3327.html#L62' title='Defined at 62 in src/javax/swing/text/DefaultFormatter.java.'>DefaultFormatter</a>.<strong class='reserved'>this</strong>.<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>(fb, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>, <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>);
+<a id='L763' name='L763'></a> 763             <em class='brace'>}</em>
+<a id='L764' name='L764'></a> 764         <em class='brace'>}</em>
+<a id='L765' name='L765'></a> 765     <em class='brace'>}</em>
+<a id='L766' name='L766'></a> 766 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L124'>[^]</a><a href='#L753'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

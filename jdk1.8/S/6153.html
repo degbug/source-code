@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xalan/internal/xsltc/compiler/ValueOf.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7870.html'>xalan</a>/<a href='../files/7871.html'>internal</a>/<a href='../files/7878.html'>xsltc</a>/<a href='../files/7881.html'>compiler</a>/ValueOf.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L48'>[^]</a><a href='#L94'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L48' title='Defined at 48.'>display</a></li>
+<li><a href='#L55' title='Defined at 55.'>parseContents</a></li>
+<li><a href='#L67' title='Defined at 67.'>typeCheck</a></li>
+<li><a href='#L94' title='Defined at 94.'>translate</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2001-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: ValueOf.java,v 1.2.4.1 2005/09/05 09:30:04 pvedula Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>package</strong> com.sun.org.apache.xalan.internal.xsltc.compiler;
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.InstructionList;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.PUSH;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 <em class='comment'>/**</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * @author Jacek Ambroziak</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * @author Santiago Pericas-Geertsen</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * @author Morten Jorgensen</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> */</em>
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/8630.html' title='Multiple referred from 2 places.'>ValueOf</a> <strong class='reserved'>extends</strong> <a href='../D/4259.html' title='Multiple defined in 2 places.'>Instruction</a> <em class='brace'>{</em>
+<a id='L44' name='L44'></a>  44     <strong class='reserved'>private</strong> <a href='../D/3045.html' title='Multiple defined in 3 places.'>Expression</a> _select;
+<a id='L45' name='L45'></a>  45     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> _escaping = <strong class='reserved'>true</strong>;
+<a id='L46' name='L46'></a>  46     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> _isString = <strong class='reserved'>false</strong>;
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13332.html' title='Multiple referred from 4 places.'>display</a>(<strong class='reserved'>int</strong> <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>) <em class='brace'>{</em>
+<a id='L49' name='L49'></a>  49         <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>(<a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>);
+<a id='L50' name='L50'></a>  50         <a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("ValueOf");
+<a id='L51' name='L51'></a>  51         <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>(<a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a> + IndentIncrement);
+<a id='L52' name='L52'></a>  52         <a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("select " + _select.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L53' name='L53'></a>  53     <em class='brace'>}</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24531.html' title='Multiple referred from 12 places.'>parseContents</a>(<a href='../D/6629.html' title='Multiple defined in 9 places.'>Parser</a> parser) <em class='brace'>{</em>
+<a id='L56' name='L56'></a>  56         _select = parser.<a href='../D/29132.html' title='Multiple defined in 3 places.'>parseExpression</a>(<strong class='reserved'>this</strong>, "select", <strong class='reserved'>null</strong>);
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58         <em class='comment'>// make sure required attribute(s) have been set</em>
+<a id='L59' name='L59'></a>  59         <strong class='reserved'>if</strong> (_select.<a href='../S/6076.html#L347' title='Defined at 347 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>isDummy</a>()) <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60             <a href='../D/31088.html' title='Multiple defined in 17 places.'>reportError</a>(<strong class='reserved'>this</strong>, parser, <a href='../S/6100.html#L41' title='Defined at 41 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>ErrorMsg</a>.REQUIRED_ATTR_ERR, "select");
+<a id='L61' name='L61'></a>  61             <strong class='reserved'>return</strong>;
+<a id='L62' name='L62'></a>  62         <em class='brace'>}</em>
+<a id='L63' name='L63'></a>  63         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> = <a href='../D/17064.html' title='Multiple defined in 72 places.'>getAttribute</a>("disable-output-escaping");
+<a id='L64' name='L64'></a>  64         <strong class='reserved'>if</strong> ((<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> != <strong class='reserved'>null</strong>) &amp;&amp; (<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("yes"))) _escaping = <strong class='reserved'>false</strong>;
+<a id='L65' name='L65'></a>  65     <em class='brace'>}</em>
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>public</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../R/29573.html' title='Multiple referred from 123 places.'>typeCheck</a>(<a href='../D/8572.html' title='Multiple defined in 2 places.'>SymbolTable</a> stable) <strong class='reserved'>throws</strong> <a href='../S/6136.html#L32' title='Defined at 32 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/TypeCheckError.java.'>TypeCheckError</a> <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68         <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = _select.<a href='../D/35754.html' title='Multiple defined in 91 places.'>typeCheck</a>(stable);
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70         <em class='comment'>// Prefer to handle the value as a node; fall back to String, otherwise</em>
+<a id='L71' name='L71'></a>  71         <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != <strong class='reserved'>null</strong> &amp;&amp; !<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>.<a href='../D/24298.html' title='Multiple defined in 12 places.'>identicalTo</a>(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a>)) <em class='brace'>{</em>
+<a id='L72' name='L72'></a>  72             <em class='comment'>/***</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>             *** %HZ% Would like to treat result-tree fragments in the same</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>             *** %HZ% way as node sets for value-of, but that's running into</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>             *** %HZ% some snags.  Instead, they'll be converted to String</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>            if (type.identicalTo(Type.ResultTree)) {</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>                _select = new CastExpr(new CastExpr(_select, Type.NodeSet),</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>                                       Type.Node);</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>            } else</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>            ***/</em>
+<a id='L81' name='L81'></a>  81             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>.<a href='../D/24298.html' title='Multiple defined in 12 places.'>identicalTo</a>(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/4934.html#L61' title='Defined at 61 in src/com/sun/org/apache/xpath/internal/NodeSet.java.'>NodeSet</a>)) <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82                 _select = <strong class='reserved'>new</strong> <a href='../S/6169.html#L48' title='Defined at 48 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/CastExpr.java.'>CastExpr</a>(_select, <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a>);
+<a id='L83' name='L83'></a>  83             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L84' name='L84'></a>  84                 _isString = <strong class='reserved'>true</strong>;
+<a id='L85' name='L85'></a>  85                 <strong class='reserved'>if</strong> (!<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>.<a href='../D/24298.html' title='Multiple defined in 12 places.'>identicalTo</a>(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)) <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86                     _select = <strong class='reserved'>new</strong> <a href='../S/6169.html#L48' title='Defined at 48 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/CastExpr.java.'>CastExpr</a>(_select, <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>);
+<a id='L87' name='L87'></a>  87                 <em class='brace'>}</em>
+<a id='L88' name='L88'></a>  88                 _isString = <strong class='reserved'>true</strong>;
+<a id='L89' name='L89'></a>  89             <em class='brace'>}</em>
+<a id='L90' name='L90'></a>  90         <em class='brace'>}</em>
+<a id='L91' name='L91'></a>  91         <strong class='reserved'>return</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>;
+<a id='L92' name='L92'></a>  92     <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/29432.html' title='Multiple referred from 503 places.'>translate</a>(<a href='../S/6130.html#L50' title='Defined at 50 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ClassGenerator.java.'>ClassGenerator</a> classGen, <a href='../S/6132.html#L82' title='Defined at 82 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/MethodGenerator.java.'>MethodGenerator</a> methodGen) <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>final</strong> <a href='../S/4764.html#L78' title='Defined at 78 in src/com/sun/org/apache/bcel/internal/generic/ConstantPoolGen.java.'>ConstantPoolGen</a> cpg = classGen.<a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>();
+<a id='L96' name='L96'></a>  96         <strong class='reserved'>final</strong> <a href='../S/4621.html#L87' title='Defined at 87 in src/com/sun/org/apache/bcel/internal/generic/InstructionList.java.'>InstructionList</a> il = methodGen.<a href='../D/19776.html' title='Multiple defined in 7 places.'>getInstructionList</a>();
+<a id='L97' name='L97'></a>  97         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/32625.html' title='Multiple defined in 11 places.'>setEscaping</a> = cpg.<a href='../D/10875.html' title='Multiple defined in 2 places.'>addInterfaceMethodref</a>(OUTPUT_HANDLER,
+<a id='L98' name='L98'></a>  98                                                           "setEscaping","(Z)Z");
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100         <em class='comment'>// Turn off character escaping if so is wanted.</em>
+<a id='L101' name='L101'></a> 101         <strong class='reserved'>if</strong> (!_escaping) <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(methodGen.<a href='../D/26931.html' title='Multiple defined in 2 places.'>loadHandler</a>());
+<a id='L103' name='L103'></a> 103             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4719.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/PUSH.java.'>PUSH</a>(cpg,<strong class='reserved'>false</strong>));
+<a id='L104' name='L104'></a> 104             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4624.html#L73' title='Defined at 73 in src/com/sun/org/apache/bcel/internal/generic/INVOKEINTERFACE.java.'>INVOKEINTERFACE</a>(<a href='../D/32625.html' title='Multiple defined in 11 places.'>setEscaping</a>,2));
+<a id='L105' name='L105'></a> 105         <em class='brace'>}</em>
+<a id='L106' name='L106'></a> 106 
+<a id='L107' name='L107'></a> 107         <em class='comment'>// Translate the contents.  If the value is a string, use the</em>
+<a id='L108' name='L108'></a> 108         <em class='comment'>// translet.characters(String, TranslatOutputHandler) method.</em>
+<a id='L109' name='L109'></a> 109         <em class='comment'>// Otherwise, the value is a node, and the</em>
+<a id='L110' name='L110'></a> 110         <em class='comment'>// dom.characters(int node, TransletOutputHandler) method can dispatch</em>
+<a id='L111' name='L111'></a> 111         <em class='comment'>// the string value of the node to the output handler more efficiently.</em>
+<a id='L112' name='L112'></a> 112         <strong class='reserved'>if</strong> (_isString) <em class='brace'>{</em>
+<a id='L113' name='L113'></a> 113             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/12339.html' title='Multiple defined in 98 places.'>characters</a> = cpg.<a href='../D/10937.html' title='Multiple defined in 2 places.'>addMethodref</a>(TRANSLET_CLASS,
+<a id='L114' name='L114'></a> 114                                                     CHARACTERSW,
+<a id='L115' name='L115'></a> 115                                                     CHARACTERSW_SIG);
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(classGen.<a href='../D/26993.html' title='Multiple defined in 4 places.'>loadTranslet</a>());
+<a id='L118' name='L118'></a> 118             _select.<a href='../D/35598.html' title='Multiple defined in 116 places.'>translate</a>(classGen, methodGen);
+<a id='L119' name='L119'></a> 119             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(methodGen.<a href='../D/26931.html' title='Multiple defined in 2 places.'>loadHandler</a>());
+<a id='L120' name='L120'></a> 120             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4737.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKEVIRTUAL.java.'>INVOKEVIRTUAL</a>(<a href='../D/12339.html' title='Multiple defined in 98 places.'>characters</a>));
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/12339.html' title='Multiple defined in 98 places.'>characters</a> = cpg.<a href='../D/10875.html' title='Multiple defined in 2 places.'>addInterfaceMethodref</a>(DOM_INTF,
+<a id='L123' name='L123'></a> 123                                                              CHARACTERS,
+<a id='L124' name='L124'></a> 124                                                              CHARACTERS_SIG);
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(methodGen.<a href='../D/26912.html' title='Multiple defined in 4 places.'>loadDOM</a>());
+<a id='L127' name='L127'></a> 127             _select.<a href='../D/35598.html' title='Multiple defined in 116 places.'>translate</a>(classGen, methodGen);
+<a id='L128' name='L128'></a> 128             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(methodGen.<a href='../D/26931.html' title='Multiple defined in 2 places.'>loadHandler</a>());
+<a id='L129' name='L129'></a> 129             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4624.html#L73' title='Defined at 73 in src/com/sun/org/apache/bcel/internal/generic/INVOKEINTERFACE.java.'>INVOKEINTERFACE</a>(<a href='../D/12339.html' title='Multiple defined in 98 places.'>characters</a>, 3));
+<a id='L130' name='L130'></a> 130         <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132         <em class='comment'>// Restore character escaping setting to whatever it was.</em>
+<a id='L133' name='L133'></a> 133         <strong class='reserved'>if</strong> (!_escaping) <em class='brace'>{</em>
+<a id='L134' name='L134'></a> 134             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(methodGen.<a href='../D/26931.html' title='Multiple defined in 2 places.'>loadHandler</a>());
+<a id='L135' name='L135'></a> 135             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/4676.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/SWAP.java.'>SWAP</a>);
+<a id='L136' name='L136'></a> 136             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4624.html#L73' title='Defined at 73 in src/com/sun/org/apache/bcel/internal/generic/INVOKEINTERFACE.java.'>INVOKEINTERFACE</a>(<a href='../D/32625.html' title='Multiple defined in 11 places.'>setEscaping</a>,2));
+<a id='L137' name='L137'></a> 137             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/6521.html' title='Multiple defined in 4 places.'>POP</a>);
+<a id='L138' name='L138'></a> 138         <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139     <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L48'>[^]</a><a href='#L94'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

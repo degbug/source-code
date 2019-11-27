@@ -1,0 +1,321 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/io/ByteArrayOutputStream.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8002.html'>io</a>/ByteArrayOutputStream.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L90'>[^]</a><a href='#L280'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L90' title='Defined at 90.'>ensureCapacity</a></li>
+<li><a href='#L110' title='Defined at 110.'>grow</a></li>
+<li><a href='#L121' title='Defined at 121.'>hugeCapacity</a></li>
+<li><a href='#L134' title='Defined at 134.'>write</a></li>
+<li><a href='#L148' title='Defined at 148.'>write</a></li>
+<li><a href='#L166' title='Defined at 166.'>writeTo</a></li>
+<li><a href='#L178' title='Defined at 178.'>reset</a></li>
+<li><a href='#L190' title='Defined at 190.'>toByteArray</a></li>
+<li><a href='#L201' title='Defined at 201.'>size</a></li>
+<li><a href='#L220' title='Defined at 220.'>toString</a></li>
+<li><a href='#L242' title='Defined at 242.'>toString</a></li>
+<li><a href='#L271' title='Defined at 271.'>toString</a></li>
+<li><a href='#L280' title='Defined at 280.'>close</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.io;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Arrays;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <em class='comment'>/**</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * This class implements an output stream in which the data is</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * written into a byte array. The buffer automatically grows as data</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * is written to it.</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * The data can be retrieved using &lt;code&gt;toByteArray()&lt;/code&gt; and</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * &lt;code&gt;toString()&lt;/code&gt;.</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * &lt;p&gt;</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * Closing a &lt;tt&gt;ByteArrayOutputStream&lt;/tt&gt; has no effect. The methods in</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * this class can be called after the stream has been closed without</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * generating an &lt;tt&gt;IOException&lt;/tt&gt;.</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * @author  Arthur van Hoff</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * @since   JDK1.0</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> */</em>
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/954.html' title='Multiple referred from 95 places.'>ByteArrayOutputStream</a> <strong class='reserved'>extends</strong> <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <em class='brace'>{</em>
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47     <em class='comment'>/**</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'>     * The buffer where data is stored.</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'>     */</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>protected</strong> <strong class='reserved'>byte</strong> <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[];
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52     <em class='comment'>/**</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'>     * The number of valid bytes in the buffer.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>     */</em>
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <em class='comment'>/**</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * Creates a new byte array output stream. The buffer capacity is</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     * initially 32 bytes, though its size increases if necessary.</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     */</em>
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>public</strong> ByteArrayOutputStream() <em class='brace'>{</em>
+<a id='L62' name='L62'></a>  62         <strong class='reserved'>this</strong>(32);
+<a id='L63' name='L63'></a>  63     <em class='brace'>}</em>
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65     <em class='comment'>/**</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * Creates a new byte array output stream, with a buffer capacity of</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * the specified size, in bytes.</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     *</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     * @param   size   the initial size.</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * @exception  IllegalArgumentException if size is negative.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     */</em>
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>public</strong> ByteArrayOutputStream(<strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>) <em class='brace'>{</em>
+<a id='L73' name='L73'></a>  73         <strong class='reserved'>if</strong> (<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> &lt; 0) <em class='brace'>{</em>
+<a id='L74' name='L74'></a>  74             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Negative initial size: "
+<a id='L75' name='L75'></a>  75                                                + <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>);
+<a id='L76' name='L76'></a>  76         <em class='brace'>}</em>
+<a id='L77' name='L77'></a>  77         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>];
+<a id='L78' name='L78'></a>  78     <em class='brace'>}</em>
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80     <em class='comment'>/**</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * Increases the capacity if necessary to ensure that it can hold</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * at least the number of elements specified by the minimum</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * capacity argument.</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     *</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * @param minCapacity the desired minimum capacity</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * @throws OutOfMemoryError if {@code minCapacity &lt; 0}.  This is</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * interpreted as a request for the unsatisfiably large capacity</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     */</em>
+<a id='L90' name='L90'></a>  90     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/13907.html' title='Multiple referred from 31 places.'>ensureCapacity</a>(<strong class='reserved'>int</strong> minCapacity) <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91         <em class='comment'>// overflow-conscious code</em>
+<a id='L92' name='L92'></a>  92         <strong class='reserved'>if</strong> (minCapacity - <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0)
+<a id='L93' name='L93'></a>  93             <a href='../D/23921.html' title='Multiple defined in 19 places.'>grow</a>(minCapacity);
+<a id='L94' name='L94'></a>  94     <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <em class='comment'>/**</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * The maximum size of array to allocate.</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * Some VMs reserve some header words in an array.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * Attempts to allocate larger arrays may result in</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * OutOfMemoryError: Requested array size exceeds VM limit</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     */</em>
+<a id='L102' name='L102'></a> 102     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> MAX_ARRAY_SIZE = <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.MAX_VALUE - 8;
+<a id='L103' name='L103'></a> 103 
+<a id='L104' name='L104'></a> 104     <em class='comment'>/**</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * Increases the capacity to ensure that it can hold at least the</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * number of elements specified by the minimum capacity argument.</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     *</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * @param minCapacity the desired minimum capacity</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     */</em>
+<a id='L110' name='L110'></a> 110     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/20041.html' title='Multiple referred from 53 places.'>grow</a>(<strong class='reserved'>int</strong> minCapacity) <em class='brace'>{</em>
+<a id='L111' name='L111'></a> 111         <em class='comment'>// overflow-conscious code</em>
+<a id='L112' name='L112'></a> 112         <strong class='reserved'>int</strong> oldCapacity = <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L113' name='L113'></a> 113         <strong class='reserved'>int</strong> newCapacity = oldCapacity &lt;&lt; 1;
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>if</strong> (newCapacity - minCapacity &lt; 0)
+<a id='L115' name='L115'></a> 115             newCapacity = minCapacity;
+<a id='L116' name='L116'></a> 116         <strong class='reserved'>if</strong> (newCapacity - MAX_ARRAY_SIZE &gt; 0)
+<a id='L117' name='L117'></a> 117             newCapacity = <a href='../D/24282.html' title='Multiple defined in 5 places.'>hugeCapacity</a>(minCapacity);
+<a id='L118' name='L118'></a> 118         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a> = <a href='../S/1150.html#L71' title='Defined at 71 in src/java/util/Arrays.java.'>Arrays</a>.<a href='../D/13512.html' title='Multiple defined in 12 places.'>copyOf</a>(<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, newCapacity);
+<a id='L119' name='L119'></a> 119     <em class='brace'>}</em>
+<a id='L120' name='L120'></a> 120 
+<a id='L121' name='L121'></a> 121     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/20352.html' title='Multiple referred from 5 places.'>hugeCapacity</a>(<strong class='reserved'>int</strong> minCapacity) <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>if</strong> (minCapacity &lt; 0) <em class='comment'>// overflow</em>
+<a id='L123' name='L123'></a> 123             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1597.html#L41' title='Defined at 41 in src/java/lang/OutOfMemoryError.java.'>OutOfMemoryError</a>();
+<a id='L124' name='L124'></a> 124         <strong class='reserved'>return</strong> (minCapacity &gt; MAX_ARRAY_SIZE) ?
+<a id='L125' name='L125'></a> 125             <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.MAX_VALUE :
+<a id='L126' name='L126'></a> 126             MAX_ARRAY_SIZE;
+<a id='L127' name='L127'></a> 127     <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <em class='comment'>/**</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * Writes the specified byte to this byte array output stream.</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * @param   b   the byte to be written.</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     */</em>
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<strong class='reserved'>int</strong> b) <em class='brace'>{</em>
+<a id='L135' name='L135'></a> 135         <a href='../D/15596.html' title='Multiple defined in 17 places.'>ensureCapacity</a>(<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> + 1);
+<a id='L136' name='L136'></a> 136         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>] = (<strong class='reserved'>byte</strong>) b;
+<a id='L137' name='L137'></a> 137         <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> += 1;
+<a id='L138' name='L138'></a> 138     <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140     <em class='comment'>/**</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * Writes &lt;code&gt;len&lt;/code&gt; bytes from the specified byte array</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * starting at offset &lt;code&gt;off&lt;/code&gt; to this byte array output stream.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     *</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * @param   b     the data.</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * @param   off   the start offset in the data.</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * @param   len   the number of bytes to write.</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     */</em>
+<a id='L148' name='L148'></a> 148     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<strong class='reserved'>byte</strong> b[], <strong class='reserved'>int</strong> off, <strong class='reserved'>int</strong> len) <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149         <strong class='reserved'>if</strong> ((off &lt; 0) || (off &gt; b.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) || (len &lt; 0) ||
+<a id='L150' name='L150'></a> 150             ((off + len) - b.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0)) <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>();
+<a id='L152' name='L152'></a> 152         <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153         <a href='../D/15596.html' title='Multiple defined in 17 places.'>ensureCapacity</a>(<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> + len);
+<a id='L154' name='L154'></a> 154         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(b, off, <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>, len);
+<a id='L155' name='L155'></a> 155         <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> += len;
+<a id='L156' name='L156'></a> 156     <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158     <em class='comment'>/**</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * Writes the complete contents of this byte array output stream to</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * the specified output stream argument, as if by calling the output</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * stream's write method using &lt;code&gt;out.write(buf, 0, count)&lt;/code&gt;.</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     *</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * @param      out   the output stream to which to write the data.</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * @exception  IOException  if an I/O error occurs.</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     */</em>
+<a id='L166' name='L166'></a> 166     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/30736.html' title='Multiple referred from 8 places.'>writeTo</a>(<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167         <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, 0, <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>);
+<a id='L168' name='L168'></a> 168     <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169 
+<a id='L170' name='L170'></a> 170     <em class='comment'>/**</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * Resets the &lt;code&gt;count&lt;/code&gt; field of this byte array output</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * stream to zero, so that all currently accumulated output in the</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * output stream is discarded. The output stream can be used again,</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * reusing the already allocated buffer space.</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     *</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * @see     java.io.ByteArrayInputStream#count</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     */</em>
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>() <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179         <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = 0;
+<a id='L180' name='L180'></a> 180     <em class='brace'>}</em>
+<a id='L181' name='L181'></a> 181 
+<a id='L182' name='L182'></a> 182     <em class='comment'>/**</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * Creates a newly allocated byte array. Its size is the current</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * size of this output stream and the valid contents of the buffer</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * have been copied into it.</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     *</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * @return  the current contents of this output stream, as a byte array.</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     * @see     java.io.ByteArrayOutputStream#size()</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     */</em>
+<a id='L190' name='L190'></a> 190     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>byte</strong> <a href='../R/29224.html' title='Multiple referred from 64 places.'>toByteArray</a>()[] <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191         <strong class='reserved'>return</strong> <a href='../S/1150.html#L71' title='Defined at 71 in src/java/util/Arrays.java.'>Arrays</a>.<a href='../D/13512.html' title='Multiple defined in 12 places.'>copyOf</a>(<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>);
+<a id='L192' name='L192'></a> 192     <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194     <em class='comment'>/**</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * Returns the current size of the buffer.</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     *</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * @return  the value of the &lt;code&gt;count&lt;/code&gt; field, which is the number</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     *          of valid bytes in this output stream.</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     * @see     java.io.ByteArrayOutputStream#count</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     */</em>
+<a id='L201' name='L201'></a> 201     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>int</strong> <a href='../R/28639.html' title='Multiple referred from 5617 places.'>size</a>() <em class='brace'>{</em>
+<a id='L202' name='L202'></a> 202         <strong class='reserved'>return</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>;
+<a id='L203' name='L203'></a> 203     <em class='brace'>}</em>
+<a id='L204' name='L204'></a> 204 
+<a id='L205' name='L205'></a> 205     <em class='comment'>/**</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * Converts the buffer's contents into a string decoding bytes using the</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     * platform's default character set. The length of the new &lt;tt&gt;String&lt;/tt&gt;</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     * is a function of the character set, and hence may not be equal to the</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * size of the buffer.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     *</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * &lt;p&gt; This method always replaces malformed-input and unmappable-character</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * sequences with the default replacement string for the platform's</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * default character set. The {@linkplain java.nio.charset.CharsetDecoder}</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * class should be used when more control over the decoding process is</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * required.</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     *</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * @return String decoded from the buffer's contents.</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * @since  JDK1.1</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     */</em>
+<a id='L220' name='L220'></a> 220     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
+<a id='L221' name='L221'></a> 221         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>(<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, 0, <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>);
+<a id='L222' name='L222'></a> 222     <em class='brace'>}</em>
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224     <em class='comment'>/**</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * Converts the buffer's contents into a string by decoding the bytes using</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * the named {@link java.nio.charset.Charset charset}. The length of the new</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * &lt;tt&gt;String&lt;/tt&gt; is a function of the charset, and hence may not be equal</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * to the length of the byte array.</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     *</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * &lt;p&gt; This method always replaces malformed-input and unmappable-character</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * sequences with this charset's default replacement string. The {@link</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * java.nio.charset.CharsetDecoder} class should be used when more control</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * over the decoding process is required.</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     *</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * @param      charsetName  the name of a supported</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     *             {@link java.nio.charset.Charset charset}</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     * @return     String decoded from the buffer's contents.</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     * @exception  UnsupportedEncodingException</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     *             If the named charset is not supported</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * @since      JDK1.1</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     */</em>
+<a id='L242' name='L242'></a> 242     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/12346.html' title='Multiple defined in 2 places.'>charsetName</a>)
+<a id='L243' name='L243'></a> 243         <strong class='reserved'>throws</strong> <a href='../S/1372.html#L33' title='Defined at 33 in src/java/io/UnsupportedEncodingException.java.'>UnsupportedEncodingException</a>
+<a id='L244' name='L244'></a> 244     <em class='brace'>{</em>
+<a id='L245' name='L245'></a> 245         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>(<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, 0, <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>, <a href='../D/12346.html' title='Multiple defined in 2 places.'>charsetName</a>);
+<a id='L246' name='L246'></a> 246     <em class='brace'>}</em>
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248     <em class='comment'>/**</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * Creates a newly allocated string. Its size is the current size of</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * the output stream and the valid contents of the buffer have been</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     * copied into it. Each character &lt;i&gt;c&lt;/i&gt; in the resulting string is</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * constructed from the corresponding element &lt;i&gt;b&lt;/i&gt; in the byte</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     * array such that:</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * &lt;blockquote&gt;&lt;pre&gt;</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     *     c == (char)(((hibyte &amp;amp; 0xff) &amp;lt;&amp;lt; 8) | (b &amp;amp; 0xff))</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * &lt;/pre&gt;&lt;/blockquote&gt;</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     *</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     * @deprecated This method does not properly convert bytes into characters.</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     * As of JDK&amp;nbsp;1.1, the preferred way to do this is via the</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * &lt;code&gt;toString(String enc)&lt;/code&gt; method, which takes an encoding-name</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     * argument, or the &lt;code&gt;toString()&lt;/code&gt; method, which uses the</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * platform's default character encoding.</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     *</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * @param      hibyte    the high byte of each resulting Unicode character.</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * @return     the current contents of the output stream, as a string.</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * @see        java.io.ByteArrayOutputStream#size()</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * @see        java.io.ByteArrayOutputStream#toString(String)</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     * @see        java.io.ByteArrayOutputStream#toString()</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     */</em>
+<a id='L270' name='L270'></a> 270     @<a href='../D/2383.html' title='Multiple defined in 2 places.'>Deprecated</a>
+<a id='L271' name='L271'></a> 271     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>(<strong class='reserved'>int</strong> hibyte) <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>(<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, hibyte, 0, <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>);
+<a id='L273' name='L273'></a> 273     <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274 
+<a id='L275' name='L275'></a> 275     <em class='comment'>/**</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * Closing a &lt;tt&gt;ByteArrayOutputStream&lt;/tt&gt; has no effect. The methods in</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * this class can be called after the stream has been closed without</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * generating an &lt;tt&gt;IOException&lt;/tt&gt;.</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     */</em>
+<a id='L280' name='L280'></a> 280     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L281' name='L281'></a> 281     <em class='brace'>}</em>
+<a id='L282' name='L282'></a> 282 
+<a id='L283' name='L283'></a> 283 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L90'>[^]</a><a href='#L280'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7892.html'>impl</a>/<a href='../files/7902.html'>xpath</a>/<a href='../files/7903.html'>regex</a>/ParserForXMLSchema.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L43'>[^]</a><a href='#L420'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L43' title='Defined at 43.'>processCaret</a></li>
+<li><a href='#L47' title='Defined at 47.'>processDollar</a></li>
+<li><a href='#L51' title='Defined at 51.'>processLookahead</a></li>
+<li><a href='#L54' title='Defined at 54.'>processNegativelookahead</a></li>
+<li><a href='#L57' title='Defined at 57.'>processLookbehind</a></li>
+<li><a href='#L60' title='Defined at 60.'>processNegativelookbehind</a></li>
+<li><a href='#L63' title='Defined at 63.'>processBacksolidus_A</a></li>
+<li><a href='#L66' title='Defined at 66.'>processBacksolidus_Z</a></li>
+<li><a href='#L69' title='Defined at 69.'>processBacksolidus_z</a></li>
+<li><a href='#L72' title='Defined at 72.'>processBacksolidus_b</a></li>
+<li><a href='#L75' title='Defined at 75.'>processBacksolidus_B</a></li>
+<li><a href='#L78' title='Defined at 78.'>processBacksolidus_lt</a></li>
+<li><a href='#L81' title='Defined at 81.'>processBacksolidus_gt</a></li>
+<li><a href='#L84' title='Defined at 84.'>processStar</a></li>
+<li><a href='#L88' title='Defined at 88.'>processPlus</a></li>
+<li><a href='#L93' title='Defined at 93.'>processQuestion</a></li>
+<li><a href='#L101' title='Defined at 101.'>checkQuestion</a></li>
+<li><a href='#L104' title='Defined at 104.'>processParen</a></li>
+<li><a href='#L111' title='Defined at 111.'>processParen2</a></li>
+<li><a href='#L114' title='Defined at 114.'>processCondition</a></li>
+<li><a href='#L117' title='Defined at 117.'>processModifiers</a></li>
+<li><a href='#L120' title='Defined at 120.'>processIndependent</a></li>
+<li><a href='#L123' title='Defined at 123.'>processBacksolidus_c</a></li>
+<li><a href='#L127' title='Defined at 127.'>processBacksolidus_C</a></li>
+<li><a href='#L131' title='Defined at 131.'>processBacksolidus_i</a></li>
+<li><a href='#L135' title='Defined at 135.'>processBacksolidus_I</a></li>
+<li><a href='#L139' title='Defined at 139.'>processBacksolidus_g</a></li>
+<li><a href='#L142' title='Defined at 142.'>processBacksolidus_X</a></li>
+<li><a href='#L145' title='Defined at 145.'>processBackreference</a></li>
+<li><a href='#L149' title='Defined at 149.'>processCIinCharacterClass</a></li>
+<li><a href='#L172' title='Defined at 172.'>parseCharacterClass</a></li>
+<li><a href='#L314' title='Defined at 314.'>parseSetOperations</a></li>
+<li><a href='#L318' title='Defined at 318.'>getTokenForShorthand</a></li>
+<li><a href='#L344' title='Defined at 344.'>decodeEscaped</a></li>
+<li><a href='#L374' title='Defined at 374.'>getRange</a></li>
+<li><a href='#L414' title='Defined at 414.'>setupRange</a></li>
+<li><a href='#L420' title='Defined at 420.'>setupRange</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 1999-2005 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 
+<a id='L21' name='L21'></a>  21 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.xpath.regex;
+<a id='L22' name='L22'></a>  22 
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>import</strong> java.util.Hashtable;
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>import</strong> java.util.Locale;
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <em class='comment'>/**</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> * A regular expression parser for the XML Schema.</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> *</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * @xerces.internal</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * @author TAMURA Kent &amp;lt;kent@trl.ibm.co.jp&amp;gt;</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * @version $Id: ParserForXMLSchema.java,v 1.9 2010-11-12 18:09:45 joehw Exp $</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> */</em>
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>class</strong> <a href='../R/6050.html' title='Multiple referred from 11 places.'>ParserForXMLSchema</a> <strong class='reserved'>extends</strong> <a href='../S/5015.html#L36' title='Defined at 36 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>RegexParser</a> <em class='brace'>{</em>
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36     <strong class='reserved'>public</strong> ParserForXMLSchema() <em class='brace'>{</em>
+<a id='L37' name='L37'></a>  37         <em class='comment'>//this.setLocale(Locale.getDefault());</em>
+<a id='L38' name='L38'></a>  38     <em class='brace'>}</em>
+<a id='L39' name='L39'></a>  39     <strong class='reserved'>public</strong> ParserForXMLSchema(<a href='../S/1034.html#L484' title='Defined at 484 in src/java/util/Locale.java.'>Locale</a> <a href='../D/27010.html' title='Multiple defined in 2 places.'>locale</a>) <em class='brace'>{</em>
+<a id='L40' name='L40'></a>  40         <strong class='reserved'>super</strong>(<a href='../D/27010.html' title='Multiple defined in 2 places.'>locale</a>);
+<a id='L41' name='L41'></a>  41     <em class='brace'>}</em>
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L658' title='Referred from 658 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processCaret</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L44' name='L44'></a>  44         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L45' name='L45'></a>  45         <strong class='reserved'>return</strong> <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13671.html' title='Multiple defined in 2 places.'>createChar</a>('^');
+<a id='L46' name='L46'></a>  46     <em class='brace'>}</em>
+<a id='L47' name='L47'></a>  47     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L659' title='Referred from 659 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processDollar</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L48' name='L48'></a>  48         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L49' name='L49'></a>  49         <strong class='reserved'>return</strong> <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13671.html' title='Multiple defined in 2 places.'>createChar</a>('$');
+<a id='L50' name='L50'></a>  50      <em class='brace'>}</em>
+<a id='L51' name='L51'></a>  51     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L660' title='Referred from 660 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processLookahead</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L52' name='L52'></a>  52         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L53' name='L53'></a>  53     <em class='brace'>}</em>
+<a id='L54' name='L54'></a>  54     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L661' title='Referred from 661 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processNegativelookahead</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L55' name='L55'></a>  55         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L56' name='L56'></a>  56     <em class='brace'>}</em>
+<a id='L57' name='L57'></a>  57     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L662' title='Referred from 662 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processLookbehind</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L59' name='L59'></a>  59     <em class='brace'>}</em>
+<a id='L60' name='L60'></a>  60     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L663' title='Referred from 663 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processNegativelookbehind</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L62' name='L62'></a>  62     <em class='brace'>}</em>
+<a id='L63' name='L63'></a>  63     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L671' title='Referred from 671 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_A</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L64' name='L64'></a>  64         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L65' name='L65'></a>  65     <em class='brace'>}</em>
+<a id='L66' name='L66'></a>  66     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L672' title='Referred from 672 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_Z</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L68' name='L68'></a>  68     <em class='brace'>}</em>
+<a id='L69' name='L69'></a>  69     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L673' title='Referred from 673 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_z</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L71' name='L71'></a>  71     <em class='brace'>}</em>
+<a id='L72' name='L72'></a>  72     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L674' title='Referred from 674 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_b</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L73' name='L73'></a>  73         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L74' name='L74'></a>  74     <em class='brace'>}</em>
+<a id='L75' name='L75'></a>  75     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L675' title='Referred from 675 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_B</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L76' name='L76'></a>  76         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L77' name='L77'></a>  77     <em class='brace'>}</em>
+<a id='L78' name='L78'></a>  78     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L676' title='Referred from 676 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_lt</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L79' name='L79'></a>  79         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L80' name='L80'></a>  80     <em class='brace'>}</em>
+<a id='L81' name='L81'></a>  81     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L677' title='Referred from 677 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_gt</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L83' name='L83'></a>  83     <em class='brace'>}</em>
+<a id='L84' name='L84'></a>  84     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L684' title='Referred from 684 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processStar</a>(<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> tok) <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L85' name='L85'></a>  85         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L86' name='L86'></a>  86         <strong class='reserved'>return</strong> <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13697.html' title='Multiple defined in 2 places.'>createClosure</a>(tok);
+<a id='L87' name='L87'></a>  87     <em class='brace'>}</em>
+<a id='L88' name='L88'></a>  88     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L685' title='Referred from 685 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processPlus</a>(<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> tok) <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L89' name='L89'></a>  89         <em class='comment'>// X+ -&gt; XX*</em>
+<a id='L90' name='L90'></a>  90         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L91' name='L91'></a>  91         <strong class='reserved'>return</strong> <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13718.html' title='Multiple defined in 2 places.'>createConcat</a>(tok, <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13697.html' title='Multiple defined in 2 places.'>createClosure</a>(tok));
+<a id='L92' name='L92'></a>  92     <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L686' title='Referred from 686 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processQuestion</a>(<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> tok) <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94         <em class='comment'>// X? -&gt; X|</em>
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L96' name='L96'></a>  96         <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> par = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14290.html' title='Multiple defined in 6 places.'>createUnion</a>();
+<a id='L97' name='L97'></a>  97         par.<a href='../D/10700.html' title='Multiple defined in 5 places.'>addChild</a>(tok);
+<a id='L98' name='L98'></a>  98         par.<a href='../D/10700.html' title='Multiple defined in 5 places.'>addChild</a>(<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../S/5016.html#L146' title='Defined at 146 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/Token.java.'>createEmpty</a>());
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>return</strong> par;
+<a id='L100' name='L100'></a> 100     <em class='brace'>}</em>
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>boolean</strong> <a href='../S/5015.html#L735' title='Referred from 735 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>checkQuestion</a>(<strong class='reserved'>int</strong> off) <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L103' name='L103'></a> 103     <em class='brace'>}</em>
+<a id='L104' name='L104'></a> 104     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L762' title='Referred from 762 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processParen</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L105' name='L105'></a> 105         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L106' name='L106'></a> 106         <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../S/5016.html#L122' title='Defined at 122 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/Token.java.'>createParen</a>(<strong class='reserved'>this</strong>.<a href='../S/5015.html#L312' title='Defined at 312 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>parseRegex</a>(), 0);
+<a id='L107' name='L107'></a> 107         <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>() != T_RPAREN)  <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.factor.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-1);
+<a id='L108' name='L108'></a> 108         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();                            <em class='comment'>// Skips ')'</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>return</strong> tok;
+<a id='L110' name='L110'></a> 110     <em class='brace'>}</em>
+<a id='L111' name='L111'></a> 111     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L763' title='Referred from 763 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processParen2</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L112' name='L112'></a> 112         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L113' name='L113'></a> 113     <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L764' title='Referred from 764 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processCondition</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L116' name='L116'></a> 116     <em class='brace'>}</em>
+<a id='L117' name='L117'></a> 117     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L765' title='Referred from 765 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processModifiers</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L119' name='L119'></a> 119     <em class='brace'>}</em>
+<a id='L120' name='L120'></a> 120     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L766' title='Referred from 766 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processIndependent</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L121' name='L121'></a> 121         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L122' name='L122'></a> 122     <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L803' title='Referred from 803 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_c</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L124' name='L124'></a> 124         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L125' name='L125'></a> 125         <strong class='reserved'>return</strong> <strong class='reserved'>this</strong>.<a href='../D/23182.html' title='Multiple defined in 2 places.'>getTokenForShorthand</a>('c');
+<a id='L126' name='L126'></a> 126     <em class='brace'>}</em>
+<a id='L127' name='L127'></a> 127     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L804' title='Referred from 804 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_C</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L129' name='L129'></a> 129         <strong class='reserved'>return</strong> <strong class='reserved'>this</strong>.<a href='../D/23182.html' title='Multiple defined in 2 places.'>getTokenForShorthand</a>('C');
+<a id='L130' name='L130'></a> 130     <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L805' title='Referred from 805 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_i</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L133' name='L133'></a> 133         <strong class='reserved'>return</strong> <strong class='reserved'>this</strong>.<a href='../D/23182.html' title='Multiple defined in 2 places.'>getTokenForShorthand</a>('i');
+<a id='L134' name='L134'></a> 134     <em class='brace'>}</em>
+<a id='L135' name='L135'></a> 135     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L806' title='Referred from 806 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_I</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>return</strong> <strong class='reserved'>this</strong>.<a href='../D/23182.html' title='Multiple defined in 2 places.'>getTokenForShorthand</a>('I');
+<a id='L138' name='L138'></a> 138     <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L807' title='Referred from 807 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_g</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140         <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);
+<a id='L141' name='L141'></a> 141     <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L808' title='Referred from 808 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_X</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);
+<a id='L144' name='L144'></a> 144     <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../S/5015.html#L811' title='Referred from 811 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBackreference</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-4);
+<a id='L147' name='L147'></a> 147     <em class='brace'>}</em>
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149     <strong class='reserved'>int</strong> <a href='../R/25108.html' title='Multiple referred from 2 places.'>processCIinCharacterClass</a>(<a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> tok, <strong class='reserved'>int</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150         tok.<a href='../D/27654.html' title='Multiple defined in 2 places.'>mergeRanges</a>(<strong class='reserved'>this</strong>.<a href='../D/23182.html' title='Multiple defined in 2 places.'>getTokenForShorthand</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>));
+<a id='L151' name='L151'></a> 151         <strong class='reserved'>return</strong> -1;
+<a id='L152' name='L152'></a> 152     <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155     <em class='comment'>/**</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * Parses a character-class-expression, not a character-class-escape.</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     *</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * c-c-expression   ::= '[' c-group ']'</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * c-group          ::= positive-c-group | negative-c-group | c-c-subtraction</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * positive-c-group ::= (c-range | c-c-escape)+</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * negative-c-group ::= '^' positive-c-group</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * c-c-subtraction  ::= (positive-c-group | negative-c-group) subtraction</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * subtraction      ::= '-' c-c-expression</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * c-range          ::= single-range | from-to-range</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * single-range     ::= multi-c-escape | category-c-escape | block-c-escape | &amp;lt;any XML char&amp;gt;</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * cc-normal-c      ::= &amp;lt;any character except [, ], \&amp;gt;</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * from-to-range    ::= cc-normal-c '-' cc-normal-c</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     *</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * @param useNrage Ignored.</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * @return This returns no NrageToken.</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     */</em>
+<a id='L172' name='L172'></a> 172     <strong class='reserved'>protected</strong> <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> <a href='../R/24522.html' title='Multiple referred from 5 places.'>parseCharacterClass</a>(<strong class='reserved'>boolean</strong> useNrange) <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L173' name='L173'></a> 173         <strong class='reserved'>this</strong>.<a href='../D/32261.html' title='Multiple defined in 4 places.'>setContext</a>(S_INBRACKETS);
+<a id='L174' name='L174'></a> 174         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();                            <em class='comment'>// '['</em>
+<a id='L175' name='L175'></a> 175         <strong class='reserved'>boolean</strong> nrange = <strong class='reserved'>false</strong>;
+<a id='L176' name='L176'></a> 176         <strong class='reserved'>boolean</strong> wasDecoded = <strong class='reserved'>false</strong>;                     <em class='comment'>// used to detect if the last - was escaped.</em>
+<a id='L177' name='L177'></a> 177         <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> base = <strong class='reserved'>null</strong>;
+<a id='L178' name='L178'></a> 178         <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> tok;
+<a id='L179' name='L179'></a> 179         <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>() == T_CHAR &amp;&amp; <strong class='reserved'>this</strong>.chardata == '^') <em class='brace'>{</em>
+<a id='L180' name='L180'></a> 180             nrange = <strong class='reserved'>true</strong>;
+<a id='L181' name='L181'></a> 181             <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();                        <em class='comment'>// '^'</em>
+<a id='L182' name='L182'></a> 182             base = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L183' name='L183'></a> 183             base.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(0, <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.UTF16_MAX);
+<a id='L184' name='L184'></a> 184             tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L185' name='L185'></a> 185         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L186' name='L186'></a> 186             tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L187' name='L187'></a> 187         <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188         <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>;
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>boolean</strong> firstloop = <strong class='reserved'>true</strong>;
+<a id='L190' name='L190'></a> 190         <strong class='reserved'>while</strong> ((<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>()) != T_EOF) <em class='brace'>{</em> <em class='comment'>// Don't use 'cotinue' for this loop.</em>
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192                 wasDecoded = <strong class='reserved'>false</strong>;
+<a id='L193' name='L193'></a> 193             <em class='comment'>// single-range | from-to-range | subtraction</em>
+<a id='L194' name='L194'></a> 194             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_CHAR &amp;&amp; <strong class='reserved'>this</strong>.chardata == ']' &amp;&amp; !firstloop) <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195                 <strong class='reserved'>if</strong> (nrange) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196                     base.<a href='../D/35023.html' title='Multiple defined in 2 places.'>subtractRanges</a>(tok);
+<a id='L197' name='L197'></a> 197                     tok = base;
+<a id='L198' name='L198'></a> 198                 <em class='brace'>}</em>
+<a id='L199' name='L199'></a> 199                 <strong class='reserved'>break</strong>;
+<a id='L200' name='L200'></a> 200             <em class='brace'>}</em>
+<a id='L201' name='L201'></a> 201             <strong class='reserved'>int</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <strong class='reserved'>this</strong>.chardata;
+<a id='L202' name='L202'></a> 202             <strong class='reserved'>boolean</strong> <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a> = <strong class='reserved'>false</strong>;
+<a id='L203' name='L203'></a> 203             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_BACKSOLIDUS) <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204                 <strong class='reserved'>switch</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
+<a id='L205' name='L205'></a> 205                   <strong class='reserved'>case</strong> 'd':  <strong class='reserved'>case</strong> 'D':
+<a id='L206' name='L206'></a> 206                   <strong class='reserved'>case</strong> 'w':  <strong class='reserved'>case</strong> 'W':
+<a id='L207' name='L207'></a> 207                   <strong class='reserved'>case</strong> 's':  <strong class='reserved'>case</strong> 'S':
+<a id='L208' name='L208'></a> 208                     tok.<a href='../D/27654.html' title='Multiple defined in 2 places.'>mergeRanges</a>(<strong class='reserved'>this</strong>.<a href='../D/23182.html' title='Multiple defined in 2 places.'>getTokenForShorthand</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>));
+<a id='L209' name='L209'></a> 209                     <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a> = <strong class='reserved'>true</strong>;
+<a id='L210' name='L210'></a> 210                     <strong class='reserved'>break</strong>;
+<a id='L211' name='L211'></a> 211 
+<a id='L212' name='L212'></a> 212                   <strong class='reserved'>case</strong> 'i':  <strong class='reserved'>case</strong> 'I':
+<a id='L213' name='L213'></a> 213                   <strong class='reserved'>case</strong> 'c':  <strong class='reserved'>case</strong> 'C':
+<a id='L214' name='L214'></a> 214                     <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <strong class='reserved'>this</strong>.<a href='../D/29775.html' title='Multiple defined in 2 places.'>processCIinCharacterClass</a>(tok, <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L215' name='L215'></a> 215                     <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> &lt; 0)  <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a> = <strong class='reserved'>true</strong>;
+<a id='L216' name='L216'></a> 216                     <strong class='reserved'>break</strong>;
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218                   <strong class='reserved'>case</strong> 'p':
+<a id='L219' name='L219'></a> 219                   <strong class='reserved'>case</strong> 'P':
+<a id='L220' name='L220'></a> 220                     <strong class='reserved'>int</strong> pstart = <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L221' name='L221'></a> 221                     <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> tok2 = <strong class='reserved'>this</strong>.<a href='../S/5015.html#L848' title='Defined at 848 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>processBacksolidus_pP</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L222' name='L222'></a> 222                     <strong class='reserved'>if</strong> (tok2 == <strong class='reserved'>null</strong>)  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.atom.5", pstart);
+<a id='L223' name='L223'></a> 223                     tok.<a href='../D/27654.html' title='Multiple defined in 2 places.'>mergeRanges</a>(tok2);
+<a id='L224' name='L224'></a> 224                     <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a> = <strong class='reserved'>true</strong>;
+<a id='L225' name='L225'></a> 225                     <strong class='reserved'>break</strong>;
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227                  <strong class='reserved'>case</strong> '-':
+<a id='L228' name='L228'></a> 228                         <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <strong class='reserved'>this</strong>.<a href='../D/14537.html' title='Multiple defined in 2 places.'>decodeEscaped</a>();
+<a id='L229' name='L229'></a> 229                         wasDecoded = <strong class='reserved'>true</strong>;
+<a id='L230' name='L230'></a> 230                         <strong class='reserved'>break</strong>;
+<a id='L231' name='L231'></a> 231 
+<a id='L232' name='L232'></a> 232                   <strong class='reserved'>default</strong>:
+<a id='L233' name='L233'></a> 233                     <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <strong class='reserved'>this</strong>.<a href='../D/14537.html' title='Multiple defined in 2 places.'>decodeEscaped</a>();
+<a id='L234' name='L234'></a> 234                 <em class='brace'>}</em> <em class='comment'>// \ + c</em>
+<a id='L235' name='L235'></a> 235             <em class='brace'>}</em> <em class='comment'>// backsolidus</em>
+<a id='L236' name='L236'></a> 236             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_XMLSCHEMA_CC_SUBTRACTION &amp;&amp; !firstloop) <em class='brace'>{</em>
+<a id='L237' name='L237'></a> 237                                                 <em class='comment'>// Subraction</em>
+<a id='L238' name='L238'></a> 238                 <strong class='reserved'>if</strong> (nrange) <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239                     base.<a href='../D/35023.html' title='Multiple defined in 2 places.'>subtractRanges</a>(tok);
+<a id='L240' name='L240'></a> 240                     tok = base;
+<a id='L241' name='L241'></a> 241                 <em class='brace'>}</em>
+<a id='L242' name='L242'></a> 242                 <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> range2 = <strong class='reserved'>this</strong>.<a href='../D/29106.html' title='Multiple defined in 2 places.'>parseCharacterClass</a>(<strong class='reserved'>false</strong>);
+<a id='L243' name='L243'></a> 243                 tok.<a href='../D/35023.html' title='Multiple defined in 2 places.'>subtractRanges</a>(range2);
+<a id='L244' name='L244'></a> 244                 <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>() != T_CHAR || <strong class='reserved'>this</strong>.chardata != ']')
+<a id='L245' name='L245'></a> 245                     <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.5", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L246' name='L246'></a> 246                 <strong class='reserved'>break</strong>;                          <em class='comment'>// Exit this loop</em>
+<a id='L247' name='L247'></a> 247             <em class='brace'>}</em>
+<a id='L248' name='L248'></a> 248             <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L249' name='L249'></a> 249             <strong class='reserved'>if</strong> (!<a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>) <em class='brace'>{</em>                         <em class='comment'>// if not shorthands...</em>
+<a id='L250' name='L250'></a> 250                 <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_CHAR) <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251                     <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '[')  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.6", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);
+<a id='L252' name='L252'></a> 252                     <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == ']')  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.7", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);
+<a id='L253' name='L253'></a> 253                     <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '-' &amp;&amp; <strong class='reserved'>this</strong>.chardata != ']' &amp;&amp; !firstloop)  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.8", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);   <em class='comment'>// if regex = '[-]' then invalid</em>
+<a id='L254' name='L254'></a> 254                 <em class='brace'>}</em>
+<a id='L255' name='L255'></a> 255                 <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>() != T_CHAR || <strong class='reserved'>this</strong>.chardata != '-' || <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '-' &amp;&amp; firstloop) <em class='brace'>{</em> <em class='comment'>// Here is no '-'.</em>
+<a id='L256' name='L256'></a> 256                     <strong class='reserved'>if</strong> (!<strong class='reserved'>this</strong>.<a href='../D/26230.html' title='Multiple defined in 16 places.'>isSet</a>(<a href='../S/5017.html#L491' title='Defined at 491 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegularExpression.java.'>RegularExpression</a>.IGNORE_CASE) || <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> &gt; 0xffff) <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257                         tok.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L258' name='L258'></a> 258                     <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259                     <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L260' name='L260'></a> 260                         <a href='../S/5015.html#L1208' title='Defined at 1208 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>addCaseInsensitiveChar</a>(tok, <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L261' name='L261'></a> 261                     <em class='brace'>}</em>
+<a id='L262' name='L262'></a> 262                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>                        <em class='comment'>// Found '-'</em>
+<a id='L263' name='L263'></a> 263                                                 <em class='comment'>// Is this '-' is a from-to token??</em>
+<a id='L264' name='L264'></a> 264                     <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>(); <em class='comment'>// Skips '-'</em>
+<a id='L265' name='L265'></a> 265                     <strong class='reserved'>if</strong> ((<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>()) == T_EOF)  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.2", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L266' name='L266'></a> 266                                                 <em class='comment'>// c '-' ']' -&gt; '-' is a single-range.</em>
+<a id='L267' name='L267'></a> 267                     <strong class='reserved'>if</strong>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_CHAR &amp;&amp; <strong class='reserved'>this</strong>.chardata == ']') <em class='brace'>{</em>                                <em class='comment'>// if - is at the last position of the group</em>
+<a id='L268' name='L268'></a> 268                         <strong class='reserved'>if</strong> (!<strong class='reserved'>this</strong>.<a href='../D/26230.html' title='Multiple defined in 16 places.'>isSet</a>(<a href='../S/5017.html#L491' title='Defined at 491 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegularExpression.java.'>RegularExpression</a>.IGNORE_CASE) || <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> &gt; 0xffff) <em class='brace'>{</em>
+<a id='L269' name='L269'></a> 269                             tok.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L270' name='L270'></a> 270                         <em class='brace'>}</em>
+<a id='L271' name='L271'></a> 271                         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272                             <a href='../S/5015.html#L1208' title='Defined at 1208 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>addCaseInsensitiveChar</a>(tok, <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L273' name='L273'></a> 273                         <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274                         tok.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>('-', '-');
+<a id='L275' name='L275'></a> 275                     <em class='brace'>}</em>
+<a id='L276' name='L276'></a> 276                     <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_XMLSCHEMA_CC_SUBTRACTION) <em class='brace'>{</em>
+<a id='L277' name='L277'></a> 277                         <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.8", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-1);
+<a id='L278' name='L278'></a> 278                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L279' name='L279'></a> 279 
+<a id='L280' name='L280'></a> 280                         <strong class='reserved'>int</strong> rangeend = <strong class='reserved'>this</strong>.chardata;
+<a id='L281' name='L281'></a> 281                         <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_CHAR) <em class='brace'>{</em>
+<a id='L282' name='L282'></a> 282                             <strong class='reserved'>if</strong> (rangeend == '[')  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.6", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-1);
+<a id='L283' name='L283'></a> 283                             <strong class='reserved'>if</strong> (rangeend == ']')  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.7", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-1);
+<a id='L284' name='L284'></a> 284                             <strong class='reserved'>if</strong> (rangeend == '-')  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.8", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);
+<a id='L285' name='L285'></a> 285                         <em class='brace'>}</em>
+<a id='L286' name='L286'></a> 286                         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == T_BACKSOLIDUS)
+<a id='L287' name='L287'></a> 287                             rangeend = <strong class='reserved'>this</strong>.<a href='../D/14537.html' title='Multiple defined in 2 places.'>decodeEscaped</a>();
+<a id='L288' name='L288'></a> 288                         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290                         <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> &gt; rangeend)  <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.ope.3", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-1);
+<a id='L291' name='L291'></a> 291                         <strong class='reserved'>if</strong> (!<strong class='reserved'>this</strong>.<a href='../D/26230.html' title='Multiple defined in 16 places.'>isSet</a>(<a href='../S/5017.html#L491' title='Defined at 491 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegularExpression.java.'>RegularExpression</a>.IGNORE_CASE) ||
+<a id='L292' name='L292'></a> 292                                 (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> &gt; 0xffff &amp;&amp; rangeend &gt; 0xffff)) <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293                             tok.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, rangeend);
+<a id='L294' name='L294'></a> 294                         <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295                         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296                             <a href='../S/5015.html#L1220' title='Defined at 1220 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>addCaseInsensitiveCharRange</a>(tok, <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, rangeend);
+<a id='L297' name='L297'></a> 297                         <em class='brace'>}</em>
+<a id='L298' name='L298'></a> 298                     <em class='brace'>}</em>
+<a id='L299' name='L299'></a> 299                 <em class='brace'>}</em>
+<a id='L300' name='L300'></a> 300             <em class='brace'>}</em>
+<a id='L301' name='L301'></a> 301             firstloop = <strong class='reserved'>false</strong>;
+<a id='L302' name='L302'></a> 302         <em class='brace'>}</em>
+<a id='L303' name='L303'></a> 303         <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>() == T_EOF)
+<a id='L304' name='L304'></a> 304             <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.cc.2", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L305' name='L305'></a> 305         tok.<a href='../D/34691.html' title='Multiple defined in 2 places.'>sortRanges</a>();
+<a id='L306' name='L306'></a> 306         tok.<a href='../D/13027.html' title='Multiple defined in 2 places.'>compactRanges</a>();
+<a id='L307' name='L307'></a> 307         <em class='comment'>//tok.dumpRanges();</em>
+<a id='L308' name='L308'></a> 308         <strong class='reserved'>this</strong>.<a href='../D/32261.html' title='Multiple defined in 4 places.'>setContext</a>(S_NORMAL);
+<a id='L309' name='L309'></a> 309         <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();                    <em class='comment'>// Skips ']'</em>
+<a id='L310' name='L310'></a> 310 
+<a id='L311' name='L311'></a> 311         <strong class='reserved'>return</strong> tok;
+<a id='L312' name='L312'></a> 312     <em class='brace'>}</em>
+<a id='L313' name='L313'></a> 313 
+<a id='L314' name='L314'></a> 314     <strong class='reserved'>protected</strong> <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> <a href='../S/5015.html#L780' title='Referred from 780 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>parseSetOperations</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L315' name='L315'></a> 315         <strong class='reserved'>throw</strong> <strong class='reserved'>this</strong>.<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L316' name='L316'></a> 316     <em class='brace'>}</em>
+<a id='L317' name='L317'></a> 317 
+<a id='L318' name='L318'></a> 318     <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../R/19524.html' title='Multiple referred from 8 places.'>getTokenForShorthand</a>(<strong class='reserved'>int</strong> ch) <em class='brace'>{</em>
+<a id='L319' name='L319'></a> 319         <strong class='reserved'>switch</strong> (ch) <em class='brace'>{</em>
+<a id='L320' name='L320'></a> 320           <strong class='reserved'>case</strong> 'd':
+<a id='L321' name='L321'></a> 321             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isDigit", <strong class='reserved'>true</strong>);
+<a id='L322' name='L322'></a> 322           <strong class='reserved'>case</strong> 'D':
+<a id='L323' name='L323'></a> 323             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isDigit", <strong class='reserved'>false</strong>);
+<a id='L324' name='L324'></a> 324           <strong class='reserved'>case</strong> 'w':
+<a id='L325' name='L325'></a> 325             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isWord", <strong class='reserved'>true</strong>);
+<a id='L326' name='L326'></a> 326           <strong class='reserved'>case</strong> 'W':
+<a id='L327' name='L327'></a> 327             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isWord", <strong class='reserved'>false</strong>);
+<a id='L328' name='L328'></a> 328           <strong class='reserved'>case</strong> 's':
+<a id='L329' name='L329'></a> 329             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isSpace", <strong class='reserved'>true</strong>);
+<a id='L330' name='L330'></a> 330           <strong class='reserved'>case</strong> 'S':
+<a id='L331' name='L331'></a> 331             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isSpace", <strong class='reserved'>false</strong>);
+<a id='L332' name='L332'></a> 332           <strong class='reserved'>case</strong> 'c':
+<a id='L333' name='L333'></a> 333             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isNameChar", <strong class='reserved'>true</strong>);
+<a id='L334' name='L334'></a> 334           <strong class='reserved'>case</strong> 'C':
+<a id='L335' name='L335'></a> 335             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isNameChar", <strong class='reserved'>false</strong>);
+<a id='L336' name='L336'></a> 336           <strong class='reserved'>case</strong> 'i':
+<a id='L337' name='L337'></a> 337             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isInitialNameChar", <strong class='reserved'>true</strong>);
+<a id='L338' name='L338'></a> 338           <strong class='reserved'>case</strong> 'I':
+<a id='L339' name='L339'></a> 339             <strong class='reserved'>return</strong> <a href='../S/5018.html#L34' title='Defined at 34 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/ParserForXMLSchema.java.'>ParserForXMLSchema</a>.<a href='../D/21841.html' title='Multiple defined in 4 places.'>getRange</a>("xml:isInitialNameChar", <strong class='reserved'>false</strong>);
+<a id='L340' name='L340'></a> 340           <strong class='reserved'>default</strong>:
+<a id='L341' name='L341'></a> 341             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>("Internal Error: shorthands: \\u"+<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(ch, 16));
+<a id='L342' name='L342'></a> 342         <em class='brace'>}</em>
+<a id='L343' name='L343'></a> 343     <em class='brace'>}</em>
+<a id='L344' name='L344'></a> 344     <strong class='reserved'>int</strong> <a href='../R/12958.html' title='Multiple referred from 7 places.'>decodeEscaped</a>() <strong class='reserved'>throws</strong> <a href='../D/6624.html' title='Multiple defined in 3 places.'>ParseException</a> <em class='brace'>{</em>
+<a id='L345' name='L345'></a> 345         <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>() != T_BACKSOLIDUS)  <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.next.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-1);
+<a id='L346' name='L346'></a> 346         <strong class='reserved'>int</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <strong class='reserved'>this</strong>.chardata;
+<a id='L347' name='L347'></a> 347         <strong class='reserved'>switch</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
+<a id='L348' name='L348'></a> 348           <strong class='reserved'>case</strong> 'n':  <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = '\n';  <strong class='reserved'>break</strong>; <em class='comment'>// LINE FEED U+000A</em>
+<a id='L349' name='L349'></a> 349           <strong class='reserved'>case</strong> 'r':  <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = '\r';  <strong class='reserved'>break</strong>; <em class='comment'>// CRRIAGE RETURN U+000D</em>
+<a id='L350' name='L350'></a> 350           <strong class='reserved'>case</strong> 't':  <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = '\t';  <strong class='reserved'>break</strong>; <em class='comment'>// HORIZONTAL TABULATION U+0009</em>
+<a id='L351' name='L351'></a> 351           <strong class='reserved'>case</strong> '\\':
+<a id='L352' name='L352'></a> 352           <strong class='reserved'>case</strong> '|':
+<a id='L353' name='L353'></a> 353           <strong class='reserved'>case</strong> '.':
+<a id='L354' name='L354'></a> 354           <strong class='reserved'>case</strong> '^':
+<a id='L355' name='L355'></a> 355           <strong class='reserved'>case</strong> '-':
+<a id='L356' name='L356'></a> 356           <strong class='reserved'>case</strong> '?':
+<a id='L357' name='L357'></a> 357           <strong class='reserved'>case</strong> '*':
+<a id='L358' name='L358'></a> 358           <strong class='reserved'>case</strong> '+':
+<a id='L359' name='L359'></a> 359           <strong class='reserved'>case</strong> '{':
+<a id='L360' name='L360'></a> 360           <strong class='reserved'>case</strong> '}':
+<a id='L361' name='L361'></a> 361           <strong class='reserved'>case</strong> '(':
+<a id='L362' name='L362'></a> 362           <strong class='reserved'>case</strong> ')':
+<a id='L363' name='L363'></a> 363           <strong class='reserved'>case</strong> '[':
+<a id='L364' name='L364'></a> 364           <strong class='reserved'>case</strong> ']':
+<a id='L365' name='L365'></a> 365             <strong class='reserved'>break</strong>; <em class='comment'>// return actucal char</em>
+<a id='L366' name='L366'></a> 366           <strong class='reserved'>default</strong>:
+<a id='L367' name='L367'></a> 367             <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>("parser.process.1", <strong class='reserved'>this</strong>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>-2);
+<a id='L368' name='L368'></a> 368         <em class='brace'>}</em>
+<a id='L369' name='L369'></a> 369         <strong class='reserved'>return</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>;
+<a id='L370' name='L370'></a> 370     <em class='brace'>}</em>
+<a id='L371' name='L371'></a> 371 
+<a id='L372' name='L372'></a> 372     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> ranges = <strong class='reserved'>null</strong>;
+<a id='L373' name='L373'></a> 373     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> ranges2 = <strong class='reserved'>null</strong>;
+<a id='L374' name='L374'></a> 374     <strong class='reserved'>static</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>protected</strong> <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> <a href='../R/18593.html' title='Multiple referred from 27 places.'>getRange</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <strong class='reserved'>boolean</strong> positive) <em class='brace'>{</em>
+<a id='L375' name='L375'></a> 375         <strong class='reserved'>if</strong> (ranges == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L376' name='L376'></a> 376             ranges = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L377' name='L377'></a> 377             ranges2 = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L378' name='L378'></a> 378 
+<a id='L379' name='L379'></a> 379             <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L380' name='L380'></a> 380             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, SPACES);
+<a id='L381' name='L381'></a> 381             ranges.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isSpace", tok);
+<a id='L382' name='L382'></a> 382             ranges2.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isSpace", <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13119.html' title='Multiple defined in 2 places.'>complementRanges</a>(tok));
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384             tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L385' name='L385'></a> 385             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, DIGITS);
+<a id='L386' name='L386'></a> 386             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, DIGITS_INT);
+<a id='L387' name='L387'></a> 387             ranges.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isDigit", tok);
+<a id='L388' name='L388'></a> 388             ranges2.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isDigit", <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13119.html' title='Multiple defined in 2 places.'>complementRanges</a>(tok));
+<a id='L389' name='L389'></a> 389 
+<a id='L390' name='L390'></a> 390             tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L391' name='L391'></a> 391             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, LETTERS);
+<a id='L392' name='L392'></a> 392             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, LETTERS_INT);
+<a id='L393' name='L393'></a> 393             tok.<a href='../D/27654.html' title='Multiple defined in 2 places.'>mergeRanges</a>((<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>)ranges.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>("xml:isDigit"));
+<a id='L394' name='L394'></a> 394             ranges.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isWord", tok);
+<a id='L395' name='L395'></a> 395             ranges2.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isWord", <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13119.html' title='Multiple defined in 2 places.'>complementRanges</a>(tok));
+<a id='L396' name='L396'></a> 396 
+<a id='L397' name='L397'></a> 397             tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L398' name='L398'></a> 398             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, NAMECHARS);
+<a id='L399' name='L399'></a> 399             ranges.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isNameChar", tok);
+<a id='L400' name='L400'></a> 400             ranges2.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isNameChar", <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13119.html' title='Multiple defined in 2 places.'>complementRanges</a>(tok));
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402             tok = <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/14141.html' title='Multiple defined in 4 places.'>createRange</a>();
+<a id='L403' name='L403'></a> 403             <a href='../D/34424.html' title='Multiple defined in 2 places.'>setupRange</a>(tok, LETTERS);
+<a id='L404' name='L404'></a> 404             tok.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>('_', '_');
+<a id='L405' name='L405'></a> 405             tok.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(':', ':');
+<a id='L406' name='L406'></a> 406             ranges.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isInitialNameChar", tok);
+<a id='L407' name='L407'></a> 407             ranges2.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("xml:isInitialNameChar", <a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a>.<a href='../D/13119.html' title='Multiple defined in 2 places.'>complementRanges</a>(tok));
+<a id='L408' name='L408'></a> 408         <em class='brace'>}</em>
+<a id='L409' name='L409'></a> 409         <a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a> tok = positive ? (<a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a>)ranges.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>)
+<a id='L410' name='L410'></a> 410             : (<a href='../S/5011.html#L29' title='Defined at 29 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RangeToken.java.'>RangeToken</a>)ranges2.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L411' name='L411'></a> 411         <strong class='reserved'>return</strong> tok;
+<a id='L412' name='L412'></a> 412     <em class='brace'>}</em>
+<a id='L413' name='L413'></a> 413 
+<a id='L414' name='L414'></a> 414     <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/28485.html' title='Multiple referred from 7 places.'>setupRange</a>(<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../D/30095.html' title='Multiple defined in 38 places.'>range</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> src) <em class='brace'>{</em>
+<a id='L415' name='L415'></a> 415         <strong class='reserved'>int</strong> len = src.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>();
+<a id='L416' name='L416'></a> 416         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0;  i &lt; len;  i += 2)
+<a id='L417' name='L417'></a> 417             <a href='../D/30095.html' title='Multiple defined in 38 places.'>range</a>.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(src.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i), src.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i+1));
+<a id='L418' name='L418'></a> 418     <em class='brace'>}</em>
+<a id='L419' name='L419'></a> 419 
+<a id='L420' name='L420'></a> 420     <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/28485.html' title='Multiple referred from 7 places.'>setupRange</a>(<a href='../D/9022.html' title='Multiple defined in 2 places.'>Token</a> <a href='../D/30095.html' title='Multiple defined in 38 places.'>range</a>, <strong class='reserved'>int</strong>[] src) <em class='brace'>{</em>
+<a id='L421' name='L421'></a> 421         <strong class='reserved'>int</strong> len = src.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L422' name='L422'></a> 422         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0;  i &lt; len;  i += 2)
+<a id='L423' name='L423'></a> 423             <a href='../D/30095.html' title='Multiple defined in 38 places.'>range</a>.<a href='../D/11024.html' title='Multiple defined in 5 places.'>addRange</a>(src[i], src[i+1]);
+<a id='L424' name='L424'></a> 424     <em class='brace'>}</em>
+<a id='L425' name='L425'></a> 425 
+<a id='L426' name='L426'></a> 426     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> SPACES = "\t\n\r\r  ";
+<a id='L427' name='L427'></a> 427     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAMECHARS =
+<a id='L428' name='L428'></a> 428         "\u002d\u002e\u0030\u003a\u0041\u005a\u005f\u005f\u0061\u007a\u00b7\u00b7\u00c0\u00d6"
+<a id='L429' name='L429'></a> 429         +"\u00d8\u00f6\u00f8\u0131\u0134\u013e\u0141\u0148\u014a\u017e\u0180\u01c3\u01cd\u01f0"
+<a id='L430' name='L430'></a> 430         +"\u01f4\u01f5\u01fa\u0217\u0250\u02a8\u02bb\u02c1\u02d0\u02d1\u0300\u0345\u0360\u0361"
+<a id='L431' name='L431'></a> 431         +"\u0386\u038a\u038c\u038c\u038e\u03a1\u03a3\u03ce\u03d0\u03d6\u03da\u03da\u03dc\u03dc"
+<a id='L432' name='L432'></a> 432         +"\u03de\u03de\u03e0\u03e0\u03e2\u03f3\u0401\u040c\u040e\u044f\u0451\u045c\u045e\u0481"
+<a id='L433' name='L433'></a> 433         +"\u0483\u0486\u0490\u04c4\u04c7\u04c8\u04cb\u04cc\u04d0\u04eb\u04ee\u04f5\u04f8\u04f9"
+<a id='L434' name='L434'></a> 434         +"\u0531\u0556\u0559\u0559\u0561\u0586\u0591\u05a1\u05a3\u05b9\u05bb\u05bd\u05bf\u05bf"
+<a id='L435' name='L435'></a> 435         +"\u05c1\u05c2\u05c4\u05c4\u05d0\u05ea\u05f0\u05f2\u0621\u063a\u0640\u0652\u0660\u0669"
+<a id='L436' name='L436'></a> 436         +"\u0670\u06b7\u06ba\u06be\u06c0\u06ce\u06d0\u06d3\u06d5\u06e8\u06ea\u06ed\u06f0\u06f9"
+<a id='L437' name='L437'></a> 437         +"\u0901\u0903\u0905\u0939\u093c\u094d\u0951\u0954\u0958\u0963\u0966\u096f\u0981\u0983"
+<a id='L438' name='L438'></a> 438         +"\u0985\u098c\u098f\u0990\u0993\u09a8\u09aa\u09b0\u09b2\u09b2\u09b6\u09b9\u09bc\u09bc"
+<a id='L439' name='L439'></a> 439         +"\u09be\u09c4\u09c7\u09c8\u09cb\u09cd\u09d7\u09d7\u09dc\u09dd\u09df\u09e3\u09e6\u09f1"
+<a id='L440' name='L440'></a> 440         +"\u0a02\u0a02\u0a05\u0a0a\u0a0f\u0a10\u0a13\u0a28\u0a2a\u0a30\u0a32\u0a33\u0a35\u0a36"
+<a id='L441' name='L441'></a> 441         +"\u0a38\u0a39\u0a3c\u0a3c\u0a3e\u0a42\u0a47\u0a48\u0a4b\u0a4d\u0a59\u0a5c\u0a5e\u0a5e"
+<a id='L442' name='L442'></a> 442         +"\u0a66\u0a74\u0a81\u0a83\u0a85\u0a8b\u0a8d\u0a8d\u0a8f\u0a91\u0a93\u0aa8\u0aaa\u0ab0"
+<a id='L443' name='L443'></a> 443         +"\u0ab2\u0ab3\u0ab5\u0ab9\u0abc\u0ac5\u0ac7\u0ac9\u0acb\u0acd\u0ae0\u0ae0\u0ae6\u0aef"
+<a id='L444' name='L444'></a> 444         +"\u0b01\u0b03\u0b05\u0b0c\u0b0f\u0b10\u0b13\u0b28\u0b2a\u0b30\u0b32\u0b33\u0b36\u0b39"
+<a id='L445' name='L445'></a> 445         +"\u0b3c\u0b43\u0b47\u0b48\u0b4b\u0b4d\u0b56\u0b57\u0b5c\u0b5d\u0b5f\u0b61\u0b66\u0b6f"
+<a id='L446' name='L446'></a> 446         +"\u0b82\u0b83\u0b85\u0b8a\u0b8e\u0b90\u0b92\u0b95\u0b99\u0b9a\u0b9c\u0b9c\u0b9e\u0b9f"
+<a id='L447' name='L447'></a> 447         +"\u0ba3\u0ba4\u0ba8\u0baa\u0bae\u0bb5\u0bb7\u0bb9\u0bbe\u0bc2\u0bc6\u0bc8\u0bca\u0bcd"
+<a id='L448' name='L448'></a> 448         +"\u0bd7\u0bd7\u0be7\u0bef\u0c01\u0c03\u0c05\u0c0c\u0c0e\u0c10\u0c12\u0c28\u0c2a\u0c33"
+<a id='L449' name='L449'></a> 449         +"\u0c35\u0c39\u0c3e\u0c44\u0c46\u0c48\u0c4a\u0c4d\u0c55\u0c56\u0c60\u0c61\u0c66\u0c6f"
+<a id='L450' name='L450'></a> 450         +"\u0c82\u0c83\u0c85\u0c8c\u0c8e\u0c90\u0c92\u0ca8\u0caa\u0cb3\u0cb5\u0cb9\u0cbe\u0cc4"
+<a id='L451' name='L451'></a> 451         +"\u0cc6\u0cc8\u0cca\u0ccd\u0cd5\u0cd6\u0cde\u0cde\u0ce0\u0ce1\u0ce6\u0cef\u0d02\u0d03"
+<a id='L452' name='L452'></a> 452         +"\u0d05\u0d0c\u0d0e\u0d10\u0d12\u0d28\u0d2a\u0d39\u0d3e\u0d43\u0d46\u0d48\u0d4a\u0d4d"
+<a id='L453' name='L453'></a> 453         +"\u0d57\u0d57\u0d60\u0d61\u0d66\u0d6f\u0e01\u0e2e\u0e30\u0e3a\u0e40\u0e4e\u0e50\u0e59"
+<a id='L454' name='L454'></a> 454         +"\u0e81\u0e82\u0e84\u0e84\u0e87\u0e88\u0e8a\u0e8a\u0e8d\u0e8d\u0e94\u0e97\u0e99\u0e9f"
+<a id='L455' name='L455'></a> 455         +"\u0ea1\u0ea3\u0ea5\u0ea5\u0ea7\u0ea7\u0eaa\u0eab\u0ead\u0eae\u0eb0\u0eb9\u0ebb\u0ebd"
+<a id='L456' name='L456'></a> 456         +"\u0ec0\u0ec4\u0ec6\u0ec6\u0ec8\u0ecd\u0ed0\u0ed9\u0f18\u0f19\u0f20\u0f29\u0f35\u0f35"
+<a id='L457' name='L457'></a> 457         +"\u0f37\u0f37\u0f39\u0f39\u0f3e\u0f47\u0f49\u0f69\u0f71\u0f84\u0f86\u0f8b\u0f90\u0f95"
+<a id='L458' name='L458'></a> 458         +"\u0f97\u0f97\u0f99\u0fad\u0fb1\u0fb7\u0fb9\u0fb9\u10a0\u10c5\u10d0\u10f6\u1100\u1100"
+<a id='L459' name='L459'></a> 459         +"\u1102\u1103\u1105\u1107\u1109\u1109\u110b\u110c\u110e\u1112\u113c\u113c\u113e\u113e"
+<a id='L460' name='L460'></a> 460         +"\u1140\u1140\u114c\u114c\u114e\u114e\u1150\u1150\u1154\u1155\u1159\u1159\u115f\u1161"
+<a id='L461' name='L461'></a> 461         +"\u1163\u1163\u1165\u1165\u1167\u1167\u1169\u1169\u116d\u116e\u1172\u1173\u1175\u1175"
+<a id='L462' name='L462'></a> 462         +"\u119e\u119e\u11a8\u11a8\u11ab\u11ab\u11ae\u11af\u11b7\u11b8\u11ba\u11ba\u11bc\u11c2"
+<a id='L463' name='L463'></a> 463         +"\u11eb\u11eb\u11f0\u11f0\u11f9\u11f9\u1e00\u1e9b\u1ea0\u1ef9\u1f00\u1f15\u1f18\u1f1d"
+<a id='L464' name='L464'></a> 464         +"\u1f20\u1f45\u1f48\u1f4d\u1f50\u1f57\u1f59\u1f59\u1f5b\u1f5b\u1f5d\u1f5d\u1f5f\u1f7d"
+<a id='L465' name='L465'></a> 465         +"\u1f80\u1fb4\u1fb6\u1fbc\u1fbe\u1fbe\u1fc2\u1fc4\u1fc6\u1fcc\u1fd0\u1fd3\u1fd6\u1fdb"
+<a id='L466' name='L466'></a> 466         +"\u1fe0\u1fec\u1ff2\u1ff4\u1ff6\u1ffc\u20d0\u20dc\u20e1\u20e1\u2126\u2126\u212a\u212b"
+<a id='L467' name='L467'></a> 467         +"\u212e\u212e\u2180\u2182\u3005\u3005\u3007\u3007\u3021\u302f\u3031\u3035\u3041\u3094"
+<a id='L468' name='L468'></a> 468         +"\u3099\u309a\u309d\u309e\u30a1\u30fa\u30fc\u30fe\u3105\u312c\u4e00\u9fa5\uac00\ud7a3"
+<a id='L469' name='L469'></a> 469         +"";
+<a id='L470' name='L470'></a> 470     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> LETTERS =
+<a id='L471' name='L471'></a> 471         "\u0041\u005a\u0061\u007a\u00c0\u00d6\u00d8\u00f6\u00f8\u0131\u0134\u013e\u0141\u0148"
+<a id='L472' name='L472'></a> 472         +"\u014a\u017e\u0180\u01f0\u01f4\u01f5\u01fa\u0217\u0250\u02a8\u02bb\u02c1"
+<a id='L473' name='L473'></a> 473         +"\u02b0\u02d1"
+<a id='L474' name='L474'></a> 474         +"\u0386\u0386\u0388\u038a\u038c\u038c\u038e\u03a1\u03a3\u03ce\u03d0\u03d6\u03da\u03da"
+<a id='L475' name='L475'></a> 475         +"\u03dc\u03dc\u03de\u03de\u03e0\u03e0\u03e2\u03f3\u0401\u040c\u040e\u044f\u0451\u045c"
+<a id='L476' name='L476'></a> 476         +"\u045e\u0481\u0490\u04c4\u04c7\u04c8\u04cb\u04cc\u04d0\u04eb\u04ee\u04f5\u04f8\u04f9"
+<a id='L477' name='L477'></a> 477         +"\u0531\u0556\u0559\u0559\u0561\u0586\u05d0\u05ea\u05f0\u05f2\u0621\u063a\u0641\u064a"
+<a id='L478' name='L478'></a> 478         +"\u0671\u06b7\u06ba\u06be\u06c0\u06ce\u06d0\u06d3\u06d5\u06d5\u06e5\u06e6\u0905\u0939"
+<a id='L479' name='L479'></a> 479         +"\u093d\u093d\u0958\u0961\u0985\u098c\u098f\u0990\u0993\u09a8\u09aa\u09b0\u09b2\u09b2"
+<a id='L480' name='L480'></a> 480         +"\u09b6\u09b9\u09dc\u09dd\u09df\u09e1\u09f0\u09f1\u0a05\u0a0a\u0a0f\u0a10\u0a13\u0a28"
+<a id='L481' name='L481'></a> 481         +"\u0a2a\u0a30\u0a32\u0a33\u0a35\u0a36\u0a38\u0a39\u0a59\u0a5c\u0a5e\u0a5e\u0a72\u0a74"
+<a id='L482' name='L482'></a> 482         +"\u0a85\u0a8b\u0a8d\u0a8d\u0a8f\u0a91\u0a93\u0aa8\u0aaa\u0ab0\u0ab2\u0ab3\u0ab5\u0ab9"
+<a id='L483' name='L483'></a> 483         +"\u0abd\u0abd\u0ae0\u0ae0\u0b05\u0b0c\u0b0f\u0b10\u0b13\u0b28\u0b2a\u0b30\u0b32\u0b33"
+<a id='L484' name='L484'></a> 484         +"\u0b36\u0b39\u0b3d\u0b3d\u0b5c\u0b5d\u0b5f\u0b61\u0b85\u0b8a\u0b8e\u0b90\u0b92\u0b95"
+<a id='L485' name='L485'></a> 485         +"\u0b99\u0b9a\u0b9c\u0b9c\u0b9e\u0b9f\u0ba3\u0ba4\u0ba8\u0baa\u0bae\u0bb5\u0bb7\u0bb9"
+<a id='L486' name='L486'></a> 486         +"\u0c05\u0c0c\u0c0e\u0c10\u0c12\u0c28\u0c2a\u0c33\u0c35\u0c39\u0c60\u0c61\u0c85\u0c8c"
+<a id='L487' name='L487'></a> 487         +"\u0c8e\u0c90\u0c92\u0ca8\u0caa\u0cb3\u0cb5\u0cb9\u0cde\u0cde\u0ce0\u0ce1\u0d05\u0d0c"
+<a id='L488' name='L488'></a> 488         +"\u0d0e\u0d10\u0d12\u0d28\u0d2a\u0d39\u0d60\u0d61\u0e01\u0e2e\u0e30\u0e30\u0e32\u0e33"
+<a id='L489' name='L489'></a> 489         +"\u0e40\u0e45\u0e81\u0e82\u0e84\u0e84\u0e87\u0e88\u0e8a\u0e8a\u0e8d\u0e8d\u0e94\u0e97"
+<a id='L490' name='L490'></a> 490         +"\u0e99\u0e9f\u0ea1\u0ea3\u0ea5\u0ea5\u0ea7\u0ea7\u0eaa\u0eab\u0ead\u0eae\u0eb0\u0eb0"
+<a id='L491' name='L491'></a> 491         +"\u0eb2\u0eb3\u0ebd\u0ebd\u0ec0\u0ec4\u0f40\u0f47\u0f49\u0f69\u10a0\u10c5\u10d0\u10f6"
+<a id='L492' name='L492'></a> 492         +"\u1100\u1100\u1102\u1103\u1105\u1107\u1109\u1109\u110b\u110c\u110e\u1112\u113c\u113c"
+<a id='L493' name='L493'></a> 493         +"\u113e\u113e\u1140\u1140\u114c\u114c\u114e\u114e\u1150\u1150\u1154\u1155\u1159\u1159"
+<a id='L494' name='L494'></a> 494         +"\u115f\u1161\u1163\u1163\u1165\u1165\u1167\u1167\u1169\u1169\u116d\u116e\u1172\u1173"
+<a id='L495' name='L495'></a> 495         +"\u1175\u1175\u119e\u119e\u11a8\u11a8\u11ab\u11ab\u11ae\u11af\u11b7\u11b8\u11ba\u11ba"
+<a id='L496' name='L496'></a> 496         +"\u11bc\u11c2\u11eb\u11eb\u11f0\u11f0\u11f9\u11f9\u1e00\u1e9b\u1ea0\u1ef9\u1f00\u1f15"
+<a id='L497' name='L497'></a> 497         +"\u1f18\u1f1d\u1f20\u1f45\u1f48\u1f4d\u1f50\u1f57\u1f59\u1f59\u1f5b\u1f5b\u1f5d\u1f5d"
+<a id='L498' name='L498'></a> 498         +"\u1f5f\u1f7d\u1f80\u1fb4\u1fb6\u1fbc\u1fbe\u1fbe\u1fc2\u1fc4\u1fc6\u1fcc\u1fd0\u1fd3"
+<a id='L499' name='L499'></a> 499         +"\u1fd6\u1fdb\u1fe0\u1fec\u1ff2\u1ff4\u1ff6\u1ffc\u2126\u2126\u212a\u212b\u212e\u212e"
+<a id='L500' name='L500'></a> 500         +"\u2180\u2182\u3007\u3007\u3021\u3029\u3041\u3094\u30a1\u30fa\u3105\u312c\u4e00\u9fa5"
+<a id='L501' name='L501'></a> 501         +"\uac00\ud7a3\uff66\uff9f";
+<a id='L502' name='L502'></a> 502 
+<a id='L503' name='L503'></a> 503     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>[] LETTERS_INT = <em class='brace'>{</em>0x1d790, 0x1d7a8, 0x1d7aa, 0x1d7c9, 0x2fa1b, 0x2fa1d<em class='brace'>}</em>;
+<a id='L504' name='L504'></a> 504 
+<a id='L505' name='L505'></a> 505     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DIGITS =
+<a id='L506' name='L506'></a> 506         "\u0030\u0039\u0660\u0669\u06F0\u06F9\u0966\u096F\u09E6\u09EF\u0A66\u0A6F\u0AE6\u0AEF"
+<a id='L507' name='L507'></a> 507         +"\u0B66\u0B6F\u0BE7\u0BEF\u0C66\u0C6F\u0CE6\u0CEF\u0D66\u0D6F\u0E50\u0E59\u0ED0\u0ED9"
+<a id='L508' name='L508'></a> 508         +"\u0F20\u0F29\u1040\u1049\u1369\u1371\u17E0\u17E9\u1810\u1819\uFF10\uFF19";
+<a id='L509' name='L509'></a> 509 
+<a id='L510' name='L510'></a> 510     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>[] DIGITS_INT = <em class='brace'>{</em>0x1D7CE, 0x1D7FF<em class='brace'>}</em>;
+<a id='L511' name='L511'></a> 511 
+<a id='L512' name='L512'></a> 512 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L43'>[^]</a><a href='#L420'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

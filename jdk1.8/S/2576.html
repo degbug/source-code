@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/sql/SQLData.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8030.html'>sql</a>/SQLData.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L80'>[^]</a><a href='#L136'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L80' title='Defined at 80.'>getSQLTypeName</a></li>
+<li><a href='#L113' title='Defined at 113.'>readSQL</a></li>
+<li><a href='#L136' title='Defined at 136.'>writeSQL</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.sql;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <em class='comment'>/**</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * The interface used for the custom mapping of an SQL user-defined type (UDT) to</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> * a class in the Java programming language. The class object for a class</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * implementing the &lt;code&gt;SQLData&lt;/code&gt; interface will be entered in the</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * appropriate &lt;code&gt;Connection&lt;/code&gt; object's type map along with the SQL</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * name of the UDT for which it is a custom mapping.</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * &lt;P&gt;</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * Typically, a &lt;code&gt;SQLData&lt;/code&gt; implementation</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * will define a field for each attribute of an SQL structured type or a</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * single field for an SQL &lt;code&gt;DISTINCT&lt;/code&gt; type. When the UDT is</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * retrieved from a data source with the &lt;code&gt;ResultSet.getObject&lt;/code&gt;</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * method, it will be mapped as an instance of this class.  A programmer</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * can operate on this class instance just as on any other object in the</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * Java programming language and then store any changes made to it by</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * calling the &lt;code&gt;PreparedStatement.setObject&lt;/code&gt; method,</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * which will map it back to the SQL type.</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * &lt;p&gt;</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * It is expected that the implementation of the class for a custom</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * mapping will be done by a tool.  In a typical implementation, the</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * programmer would simply supply the name of the SQL UDT, the name of</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * the class to which it is being mapped, and the names of the fields to</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * which each of the attributes of the UDT is to be mapped.  The tool will use</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * this information to implement the &lt;code&gt;SQLData.readSQL&lt;/code&gt; and</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;code&gt;SQLData.writeSQL&lt;/code&gt; methods.  The &lt;code&gt;readSQL&lt;/code&gt; method</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * calls the appropriate &lt;code&gt;SQLInput&lt;/code&gt; methods to read</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * each attribute from an &lt;code&gt;SQLInput&lt;/code&gt; object, and the</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * &lt;code&gt;writeSQL&lt;/code&gt; method calls &lt;code&gt;SQLOutput&lt;/code&gt; methods</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * to write each attribute back to the data source via an</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * &lt;code&gt;SQLOutput&lt;/code&gt; object.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * &lt;P&gt;</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * An application programmer will not normally call &lt;code&gt;SQLData&lt;/code&gt; methods</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * directly, and the &lt;code&gt;SQLInput&lt;/code&gt; and &lt;code&gt;SQLOutput&lt;/code&gt; methods</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * are called internally by &lt;code&gt;SQLData&lt;/code&gt; methods, not by application code.</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * @since 1.2</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> */</em>
+<a id='L64' name='L64'></a>  64 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/6873.html' title='Multiple referred from 7 places.'>SQLData</a> <em class='brace'>{</em>
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66  <em class='comment'>/**</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>  * Returns the fully-qualified</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>  * name of the SQL user-defined type that this object represents.</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>  * This method is called by the JDBC driver to get the name of the</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>  * UDT instance that is being mapped to this instance of</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>  * &lt;code&gt;SQLData&lt;/code&gt;.</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>  *</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>  * @return the type name that was passed to the method &lt;code&gt;readSQL&lt;/code&gt;</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>  *            when this object was constructed and populated</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>  * @exception SQLException if there is a database access error</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>  * @exception SQLFeatureNotSupportedException if the JDBC driver does not support</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>  * this method</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>  * @since 1.2</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>  */</em>
+<a id='L80' name='L80'></a>  80   <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18828.html' title='Multiple referred from 4 places.'>getSQLTypeName</a>() <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82  <em class='comment'>/**</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>  * Populates this object with data read from the database.</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>  * The implementation of the method must follow this protocol:</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>  * &lt;UL&gt;</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>  * &lt;LI&gt;It must read each of the attributes or elements of the SQL</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>  * type  from the given input stream.  This is done</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>  * by calling a method of the input stream to read each</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>  * item, in the order that they appear in the SQL definition</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>  * of the type.</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>  * &lt;LI&gt;The method &lt;code&gt;readSQL&lt;/code&gt; then</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>  * assigns the data to appropriate fields or</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>  * elements (of this or other objects).</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>  * Specifically, it must call the appropriate &lt;i&gt;reader&lt;/i&gt; method</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>  * (&lt;code&gt;SQLInput.readString&lt;/code&gt;, &lt;code&gt;SQLInput.readBigDecimal&lt;/code&gt;,</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>  * and so on) method(s) to do the following:</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>  * for a distinct type, read its single data element;</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>  * for a structured type, read a value for each attribute of the SQL type.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>  * &lt;/UL&gt;</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>  * The JDBC driver initializes the input stream with a type map</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>  * before calling this method, which is used by the appropriate</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>  * &lt;code&gt;SQLInput&lt;/code&gt; reader method on the stream.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>  *</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>  * @param stream the &lt;code&gt;SQLInput&lt;/code&gt; object from which to read the data for</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>  * the value that is being custom mapped</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>  * @param typeName the SQL type name of the value on the data stream</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>  * @exception SQLException if there is a database access error</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>  * @exception SQLFeatureNotSupportedException if the JDBC driver does not support</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>  * this method</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>  * @see SQLInput</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>  * @since 1.2</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>  */</em>
+<a id='L113' name='L113'></a> 113   <strong class='reserved'>void</strong> <a href='../S/4470.html#L489' title='Referred from 489 in src/javax/sql/rowset/serial/SQLInputImpl.java.'>readSQL</a> (<a href='../S/2562.html#L56' title='Defined at 56 in src/java/sql/SQLInput.java.'>SQLInput</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35766.html' title='Multiple defined in 4 places.'>typeName</a>) <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115   <em class='comment'>/**</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>  * Writes this object to the given SQL data stream, converting it back to</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>  * its SQL value in the data source.</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>  * The implementation of the method must follow this protocol:&lt;BR&gt;</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>  * It must write each of the attributes of the SQL type</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>  * to the given output stream.  This is done by calling a</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>  * method of the output stream to write each item, in the order that</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>  * they appear in the SQL definition of the type.</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>  * Specifically, it must call the appropriate &lt;code&gt;SQLOutput&lt;/code&gt; writer</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>  * method(s) (&lt;code&gt;writeInt&lt;/code&gt;, &lt;code&gt;writeString&lt;/code&gt;, and so on)</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>  * to do the following: for a Distinct Type, write its single data element;</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>  * for a Structured Type, write a value for each attribute of the SQL type.</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>  *</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>  * @param stream the &lt;code&gt;SQLOutput&lt;/code&gt; object to which to write the data for</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>  * the value that was custom mapped</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>  * @exception SQLException if there is a database access error</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>  * @exception SQLFeatureNotSupportedException if the JDBC driver does not support</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>  * this method</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>  * @see SQLOutput</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>  * @since 1.2</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>  */</em>
+<a id='L136' name='L136'></a> 136   <strong class='reserved'>void</strong> <a href='../S/4469.html#L152' title='Referred from 152 in src/javax/sql/rowset/serial/SerialStruct.java.'>writeSQL</a> (<a href='../S/2579.html#L49' title='Defined at 49 in src/java/sql/SQLOutput.java.'>SQLOutput</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>) <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
+<a id='L137' name='L137'></a> 137 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L80'>[^]</a><a href='#L136'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

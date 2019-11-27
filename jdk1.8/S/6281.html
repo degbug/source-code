@@ -1,0 +1,321 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/jmx/mbeanserver/MBeanSupport.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7843.html'>mbeanserver</a>/MBeanSupport.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L143'>[^]</a><a href='#L269'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L143' title='Defined at 143.'>getMBeanIntrospector</a></li>
+<li><a href='#L151' title='Defined at 151.'>getCookie</a></li>
+<li><a href='#L153' title='Defined at 153.'>isMXBean</a></li>
+<li><a href='#L160' title='Defined at 160.'>register</a></li>
+<li><a href='#L162' title='Defined at 162.'>unregister</a></li>
+<li><a href='#L164' title='Defined at 164.'>preRegister</a></li>
+<li><a href='#L171' title='Defined at 171.'>preRegister2</a></li>
+<li><a href='#L176' title='Defined at 176.'>registerFailed</a></li>
+<li><a href='#L180' title='Defined at 180.'>postRegister</a></li>
+<li><a href='#L185' title='Defined at 185.'>preDeregister</a></li>
+<li><a href='#L190' title='Defined at 190.'>postDeregister</a></li>
+<li><a href='#L202' title='Defined at 202.'>getAttribute</a></li>
+<li><a href='#L209' title='Defined at 209.'>getAttributes</a></li>
+<li><a href='#L223' title='Defined at 223.'>setAttribute</a></li>
+<li><a href='#L233' title='Defined at 233.'>setAttributes</a></li>
+<li><a href='#L249' title='Defined at 249.'>invoke</a></li>
+<li><a href='#L257' title='Defined at 257.'>getMBeanInfo</a></li>
+<li><a href='#L261' title='Defined at 261.'>getClassName</a></li>
+<li><a href='#L265' title='Defined at 265.'>getResource</a></li>
+<li><a href='#L269' title='Defined at 269.'>getMBeanInterface</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.jmx.mbeanserver;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> javax.management.Attribute;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> javax.management.AttributeList;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> javax.management.AttributeNotFoundException;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> javax.management.InvalidAttributeValueException;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> javax.management.MBeanException;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> javax.management.MBeanInfo;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> javax.management.MBeanRegistration;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> javax.management.MBeanServer;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> javax.management.NotCompliantMBeanException;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> javax.management.ObjectName;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> javax.management.ReflectionException;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.jmx.mbeanserver.MXBeanMappingFactory;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> sun.reflect.misc.ReflectUtil;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <em class='comment'>/**</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * Base class for MBeans.  There is one instance of this class for</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * every Standard MBean and every MXBean.  We try to limit the amount</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * of information per instance so we can handle very large numbers of</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * MBeans comfortably.</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> *</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * @param &lt;M&gt; either Method or ConvertingMethod, for Standard MBeans</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * and MXBeans respectively.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> *</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * @since 1.6</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> */</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>/*</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * We maintain a couple of caches to increase sharing between</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * different MBeans of the same type and also to reduce creation time</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * for the second and subsequent instances of the same type.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * The first cache maps from an MBean interface to a PerInterface</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * object containing information parsed out of the interface.  The</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * interface is either a Standard MBean interface or an MXBean</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * interface, and there is one cache for each case.</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> *</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * The PerInterface includes an MBeanInfo.  This contains the</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * attributes and operations parsed out of the interface's methods,</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * plus a basic Descriptor for the interface containing at least the</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> * interfaceClassName field and any fields derived from annotations on</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * the interface.  This MBeanInfo can never be the MBeanInfo for any</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * actual MBean, because an MBeanInfo's getClassName() is the name of</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * a concrete class and we don't know what the class will be.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * Furthermore a real MBeanInfo may need to add constructors and/or</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * notifications to the MBeanInfo.</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> *</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> * The PerInterface also contains an MBeanDispatcher which is able to</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> * route getAttribute, setAttribute, and invoke to the appropriate</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * method of the interface, including doing any necessary translation</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> * of parameters and return values for MXBeans.</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> *</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * The PerInterface also contains the original Class for the interface.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> *</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * We need to be careful about references.  When there are no MBeans</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * with a given interface, there must not be any strong references to</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * the interface Class.  Otherwise it could never be garbage collected,</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * and neither could its ClassLoader or any other classes loaded by</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * its ClassLoader.  Therefore the cache must wrap the PerInterface</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * in a WeakReference.  Each instance of MBeanSupport has a strong</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * reference to its PerInterface, which prevents PerInterface instances</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> * from being garbage-collected prematurely.</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> *</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> * The second cache maps from a concrete class and an MBean interface</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> * that that class implements to the MBeanInfo for that class and</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> * interface.  (The ability to specify an interface separately comes</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> * from the class StandardMBean.  MBeans registered directly in the</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> * MBean Server will always have the same interface here.)</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> *</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> * The MBeanInfo in this second cache will be the MBeanInfo from the</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> * PerInterface cache for the given itnerface, but with the</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> * getClassName() having the concrete class's name, and the public</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'> * constructors based on the concrete class's constructors.  This</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'> * MBeanInfo can be shared between all instances of the concrete class</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'> * specifying the same interface, except instances that are</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'> * NotificationBroadcasters.  NotificationBroadcasters supply the</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'> * MBeanNotificationInfo[] in the MBeanInfo based on the instance</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'> * method NotificationBroadcaster.getNotificationInfo(), so two</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'> * instances of the same concrete class do not necessarily have the</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'> * same MBeanNotificationInfo[].  Currently we do not try to detect</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'> * when they do, although it would probably be worthwhile doing that</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'> * since it is a very common case.</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'> *</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'> * Standard MBeans additionally have the property that</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'> * getNotificationInfo() must in principle be called every time</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'> * getMBeanInfo() is called for the MBean, since the returned array is</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'> * allowed to change over time.  We attempt to reduce the cost of</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'> * doing this by detecting when the Standard MBean is a subclass of</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'> * NotificationBroadcasterSupport that does not override</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'> * getNotificationInfo(), meaning that the MBeanNotificationInfo[] is</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'> * the one that was supplied to the constructor.  MXBeans do not have</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'> * this problem because their getNotificationInfo() method is called</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'> * only once.</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'> *</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'> */</em>
+<a id='L122' name='L122'></a> 122 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/4842.html' title='Multiple referred from 5 places.'>MBeanSupport</a>&lt;M&gt;
+<a id='L123' name='L123'></a> 123         <strong class='reserved'>implements</strong> <a href='../S/6286.html#L38' title='Defined at 38 in src/com/sun/jmx/mbeanserver/DynamicMBean2.java.'>DynamicMBean2</a>, <a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a> <em class='brace'>{</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; MBeanSupport(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> resource, <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; mbeanInterfaceType)
+<a id='L126' name='L126'></a> 126             <strong class='reserved'>throws</strong> <a href='../S/3508.html#L34' title='Defined at 34 in src/javax/management/NotCompliantMBeanException.java.'>NotCompliantMBeanException</a> <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>if</strong> (mbeanInterfaceType == <strong class='reserved'>null</strong>)
+<a id='L128' name='L128'></a> 128             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/3508.html#L34' title='Defined at 34 in src/javax/management/NotCompliantMBeanException.java.'>NotCompliantMBeanException</a>("Null MBean interface");
+<a id='L129' name='L129'></a> 129         <strong class='reserved'>if</strong> (!mbeanInterfaceType.<a href='../S/1722.html#L483' title='Defined at 483 in src/java/lang/Class.java.'>isInstance</a>(resource)) <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130             <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> =
+<a id='L131' name='L131'></a> 131                 "Resource class " + resource.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() +
+<a id='L132' name='L132'></a> 132                 " is not an instance of " + mbeanInterfaceType.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L133' name='L133'></a> 133             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/3508.html#L34' title='Defined at 34 in src/javax/management/NotCompliantMBeanException.java.'>NotCompliantMBeanException</a>(<a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L134' name='L134'></a> 134         <em class='brace'>}</em>
+<a id='L135' name='L135'></a> 135         ReflectUtil.<a href='../D/12578.html' title='Multiple defined in 3 places.'>checkPackageAccess</a>(mbeanInterfaceType);
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>this</strong>.resource = resource;
+<a id='L137' name='L137'></a> 137         <a href='../S/6283.html#L75' title='Defined at 75 in src/com/sun/jmx/mbeanserver/MBeanIntrospector.java.'>MBeanIntrospector</a>&lt;M&gt; introspector = <a href='../D/20321.html' title='Multiple defined in 3 places.'>getMBeanIntrospector</a>();
+<a id='L138' name='L138'></a> 138         <strong class='reserved'>this</strong>.perInterface = introspector.<a href='../S/6283.html#L184' title='Defined at 184 in src/com/sun/jmx/mbeanserver/MBeanIntrospector.java.'>getPerInterface</a>(mbeanInterfaceType);
+<a id='L139' name='L139'></a> 139         <strong class='reserved'>this</strong>.mbeanInfo = introspector.<a href='../D/20317.html' title='Multiple defined in 16 places.'>getMBeanInfo</a>(resource, perInterface);
+<a id='L140' name='L140'></a> 140     <em class='brace'>}</em>
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142     <em class='comment'>/** Return the appropriate introspector for this type of MBean. */</em>
+<a id='L143' name='L143'></a> 143     <strong class='reserved'>abstract</strong> <a href='../S/6283.html#L75' title='Defined at 75 in src/com/sun/jmx/mbeanserver/MBeanIntrospector.java.'>MBeanIntrospector</a>&lt;M&gt; <a href='../S/6281.html#L137' title='Referred from 137 in src/com/sun/jmx/mbeanserver/MBeanSupport.java.'>getMBeanIntrospector</a>();
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145     <em class='comment'>/**</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * Return a cookie for this MBean.  This cookie will be passed to</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * MBean method invocations where it can supply additional information</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * to the invocation.  For example, with MXBeans it can be used to</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * supply the MXBeanLookup context for resolving inter-MXBean references.</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     */</em>
+<a id='L151' name='L151'></a> 151     <strong class='reserved'>abstract</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/15829.html' title='Multiple referred from 3 places.'>getCookie</a>();
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> <a href='../R/21708.html' title='Multiple referred from 24 places.'>isMXBean</a>() <em class='brace'>{</em>
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>return</strong> perInterface.<a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>();
+<a id='L155' name='L155'></a> 155     <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157     <em class='comment'>// Methods that javax.management.StandardMBean should call from its</em>
+<a id='L158' name='L158'></a> 158     <em class='comment'>// preRegister and postRegister, given that it is not supposed to</em>
+<a id='L159' name='L159'></a> 159     <em class='comment'>// call the contained object's preRegister etc methods even if it has them</em>
+<a id='L160' name='L160'></a> 160     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/25749.html' title='Multiple referred from 136 places.'>register</a>(<a href='../S/3578.html#L260' title='Defined at 260 in src/javax/management/MBeanServer.java.'>MBeanServer</a> mbs, <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>)
+<a id='L161' name='L161'></a> 161             <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>;
+<a id='L162' name='L162'></a> 162     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/29751.html' title='Multiple referred from 16 places.'>unregister</a>();
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../R/24896.html' title='Multiple referred from 4 places.'>preRegister</a>(<a href='../S/3578.html#L260' title='Defined at 260 in src/javax/management/MBeanServer.java.'>MBeanServer</a> server, <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>)
+<a id='L165' name='L165'></a> 165             <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>if</strong> (resource <strong class='reserved'>instanceof</strong> <a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>)
+<a id='L167' name='L167'></a> 167             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = ((<a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>) resource).<a href='../D/29525.html' title='Multiple defined in 16 places.'>preRegister</a>(server, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L168' name='L168'></a> 168         <strong class='reserved'>return</strong> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>;
+<a id='L169' name='L169'></a> 169     <em class='brace'>}</em>
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../S/6489.html#L930' title='Referred from 930 in src/com/sun/jmx/interceptor/DefaultMBeanServerInterceptor.java.'>preRegister2</a>(<a href='../S/3578.html#L260' title='Defined at 260 in src/javax/management/MBeanServer.java.'>MBeanServer</a> server, <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>)
+<a id='L172' name='L172'></a> 172             <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <em class='brace'>{</em>
+<a id='L173' name='L173'></a> 173         <a href='../D/30517.html' title='Multiple defined in 40 places.'>register</a>(server, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L174' name='L174'></a> 174     <em class='brace'>}</em>
+<a id='L175' name='L175'></a> 175 
+<a id='L176' name='L176'></a> 176     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/25772.html' title='Multiple referred from 7 places.'>registerFailed</a>() <em class='brace'>{</em>
+<a id='L177' name='L177'></a> 177         <a href='../D/35968.html' title='Multiple defined in 8 places.'>unregister</a>();
+<a id='L178' name='L178'></a> 178     <em class='brace'>}</em>
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/24865.html' title='Multiple referred from 4 places.'>postRegister</a>(<a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a> registrationDone) <em class='brace'>{</em>
+<a id='L181' name='L181'></a> 181         <strong class='reserved'>if</strong> (resource <strong class='reserved'>instanceof</strong> <a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>)
+<a id='L182' name='L182'></a> 182             ((<a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>) resource).<a href='../D/29492.html' title='Multiple defined in 15 places.'>postRegister</a>(registrationDone);
+<a id='L183' name='L183'></a> 183     <em class='brace'>}</em>
+<a id='L184' name='L184'></a> 184 
+<a id='L185' name='L185'></a> 185     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/24887.html' title='Multiple referred from 3 places.'>preDeregister</a>() <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <em class='brace'>{</em>
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>if</strong> (resource <strong class='reserved'>instanceof</strong> <a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>)
+<a id='L187' name='L187'></a> 187             ((<a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>) resource).<a href='../D/29516.html' title='Multiple defined in 14 places.'>preDeregister</a>();
+<a id='L188' name='L188'></a> 188     <em class='brace'>}</em>
+<a id='L189' name='L189'></a> 189 
+<a id='L190' name='L190'></a> 190     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/24854.html' title='Multiple referred from 3 places.'>postDeregister</a>() <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191         <em class='comment'>// Undo any work from registration.  We do this in postDeregister</em>
+<a id='L192' name='L192'></a> 192         <em class='comment'>// not preDeregister, because if the user preDeregister throws an</em>
+<a id='L193' name='L193'></a> 193         <em class='comment'>// exception then the MBean is not unregistered.</em>
+<a id='L194' name='L194'></a> 194         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195             <a href='../D/35968.html' title='Multiple defined in 8 places.'>unregister</a>();
+<a id='L196' name='L196'></a> 196         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L197' name='L197'></a> 197             <strong class='reserved'>if</strong> (resource <strong class='reserved'>instanceof</strong> <a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>)
+<a id='L198' name='L198'></a> 198                 ((<a href='../S/3438.html#L38' title='Defined at 38 in src/javax/management/MBeanRegistration.java.'>MBeanRegistration</a>) resource).<a href='../D/29480.html' title='Multiple defined in 14 places.'>postDeregister</a>();
+<a id='L199' name='L199'></a> 199         <em class='brace'>}</em>
+<a id='L200' name='L200'></a> 200     <em class='brace'>}</em>
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/15136.html' title='Multiple referred from 528 places.'>getAttribute</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/11628.html' title='Multiple defined in 2 places.'>attribute</a>)
+<a id='L203' name='L203'></a> 203             <strong class='reserved'>throws</strong> <a href='../S/3518.html#L34' title='Defined at 34 in src/javax/management/AttributeNotFoundException.java.'>AttributeNotFoundException</a>,
+<a id='L204' name='L204'></a> 204                    <a href='../S/3501.html#L37' title='Defined at 37 in src/javax/management/MBeanException.java.'>MBeanException</a>,
+<a id='L205' name='L205'></a> 205                    <a href='../S/3580.html#L37' title='Defined at 37 in src/javax/management/ReflectionException.java.'>ReflectionException</a> <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206         <strong class='reserved'>return</strong> perInterface.<a href='../D/17064.html' title='Multiple defined in 72 places.'>getAttribute</a>(resource, <a href='../D/11628.html' title='Multiple defined in 2 places.'>attribute</a>, <a href='../D/18015.html' title='Multiple defined in 5 places.'>getCookie</a>());
+<a id='L207' name='L207'></a> 207     <em class='brace'>}</em>
+<a id='L208' name='L208'></a> 208 
+<a id='L209' name='L209'></a> 209     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a> <a href='../R/15169.html' title='Multiple referred from 431 places.'>getAttributes</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L210' name='L210'></a> 210         <strong class='reserved'>final</strong> <a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>new</strong> <a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a>(<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L211' name='L211'></a> 211         <strong class='reserved'>for</strong> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> attrName : <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L212' name='L212'></a> 212             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213                 <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> attrValue = <a href='../D/17064.html' title='Multiple defined in 72 places.'>getAttribute</a>(attrName);
+<a id='L214' name='L214'></a> 214                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a>(attrName, attrValue));
+<a id='L215' name='L215'></a> 215             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L216' name='L216'></a> 216                 <em class='comment'>// OK: attribute is not included in returned list, per spec</em>
+<a id='L217' name='L217'></a> 217                 <em class='comment'>// XXX: log the exception</em>
+<a id='L218' name='L218'></a> 218             <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219         <em class='brace'>}</em>
+<a id='L220' name='L220'></a> 220         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L221' name='L221'></a> 221     <em class='brace'>}</em>
+<a id='L222' name='L222'></a> 222 
+<a id='L223' name='L223'></a> 223     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/26918.html' title='Multiple referred from 340 places.'>setAttribute</a>(<a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a> <a href='../D/11628.html' title='Multiple defined in 2 places.'>attribute</a>)
+<a id='L224' name='L224'></a> 224             <strong class='reserved'>throws</strong> <a href='../S/3518.html#L34' title='Defined at 34 in src/javax/management/AttributeNotFoundException.java.'>AttributeNotFoundException</a>,
+<a id='L225' name='L225'></a> 225                    <a href='../D/4376.html' title='Multiple defined in 2 places.'>InvalidAttributeValueException</a>,
+<a id='L226' name='L226'></a> 226                    <a href='../S/3501.html#L37' title='Defined at 37 in src/javax/management/MBeanException.java.'>MBeanException</a>,
+<a id='L227' name='L227'></a> 227                    <a href='../S/3580.html#L37' title='Defined at 37 in src/javax/management/ReflectionException.java.'>ReflectionException</a> <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = <a href='../D/11628.html' title='Multiple defined in 2 places.'>attribute</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L229' name='L229'></a> 229         <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/11628.html' title='Multiple defined in 2 places.'>attribute</a>.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>();
+<a id='L230' name='L230'></a> 230         perInterface.<a href='../D/31941.html' title='Multiple defined in 34 places.'>setAttribute</a>(resource, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <a href='../D/18015.html' title='Multiple defined in 5 places.'>getCookie</a>());
+<a id='L231' name='L231'></a> 231     <em class='brace'>}</em>
+<a id='L232' name='L232'></a> 232 
+<a id='L233' name='L233'></a> 233     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a> <a href='../R/26924.html' title='Multiple referred from 25 places.'>setAttributes</a>(<a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L234' name='L234'></a> 234         <strong class='reserved'>final</strong> <a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>new</strong> <a href='../D/576.html' title='Multiple defined in 3 places.'>AttributeList</a>(<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>());
+<a id='L235' name='L235'></a> 235         <strong class='reserved'>for</strong> (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> attrObj : <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L236' name='L236'></a> 236             <em class='comment'>// We can't use AttributeList.asList because it has side-effects</em>
+<a id='L237' name='L237'></a> 237             <a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a> <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a> = (<a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a>) attrObj;
+<a id='L238' name='L238'></a> 238             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239                 <a href='../D/31941.html' title='Multiple defined in 34 places.'>setAttribute</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>);
+<a id='L240' name='L240'></a> 240                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(), <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>()));
+<a id='L241' name='L241'></a> 241             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L242' name='L242'></a> 242                 <em class='comment'>// OK: attribute is not included in returned list, per spec</em>
+<a id='L243' name='L243'></a> 243                 <em class='comment'>// XXX: log the exception</em>
+<a id='L244' name='L244'></a> 244             <em class='brace'>}</em>
+<a id='L245' name='L245'></a> 245         <em class='brace'>}</em>
+<a id='L246' name='L246'></a> 246         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L247' name='L247'></a> 247     <em class='brace'>}</em>
+<a id='L248' name='L248'></a> 248 
+<a id='L249' name='L249'></a> 249     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/21052.html' title='Multiple referred from 440 places.'>invoke</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>,
+<a id='L250' name='L250'></a> 250                          <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>)
+<a id='L251' name='L251'></a> 251             <strong class='reserved'>throws</strong> <a href='../S/3501.html#L37' title='Defined at 37 in src/javax/management/MBeanException.java.'>MBeanException</a>, <a href='../S/3580.html#L37' title='Defined at 37 in src/javax/management/ReflectionException.java.'>ReflectionException</a> <em class='brace'>{</em>
+<a id='L252' name='L252'></a> 252         <strong class='reserved'>return</strong> perInterface.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>(resource, <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>, <a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>,
+<a id='L253' name='L253'></a> 253                                    <a href='../D/18015.html' title='Multiple defined in 5 places.'>getCookie</a>());
+<a id='L254' name='L254'></a> 254     <em class='brace'>}</em>
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256     <em class='comment'>// Overridden by StandardMBeanSupport</em>
+<a id='L257' name='L257'></a> 257     <strong class='reserved'>public</strong> <a href='../S/3541.html#L107' title='Defined at 107 in src/javax/management/MBeanInfo.java.'>MBeanInfo</a> <a href='../R/17504.html' title='Multiple referred from 15 places.'>getMBeanInfo</a>() <em class='brace'>{</em>
+<a id='L258' name='L258'></a> 258         <strong class='reserved'>return</strong> mbeanInfo;
+<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/15596.html' title='Multiple referred from 186 places.'>getClassName</a>() <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262         <strong class='reserved'>return</strong> resource.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L263' name='L263'></a> 263     <em class='brace'>}</em>
+<a id='L264' name='L264'></a> 264 
+<a id='L265' name='L265'></a> 265     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/18711.html' title='Multiple referred from 79 places.'>getResource</a>() <em class='brace'>{</em>
+<a id='L266' name='L266'></a> 266         <strong class='reserved'>return</strong> resource;
+<a id='L267' name='L267'></a> 267     <em class='brace'>}</em>
+<a id='L268' name='L268'></a> 268 
+<a id='L269' name='L269'></a> 269     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../R/17506.html' title='Multiple referred from 6 places.'>getMBeanInterface</a>() <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270         <strong class='reserved'>return</strong> perInterface.<a href='../D/20320.html' title='Multiple defined in 4 places.'>getMBeanInterface</a>();
+<a id='L271' name='L271'></a> 271     <em class='brace'>}</em>
+<a id='L272' name='L272'></a> 272 
+<a id='L273' name='L273'></a> 273     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/3541.html#L107' title='Defined at 107 in src/javax/management/MBeanInfo.java.'>MBeanInfo</a> mbeanInfo;
+<a id='L274' name='L274'></a> 274     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> resource;
+<a id='L275' name='L275'></a> 275     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/6278.html#L48' title='Defined at 48 in src/com/sun/jmx/mbeanserver/PerInterface.java.'>PerInterface</a>&lt;M&gt; perInterface;
+<a id='L276' name='L276'></a> 276 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L143'>[^]</a><a href='#L269'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

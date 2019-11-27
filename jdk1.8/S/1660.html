@@ -1,0 +1,804 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/lang/reflect/Executable.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8003.html'>lang</a>/<a href='../files/8009.html'>reflect</a>/Executable.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L53'>[^]</a><a href='#L724'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L53' title='Defined at 53.'>getAnnotationBytes</a></li>
+<li><a href='#L58' title='Defined at 58.'>getRoot</a></li>
+<li><a href='#L63' title='Defined at 63.'>hasGenericInformation</a></li>
+<li><a href='#L65' title='Defined at 65.'>getGenericInfo</a></li>
+<li><a href='#L67' title='Defined at 67.'>equalParamTypes</a></li>
+<li><a href='#L79' title='Defined at 79.'>parseParameterAnnotations</a></li>
+<li><a href='#L87' title='Defined at 87.'>separateWithCommas</a></li>
+<li><a href='#L96' title='Defined at 96.'>printModifiersIfNonzero</a></li>
+<li><a href='#L113' title='Defined at 113.'>sharedToString</a></li>
+<li><a href='#L140' title='Defined at 140.'>specificToStringHeader</a></li>
+<li><a href='#L142' title='Defined at 142.'>sharedToGenericString</a></li>
+<li><a href='#L197' title='Defined at 197.'>specificToGenericStringHeader</a></li>
+<li><a href='#L203' title='Defined at 203.'>getDeclaringClass</a></li>
+<li><a href='#L208' title='Defined at 208.'>getName</a></li>
+<li><a href='#L214' title='Defined at 214.'>getModifiers</a></li>
+<li><a href='#L230' title='Defined at 230.'>getTypeParameters</a></li>
+<li><a href='#L241' title='Defined at 241.'>getParameterTypes</a></li>
+<li><a href='#L252' title='Defined at 252.'>getParameterCount</a></li>
+<li><a href='#L282' title='Defined at 282.'>getGenericParameterTypes</a></li>
+<li><a href='#L293' title='Defined at 293.'>getAllGenericParameterTypes</a></li>
+<li><a href='#L352' title='Defined at 352.'>getParameters</a></li>
+<li><a href='#L362' title='Defined at 362.'>synthesizeAllParams</a></li>
+<li><a href='#L374' title='Defined at 374.'>verifyParameters</a></li>
+<li><a href='#L398' title='Defined at 398.'>privateGetParameters</a></li>
+<li><a href='#L427' title='Defined at 427.'>hasRealParameterData</a></li>
+<li><a href='#L439' title='Defined at 439.'>getParameters0</a></li>
+<li><a href='#L440' title='Defined at 440.'>getTypeAnnotationBytes0</a></li>
+<li><a href='#L443' title='Defined at 443.'>getTypeAnnotationBytes</a></li>
+<li><a href='#L457' title='Defined at 457.'>getExceptionTypes</a></li>
+<li><a href='#L480' title='Defined at 480.'>getGenericExceptionTypes</a></li>
+<li><a href='#L495' title='Defined at 495.'>toGenericString</a></li>
+<li><a href='#L504' title='Defined at 504.'>isVarArgs</a></li>
+<li><a href='#L517' title='Defined at 517.'>isSynthetic</a></li>
+<li><a href='#L549' title='Defined at 549.'>getParameterAnnotations</a></li>
+<li><a href='#L551' title='Defined at 551.'>sharedGetParameterAnnotations</a></li>
+<li><a href='#L564' title='Defined at 564.'>handleParameterNumberMismatch</a></li>
+<li><a href='#L570' title='Defined at 570.'>getAnnotation</a></li>
+<li><a href='#L581' title='Defined at 581.'>getAnnotationsByType</a></li>
+<li><a href='#L590' title='Defined at 590.'>getDeclaredAnnotations</a></li>
+<li><a href='#L596' title='Defined at 596.'>declaredAnnotations</a></li>
+<li><a href='#L629' title='Defined at 629.'>getAnnotatedReturnType</a></li>
+<li><a href='#L639' title='Defined at 639.'>getAnnotatedReturnType0</a></li>
+<li><a href='#L670' title='Defined at 670.'>getAnnotatedReceiverType</a></li>
+<li><a href='#L698' title='Defined at 698.'>getAnnotatedParameterTypes</a></li>
+<li><a href='#L724' title='Defined at 724.'>getAnnotatedExceptionTypes</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.reflect;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.lang.annotation.*;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Map;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.Objects;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> sun.reflect.annotation.AnnotationParser;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> sun.reflect.annotation.AnnotationSupport;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> sun.reflect.annotation.TypeAnnotationParser;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> sun.reflect.annotation.TypeAnnotation;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> sun.reflect.generics.repository.ConstructorRepository;
+<a id='L36' name='L36'></a>  36 
+<a id='L37' name='L37'></a>  37 <em class='comment'>/**</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * A shared superclass for the common functionality of {@link Method}</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * and {@link Constructor}.</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * @since 1.8</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> */</em>
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/2774.html' title='Multiple referred from 14 places.'>Executable</a> <strong class='reserved'>extends</strong> <a href='../S/1652.html#L57' title='Defined at 57 in src/java/lang/reflect/AccessibleObject.java.'>AccessibleObject</a>
+<a id='L44' name='L44'></a>  44     <strong class='reserved'>implements</strong> <a href='../S/1664.html#L40' title='Defined at 40 in src/java/lang/reflect/Member.java.'>Member</a>, <a href='../S/1658.html#L33' title='Defined at 33 in src/java/lang/reflect/GenericDeclaration.java.'>GenericDeclaration</a> <em class='brace'>{</em>
+<a id='L45' name='L45'></a>  45     <em class='comment'>/*</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'>     * Only grant package-visibility to the constructor.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'>     */</em>
+<a id='L48' name='L48'></a>  48     Executable() <em class='brace'>{</em><em class='brace'>}</em>
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     <em class='comment'>/**</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     * Accessor method to allow code sharing</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>     */</em>
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>abstract</strong> <strong class='reserved'>byte</strong>[] <a href='../S/1660.html#L603' title='Referred from 603 in src/java/lang/reflect/Executable.java.'>getAnnotationBytes</a>();
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     <em class='comment'>/**</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     * Accessor method to allow code sharing</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     */</em>
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>abstract</strong> <a href='../S/1660.html#L43' title='Defined at 43 in src/java/lang/reflect/Executable.java.'>Executable</a> <a href='../R/18758.html' title='Multiple referred from 54 places.'>getRoot</a>();
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <em class='comment'>/**</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * Does the Executable have generic information.</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     */</em>
+<a id='L63' name='L63'></a>  63     <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/20201.html' title='Multiple referred from 3 places.'>hasGenericInformation</a>();
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65     <strong class='reserved'>abstract</strong> ConstructorRepository <a href='../R/16764.html' title='Multiple referred from 9 places.'>getGenericInfo</a>();
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>boolean</strong> <a href='../R/13991.html' title='Multiple referred from 2 places.'>equalParamTypes</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] params1, <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] params2) <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68         <em class='comment'>/* Avoid unnecessary cloning */</em>
+<a id='L69' name='L69'></a>  69         <strong class='reserved'>if</strong> (params1.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == params2.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; params1.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71                 <strong class='reserved'>if</strong> (params1[i] != params2[i])
+<a id='L72' name='L72'></a>  72                     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L73' name='L73'></a>  73             <em class='brace'>}</em>
+<a id='L74' name='L74'></a>  74             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L75' name='L75'></a>  75         <em class='brace'>}</em>
+<a id='L76' name='L76'></a>  76         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L77' name='L77'></a>  77     <em class='brace'>}</em>
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>[][] <a href='../R/24588.html' title='Multiple referred from 2 places.'>parseParameterAnnotations</a>(<strong class='reserved'>byte</strong>[] parameterAnnotations) <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80         <strong class='reserved'>return</strong> AnnotationParser.<a href='../S/1660.html#L79' title='Defined at 79 in src/java/lang/reflect/Executable.java.'>parseParameterAnnotations</a>(
+<a id='L81' name='L81'></a>  81                parameterAnnotations,
+<a id='L82' name='L82'></a>  82                sun.misc.SharedSecrets.getJavaLangAccess().
+<a id='L83' name='L83'></a>  83                <a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>(<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>()),
+<a id='L84' name='L84'></a>  84                <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>());
+<a id='L85' name='L85'></a>  85     <em class='brace'>}</em>
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>void</strong> <a href='../R/26799.html' title='Multiple referred from 2 places.'>separateWithCommas</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] types, <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb) <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> j = 0; j &lt; types.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; j++) <em class='brace'>{</em>
+<a id='L89' name='L89'></a>  89             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(types[j].<a href='../D/23338.html' title='Multiple defined in 24 places.'>getTypeName</a>());
+<a id='L90' name='L90'></a>  90             <strong class='reserved'>if</strong> (j &lt; (types.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1))
+<a id='L91' name='L91'></a>  91                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(",");
+<a id='L92' name='L92'></a>  92         <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>void</strong> <a href='../R/25032.html' title='Multiple referred from 2 places.'>printModifiersIfNonzero</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb, <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>, <strong class='reserved'>boolean</strong> <a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>) <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97         <strong class='reserved'>int</strong> <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> = <a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>() &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>if</strong> (<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> != 0 &amp;&amp; !<a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>) <em class='brace'>{</em>
+<a id='L100' name='L100'></a> 100             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a>)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(' ');
+<a id='L101' name='L101'></a> 101         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102             <strong class='reserved'>int</strong> access_mod = <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> &amp; <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.ACCESS_MODIFIERS;
+<a id='L103' name='L103'></a> 103             <strong class='reserved'>if</strong> (access_mod != 0)
+<a id='L104' name='L104'></a> 104                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(access_mod)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(' ');
+<a id='L105' name='L105'></a> 105             <strong class='reserved'>if</strong> (<a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>)
+<a id='L106' name='L106'></a> 106                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("default ");
+<a id='L107' name='L107'></a> 107             <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> = (<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> &amp; ~<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.ACCESS_MODIFIERS);
+<a id='L108' name='L108'></a> 108             <strong class='reserved'>if</strong> (<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> != 0)
+<a id='L109' name='L109'></a> 109                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a>)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(' ');
+<a id='L110' name='L110'></a> 110         <em class='brace'>}</em>
+<a id='L111' name='L111'></a> 111     <em class='brace'>}</em>
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/28500.html' title='Multiple referred from 2 places.'>sharedToString</a>(<strong class='reserved'>int</strong> modifierMask,
+<a id='L114' name='L114'></a> 114                           <strong class='reserved'>boolean</strong> <a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>,
+<a id='L115' name='L115'></a> 115                           <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] parameterTypes,
+<a id='L116' name='L116'></a> 116                           <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] exceptionTypes) <em class='brace'>{</em>
+<a id='L117' name='L117'></a> 117         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118             <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>();
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120             <a href='../S/1660.html#L96' title='Defined at 96 in src/java/lang/reflect/Executable.java.'>printModifiersIfNonzero</a>(sb, modifierMask, <a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>);
+<a id='L121' name='L121'></a> 121             <a href='../D/34713.html' title='Multiple defined in 3 places.'>specificToStringHeader</a>(sb);
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('(');
+<a id='L124' name='L124'></a> 124             <a href='../S/1660.html#L87' title='Defined at 87 in src/java/lang/reflect/Executable.java.'>separateWithCommas</a>(parameterTypes, sb);
+<a id='L125' name='L125'></a> 125             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(')');
+<a id='L126' name='L126'></a> 126             <strong class='reserved'>if</strong> (exceptionTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0) <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" throws ");
+<a id='L128' name='L128'></a> 128                 <a href='../S/1660.html#L87' title='Defined at 87 in src/java/lang/reflect/Executable.java.'>separateWithCommas</a>(exceptionTypes, sb);
+<a id='L129' name='L129'></a> 129             <em class='brace'>}</em>
+<a id='L130' name='L130'></a> 130             <strong class='reserved'>return</strong> sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L131' name='L131'></a> 131         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132             <strong class='reserved'>return</strong> "&lt;" + e + "&gt;";
+<a id='L133' name='L133'></a> 133         <em class='brace'>}</em>
+<a id='L134' name='L134'></a> 134     <em class='brace'>}</em>
+<a id='L135' name='L135'></a> 135 
+<a id='L136' name='L136'></a> 136     <em class='comment'>/**</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * Generate toString header information specific to a method or</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * constructor.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     */</em>
+<a id='L140' name='L140'></a> 140     <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/28751.html' title='Multiple referred from 2 places.'>specificToStringHeader</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb);
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/28499.html' title='Multiple referred from 2 places.'>sharedToGenericString</a>(<strong class='reserved'>int</strong> modifierMask, <strong class='reserved'>boolean</strong> <a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>) <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144             <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>();
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146             <a href='../S/1660.html#L96' title='Defined at 96 in src/java/lang/reflect/Executable.java.'>printModifiersIfNonzero</a>(sb, modifierMask, <a href='../D/25408.html' title='Multiple defined in 4 places.'>isDefault</a>);
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148             <a href='../D/9209.html' title='Multiple defined in 3 places.'>TypeVariable</a>&lt;?&gt;[] typeparms = <a href='../D/23340.html' title='Multiple defined in 10 places.'>getTypeParameters</a>();
+<a id='L149' name='L149'></a> 149             <strong class='reserved'>if</strong> (typeparms.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150                 <strong class='reserved'>boolean</strong> <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a> = <strong class='reserved'>true</strong>;
+<a id='L151' name='L151'></a> 151                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('&lt;');
+<a id='L152' name='L152'></a> 152                 <strong class='reserved'>for</strong>(<a href='../D/9209.html' title='Multiple defined in 3 places.'>TypeVariable</a>&lt;?&gt; typeparm: typeparms) <em class='brace'>{</em>
+<a id='L153' name='L153'></a> 153                     <strong class='reserved'>if</strong> (!<a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a>)
+<a id='L154' name='L154'></a> 154                         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(',');
+<a id='L155' name='L155'></a> 155                     <em class='comment'>// Class objects can't occur here; no need to test</em>
+<a id='L156' name='L156'></a> 156                     <em class='comment'>// and call Class.getName().</em>
+<a id='L157' name='L157'></a> 157                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(typeparm.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L158' name='L158'></a> 158                     <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a> = <strong class='reserved'>false</strong>;
+<a id='L159' name='L159'></a> 159                 <em class='brace'>}</em>
+<a id='L160' name='L160'></a> 160                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt; ");
+<a id='L161' name='L161'></a> 161             <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163             <a href='../D/34712.html' title='Multiple defined in 3 places.'>specificToGenericStringHeader</a>(sb);
+<a id='L164' name='L164'></a> 164 
+<a id='L165' name='L165'></a> 165             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('(');
+<a id='L166' name='L166'></a> 166             <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a> = <a href='../D/19301.html' title='Multiple defined in 7 places.'>getGenericParameterTypes</a>();
+<a id='L167' name='L167'></a> 167             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> j = 0; j &lt; <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; j++) <em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> param = <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[j].<a href='../D/23338.html' title='Multiple defined in 24 places.'>getTypeName</a>();
+<a id='L169' name='L169'></a> 169                 <strong class='reserved'>if</strong> (<a href='../D/26476.html' title='Multiple defined in 7 places.'>isVarArgs</a>() &amp;&amp; (j == <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1)) <em class='comment'>// replace T[] with T...</em>
+<a id='L170' name='L170'></a> 170                     param = param.<a href='../D/31048.html' title='Multiple defined in 2 places.'>replaceFirst</a>("\\[\\]$", "...");
+<a id='L171' name='L171'></a> 171                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(param);
+<a id='L172' name='L172'></a> 172                 <strong class='reserved'>if</strong> (j &lt; (<a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1))
+<a id='L173' name='L173'></a> 173                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(',');
+<a id='L174' name='L174'></a> 174             <em class='brace'>}</em>
+<a id='L175' name='L175'></a> 175             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(')');
+<a id='L176' name='L176'></a> 176             <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a> = <a href='../D/19298.html' title='Multiple defined in 3 places.'>getGenericExceptionTypes</a>();
+<a id='L177' name='L177'></a> 177             <strong class='reserved'>if</strong> (<a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" throws ");
+<a id='L179' name='L179'></a> 179                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> k = 0; k &lt; <a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; k++) <em class='brace'>{</em>
+<a id='L180' name='L180'></a> 180                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>((<a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>[k] <strong class='reserved'>instanceof</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>)?
+<a id='L181' name='L181'></a> 181                               ((<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>)<a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>[k]).<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>():
+<a id='L182' name='L182'></a> 182                               <a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>[k].<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L183' name='L183'></a> 183                     <strong class='reserved'>if</strong> (k &lt; (<a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1))
+<a id='L184' name='L184'></a> 184                         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(',');
+<a id='L185' name='L185'></a> 185                 <em class='brace'>}</em>
+<a id='L186' name='L186'></a> 186             <em class='brace'>}</em>
+<a id='L187' name='L187'></a> 187             <strong class='reserved'>return</strong> sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L188' name='L188'></a> 188         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L189' name='L189'></a> 189             <strong class='reserved'>return</strong> "&lt;" + e + "&gt;";
+<a id='L190' name='L190'></a> 190         <em class='brace'>}</em>
+<a id='L191' name='L191'></a> 191     <em class='brace'>}</em>
+<a id='L192' name='L192'></a> 192 
+<a id='L193' name='L193'></a> 193     <em class='comment'>/**</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     * Generate toGenericString header information specific to a</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * method or constructor.</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     */</em>
+<a id='L197' name='L197'></a> 197     <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../S/1660.html#L163' title='Referred from 163 in src/java/lang/reflect/Executable.java.'>specificToGenericStringHeader</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb);
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199     <em class='comment'>/**</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     * Returns the {@code Class} object representing the class or interface</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     * that declares the executable represented by this object.</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     */</em>
+<a id='L203' name='L203'></a> 203     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../R/15996.html' title='Multiple referred from 151 places.'>getDeclaringClass</a>();
+<a id='L204' name='L204'></a> 204 
+<a id='L205' name='L205'></a> 205     <em class='comment'>/**</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * Returns the name of the executable represented by this object.</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     */</em>
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/17826.html' title='Multiple referred from 2652 places.'>getName</a>();
+<a id='L209' name='L209'></a> 209 
+<a id='L210' name='L210'></a> 210     <em class='comment'>/**</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * Returns the Java language {@linkplain Modifier modifiers} for</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * the executable represented by this object.</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     */</em>
+<a id='L214' name='L214'></a> 214     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/17775.html' title='Multiple referred from 223 places.'>getModifiers</a>();
+<a id='L215' name='L215'></a> 215 
+<a id='L216' name='L216'></a> 216     <em class='comment'>/**</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * Returns an array of {@code TypeVariable} objects that represent the</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * type variables declared by the generic declaration represented by this</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * {@code GenericDeclaration} object, in declaration order.  Returns an</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * array of length 0 if the underlying generic declaration declares no type</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * variables.</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     *</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * @return an array of {@code TypeVariable} objects that represent</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     *     the type variables declared by this generic declaration</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * @throws GenericSignatureFormatError if the generic</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     *     signature of this generic declaration does not conform to</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     *     the format specified in</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     *     &lt;cite&gt;The Java&amp;trade; Virtual Machine Specification&lt;/cite&gt;</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     */</em>
+<a id='L230' name='L230'></a> 230     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/9209.html' title='Multiple defined in 3 places.'>TypeVariable</a>&lt;?&gt;[] <a href='../R/19633.html' title='Multiple referred from 7 places.'>getTypeParameters</a>();
+<a id='L231' name='L231'></a> 231 
+<a id='L232' name='L232'></a> 232     <em class='comment'>/**</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * Returns an array of {@code Class} objects that represent the formal</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * parameter types, in declaration order, of the executable</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * represented by this object.  Returns an array of length</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     * 0 if the underlying executable takes no parameters.</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     *</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     * @return the parameter types for the executable this object</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     * represents</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     */</em>
+<a id='L241' name='L241'></a> 241     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] <a href='../R/18257.html' title='Multiple referred from 85 places.'>getParameterTypes</a>();
+<a id='L242' name='L242'></a> 242 
+<a id='L243' name='L243'></a> 243     <em class='comment'>/**</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * Returns the number of formal parameters (whether explicitly</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * declared or implicitly declared or neither) for the executable</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * represented by this object.</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     *</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * @since 1.8</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * @return The number of formal parameters for the executable this</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * object represents</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     */</em>
+<a id='L252' name='L252'></a> 252     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/18252.html' title='Multiple referred from 3 places.'>getParameterCount</a>() <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1595.html#L39' title='Defined at 39 in src/java/lang/AbstractMethodError.java.'>AbstractMethodError</a>();
+<a id='L254' name='L254'></a> 254     <em class='brace'>}</em>
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256     <em class='comment'>/**</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     * Returns an array of {@code Type} objects that represent the formal</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     * parameter types, in declaration order, of the executable represented by</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     * this object. Returns an array of length 0 if the</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * underlying executable takes no parameters.</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     *</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * &lt;p&gt;If a formal parameter type is a parameterized type,</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * the {@code Type} object returned for it must accurately reflect</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * the actual type parameters used in the source code.</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     *</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * &lt;p&gt;If a formal parameter type is a type variable or a parameterized</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * type, it is created. Otherwise, it is resolved.</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     *</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * @return an array of {@code Type}s that represent the formal</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     *     parameter types of the underlying executable, in declaration order</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     * @throws GenericSignatureFormatError</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     *     if the generic method signature does not conform to the format</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     *     specified in</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     *     &lt;cite&gt;The Java&amp;trade; Virtual Machine Specification&lt;/cite&gt;</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * @throws TypeNotPresentException if any of the parameter</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     *     types of the underlying executable refers to a non-existent type</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     *     declaration</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * @throws MalformedParameterizedTypeException if any of</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     *     the underlying executable's parameter types refer to a parameterized</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     *     type that cannot be instantiated for any reason</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     */</em>
+<a id='L282' name='L282'></a> 282     <strong class='reserved'>public</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../R/16766.html' title='Multiple referred from 20 places.'>getGenericParameterTypes</a>() <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283         <strong class='reserved'>if</strong> (<a href='../D/24099.html' title='Multiple defined in 3 places.'>hasGenericInformation</a>())
+<a id='L284' name='L284'></a> 284             <strong class='reserved'>return</strong> <a href='../D/19299.html' title='Multiple defined in 5 places.'>getGenericInfo</a>().<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>();
+<a id='L285' name='L285'></a> 285         <strong class='reserved'>else</strong>
+<a id='L286' name='L286'></a> 286             <strong class='reserved'>return</strong> <a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>();
+<a id='L287' name='L287'></a> 287     <em class='brace'>}</em>
+<a id='L288' name='L288'></a> 288 
+<a id='L289' name='L289'></a> 289     <em class='comment'>/**</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * Behaves like {@code getGenericParameterTypes}, but returns type</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * information for all parameters, including synthetic parameters.</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     */</em>
+<a id='L293' name='L293'></a> 293     <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../R/15019.html' title='Multiple referred from 2 places.'>getAllGenericParameterTypes</a>() <em class='brace'>{</em>
+<a id='L294' name='L294'></a> 294         <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> genericInfo = <a href='../D/24099.html' title='Multiple defined in 3 places.'>hasGenericInformation</a>();
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296         <em class='comment'>// Easy case: we don't have generic parameter information.  In</em>
+<a id='L297' name='L297'></a> 297         <em class='comment'>// this case, we just return the result of</em>
+<a id='L298' name='L298'></a> 298         <em class='comment'>// getParameterTypes().</em>
+<a id='L299' name='L299'></a> 299         <strong class='reserved'>if</strong> (!genericInfo) <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300             <strong class='reserved'>return</strong> <a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>();
+<a id='L301' name='L301'></a> 301         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302             <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> realParamData = <a href='../S/1660.html#L427' title='Defined at 427 in src/java/lang/reflect/Executable.java.'>hasRealParameterData</a>();
+<a id='L303' name='L303'></a> 303             <strong class='reserved'>final</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] genericParamTypes = <a href='../D/19301.html' title='Multiple defined in 7 places.'>getGenericParameterTypes</a>();
+<a id='L304' name='L304'></a> 304             <strong class='reserved'>final</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] nonGenericParamTypes = <a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>();
+<a id='L305' name='L305'></a> 305             <strong class='reserved'>final</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a> = <strong class='reserved'>new</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[nonGenericParamTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>];
+<a id='L306' name='L306'></a> 306             <strong class='reserved'>final</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a> = <a href='../D/21383.html' title='Multiple defined in 13 places.'>getParameters</a>();
+<a id='L307' name='L307'></a> 307             <strong class='reserved'>int</strong> fromidx = 0;
+<a id='L308' name='L308'></a> 308             <em class='comment'>// If we have real parameter data, then we use the</em>
+<a id='L309' name='L309'></a> 309             <em class='comment'>// synthetic and mandate flags to our advantage.</em>
+<a id='L310' name='L310'></a> 310             <strong class='reserved'>if</strong> (realParamData) <em class='brace'>{</em>
+<a id='L311' name='L311'></a> 311                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L312' name='L312'></a> 312                     <strong class='reserved'>final</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a> param = <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[i];
+<a id='L313' name='L313'></a> 313                     <strong class='reserved'>if</strong> (param.<a href='../D/26330.html' title='Multiple defined in 10 places.'>isSynthetic</a>() || param.<a href='../S/1648.html#L250' title='Defined at 250 in src/java/lang/reflect/Parameter.java.'>isImplicit</a>()) <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314                         <em class='comment'>// If we hit a synthetic or mandated parameter,</em>
+<a id='L315' name='L315'></a> 315                         <em class='comment'>// use the non generic parameter info.</em>
+<a id='L316' name='L316'></a> 316                         <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>[i] = nonGenericParamTypes[i];
+<a id='L317' name='L317'></a> 317                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L318' name='L318'></a> 318                         <em class='comment'>// Otherwise, use the generic parameter info.</em>
+<a id='L319' name='L319'></a> 319                         <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>[i] = genericParamTypes[fromidx];
+<a id='L320' name='L320'></a> 320                         fromidx++;
+<a id='L321' name='L321'></a> 321                     <em class='brace'>}</em>
+<a id='L322' name='L322'></a> 322                 <em class='brace'>}</em>
+<a id='L323' name='L323'></a> 323             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L324' name='L324'></a> 324                 <em class='comment'>// Otherwise, use the non-generic parameter data.</em>
+<a id='L325' name='L325'></a> 325                 <em class='comment'>// Without method parameter reflection data, we have</em>
+<a id='L326' name='L326'></a> 326                 <em class='comment'>// no way to figure out which parameters are</em>
+<a id='L327' name='L327'></a> 327                 <em class='comment'>// synthetic/mandated, thus, no way to match up the</em>
+<a id='L328' name='L328'></a> 328                 <em class='comment'>// indexes.</em>
+<a id='L329' name='L329'></a> 329                 <strong class='reserved'>return</strong> genericParamTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == nonGenericParamTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ?
+<a id='L330' name='L330'></a> 330                     genericParamTypes : nonGenericParamTypes;
+<a id='L331' name='L331'></a> 331             <em class='brace'>}</em>
+<a id='L332' name='L332'></a> 332             <strong class='reserved'>return</strong> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>;
+<a id='L333' name='L333'></a> 333         <em class='brace'>}</em>
+<a id='L334' name='L334'></a> 334     <em class='brace'>}</em>
+<a id='L335' name='L335'></a> 335 
+<a id='L336' name='L336'></a> 336     <em class='comment'>/**</em>
+<a id='L337' name='L337'></a> 337 <em class='comment'>     * Returns an array of {@code Parameter} objects that represent</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * all the parameters to the underlying executable represented by</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     * this object.  Returns an array of length 0 if the executable</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     * has no parameters.</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     *</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * &lt;p&gt;The parameters of the underlying executable do not necessarily</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     * have unique names, or names that are legal identifiers in the</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * Java programming language (JLS 3.8).</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     *</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     * @since 1.8</em>
+<a id='L347' name='L347'></a> 347 <em class='comment'>     * @throws MalformedParametersException if the class file contains</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>     * a MethodParameters attribute that is improperly formatted.</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * @return an array of {@code Parameter} objects representing all</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     * the parameters to the executable this object represents.</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>     */</em>
+<a id='L352' name='L352'></a> 352     <strong class='reserved'>public</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../R/18260.html' title='Multiple referred from 9 places.'>getParameters</a>() <em class='brace'>{</em>
+<a id='L353' name='L353'></a> 353         <em class='comment'>// TODO: This may eventually need to be guarded by security</em>
+<a id='L354' name='L354'></a> 354         <em class='comment'>// mechanisms similar to those in Field, Method, etc.</em>
+<a id='L355' name='L355'></a> 355         <em class='comment'>//</em>
+<a id='L356' name='L356'></a> 356         <em class='comment'>// Need to copy the cached array to prevent users from messing</em>
+<a id='L357' name='L357'></a> 357         <em class='comment'>// with it.  Since parameters are immutable, we can</em>
+<a id='L358' name='L358'></a> 358         <em class='comment'>// shallow-copy.</em>
+<a id='L359' name='L359'></a> 359         <strong class='reserved'>return</strong> <a href='../S/1660.html#L398' title='Defined at 398 in src/java/lang/reflect/Executable.java.'>privateGetParameters</a>().<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L360' name='L360'></a> 360     <em class='brace'>}</em>
+<a id='L361' name='L361'></a> 361 
+<a id='L362' name='L362'></a> 362     <strong class='reserved'>private</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../S/1660.html#L415' title='Referred from 415 in src/java/lang/reflect/Executable.java.'>synthesizeAllParams</a>() <em class='brace'>{</em>
+<a id='L363' name='L363'></a> 363         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> realparams = <a href='../D/21368.html' title='Multiple defined in 4 places.'>getParameterCount</a>();
+<a id='L364' name='L364'></a> 364         <strong class='reserved'>final</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a> = <strong class='reserved'>new</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[realparams];
+<a id='L365' name='L365'></a> 365         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; realparams; i++)
+<a id='L366' name='L366'></a> 366             <em class='comment'>// TODO: is there a way to synthetically derive the</em>
+<a id='L367' name='L367'></a> 367             <em class='comment'>// modifiers?  Probably not in the general case, since</em>
+<a id='L368' name='L368'></a> 368             <em class='comment'>// we'd have no way of knowing about them, but there</em>
+<a id='L369' name='L369'></a> 369             <em class='comment'>// may be specific cases.</em>
+<a id='L370' name='L370'></a> 370             <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>[i] = <strong class='reserved'>new</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>("arg" + i, 0, <strong class='reserved'>this</strong>, i);
+<a id='L371' name='L371'></a> 371         <strong class='reserved'>return</strong> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>;
+<a id='L372' name='L372'></a> 372     <em class='brace'>}</em>
+<a id='L373' name='L373'></a> 373 
+<a id='L374' name='L374'></a> 374     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1660.html#L418' title='Referred from 418 in src/java/lang/reflect/Executable.java.'>verifyParameters</a>(<strong class='reserved'>final</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>) <em class='brace'>{</em>
+<a id='L375' name='L375'></a> 375         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.FINAL | <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.SYNTHETIC | <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.MANDATED;
+<a id='L376' name='L376'></a> 376 
+<a id='L377' name='L377'></a> 377         <strong class='reserved'>if</strong> (<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>)
+<a id='L378' name='L378'></a> 378             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1649.html#L51' title='Defined at 51 in src/java/lang/reflect/MalformedParametersException.java.'>MalformedParametersException</a>("Wrong number of parameters in MethodParameters attribute");
+<a id='L379' name='L379'></a> 379 
+<a id='L380' name='L380'></a> 380         <strong class='reserved'>for</strong> (<a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a> <a href='../S/1626.html#L504' title='Defined at 504 in src/java/lang/invoke/LambdaForm.java.'>parameter</a> : <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>) <em class='brace'>{</em>
+<a id='L381' name='L381'></a> 381             <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = <a href='../S/1626.html#L504' title='Defined at 504 in src/java/lang/invoke/LambdaForm.java.'>parameter</a>.<a href='../S/1648.html#L186' title='Defined at 186 in src/java/lang/reflect/Parameter.java.'>getRealName</a>();
+<a id='L382' name='L382'></a> 382             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> mods = <a href='../S/1626.html#L504' title='Defined at 504 in src/java/lang/invoke/LambdaForm.java.'>parameter</a>.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>();
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384             <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L385' name='L385'></a> 385                 <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/25493.html' title='Multiple defined in 113 places.'>isEmpty</a>() || <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>('.') != -1 ||
+<a id='L386' name='L386'></a> 386                     <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>(';') != -1 || <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>('[') != -1 ||
+<a id='L387' name='L387'></a> 387                     <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>('/') != -1) <em class='brace'>{</em>
+<a id='L388' name='L388'></a> 388                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1649.html#L51' title='Defined at 51 in src/java/lang/reflect/MalformedParametersException.java.'>MalformedParametersException</a>("Invalid parameter name \"" + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + "\"");
+<a id='L389' name='L389'></a> 389                 <em class='brace'>}</em>
+<a id='L390' name='L390'></a> 390             <em class='brace'>}</em>
+<a id='L391' name='L391'></a> 391 
+<a id='L392' name='L392'></a> 392             <strong class='reserved'>if</strong> (mods != (mods &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>)) <em class='brace'>{</em>
+<a id='L393' name='L393'></a> 393                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1649.html#L51' title='Defined at 51 in src/java/lang/reflect/MalformedParametersException.java.'>MalformedParametersException</a>("Invalid parameter modifiers");
+<a id='L394' name='L394'></a> 394             <em class='brace'>}</em>
+<a id='L395' name='L395'></a> 395         <em class='brace'>}</em>
+<a id='L396' name='L396'></a> 396     <em class='brace'>}</em>
+<a id='L397' name='L397'></a> 397 
+<a id='L398' name='L398'></a> 398     <strong class='reserved'>private</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../R/25073.html' title='Multiple referred from 2 places.'>privateGetParameters</a>() <em class='brace'>{</em>
+<a id='L399' name='L399'></a> 399         <em class='comment'>// Use tmp to avoid multiple writes to a volatile.</em>
+<a id='L400' name='L400'></a> 400         <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] tmp = <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>;
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402         <strong class='reserved'>if</strong> (tmp == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L403' name='L403'></a> 403 
+<a id='L404' name='L404'></a> 404             <em class='comment'>// Otherwise, go to the JVM to get them</em>
+<a id='L405' name='L405'></a> 405             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L406' name='L406'></a> 406                 tmp = <a href='../S/1660.html#L439' title='Defined at 439 in src/java/lang/reflect/Executable.java.'>getParameters0</a>();
+<a id='L407' name='L407'></a> 407             <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> e) <em class='brace'>{</em>
+<a id='L408' name='L408'></a> 408                 <em class='comment'>// Rethrow ClassFormatErrors</em>
+<a id='L409' name='L409'></a> 409                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1649.html#L51' title='Defined at 51 in src/java/lang/reflect/MalformedParametersException.java.'>MalformedParametersException</a>("Invalid constant pool index");
+<a id='L410' name='L410'></a> 410             <em class='brace'>}</em>
+<a id='L411' name='L411'></a> 411 
+<a id='L412' name='L412'></a> 412             <em class='comment'>// If we get back nothing, then synthesize parameters</em>
+<a id='L413' name='L413'></a> 413             <strong class='reserved'>if</strong> (tmp == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414                 <a href='../S/1660.html#L427' title='Defined at 427 in src/java/lang/reflect/Executable.java.'>hasRealParameterData</a> = <strong class='reserved'>false</strong>;
+<a id='L415' name='L415'></a> 415                 tmp = <a href='../S/1660.html#L362' title='Defined at 362 in src/java/lang/reflect/Executable.java.'>synthesizeAllParams</a>();
+<a id='L416' name='L416'></a> 416             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L417' name='L417'></a> 417                 <a href='../S/1660.html#L427' title='Defined at 427 in src/java/lang/reflect/Executable.java.'>hasRealParameterData</a> = <strong class='reserved'>true</strong>;
+<a id='L418' name='L418'></a> 418                 <a href='../S/1660.html#L374' title='Defined at 374 in src/java/lang/reflect/Executable.java.'>verifyParameters</a>(tmp);
+<a id='L419' name='L419'></a> 419             <em class='brace'>}</em>
+<a id='L420' name='L420'></a> 420 
+<a id='L421' name='L421'></a> 421             <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a> = tmp;
+<a id='L422' name='L422'></a> 422         <em class='brace'>}</em>
+<a id='L423' name='L423'></a> 423 
+<a id='L424' name='L424'></a> 424         <strong class='reserved'>return</strong> tmp;
+<a id='L425' name='L425'></a> 425     <em class='brace'>}</em>
+<a id='L426' name='L426'></a> 426 
+<a id='L427' name='L427'></a> 427     <strong class='reserved'>boolean</strong> <a href='../R/20264.html' title='Multiple referred from 6 places.'>hasRealParameterData</a>() <em class='brace'>{</em>
+<a id='L428' name='L428'></a> 428         <em class='comment'>// If this somehow gets called before parameters gets</em>
+<a id='L429' name='L429'></a> 429         <em class='comment'>// initialized, force it into existence.</em>
+<a id='L430' name='L430'></a> 430         <strong class='reserved'>if</strong> (<a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L431' name='L431'></a> 431             <a href='../S/1660.html#L398' title='Defined at 398 in src/java/lang/reflect/Executable.java.'>privateGetParameters</a>();
+<a id='L432' name='L432'></a> 432         <em class='brace'>}</em>
+<a id='L433' name='L433'></a> 433         <strong class='reserved'>return</strong> <a href='../S/1660.html#L427' title='Defined at 427 in src/java/lang/reflect/Executable.java.'>hasRealParameterData</a>;
+<a id='L434' name='L434'></a> 434     <em class='brace'>}</em>
+<a id='L435' name='L435'></a> 435 
+<a id='L436' name='L436'></a> 436     <strong class='reserved'>private</strong> <strong class='reserved'>transient</strong> <strong class='reserved'>volatile</strong> <strong class='reserved'>boolean</strong> <a href='../S/1660.html#L427' title='Defined at 427 in src/java/lang/reflect/Executable.java.'>hasRealParameterData</a>;
+<a id='L437' name='L437'></a> 437     <strong class='reserved'>private</strong> <strong class='reserved'>transient</strong> <strong class='reserved'>volatile</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>;
+<a id='L438' name='L438'></a> 438 
+<a id='L439' name='L439'></a> 439     <strong class='reserved'>private</strong> <strong class='reserved'>native</strong> <a href='../D/6597.html' title='Multiple defined in 4 places.'>Parameter</a>[] <a href='../S/1660.html#L406' title='Referred from 406 in src/java/lang/reflect/Executable.java.'>getParameters0</a>();
+<a id='L440' name='L440'></a> 440     <strong class='reserved'>native</strong> <strong class='reserved'>byte</strong>[] <a href='../R/19613.html' title='Multiple referred from 7 places.'>getTypeAnnotationBytes0</a>();
+<a id='L441' name='L441'></a> 441 
+<a id='L442' name='L442'></a> 442     <em class='comment'>// Needed by reflectaccess</em>
+<a id='L443' name='L443'></a> 443     <strong class='reserved'>byte</strong>[] <a href='../S/1665.html#L132' title='Referred from 132 in src/java/lang/reflect/ReflectAccess.java.'>getTypeAnnotationBytes</a>() <em class='brace'>{</em>
+<a id='L444' name='L444'></a> 444         <strong class='reserved'>return</strong> <a href='../D/23315.html' title='Multiple defined in 2 places.'>getTypeAnnotationBytes0</a>();
+<a id='L445' name='L445'></a> 445     <em class='brace'>}</em>
+<a id='L446' name='L446'></a> 446 
+<a id='L447' name='L447'></a> 447     <em class='comment'>/**</em>
+<a id='L448' name='L448'></a> 448 <em class='comment'>     * Returns an array of {@code Class} objects that represent the</em>
+<a id='L449' name='L449'></a> 449 <em class='comment'>     * types of exceptions declared to be thrown by the underlying</em>
+<a id='L450' name='L450'></a> 450 <em class='comment'>     * executable represented by this object.  Returns an array of</em>
+<a id='L451' name='L451'></a> 451 <em class='comment'>     * length 0 if the executable declares no exceptions in its {@code</em>
+<a id='L452' name='L452'></a> 452 <em class='comment'>     * throws} clause.</em>
+<a id='L453' name='L453'></a> 453 <em class='comment'>     *</em>
+<a id='L454' name='L454'></a> 454 <em class='comment'>     * @return the exception types declared as being thrown by the</em>
+<a id='L455' name='L455'></a> 455 <em class='comment'>     * executable this object represents</em>
+<a id='L456' name='L456'></a> 456 <em class='comment'>     */</em>
+<a id='L457' name='L457'></a> 457     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] <a href='../R/16471.html' title='Multiple referred from 11 places.'>getExceptionTypes</a>();
+<a id='L458' name='L458'></a> 458 
+<a id='L459' name='L459'></a> 459     <em class='comment'>/**</em>
+<a id='L460' name='L460'></a> 460 <em class='comment'>     * Returns an array of {@code Type} objects that represent the</em>
+<a id='L461' name='L461'></a> 461 <em class='comment'>     * exceptions declared to be thrown by this executable object.</em>
+<a id='L462' name='L462'></a> 462 <em class='comment'>     * Returns an array of length 0 if the underlying executable declares</em>
+<a id='L463' name='L463'></a> 463 <em class='comment'>     * no exceptions in its {@code throws} clause.</em>
+<a id='L464' name='L464'></a> 464 <em class='comment'>     *</em>
+<a id='L465' name='L465'></a> 465 <em class='comment'>     * &lt;p&gt;If an exception type is a type variable or a parameterized</em>
+<a id='L466' name='L466'></a> 466 <em class='comment'>     * type, it is created. Otherwise, it is resolved.</em>
+<a id='L467' name='L467'></a> 467 <em class='comment'>     *</em>
+<a id='L468' name='L468'></a> 468 <em class='comment'>     * @return an array of Types that represent the exception types</em>
+<a id='L469' name='L469'></a> 469 <em class='comment'>     *     thrown by the underlying executable</em>
+<a id='L470' name='L470'></a> 470 <em class='comment'>     * @throws GenericSignatureFormatError</em>
+<a id='L471' name='L471'></a> 471 <em class='comment'>     *     if the generic method signature does not conform to the format</em>
+<a id='L472' name='L472'></a> 472 <em class='comment'>     *     specified in</em>
+<a id='L473' name='L473'></a> 473 <em class='comment'>     *     &lt;cite&gt;The Java&amp;trade; Virtual Machine Specification&lt;/cite&gt;</em>
+<a id='L474' name='L474'></a> 474 <em class='comment'>     * @throws TypeNotPresentException if the underlying executable's</em>
+<a id='L475' name='L475'></a> 475 <em class='comment'>     *     {@code throws} clause refers to a non-existent type declaration</em>
+<a id='L476' name='L476'></a> 476 <em class='comment'>     * @throws MalformedParameterizedTypeException if</em>
+<a id='L477' name='L477'></a> 477 <em class='comment'>     *     the underlying executable's {@code throws} clause refers to a</em>
+<a id='L478' name='L478'></a> 478 <em class='comment'>     *     parameterized type that cannot be instantiated for any reason</em>
+<a id='L479' name='L479'></a> 479 <em class='comment'>     */</em>
+<a id='L480' name='L480'></a> 480     <strong class='reserved'>public</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../R/16763.html' title='Multiple referred from 4 places.'>getGenericExceptionTypes</a>() <em class='brace'>{</em>
+<a id='L481' name='L481'></a> 481         <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>[] <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L482' name='L482'></a> 482         <strong class='reserved'>if</strong> (<a href='../D/24099.html' title='Multiple defined in 3 places.'>hasGenericInformation</a>() &amp;&amp;
+<a id='L483' name='L483'></a> 483             ((<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../D/19299.html' title='Multiple defined in 5 places.'>getGenericInfo</a>().<a href='../D/18906.html' title='Multiple defined in 3 places.'>getExceptionTypes</a>()).<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0))
+<a id='L484' name='L484'></a> 484             <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L485' name='L485'></a> 485         <strong class='reserved'>else</strong>
+<a id='L486' name='L486'></a> 486             <strong class='reserved'>return</strong> <a href='../D/18906.html' title='Multiple defined in 3 places.'>getExceptionTypes</a>();
+<a id='L487' name='L487'></a> 487     <em class='brace'>}</em>
+<a id='L488' name='L488'></a> 488 
+<a id='L489' name='L489'></a> 489     <em class='comment'>/**</em>
+<a id='L490' name='L490'></a> 490 <em class='comment'>     * Returns a string describing this {@code Executable}, including</em>
+<a id='L491' name='L491'></a> 491 <em class='comment'>     * any type parameters.</em>
+<a id='L492' name='L492'></a> 492 <em class='comment'>     * @return a string describing this {@code Executable}, including</em>
+<a id='L493' name='L493'></a> 493 <em class='comment'>     * any type parameters</em>
+<a id='L494' name='L494'></a> 494 <em class='comment'>     */</em>
+<a id='L495' name='L495'></a> 495     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29263.html' title='Multiple referred from 2 places.'>toGenericString</a>();
+<a id='L496' name='L496'></a> 496 
+<a id='L497' name='L497'></a> 497     <em class='comment'>/**</em>
+<a id='L498' name='L498'></a> 498 <em class='comment'>     * Returns {@code true} if this executable was declared to take a</em>
+<a id='L499' name='L499'></a> 499 <em class='comment'>     * variable number of arguments; returns {@code false} otherwise.</em>
+<a id='L500' name='L500'></a> 500 <em class='comment'>     *</em>
+<a id='L501' name='L501'></a> 501 <em class='comment'>     * @return {@code true} if an only if this executable was declared</em>
+<a id='L502' name='L502'></a> 502 <em class='comment'>     * to take a variable number of arguments.</em>
+<a id='L503' name='L503'></a> 503 <em class='comment'>     */</em>
+<a id='L504' name='L504'></a> 504     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/22209.html' title='Multiple referred from 5 places.'>isVarArgs</a>()  <em class='brace'>{</em>
+<a id='L505' name='L505'></a> 505         <strong class='reserved'>return</strong> (<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>() &amp; <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.VARARGS) != 0;
+<a id='L506' name='L506'></a> 506     <em class='brace'>}</em>
+<a id='L507' name='L507'></a> 507 
+<a id='L508' name='L508'></a> 508     <em class='comment'>/**</em>
+<a id='L509' name='L509'></a> 509 <em class='comment'>     * Returns {@code true} if this executable is a synthetic</em>
+<a id='L510' name='L510'></a> 510 <em class='comment'>     * construct; returns {@code false} otherwise.</em>
+<a id='L511' name='L511'></a> 511 <em class='comment'>     *</em>
+<a id='L512' name='L512'></a> 512 <em class='comment'>     * @return true if and only if this executable is a synthetic</em>
+<a id='L513' name='L513'></a> 513 <em class='comment'>     * construct as defined by</em>
+<a id='L514' name='L514'></a> 514 <em class='comment'>     * &lt;cite&gt;The Java&amp;trade; Language Specification&lt;/cite&gt;.</em>
+<a id='L515' name='L515'></a> 515 <em class='comment'>     * @jls 13.1 The Form of a Binary</em>
+<a id='L516' name='L516'></a> 516 <em class='comment'>     */</em>
+<a id='L517' name='L517'></a> 517     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/22089.html' title='Multiple referred from 7 places.'>isSynthetic</a>() <em class='brace'>{</em>
+<a id='L518' name='L518'></a> 518         <strong class='reserved'>return</strong> <a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26330.html' title='Multiple defined in 10 places.'>isSynthetic</a>(<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>());
+<a id='L519' name='L519'></a> 519     <em class='brace'>}</em>
+<a id='L520' name='L520'></a> 520 
+<a id='L521' name='L521'></a> 521     <em class='comment'>/**</em>
+<a id='L522' name='L522'></a> 522 <em class='comment'>     * Returns an array of arrays of {@code Annotation}s that</em>
+<a id='L523' name='L523'></a> 523 <em class='comment'>     * represent the annotations on the formal parameters, in</em>
+<a id='L524' name='L524'></a> 524 <em class='comment'>     * declaration order, of the {@code Executable} represented by</em>
+<a id='L525' name='L525'></a> 525 <em class='comment'>     * this object.  Synthetic and mandated parameters (see</em>
+<a id='L526' name='L526'></a> 526 <em class='comment'>     * explanation below), such as the outer "this" parameter to an</em>
+<a id='L527' name='L527'></a> 527 <em class='comment'>     * inner class constructor will be represented in the returned</em>
+<a id='L528' name='L528'></a> 528 <em class='comment'>     * array.  If the executable has no parameters (meaning no formal,</em>
+<a id='L529' name='L529'></a> 529 <em class='comment'>     * no synthetic, and no mandated parameters), a zero-length array</em>
+<a id='L530' name='L530'></a> 530 <em class='comment'>     * will be returned.  If the {@code Executable} has one or more</em>
+<a id='L531' name='L531'></a> 531 <em class='comment'>     * parameters, a nested array of length zero is returned for each</em>
+<a id='L532' name='L532'></a> 532 <em class='comment'>     * parameter with no annotations. The annotation objects contained</em>
+<a id='L533' name='L533'></a> 533 <em class='comment'>     * in the returned arrays are serializable.  The caller of this</em>
+<a id='L534' name='L534'></a> 534 <em class='comment'>     * method is free to modify the returned arrays; it will have no</em>
+<a id='L535' name='L535'></a> 535 <em class='comment'>     * effect on the arrays returned to other callers.</em>
+<a id='L536' name='L536'></a> 536 <em class='comment'>     *</em>
+<a id='L537' name='L537'></a> 537 <em class='comment'>     * A compiler may add extra parameters that are implicitly</em>
+<a id='L538' name='L538'></a> 538 <em class='comment'>     * declared in source ("mandated"), as well as parameters that</em>
+<a id='L539' name='L539'></a> 539 <em class='comment'>     * are neither implicitly nor explicitly declared in source</em>
+<a id='L540' name='L540'></a> 540 <em class='comment'>     * ("synthetic") to the parameter list for a method.  See {@link</em>
+<a id='L541' name='L541'></a> 541 <em class='comment'>     * java.lang.reflect.Parameter} for more information.</em>
+<a id='L542' name='L542'></a> 542 <em class='comment'>     *</em>
+<a id='L543' name='L543'></a> 543 <em class='comment'>     * @see java.lang.reflect.Parameter</em>
+<a id='L544' name='L544'></a> 544 <em class='comment'>     * @see java.lang.reflect.Parameter#getAnnotations</em>
+<a id='L545' name='L545'></a> 545 <em class='comment'>     * @return an array of arrays that represent the annotations on</em>
+<a id='L546' name='L546'></a> 546 <em class='comment'>     *    the formal and implicit parameters, in declaration order, of</em>
+<a id='L547' name='L547'></a> 547 <em class='comment'>     *    the executable represented by this object</em>
+<a id='L548' name='L548'></a> 548 <em class='comment'>     */</em>
+<a id='L549' name='L549'></a> 549     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>[][] <a href='../R/18251.html' title='Multiple referred from 4 places.'>getParameterAnnotations</a>();
+<a id='L550' name='L550'></a> 550 
+<a id='L551' name='L551'></a> 551     <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>[][] <a href='../R/28497.html' title='Multiple referred from 2 places.'>sharedGetParameterAnnotations</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] parameterTypes,
+<a id='L552' name='L552'></a> 552                                                  <strong class='reserved'>byte</strong>[] parameterAnnotations) <em class='brace'>{</em>
+<a id='L553' name='L553'></a> 553         <strong class='reserved'>int</strong> numParameters = parameterTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L554' name='L554'></a> 554         <strong class='reserved'>if</strong> (parameterAnnotations == <strong class='reserved'>null</strong>)
+<a id='L555' name='L555'></a> 555             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>[numParameters][0];
+<a id='L556' name='L556'></a> 556 
+<a id='L557' name='L557'></a> 557         <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>[][] <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/1660.html#L79' title='Defined at 79 in src/java/lang/reflect/Executable.java.'>parseParameterAnnotations</a>(parameterAnnotations);
+<a id='L558' name='L558'></a> 558 
+<a id='L559' name='L559'></a> 559         <strong class='reserved'>if</strong> (<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != numParameters)
+<a id='L560' name='L560'></a> 560             <a href='../D/24014.html' title='Multiple defined in 3 places.'>handleParameterNumberMismatch</a>(<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, numParameters);
+<a id='L561' name='L561'></a> 561         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L562' name='L562'></a> 562     <em class='brace'>}</em>
+<a id='L563' name='L563'></a> 563 
+<a id='L564' name='L564'></a> 564     <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../S/1660.html#L560' title='Referred from 560 in src/java/lang/reflect/Executable.java.'>handleParameterNumberMismatch</a>(<strong class='reserved'>int</strong> resultLength, <strong class='reserved'>int</strong> numParameters);
+<a id='L565' name='L565'></a> 565 
+<a id='L566' name='L566'></a> 566     <em class='comment'>/**</em>
+<a id='L567' name='L567'></a> 567 <em class='comment'>     * {@inheritDoc}</em>
+<a id='L568' name='L568'></a> 568 <em class='comment'>     * @throws NullPointerException  {@inheritDoc}</em>
+<a id='L569' name='L569'></a> 569 <em class='comment'>     */</em>
+<a id='L570' name='L570'></a> 570     <strong class='reserved'>public</strong> &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <strong class='reserved'>extends</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>&gt; <a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <a href='../R/15072.html' title='Multiple referred from 23 places.'>getAnnotation</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; annotationClass) <em class='brace'>{</em>
+<a id='L571' name='L571'></a> 571         <a href='../S/859.html#L38' title='Defined at 38 in src/java/util/Objects.java.'>Objects</a>.<a href='../D/31141.html' title='Multiple defined in 4 places.'>requireNonNull</a>(annotationClass);
+<a id='L572' name='L572'></a> 572         <strong class='reserved'>return</strong> annotationClass.<a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(<a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a>().<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(annotationClass));
+<a id='L573' name='L573'></a> 573     <em class='brace'>}</em>
+<a id='L574' name='L574'></a> 574 
+<a id='L575' name='L575'></a> 575     <em class='comment'>/**</em>
+<a id='L576' name='L576'></a> 576 <em class='comment'>     * {@inheritDoc}</em>
+<a id='L577' name='L577'></a> 577 <em class='comment'>     * @throws NullPointerException {@inheritDoc}</em>
+<a id='L578' name='L578'></a> 578 <em class='comment'>     * @since 1.8</em>
+<a id='L579' name='L579'></a> 579 <em class='comment'>     */</em>
+<a id='L580' name='L580'></a> 580     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L581' name='L581'></a> 581     <strong class='reserved'>public</strong> &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <strong class='reserved'>extends</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>&gt; <a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>[] <a href='../R/15077.html' title='Multiple referred from 4 places.'>getAnnotationsByType</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; annotationClass) <em class='brace'>{</em>
+<a id='L582' name='L582'></a> 582         <a href='../S/859.html#L38' title='Defined at 38 in src/java/util/Objects.java.'>Objects</a>.<a href='../D/31141.html' title='Multiple defined in 4 places.'>requireNonNull</a>(annotationClass);
+<a id='L583' name='L583'></a> 583 
+<a id='L584' name='L584'></a> 584         <strong class='reserved'>return</strong> AnnotationSupport.getDirectlyAndIndirectlyPresent(<a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a>(), annotationClass);
+<a id='L585' name='L585'></a> 585     <em class='brace'>}</em>
+<a id='L586' name='L586'></a> 586 
+<a id='L587' name='L587'></a> 587     <em class='comment'>/**</em>
+<a id='L588' name='L588'></a> 588 <em class='comment'>     * {@inheritDoc}</em>
+<a id='L589' name='L589'></a> 589 <em class='comment'>     */</em>
+<a id='L590' name='L590'></a> 590     <strong class='reserved'>public</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>[] <a href='../R/15977.html' title='Multiple referred from 8 places.'>getDeclaredAnnotations</a>()  <em class='brace'>{</em>
+<a id='L591' name='L591'></a> 591         <strong class='reserved'>return</strong> AnnotationParser.<a href='../D/35348.html' title='Multiple defined in 117 places.'>toArray</a>(<a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a>());
+<a id='L592' name='L592'></a> 592     <em class='brace'>}</em>
+<a id='L593' name='L593'></a> 593 
+<a id='L594' name='L594'></a> 594     <strong class='reserved'>private</strong> <strong class='reserved'>transient</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;? <strong class='reserved'>extends</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>&gt;, <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>&gt; <a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a>;
+<a id='L595' name='L595'></a> 595 
+<a id='L596' name='L596'></a> 596     <strong class='reserved'>private</strong> <strong class='reserved'>synchronized</strong>  <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;? <strong class='reserved'>extends</strong> <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>&gt;, <a href='../D/428.html' title='Multiple defined in 2 places.'>Annotation</a>&gt; <a href='../R/12939.html' title='Multiple referred from 37 places.'>declaredAnnotations</a>() <em class='brace'>{</em>
+<a id='L597' name='L597'></a> 597         <strong class='reserved'>if</strong> (<a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L598' name='L598'></a> 598             <a href='../S/1660.html#L43' title='Defined at 43 in src/java/lang/reflect/Executable.java.'>Executable</a> <a href='../S/867.html#L1804' title='Defined at 1804 in src/java/util/HashMap.java.'>root</a> = <a href='../D/22122.html' title='Multiple defined in 25 places.'>getRoot</a>();
+<a id='L599' name='L599'></a> 599             <strong class='reserved'>if</strong> (<a href='../S/867.html#L1804' title='Defined at 1804 in src/java/util/HashMap.java.'>root</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L600' name='L600'></a> 600                 <a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a> = <a href='../S/867.html#L1804' title='Defined at 1804 in src/java/util/HashMap.java.'>root</a>.<a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a>();
+<a id='L601' name='L601'></a> 601             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L602' name='L602'></a> 602                 <a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a> = AnnotationParser.parseAnnotations(
+<a id='L603' name='L603'></a> 603                     <a href='../D/16965.html' title='Multiple defined in 3 places.'>getAnnotationBytes</a>(),
+<a id='L604' name='L604'></a> 604                     sun.misc.SharedSecrets.getJavaLangAccess().
+<a id='L605' name='L605'></a> 605                     <a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>(<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>()),
+<a id='L606' name='L606'></a> 606                     <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>());
+<a id='L607' name='L607'></a> 607             <em class='brace'>}</em>
+<a id='L608' name='L608'></a> 608         <em class='brace'>}</em>
+<a id='L609' name='L609'></a> 609         <strong class='reserved'>return</strong> <a href='../D/14514.html' title='Multiple defined in 3 places.'>declaredAnnotations</a>;
+<a id='L610' name='L610'></a> 610     <em class='brace'>}</em>
+<a id='L611' name='L611'></a> 611 
+<a id='L612' name='L612'></a> 612     <em class='comment'>/**</em>
+<a id='L613' name='L613'></a> 613 <em class='comment'>     * Returns an {@code AnnotatedType} object that represents the use of a type to</em>
+<a id='L614' name='L614'></a> 614 <em class='comment'>     * specify the return type of the method/constructor represented by this</em>
+<a id='L615' name='L615'></a> 615 <em class='comment'>     * Executable.</em>
+<a id='L616' name='L616'></a> 616 <em class='comment'>     *</em>
+<a id='L617' name='L617'></a> 617 <em class='comment'>     * If this {@code Executable} object represents a constructor, the {@code</em>
+<a id='L618' name='L618'></a> 618 <em class='comment'>     * AnnotatedType} object represents the type of the constructed object.</em>
+<a id='L619' name='L619'></a> 619 <em class='comment'>     *</em>
+<a id='L620' name='L620'></a> 620 <em class='comment'>     * If this {@code Executable} object represents a method, the {@code</em>
+<a id='L621' name='L621'></a> 621 <em class='comment'>     * AnnotatedType} object represents the use of a type to specify the return</em>
+<a id='L622' name='L622'></a> 622 <em class='comment'>     * type of the method.</em>
+<a id='L623' name='L623'></a> 623 <em class='comment'>     *</em>
+<a id='L624' name='L624'></a> 624 <em class='comment'>     * @return an object representing the return type of the method</em>
+<a id='L625' name='L625'></a> 625 <em class='comment'>     * or constructor represented by this {@code Executable}</em>
+<a id='L626' name='L626'></a> 626 <em class='comment'>     *</em>
+<a id='L627' name='L627'></a> 627 <em class='comment'>     * @since 1.8</em>
+<a id='L628' name='L628'></a> 628 <em class='comment'>     */</em>
+<a id='L629' name='L629'></a> 629     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/424.html' title='Multiple defined in 2 places.'>AnnotatedType</a> getAnnotatedReturnType();
+<a id='L630' name='L630'></a> 630 
+<a id='L631' name='L631'></a> 631     <em class='comment'>/* Helper for subclasses of Executable.</em>
+<a id='L632' name='L632'></a> 632 <em class='comment'>     *</em>
+<a id='L633' name='L633'></a> 633 <em class='comment'>     * Returns an AnnotatedType object that represents the use of a type to</em>
+<a id='L634' name='L634'></a> 634 <em class='comment'>     * specify the return type of the method/constructor represented by this</em>
+<a id='L635' name='L635'></a> 635 <em class='comment'>     * Executable.</em>
+<a id='L636' name='L636'></a> 636 <em class='comment'>     *</em>
+<a id='L637' name='L637'></a> 637 <em class='comment'>     * @since 1.8</em>
+<a id='L638' name='L638'></a> 638 <em class='comment'>     */</em>
+<a id='L639' name='L639'></a> 639     <a href='../D/424.html' title='Multiple defined in 2 places.'>AnnotatedType</a> <a href='../R/15071.html' title='Multiple referred from 2 places.'>getAnnotatedReturnType0</a>(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>) <em class='brace'>{</em>
+<a id='L640' name='L640'></a> 640         <strong class='reserved'>return</strong> TypeAnnotationParser.buildAnnotatedType(<a href='../D/23315.html' title='Multiple defined in 2 places.'>getTypeAnnotationBytes0</a>(),
+<a id='L641' name='L641'></a> 641                 sun.misc.SharedSecrets.getJavaLangAccess().
+<a id='L642' name='L642'></a> 642                         <a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>(<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>()),
+<a id='L643' name='L643'></a> 643                 <strong class='reserved'>this</strong>,
+<a id='L644' name='L644'></a> 644                 <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>(),
+<a id='L645' name='L645'></a> 645                 <a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>,
+<a id='L646' name='L646'></a> 646                 TypeAnnotation.TypeAnnotationTarget.METHOD_RETURN);
+<a id='L647' name='L647'></a> 647     <em class='brace'>}</em>
+<a id='L648' name='L648'></a> 648 
+<a id='L649' name='L649'></a> 649     <em class='comment'>/**</em>
+<a id='L650' name='L650'></a> 650 <em class='comment'>     * Returns an {@code AnnotatedType} object that represents the use of a</em>
+<a id='L651' name='L651'></a> 651 <em class='comment'>     * type to specify the receiver type of the method/constructor represented</em>
+<a id='L652' name='L652'></a> 652 <em class='comment'>     * by this Executable object. The receiver type of a method/constructor is</em>
+<a id='L653' name='L653'></a> 653 <em class='comment'>     * available only if the method/constructor has a &lt;em&gt;receiver</em>
+<a id='L654' name='L654'></a> 654 <em class='comment'>     * parameter&lt;/em&gt; (JLS 8.4.1).</em>
+<a id='L655' name='L655'></a> 655 <em class='comment'>     *</em>
+<a id='L656' name='L656'></a> 656 <em class='comment'>     * If this {@code Executable} object represents a constructor or instance</em>
+<a id='L657' name='L657'></a> 657 <em class='comment'>     * method that does not have a receiver parameter, or has a receiver</em>
+<a id='L658' name='L658'></a> 658 <em class='comment'>     * parameter with no annotations on its type, then the return value is an</em>
+<a id='L659' name='L659'></a> 659 <em class='comment'>     * {@code AnnotatedType} object representing an element with no</em>
+<a id='L660' name='L660'></a> 660 <em class='comment'>     * annotations.</em>
+<a id='L661' name='L661'></a> 661 <em class='comment'>     *</em>
+<a id='L662' name='L662'></a> 662 <em class='comment'>     * If this {@code Executable} object represents a static method, then the</em>
+<a id='L663' name='L663'></a> 663 <em class='comment'>     * return value is null.</em>
+<a id='L664' name='L664'></a> 664 <em class='comment'>     *</em>
+<a id='L665' name='L665'></a> 665 <em class='comment'>     * @return an object representing the receiver type of the method or</em>
+<a id='L666' name='L666'></a> 666 <em class='comment'>     * constructor represented by this {@code Executable}</em>
+<a id='L667' name='L667'></a> 667 <em class='comment'>     *</em>
+<a id='L668' name='L668'></a> 668 <em class='comment'>     * @since 1.8</em>
+<a id='L669' name='L669'></a> 669 <em class='comment'>     */</em>
+<a id='L670' name='L670'></a> 670     <strong class='reserved'>public</strong> <a href='../D/424.html' title='Multiple defined in 2 places.'>AnnotatedType</a> <a href='../S/1650.html#L561' title='Referred from 561 in src/java/lang/reflect/Constructor.java.'>getAnnotatedReceiverType</a>() <em class='brace'>{</em>
+<a id='L671' name='L671'></a> 671         <strong class='reserved'>if</strong> (<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26281.html' title='Multiple defined in 7 places.'>isStatic</a>(<strong class='reserved'>this</strong>.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>()))
+<a id='L672' name='L672'></a> 672             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L673' name='L673'></a> 673         <strong class='reserved'>return</strong> TypeAnnotationParser.buildAnnotatedType(<a href='../D/23315.html' title='Multiple defined in 2 places.'>getTypeAnnotationBytes0</a>(),
+<a id='L674' name='L674'></a> 674                 sun.misc.SharedSecrets.getJavaLangAccess().
+<a id='L675' name='L675'></a> 675                         <a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>(<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>()),
+<a id='L676' name='L676'></a> 676                 <strong class='reserved'>this</strong>,
+<a id='L677' name='L677'></a> 677                 <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>(),
+<a id='L678' name='L678'></a> 678                 <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>(),
+<a id='L679' name='L679'></a> 679                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
+<a id='L680' name='L680'></a> 680     <em class='brace'>}</em>
+<a id='L681' name='L681'></a> 681 
+<a id='L682' name='L682'></a> 682     <em class='comment'>/**</em>
+<a id='L683' name='L683'></a> 683 <em class='comment'>     * Returns an array of {@code AnnotatedType} objects that represent the use</em>
+<a id='L684' name='L684'></a> 684 <em class='comment'>     * of types to specify formal parameter types of the method/constructor</em>
+<a id='L685' name='L685'></a> 685 <em class='comment'>     * represented by this Executable. The order of the objects in the array</em>
+<a id='L686' name='L686'></a> 686 <em class='comment'>     * corresponds to the order of the formal parameter types in the</em>
+<a id='L687' name='L687'></a> 687 <em class='comment'>     * declaration of the method/constructor.</em>
+<a id='L688' name='L688'></a> 688 <em class='comment'>     *</em>
+<a id='L689' name='L689'></a> 689 <em class='comment'>     * Returns an array of length 0 if the method/constructor declares no</em>
+<a id='L690' name='L690'></a> 690 <em class='comment'>     * parameters.</em>
+<a id='L691' name='L691'></a> 691 <em class='comment'>     *</em>
+<a id='L692' name='L692'></a> 692 <em class='comment'>     * @return an array of objects representing the types of the</em>
+<a id='L693' name='L693'></a> 693 <em class='comment'>     * formal parameters of the method or constructor represented by this</em>
+<a id='L694' name='L694'></a> 694 <em class='comment'>     * {@code Executable}</em>
+<a id='L695' name='L695'></a> 695 <em class='comment'>     *</em>
+<a id='L696' name='L696'></a> 696 <em class='comment'>     * @since 1.8</em>
+<a id='L697' name='L697'></a> 697 <em class='comment'>     */</em>
+<a id='L698' name='L698'></a> 698     <strong class='reserved'>public</strong> <a href='../D/424.html' title='Multiple defined in 2 places.'>AnnotatedType</a>[] <a href='../S/1648.html#L237' title='Referred from 237 in src/java/lang/reflect/Parameter.java.'>getAnnotatedParameterTypes</a>() <em class='brace'>{</em>
+<a id='L699' name='L699'></a> 699         <strong class='reserved'>return</strong> TypeAnnotationParser.buildAnnotatedTypes(<a href='../D/23315.html' title='Multiple defined in 2 places.'>getTypeAnnotationBytes0</a>(),
+<a id='L700' name='L700'></a> 700                 sun.misc.SharedSecrets.getJavaLangAccess().
+<a id='L701' name='L701'></a> 701                         <a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>(<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>()),
+<a id='L702' name='L702'></a> 702                 <strong class='reserved'>this</strong>,
+<a id='L703' name='L703'></a> 703                 <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>(),
+<a id='L704' name='L704'></a> 704                 <a href='../S/1660.html#L293' title='Defined at 293 in src/java/lang/reflect/Executable.java.'>getAllGenericParameterTypes</a>(),
+<a id='L705' name='L705'></a> 705                 TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
+<a id='L706' name='L706'></a> 706     <em class='brace'>}</em>
+<a id='L707' name='L707'></a> 707 
+<a id='L708' name='L708'></a> 708     <em class='comment'>/**</em>
+<a id='L709' name='L709'></a> 709 <em class='comment'>     * Returns an array of {@code AnnotatedType} objects that represent the use</em>
+<a id='L710' name='L710'></a> 710 <em class='comment'>     * of types to specify the declared exceptions of the method/constructor</em>
+<a id='L711' name='L711'></a> 711 <em class='comment'>     * represented by this Executable. The order of the objects in the array</em>
+<a id='L712' name='L712'></a> 712 <em class='comment'>     * corresponds to the order of the exception types in the declaration of</em>
+<a id='L713' name='L713'></a> 713 <em class='comment'>     * the method/constructor.</em>
+<a id='L714' name='L714'></a> 714 <em class='comment'>     *</em>
+<a id='L715' name='L715'></a> 715 <em class='comment'>     * Returns an array of length 0 if the method/constructor declares no</em>
+<a id='L716' name='L716'></a> 716 <em class='comment'>     * exceptions.</em>
+<a id='L717' name='L717'></a> 717 <em class='comment'>     *</em>
+<a id='L718' name='L718'></a> 718 <em class='comment'>     * @return an array of objects representing the declared</em>
+<a id='L719' name='L719'></a> 719 <em class='comment'>     * exceptions of the method or constructor represented by this {@code</em>
+<a id='L720' name='L720'></a> 720 <em class='comment'>     * Executable}</em>
+<a id='L721' name='L721'></a> 721 <em class='comment'>     *</em>
+<a id='L722' name='L722'></a> 722 <em class='comment'>     * @since 1.8</em>
+<a id='L723' name='L723'></a> 723 <em class='comment'>     */</em>
+<a id='L724' name='L724'></a> 724     <strong class='reserved'>public</strong> <a href='../D/424.html' title='Multiple defined in 2 places.'>AnnotatedType</a>[] getAnnotatedExceptionTypes() <em class='brace'>{</em>
+<a id='L725' name='L725'></a> 725         <strong class='reserved'>return</strong> TypeAnnotationParser.buildAnnotatedTypes(<a href='../D/23315.html' title='Multiple defined in 2 places.'>getTypeAnnotationBytes0</a>(),
+<a id='L726' name='L726'></a> 726                 sun.misc.SharedSecrets.getJavaLangAccess().
+<a id='L727' name='L727'></a> 727                         <a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>(<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>()),
+<a id='L728' name='L728'></a> 728                 <strong class='reserved'>this</strong>,
+<a id='L729' name='L729'></a> 729                 <a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>(),
+<a id='L730' name='L730'></a> 730                 <a href='../D/19298.html' title='Multiple defined in 3 places.'>getGenericExceptionTypes</a>(),
+<a id='L731' name='L731'></a> 731                 TypeAnnotation.TypeAnnotationTarget.<a href='../S/6604.html#L198' title='Defined at 198 in src/com/sun/source/doctree/DocTree.java.'>THROWS</a>);
+<a id='L732' name='L732'></a> 732     <em class='brace'>}</em>
+<a id='L733' name='L733'></a> 733 
+<a id='L734' name='L734'></a> 734 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L53'>[^]</a><a href='#L724'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

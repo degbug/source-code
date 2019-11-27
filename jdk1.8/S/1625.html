@@ -1,0 +1,344 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/lang/invoke/TypeConvertingMethodAdapter.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8003.html'>lang</a>/<a href='../files/8006.html'>invoke</a>/TypeConvertingMethodAdapter.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L90'>[^]</a><a href='#L291'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L90' title='Defined at 90.'>initWidening</a></li>
+<li><a href='#L101' title='Defined at 101.'>hashWrapperName</a></li>
+<li><a href='#L108' title='Defined at 108.'>wrapperOrNullFromDescriptor</a></li>
+<li><a href='#L125' title='Defined at 125.'>wrapperName</a></li>
+<li><a href='#L129' title='Defined at 129.'>unboxMethod</a></li>
+<li><a href='#L133' title='Defined at 133.'>boxingDescriptor</a></li>
+<li><a href='#L137' title='Defined at 137.'>unboxingDescriptor</a></li>
+<li><a href='#L141' title='Defined at 141.'>boxIfTypePrimitive</a></li>
+<li><a href='#L148' title='Defined at 148.'>widen</a></li>
+<li><a href='#L157' title='Defined at 157.'>box</a></li>
+<li><a href='#L169' title='Defined at 169.'>unbox</a></li>
+<li><a href='#L176' title='Defined at 176.'>descriptorToName</a></li>
+<li><a href='#L187' title='Defined at 187.'>cast</a></li>
+<li><a href='#L195' title='Defined at 195.'>isPrimitive</a></li>
+<li><a href='#L199' title='Defined at 199.'>toWrapper</a></li>
+<li><a href='#L214' title='Defined at 214.'>convertType</a></li>
+<li><a href='#L291' title='Defined at 291.'>iconst</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> jdk.internal.org.objectweb.asm.MethodVisitor;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> jdk.internal.org.objectweb.asm.Opcodes;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> jdk.internal.org.objectweb.asm.Type;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> sun.invoke.util.BytecodeDescriptor;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> sun.invoke.util.Wrapper;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> static sun.invoke.util.Wrapper.*;
+<a id='L34' name='L34'></a>  34 
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>class</strong> <a href='../R/8353.html' title='Multiple referred from 3 places.'>TypeConvertingMethodAdapter</a> <strong class='reserved'>extends</strong> MethodVisitor <em class='brace'>{</em>
+<a id='L36' name='L36'></a>  36 
+<a id='L37' name='L37'></a>  37     TypeConvertingMethodAdapter(MethodVisitor mv) <em class='brace'>{</em>
+<a id='L38' name='L38'></a>  38         <strong class='reserved'>super</strong>(Opcodes.ASM5, mv);
+<a id='L39' name='L39'></a>  39     <em class='brace'>}</em>
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NUM_WRAPPERS = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_OBJECT = "java/lang/Object";
+<a id='L44' name='L44'></a>  44     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> WRAPPER_PREFIX = "Ljava/lang/";
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46     <em class='comment'>// Same for all primitives; name of the boxing method</em>
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_BOX_METHOD = "valueOf";
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49     <em class='comment'>// Table of opcodes for widening primitive conversions; NOP = no conversion</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>[][] wideningOpcodes = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[NUM_WRAPPERS][NUM_WRAPPERS];
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>[] FROM_WRAPPER_NAME = <strong class='reserved'>new</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>[16];
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54     <em class='comment'>// Table of wrappers for primitives, indexed by ASM type sorts</em>
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>[] FROM_TYPE_SORT = <strong class='reserved'>new</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>[16];
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>static</strong> <em class='brace'>{</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>for</strong> (<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w : <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>()) <em class='brace'>{</em>
+<a id='L59' name='L59'></a>  59             <strong class='reserved'>if</strong> (w.<a href='../D/11786.html' title='Multiple defined in 2 places.'>basicTypeChar</a>() != 'L') <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60                 <strong class='reserved'>int</strong> <a href='../S/4879.html#L58' title='Defined at 58 in src/com/sun/org/apache/xpath/internal/axes/AxesWalker.java.'>wi</a> = <a href='../S/1625.html#L101' title='Defined at 101 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>hashWrapperName</a>(w.wrapperSimpleName());
+<a id='L61' name='L61'></a>  61                 <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> (FROM_WRAPPER_NAME[<a href='../S/4879.html#L58' title='Defined at 58 in src/com/sun/org/apache/xpath/internal/axes/AxesWalker.java.'>wi</a>] == <strong class='reserved'>null</strong>);
+<a id='L62' name='L62'></a>  62                 FROM_WRAPPER_NAME[<a href='../S/4879.html#L58' title='Defined at 58 in src/com/sun/org/apache/xpath/internal/axes/AxesWalker.java.'>wi</a>] = w;
+<a id='L63' name='L63'></a>  63             <em class='brace'>}</em>
+<a id='L64' name='L64'></a>  64         <em class='brace'>}</em>
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; NUM_WRAPPERS; i++) <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> j = 0; j &lt; NUM_WRAPPERS; j++) <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68                 wideningOpcodes[i][j] = Opcodes.<a href='../S/4691.html#L66' title='Defined at 66 in src/com/sun/org/apache/bcel/internal/generic/NOP.java.'>NOP</a>;
+<a id='L69' name='L69'></a>  69             <em class='brace'>}</em>
+<a id='L70' name='L70'></a>  70         <em class='brace'>}</em>
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(LONG,   Opcodes.<a href='../S/4666.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/I2L.java.'>I2L</a>, BYTE, <a href='../S/1535.html#L104' title='Defined at 104 in src/java/time/format/TextStyle.java.'>SHORT</a>, INT, <a href='../S/2603.html#L79' title='Defined at 79 in src/java/sql/JDBCType.java.'>CHAR</a>);
+<a id='L73' name='L73'></a>  73         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(LONG,   Opcodes.<a href='../S/4740.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/F2L.java.'>F2L</a>, <a href='../S/2603.html#L59' title='Defined at 59 in src/java/sql/JDBCType.java.'>FLOAT</a>);
+<a id='L74' name='L74'></a>  74         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(<a href='../S/2603.html#L59' title='Defined at 59 in src/java/sql/JDBCType.java.'>FLOAT</a>,  Opcodes.<a href='../S/4714.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/I2F.java.'>I2F</a>, BYTE, <a href='../S/1535.html#L104' title='Defined at 104 in src/java/time/format/TextStyle.java.'>SHORT</a>, INT, <a href='../S/2603.html#L79' title='Defined at 79 in src/java/sql/JDBCType.java.'>CHAR</a>);
+<a id='L75' name='L75'></a>  75         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(<a href='../S/2603.html#L59' title='Defined at 59 in src/java/sql/JDBCType.java.'>FLOAT</a>,  Opcodes.<a href='../S/4728.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/L2F.java.'>L2F</a>, LONG);
+<a id='L76' name='L76'></a>  76         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(<a href='../S/2603.html#L67' title='Defined at 67 in src/java/sql/JDBCType.java.'>DOUBLE</a>, Opcodes.<a href='../S/4770.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/I2D.java.'>I2D</a>, BYTE, <a href='../S/1535.html#L104' title='Defined at 104 in src/java/time/format/TextStyle.java.'>SHORT</a>, INT, <a href='../S/2603.html#L79' title='Defined at 79 in src/java/sql/JDBCType.java.'>CHAR</a>);
+<a id='L77' name='L77'></a>  77         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(<a href='../S/2603.html#L67' title='Defined at 67 in src/java/sql/JDBCType.java.'>DOUBLE</a>, Opcodes.<a href='../S/4637.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/F2D.java.'>F2D</a>, <a href='../S/2603.html#L59' title='Defined at 59 in src/java/sql/JDBCType.java.'>FLOAT</a>);
+<a id='L78' name='L78'></a>  78         <a href='../S/1625.html#L90' title='Defined at 90 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>initWidening</a>(<a href='../S/2603.html#L67' title='Defined at 67 in src/java/sql/JDBCType.java.'>DOUBLE</a>, Opcodes.<a href='../S/4671.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/L2D.java.'>L2D</a>, LONG);
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.BYTE] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.BYTE;
+<a id='L81' name='L81'></a>  81         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/1535.html#L104' title='Defined at 104 in src/java/time/format/TextStyle.java.'>SHORT</a>] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../S/1535.html#L104' title='Defined at 104 in src/java/time/format/TextStyle.java.'>SHORT</a>;
+<a id='L82' name='L82'></a>  82         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.INT] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.INT;
+<a id='L83' name='L83'></a>  83         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.LONG] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.LONG;
+<a id='L84' name='L84'></a>  84         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/2603.html#L79' title='Defined at 79 in src/java/sql/JDBCType.java.'>CHAR</a>] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../S/2603.html#L79' title='Defined at 79 in src/java/sql/JDBCType.java.'>CHAR</a>;
+<a id='L85' name='L85'></a>  85         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/2603.html#L59' title='Defined at 59 in src/java/sql/JDBCType.java.'>FLOAT</a>] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../S/2603.html#L59' title='Defined at 59 in src/java/sql/JDBCType.java.'>FLOAT</a>;
+<a id='L86' name='L86'></a>  86         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/2603.html#L67' title='Defined at 67 in src/java/sql/JDBCType.java.'>DOUBLE</a>] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../S/2603.html#L67' title='Defined at 67 in src/java/sql/JDBCType.java.'>DOUBLE</a>;
+<a id='L87' name='L87'></a>  87         FROM_TYPE_SORT[<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/2603.html#L159' title='Defined at 159 in src/java/sql/JDBCType.java.'>BOOLEAN</a>] = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.<a href='../S/2603.html#L159' title='Defined at 159 in src/java/sql/JDBCType.java.'>BOOLEAN</a>;
+<a id='L88' name='L88'></a>  88     <em class='brace'>}</em>
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/20671.html' title='Multiple referred from 7 places.'>initWidening</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> <a href='../D/35341.html' title='Multiple defined in 2 places.'>to</a>, <strong class='reserved'>int</strong> opcode, <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>... <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>) <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91         <strong class='reserved'>for</strong> (<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> f : <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>) <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92             wideningOpcodes[f.<a href='../D/28579.html' title='Multiple defined in 2 places.'>ordinal</a>()][<a href='../D/35341.html' title='Multiple defined in 2 places.'>to</a>.<a href='../D/28579.html' title='Multiple defined in 2 places.'>ordinal</a>()] = opcode;
+<a id='L93' name='L93'></a>  93         <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94     <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <em class='comment'>/**</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * Class name to Wrapper hash, derived from Wrapper.hashWrap()</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * @param xn</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * @return The hash code 0-15</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     */</em>
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/20300.html' title='Multiple referred from 2 places.'>hashWrapperName</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> xn) <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102         <strong class='reserved'>if</strong> (xn.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &lt; 3) <em class='brace'>{</em>
+<a id='L103' name='L103'></a> 103             <strong class='reserved'>return</strong> 0;
+<a id='L104' name='L104'></a> 104         <em class='brace'>}</em>
+<a id='L105' name='L105'></a> 105         <strong class='reserved'>return</strong> (3 * xn.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(1) + xn.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(2)) % 16;
+<a id='L106' name='L106'></a> 106     <em class='brace'>}</em>
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>private</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> <a href='../R/30543.html' title='Multiple referred from 2 places.'>wrapperOrNullFromDescriptor</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> desc) <em class='brace'>{</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>if</strong> (!desc.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>(WRAPPER_PREFIX)) <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110             <em class='comment'>// Not a class type (array or method), so not a boxed type</em>
+<a id='L111' name='L111'></a> 111             <em class='comment'>// or not in the right package</em>
+<a id='L112' name='L112'></a> 112             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L113' name='L113'></a> 113         <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114         <em class='comment'>// Pare it down to the simple class name</em>
+<a id='L115' name='L115'></a> 115         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> cname = desc.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(WRAPPER_PREFIX.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>(), desc.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - 1);
+<a id='L116' name='L116'></a> 116         <em class='comment'>// Hash to a Wrapper</em>
+<a id='L117' name='L117'></a> 117         <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w = FROM_WRAPPER_NAME[<a href='../S/1625.html#L101' title='Defined at 101 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>hashWrapperName</a>(cname)];
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>if</strong> (w == <strong class='reserved'>null</strong> || w.wrapperSimpleName().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(cname)) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119             <strong class='reserved'>return</strong> w;
+<a id='L120' name='L120'></a> 120         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L121' name='L121'></a> 121             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L122' name='L122'></a> 122         <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/30542.html' title='Multiple referred from 6 places.'>wrapperName</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w) <em class='brace'>{</em>
+<a id='L126' name='L126'></a> 126         <strong class='reserved'>return</strong> "java/lang/" + w.wrapperSimpleName();
+<a id='L127' name='L127'></a> 127     <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1625.html#L172' title='Referred from 172 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unboxMethod</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w) <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130         <strong class='reserved'>return</strong> w.primitiveSimpleName() + "Value";
+<a id='L131' name='L131'></a> 131     <em class='brace'>}</em>
+<a id='L132' name='L132'></a> 132 
+<a id='L133' name='L133'></a> 133     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1625.html#L161' title='Referred from 161 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>boxingDescriptor</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w) <em class='brace'>{</em>
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>return</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<a href='../D/16531.html' title='Multiple defined in 87 places.'>format</a>("(%s)L%s;", w.<a href='../D/11786.html' title='Multiple defined in 2 places.'>basicTypeChar</a>(), <a href='../S/1625.html#L125' title='Defined at 125 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperName</a>(w));
+<a id='L135' name='L135'></a> 135     <em class='brace'>}</em>
+<a id='L136' name='L136'></a> 136 
+<a id='L137' name='L137'></a> 137     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1625.html#L173' title='Referred from 173 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unboxingDescriptor</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w) <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138         <strong class='reserved'>return</strong> "()" + w.<a href='../D/11786.html' title='Multiple defined in 2 places.'>basicTypeChar</a>();
+<a id='L139' name='L139'></a> 139     <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140 
+<a id='L141' name='L141'></a> 141     <strong class='reserved'>void</strong> <a href='../S/1600.html#L403' title='Referred from 403 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>boxIfTypePrimitive</a>(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> t) <em class='brace'>{</em>
+<a id='L142' name='L142'></a> 142         <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w = FROM_TYPE_SORT[t.getSort()];
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>if</strong> (w != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144             <a href='../S/1625.html#L157' title='Defined at 157 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>box</a>(w);
+<a id='L145' name='L145'></a> 145         <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146     <em class='brace'>}</em>
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148     <strong class='reserved'>void</strong> <a href='../R/30475.html' title='Multiple referred from 3 places.'>widen</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> ws, <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> wt) <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149         <strong class='reserved'>if</strong> (ws != wt) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150             <strong class='reserved'>int</strong> opcode = wideningOpcodes[ws.<a href='../D/28579.html' title='Multiple defined in 2 places.'>ordinal</a>()][wt.<a href='../D/28579.html' title='Multiple defined in 2 places.'>ordinal</a>()];
+<a id='L151' name='L151'></a> 151             <strong class='reserved'>if</strong> (opcode != Opcodes.<a href='../S/4691.html#L66' title='Defined at 66 in src/com/sun/org/apache/bcel/internal/generic/NOP.java.'>NOP</a>) <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152                 visitInsn(opcode);
+<a id='L153' name='L153'></a> 153             <em class='brace'>}</em>
+<a id='L154' name='L154'></a> 154         <em class='brace'>}</em>
+<a id='L155' name='L155'></a> 155     <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157     <strong class='reserved'>void</strong> <a href='../R/10659.html' title='Multiple referred from 50 places.'>box</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w) <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158         visitMethodInsn(Opcodes.<a href='../S/4756.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKESTATIC.java.'>INVOKESTATIC</a>,
+<a id='L159' name='L159'></a> 159                 <a href='../S/1625.html#L125' title='Defined at 125 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperName</a>(w),
+<a id='L160' name='L160'></a> 160                 NAME_BOX_METHOD,
+<a id='L161' name='L161'></a> 161                 <a href='../S/1625.html#L133' title='Defined at 133 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>boxingDescriptor</a>(w), <strong class='reserved'>false</strong>);
+<a id='L162' name='L162'></a> 162     <em class='brace'>}</em>
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164     <em class='comment'>/**</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * Convert types by unboxing. The source type is known to be a primitive wrapper.</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * @param sname A primitive wrapper corresponding to wrapped reference source type</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * @param wt A primitive wrapper being converted to</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     */</em>
+<a id='L169' name='L169'></a> 169     <strong class='reserved'>void</strong> <a href='../R/29614.html' title='Multiple referred from 3 places.'>unbox</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> sname, <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> wt) <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170         visitMethodInsn(Opcodes.<a href='../S/4737.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKEVIRTUAL.java.'>INVOKEVIRTUAL</a>,
+<a id='L171' name='L171'></a> 171                 sname,
+<a id='L172' name='L172'></a> 172                 <a href='../S/1625.html#L129' title='Defined at 129 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unboxMethod</a>(wt),
+<a id='L173' name='L173'></a> 173                 <a href='../S/1625.html#L137' title='Defined at 137 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unboxingDescriptor</a>(wt), <strong class='reserved'>false</strong>);
+<a id='L174' name='L174'></a> 174     <em class='brace'>}</em>
+<a id='L175' name='L175'></a> 175 
+<a id='L176' name='L176'></a> 176     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/13253.html' title='Multiple referred from 2 places.'>descriptorToName</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> desc) <em class='brace'>{</em>
+<a id='L177' name='L177'></a> 177         <strong class='reserved'>int</strong> <a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a> = desc.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - 1;
+<a id='L178' name='L178'></a> 178         <strong class='reserved'>if</strong> (desc.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(0) == 'L' &amp;&amp; desc.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(<a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a>) == ';') <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179             <em class='comment'>// In descriptor form</em>
+<a id='L180' name='L180'></a> 180             <strong class='reserved'>return</strong> desc.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(1, <a href='../D/26739.html' title='Multiple defined in 19 places.'>last</a>);
+<a id='L181' name='L181'></a> 181         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L182' name='L182'></a> 182             <em class='comment'>// Already in internal name form</em>
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>return</strong> desc;
+<a id='L184' name='L184'></a> 184         <em class='brace'>}</em>
+<a id='L185' name='L185'></a> 185     <em class='brace'>}</em>
+<a id='L186' name='L186'></a> 186 
+<a id='L187' name='L187'></a> 187     <strong class='reserved'>void</strong> <a href='../R/10996.html' title='Multiple referred from 111 places.'>cast</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ds, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dt) <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ns = <a href='../S/1625.html#L176' title='Defined at 176 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>descriptorToName</a>(ds);
+<a id='L189' name='L189'></a> 189         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> nt = <a href='../S/1625.html#L176' title='Defined at 176 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>descriptorToName</a>(dt);
+<a id='L190' name='L190'></a> 190         <strong class='reserved'>if</strong> (!nt.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(ns) &amp;&amp; !nt.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(NAME_OBJECT)) <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191             visitTypeInsn(Opcodes.<a href='../S/4791.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/CHECKCAST.java.'>CHECKCAST</a>, nt);
+<a id='L192' name='L192'></a> 192         <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193     <em class='brace'>}</em>
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../R/21898.html' title='Multiple referred from 87 places.'>isPrimitive</a>(<a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> w) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>return</strong> w != OBJECT;
+<a id='L197' name='L197'></a> 197     <em class='brace'>}</em>
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199     <strong class='reserved'>private</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> <a href='../S/1625.html#L252' title='Referred from 252 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>toWrapper</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> desc) <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200         <strong class='reserved'>char</strong> <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a> = desc.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(0);
+<a id='L201' name='L201'></a> 201         <strong class='reserved'>if</strong> (<a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a> == '[' || <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a> == '(') <em class='brace'>{</em>
+<a id='L202' name='L202'></a> 202             <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a> = 'L';
+<a id='L203' name='L203'></a> 203         <em class='brace'>}</em>
+<a id='L204' name='L204'></a> 204         <strong class='reserved'>return</strong> <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.forBasicType(<a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a>);
+<a id='L205' name='L205'></a> 205     <em class='brace'>}</em>
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207     <em class='comment'>/**</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     * Convert an argument of type 'arg' to be passed to 'target' assuring that it is 'functional'.</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * Insert the needed conversion instructions in the method code.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * @param arg</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * @param target</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * @param functional</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     */</em>
+<a id='L214' name='L214'></a> 214     <strong class='reserved'>void</strong> <a href='../R/12083.html' title='Multiple referred from 3 places.'>convertType</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>, <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>, <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; functional) <em class='brace'>{</em>
+<a id='L215' name='L215'></a> 215         <strong class='reserved'>if</strong> (<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>) &amp;&amp; <a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(functional)) <em class='brace'>{</em>
+<a id='L216' name='L216'></a> 216             <strong class='reserved'>return</strong>;
+<a id='L217' name='L217'></a> 217         <em class='brace'>}</em>
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>if</strong> (<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a> == <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE || <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a> == <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE) <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219             <strong class='reserved'>return</strong>;
+<a id='L220' name='L220'></a> 220         <em class='brace'>}</em>
+<a id='L221' name='L221'></a> 221         <strong class='reserved'>if</strong> (<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>.<a href='../D/26086.html' title='Multiple defined in 8 places.'>isPrimitive</a>()) <em class='brace'>{</em>
+<a id='L222' name='L222'></a> 222             <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> wArg = <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.forPrimitiveType(<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>);
+<a id='L223' name='L223'></a> 223             <strong class='reserved'>if</strong> (<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>.<a href='../D/26086.html' title='Multiple defined in 8 places.'>isPrimitive</a>()) <em class='brace'>{</em>
+<a id='L224' name='L224'></a> 224                 <em class='comment'>// Both primitives: widening</em>
+<a id='L225' name='L225'></a> 225                 <a href='../S/1625.html#L148' title='Defined at 148 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>widen</a>(wArg, <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a>.forPrimitiveType(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>));
+<a id='L226' name='L226'></a> 226             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227                 <em class='comment'>// Primitive argument to reference target</em>
+<a id='L228' name='L228'></a> 228                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dTarget = BytecodeDescriptor.unparse(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L229' name='L229'></a> 229                 <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> wPrimTarget = <a href='../S/1625.html#L108' title='Defined at 108 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperOrNullFromDescriptor</a>(dTarget);
+<a id='L230' name='L230'></a> 230                 <strong class='reserved'>if</strong> (wPrimTarget != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L231' name='L231'></a> 231                     <em class='comment'>// The target is a boxed primitive type, widen to get there before boxing</em>
+<a id='L232' name='L232'></a> 232                     <a href='../S/1625.html#L148' title='Defined at 148 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>widen</a>(wArg, wPrimTarget);
+<a id='L233' name='L233'></a> 233                     <a href='../S/1625.html#L157' title='Defined at 157 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>box</a>(wPrimTarget);
+<a id='L234' name='L234'></a> 234                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L235' name='L235'></a> 235                     <em class='comment'>// Otherwise, box and cast</em>
+<a id='L236' name='L236'></a> 236                     <a href='../S/1625.html#L157' title='Defined at 157 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>box</a>(wArg);
+<a id='L237' name='L237'></a> 237                     <a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(<a href='../S/1625.html#L125' title='Defined at 125 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperName</a>(wArg), dTarget);
+<a id='L238' name='L238'></a> 238                 <em class='brace'>}</em>
+<a id='L239' name='L239'></a> 239             <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dArg = BytecodeDescriptor.unparse(<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>);
+<a id='L242' name='L242'></a> 242             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dSrc;
+<a id='L243' name='L243'></a> 243             <strong class='reserved'>if</strong> (functional.<a href='../D/26086.html' title='Multiple defined in 8 places.'>isPrimitive</a>()) <em class='brace'>{</em>
+<a id='L244' name='L244'></a> 244                 dSrc = dArg;
+<a id='L245' name='L245'></a> 245             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L246' name='L246'></a> 246                 <em class='comment'>// Cast to convert to possibly more specific type, and generate CCE for invalid arg</em>
+<a id='L247' name='L247'></a> 247                 dSrc = BytecodeDescriptor.unparse(functional);
+<a id='L248' name='L248'></a> 248                 <a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(dArg, dSrc);
+<a id='L249' name='L249'></a> 249             <em class='brace'>}</em>
+<a id='L250' name='L250'></a> 250             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dTarget = BytecodeDescriptor.unparse(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L251' name='L251'></a> 251             <strong class='reserved'>if</strong> (<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>.<a href='../D/26086.html' title='Multiple defined in 8 places.'>isPrimitive</a>()) <em class='brace'>{</em>
+<a id='L252' name='L252'></a> 252                 <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> wTarget = <a href='../S/1625.html#L199' title='Defined at 199 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>toWrapper</a>(dTarget);
+<a id='L253' name='L253'></a> 253                 <em class='comment'>// Reference argument to primitive target</em>
+<a id='L254' name='L254'></a> 254                 <a href='../S/2566.html#L42' title='Defined at 42 in src/java/sql/Wrapper.java.'>Wrapper</a> wps = <a href='../S/1625.html#L108' title='Defined at 108 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperOrNullFromDescriptor</a>(dSrc);
+<a id='L255' name='L255'></a> 255                 <strong class='reserved'>if</strong> (wps != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L256' name='L256'></a> 256                     <strong class='reserved'>if</strong> (wps.<a href='../D/26241.html' title='Multiple defined in 3 places.'>isSigned</a>() || wps.<a href='../S/2867.html#L781' title='Defined at 781 in src/javax/swing/plaf/basic/BasicToolBarUI.java.'>isFloating</a>()) <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257                         <em class='comment'>// Boxed number to primitive</em>
+<a id='L258' name='L258'></a> 258                         <a href='../S/1625.html#L169' title='Defined at 169 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unbox</a>(<a href='../S/1625.html#L125' title='Defined at 125 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperName</a>(wps), wTarget);
+<a id='L259' name='L259'></a> 259                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L260' name='L260'></a> 260                         <em class='comment'>// Character or Boolean</em>
+<a id='L261' name='L261'></a> 261                         <a href='../S/1625.html#L169' title='Defined at 169 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unbox</a>(<a href='../S/1625.html#L125' title='Defined at 125 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperName</a>(wps), wps);
+<a id='L262' name='L262'></a> 262                         <a href='../S/1625.html#L148' title='Defined at 148 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>widen</a>(wps, wTarget);
+<a id='L263' name='L263'></a> 263                     <em class='brace'>}</em>
+<a id='L264' name='L264'></a> 264                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L265' name='L265'></a> 265                     <em class='comment'>// Source type is reference type, but not boxed type,</em>
+<a id='L266' name='L266'></a> 266                     <em class='comment'>// assume it is super type of target type</em>
+<a id='L267' name='L267'></a> 267                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> intermediate;
+<a id='L268' name='L268'></a> 268                     <strong class='reserved'>if</strong> (wTarget.<a href='../D/26241.html' title='Multiple defined in 3 places.'>isSigned</a>() || wTarget.<a href='../S/2867.html#L781' title='Defined at 781 in src/javax/swing/plaf/basic/BasicToolBarUI.java.'>isFloating</a>()) <em class='brace'>{</em>
+<a id='L269' name='L269'></a> 269                         <em class='comment'>// Boxed number to primitive</em>
+<a id='L270' name='L270'></a> 270                         intermediate = "java/lang/Number";
+<a id='L271' name='L271'></a> 271                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272                         <em class='comment'>// Character or Boolean</em>
+<a id='L273' name='L273'></a> 273                         intermediate = <a href='../S/1625.html#L125' title='Defined at 125 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>wrapperName</a>(wTarget);
+<a id='L274' name='L274'></a> 274                     <em class='brace'>}</em>
+<a id='L275' name='L275'></a> 275                     <a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(dSrc, intermediate);
+<a id='L276' name='L276'></a> 276                     <a href='../S/1625.html#L169' title='Defined at 169 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>unbox</a>(intermediate, wTarget);
+<a id='L277' name='L277'></a> 277                 <em class='brace'>}</em>
+<a id='L278' name='L278'></a> 278             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L279' name='L279'></a> 279                 <em class='comment'>// Both reference types: just case to target type</em>
+<a id='L280' name='L280'></a> 280                 <a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(dSrc, dTarget);
+<a id='L281' name='L281'></a> 281             <em class='brace'>}</em>
+<a id='L282' name='L282'></a> 282         <em class='brace'>}</em>
+<a id='L283' name='L283'></a> 283     <em class='brace'>}</em>
+<a id='L284' name='L284'></a> 284 
+<a id='L285' name='L285'></a> 285     <em class='comment'>/**</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     * The following method is copied from</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * org.objectweb.asm.commons.InstructionAdapter. Part of ASM: a very small</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * and fast Java bytecode manipulation framework.</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * Copyright (c) 2000-2005 INRIA, France Telecom All rights reserved.</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     */</em>
+<a id='L291' name='L291'></a> 291     <strong class='reserved'>void</strong> <a href='../R/20360.html' title='Multiple referred from 2 places.'>iconst</a>(<strong class='reserved'>final</strong> <strong class='reserved'>int</strong> cst) <em class='brace'>{</em>
+<a id='L292' name='L292'></a> 292         <strong class='reserved'>if</strong> (cst &gt;= -1 &amp;&amp; cst &lt;= 5) <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293             mv.visitInsn(Opcodes.ICONST_0 + cst);
+<a id='L294' name='L294'></a> 294         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (cst &gt;= <a href='../D/1038.html' title='Multiple defined in 2 places.'>Byte</a>.MIN_VALUE &amp;&amp; cst &lt;= <a href='../D/1038.html' title='Multiple defined in 2 places.'>Byte</a>.MAX_VALUE) <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295             mv.visitIntInsn(Opcodes.<a href='../S/4745.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/BIPUSH.java.'>BIPUSH</a>, cst);
+<a id='L296' name='L296'></a> 296         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (cst &gt;= <a href='../S/1596.html#L43' title='Defined at 43 in src/java/lang/Short.java.'>Short</a>.MIN_VALUE &amp;&amp; cst &lt;= <a href='../S/1596.html#L43' title='Defined at 43 in src/java/lang/Short.java.'>Short</a>.MAX_VALUE) <em class='brace'>{</em>
+<a id='L297' name='L297'></a> 297             mv.visitIntInsn(Opcodes.<a href='../S/4656.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/SIPUSH.java.'>SIPUSH</a>, cst);
+<a id='L298' name='L298'></a> 298         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L299' name='L299'></a> 299             mv.visitLdcInsn(cst);
+<a id='L300' name='L300'></a> 300         <em class='brace'>}</em>
+<a id='L301' name='L301'></a> 301     <em class='brace'>}</em>
+<a id='L302' name='L302'></a> 302 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L90'>[^]</a><a href='#L291'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

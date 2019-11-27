@@ -1,0 +1,431 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/nio/channels/Selector.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8012.html'>nio</a>/<a href='../files/8013.html'>channels</a>/Selector.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L226'>[^]</a><a href='#L394'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L226' title='Defined at 226.'>open</a></li>
+<li><a href='#L235' title='Defined at 235.'>isOpen</a></li>
+<li><a href='#L242' title='Defined at 242.'>provider</a></li>
+<li><a href='#L259' title='Defined at 259.'>keys</a></li>
+<li><a href='#L275' title='Defined at 275.'>selectedKeys</a></li>
+<li><a href='#L297' title='Defined at 297.'>selectNow</a></li>
+<li><a href='#L329' title='Defined at 329.'>select</a></li>
+<li><a href='#L350' title='Defined at 350.'>select</a></li>
+<li><a href='#L371' title='Defined at 371.'>wakeup</a></li>
+<li><a href='#L394' title='Defined at 394.'>close</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.nio.channels;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.Closeable;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.nio.channels.spi.SelectorProvider;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Set;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <em class='comment'>/**</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * A multiplexor of {@link SelectableChannel} objects.</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> *</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * &lt;p&gt; A selector may be created by invoking the {@link #open open} method of</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * this class, which will use the system's default {@link</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * java.nio.channels.spi.SelectorProvider selector provider} to</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * create a new selector.  A selector may also be created by invoking the</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * {@link java.nio.channels.spi.SelectorProvider#openSelector openSelector}</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * method of a custom selector provider.  A selector remains open until it is</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * closed via its {@link #close close} method.</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * &lt;a name="ks"&gt;&lt;/a&gt;</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> *</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * &lt;p&gt; A selectable channel's registration with a selector is represented by a</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * {@link SelectionKey} object.  A selector maintains three sets of selection</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * keys:</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> *</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;ul&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> *</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> *   &lt;li&gt;&lt;p&gt; The &lt;i&gt;key set&lt;/i&gt; contains the keys representing the current</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> *   channel registrations of this selector.  This set is returned by the</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> *   {@link #keys() keys} method. &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> *</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *   &lt;li&gt;&lt;p&gt; The &lt;i&gt;selected-key set&lt;/i&gt; is the set of keys such that each</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *   key's channel was detected to be ready for at least one of the operations</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> *   identified in the key's interest set during a prior selection operation.</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *   This set is returned by the {@link #selectedKeys() selectedKeys} method.</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *   The selected-key set is always a subset of the key set. &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> *   &lt;li&gt;&lt;p&gt; The &lt;i&gt;cancelled-key&lt;/i&gt; set is the set of keys that have been</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> *   cancelled but whose channels have not yet been deregistered.  This set is</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> *   not directly accessible.  The cancelled-key set is always a subset of the</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> *   key set. &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> *</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * &lt;/ul&gt;</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> *</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * &lt;p&gt; All three sets are empty in a newly-created selector.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> *</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * &lt;p&gt; A key is added to a selector's key set as a side effect of registering a</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * channel via the channel's {@link SelectableChannel#register(Selector,int)</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> * register} method.  Cancelled keys are removed from the key set during</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> * selection operations.  The key set itself is not directly modifiable.</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> *</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> * &lt;p&gt; A key is added to its selector's cancelled-key set when it is cancelled,</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> * whether by closing its channel or by invoking its {@link SelectionKey#cancel</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * cancel} method.  Cancelling a key will cause its channel to be deregistered</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> * during the next selection operation, at which time the key will removed from</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * all of the selector's key sets.</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> *</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * &lt;a name="sks"&gt;&lt;/a&gt;&lt;p&gt; Keys are added to the selected-key set by selection</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * operations.  A key may be removed directly from the selected-key set by</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * invoking the set's {@link java.util.Set#remove(java.lang.Object) remove}</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * method or by invoking the {@link java.util.Iterator#remove() remove} method</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * of an {@link java.util.Iterator iterator} obtained from the</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> * set.  Keys are never removed from the selected-key set in any other way;</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> * they are not, in particular, removed as a side effect of selection</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> * operations.  Keys may not be added directly to the selected-key set. &lt;/p&gt;</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> *</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> *</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> * &lt;a name="selop"&gt;&lt;/a&gt;</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> * &lt;h2&gt;Selection&lt;/h2&gt;</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> *</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> * &lt;p&gt; During each selection operation, keys may be added to and removed from a</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> * selector's selected-key set and may be removed from its key and</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> * cancelled-key sets.  Selection is performed by the {@link #select()}, {@link</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'> * #select(long)}, and {@link #selectNow()} methods, and involves three steps:</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'> * &lt;/p&gt;</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'> *</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'> * &lt;ol&gt;</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'> *</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'> *   &lt;li&gt;&lt;p&gt; Each key in the cancelled-key set is removed from each key set of</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'> *   which it is a member, and its channel is deregistered.  This step leaves</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'> *   the cancelled-key set empty. &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'> *</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'> *   &lt;li&gt;&lt;p&gt; The underlying operating system is queried for an update as to the</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'> *   readiness of each remaining channel to perform any of the operations</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'> *   identified by its key's interest set as of the moment that the selection</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'> *   operation began.  For a channel that is ready for at least one such</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'> *   operation, one of the following two actions is performed: &lt;/p&gt;</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'> *</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'> *   &lt;ol&gt;</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'> *</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'> *     &lt;li&gt;&lt;p&gt; If the channel's key is not already in the selected-key set then</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'> *     it is added to that set and its ready-operation set is modified to</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'> *     identify exactly those operations for which the channel is now reported</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'> *     to be ready.  Any readiness information previously recorded in the ready</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'> *     set is discarded.  &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'> *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'> *     &lt;li&gt;&lt;p&gt; Otherwise the channel's key is already in the selected-key set,</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'> *     so its ready-operation set is modified to identify any new operations</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'> *     for which the channel is reported to be ready.  Any readiness</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'> *     information previously recorded in the ready set is preserved; in other</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'> *     words, the ready set returned by the underlying system is</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'> *     bitwise-disjoined into the key's current ready set. &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'> *</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'> *   &lt;/ol&gt;</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'> *</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'> *   If all of the keys in the key set at the start of this step have empty</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'> *   interest sets then neither the selected-key set nor any of the keys'</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'> *   ready-operation sets will be updated.</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'> *</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'> *   &lt;li&gt;&lt;p&gt; If any keys were added to the cancelled-key set while step (2) was</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'> *   in progress then they are processed as in step (1). &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'> *</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'> * &lt;/ol&gt;</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'> *</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'> * &lt;p&gt; Whether or not a selection operation blocks to wait for one or more</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'> * channels to become ready, and if so for how long, is the only essential</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'> * difference between the three selection methods. &lt;/p&gt;</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'> *</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'> *</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'> * &lt;h2&gt;Concurrency&lt;/h2&gt;</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'> *</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'> * &lt;p&gt; Selectors are themselves safe for use by multiple concurrent threads;</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'> * their key sets, however, are not.</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'> *</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'> * &lt;p&gt; The selection operations synchronize on the selector itself, on the key</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'> * set, and on the selected-key set, in that order.  They also synchronize on</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'> * the cancelled-key set during steps (1) and (3) above.</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'> *</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'> * &lt;p&gt; Changes made to the interest sets of a selector's keys while a</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'> * selection operation is in progress have no effect upon that operation; they</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'> * will be seen by the next selection operation.</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'> *</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'> * &lt;p&gt; Keys may be cancelled and channels may be closed at any time.  Hence the</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'> * presence of a key in one or more of a selector's key sets does not imply</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'> * that the key is valid or that its channel is open.  Application code should</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'> * be careful to synchronize and check these conditions as necessary if there</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'> * is any possibility that another thread will cancel a key or close a channel.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'> *</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'> * &lt;p&gt; A thread blocked in one of the {@link #select()} or {@link</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'> * #select(long)} methods may be interrupted by some other thread in one of</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'> * three ways:</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'> *</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'> * &lt;ul&gt;</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'> *</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'> *   &lt;li&gt;&lt;p&gt; By invoking the selector's {@link #wakeup wakeup} method,</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'> *   &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'> *</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'> *   &lt;li&gt;&lt;p&gt; By invoking the selector's {@link #close close} method, or</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'> *   &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'> *</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'> *   &lt;li&gt;&lt;p&gt; By invoking the blocked thread's {@link</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'> *   java.lang.Thread#interrupt() interrupt} method, in which case its</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'> *   interrupt status will be set and the selector's {@link #wakeup wakeup}</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'> *   method will be invoked. &lt;/p&gt;&lt;/li&gt;</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'> *</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'> * &lt;/ul&gt;</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'> *</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'> * &lt;p&gt; The {@link #close close} method synchronizes on the selector and all</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'> * three key sets in the same order as in a selection operation.</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'> *</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'> * &lt;a name="ksc"&gt;&lt;/a&gt;</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'> *</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'> * &lt;p&gt; A selector's key and selected-key sets are not, in general, safe for use</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'> * by multiple concurrent threads.  If such a thread might modify one of these</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'> * sets directly then access should be controlled by synchronizing on the set</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'> * itself.  The iterators returned by these sets' {@link</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'> * java.util.Set#iterator() iterator} methods are &lt;i&gt;fail-fast:&lt;/i&gt; If the set</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'> * is modified after the iterator is created, in any way except by invoking the</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'> * iterator's own {@link java.util.Iterator#remove() remove} method, then a</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'> * {@link java.util.ConcurrentModificationException} will be thrown. &lt;/p&gt;</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'> *</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'> *</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'> * @author Mark Reinhold</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'> * @author JSR-51 Expert Group</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'> * @since 1.4</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'> *</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'> * @see SelectableChannel</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'> * @see SelectionKey</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'> */</em>
+<a id='L205' name='L205'></a> 205 
+<a id='L206' name='L206'></a> 206 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/7013.html' title='Multiple referred from 53 places.'>Selector</a> <strong class='reserved'>implements</strong> <a href='../S/1405.html#L37' title='Defined at 37 in src/java/io/Closeable.java.'>Closeable</a> <em class='brace'>{</em>
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208     <em class='comment'>/**</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * Initializes a new instance of this class.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     */</em>
+<a id='L211' name='L211'></a> 211     <strong class='reserved'>protected</strong> Selector() <em class='brace'>{</em> <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213     <em class='comment'>/**</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * Opens a selector.</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     *</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * &lt;p&gt; The new selector is created by invoking the {@link</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * java.nio.channels.spi.SelectorProvider#openSelector openSelector} method</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * of the system-wide default {@link</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * java.nio.channels.spi.SelectorProvider} object.  &lt;/p&gt;</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     *</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * @return  A new selector</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     *</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * @throws  IOException</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     *          If an I/O error occurs</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     */</em>
+<a id='L226' name='L226'></a> 226     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/7704.html' title='Multiple defined in 3 places.'>Selector</a> <a href='../R/23970.html' title='Multiple referred from 49 places.'>open</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227         <strong class='reserved'>return</strong> <a href='../S/2046.html#L69' title='Defined at 69 in src/java/nio/channels/spi/SelectorProvider.java.'>SelectorProvider</a>.<a href='../D/29909.html' title='Multiple defined in 12 places.'>provider</a>().<a href='../S/2046.html#L230' title='Defined at 230 in src/java/nio/channels/spi/SelectorProvider.java.'>openSelector</a>();
+<a id='L228' name='L228'></a> 228     <em class='brace'>}</em>
+<a id='L229' name='L229'></a> 229 
+<a id='L230' name='L230'></a> 230     <em class='comment'>/**</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * Tells whether or not this selector is open.</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     *</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * @return &lt;tt&gt;true&lt;/tt&gt; if, and only if, this selector is open</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     */</em>
+<a id='L235' name='L235'></a> 235     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/21825.html' title='Multiple referred from 5 places.'>isOpen</a>();
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237     <em class='comment'>/**</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     * Returns the provider that created this channel.</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     *</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * @return  The provider that created this channel</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     */</em>
+<a id='L242' name='L242'></a> 242     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/2046.html#L69' title='Defined at 69 in src/java/nio/channels/spi/SelectorProvider.java.'>SelectorProvider</a> <a href='../R/25233.html' title='Multiple referred from 689 places.'>provider</a>();
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244     <em class='comment'>/**</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * Returns this selector's key set.</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     *</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * &lt;p&gt; The key set is not directly modifiable.  A key is removed only after</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * it has been cancelled and its channel has been deregistered.  Any</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * attempt to modify the key set will cause an {@link</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * UnsupportedOperationException} to be thrown.</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     *</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * &lt;p&gt; The key set is &lt;a href="#ksc"&gt;not thread-safe&lt;/a&gt;. &lt;/p&gt;</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     *</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * @return  This selector's key set</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     *</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * @throws  ClosedSelectorException</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     *          If this selector is closed</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     */</em>
+<a id='L259' name='L259'></a> 259     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/2078.html#L110' title='Defined at 110 in src/java/nio/channels/SelectionKey.java.'>SelectionKey</a>&gt; <a href='../R/22399.html' title='Multiple referred from 606 places.'>keys</a>();
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261     <em class='comment'>/**</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * Returns this selector's selected-key set.</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     *</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * &lt;p&gt; Keys may be removed from, but not directly added to, the</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * selected-key set.  Any attempt to add an object to the key set will</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * cause an {@link UnsupportedOperationException} to be thrown.</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     *</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     * &lt;p&gt; The selected-key set is &lt;a href="#ksc"&gt;not thread-safe&lt;/a&gt;. &lt;/p&gt;</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     *</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     * @return  This selector's selected-key set</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     *</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * @throws  ClosedSelectorException</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     *          If this selector is closed</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     */</em>
+<a id='L275' name='L275'></a> 275     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/2078.html#L110' title='Defined at 110 in src/java/nio/channels/SelectionKey.java.'>SelectionKey</a>&gt; <a href='../S/6885.html#L294' title='Referred from 294 in src/com/sun/corba/se/impl/transport/SelectorImpl.java.'>selectedKeys</a>();
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277     <em class='comment'>/**</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * Selects a set of keys whose corresponding channels are ready for I/O</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * operations.</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     *</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * &lt;p&gt; This method performs a non-blocking &lt;a href="#selop"&gt;selection</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * operation&lt;/a&gt;.  If no channels have become selectable since the previous</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * selection operation then this method immediately returns zero.</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     *</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * &lt;p&gt; Invoking this method clears the effect of any previous invocations</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     * of the {@link #wakeup wakeup} method.  &lt;/p&gt;</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     *</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * @return  The number of keys, possibly zero, whose ready-operation sets</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     *          were updated by the selection operation</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     *</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * @throws  IOException</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     *          If an I/O error occurs</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     *</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     * @throws  ClosedSelectorException</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>     *          If this selector is closed</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     */</em>
+<a id='L297' name='L297'></a> 297     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> selectNow() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L298' name='L298'></a> 298 
+<a id='L299' name='L299'></a> 299     <em class='comment'>/**</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * Selects a set of keys whose corresponding channels are ready for I/O</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     * operations.</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     *</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     * &lt;p&gt; This method performs a blocking &lt;a href="#selop"&gt;selection</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     * operation&lt;/a&gt;.  It returns only after at least one channel is selected,</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     * this selector's {@link #wakeup wakeup} method is invoked, the current</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * thread is interrupted, or the given timeout period expires, whichever</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     * comes first.</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'>     *</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>     * &lt;p&gt; This method does not offer real-time guarantees: It schedules the</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>     * timeout as if by invoking the {@link Object#wait(long)} method. &lt;/p&gt;</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>     *</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>     * @param  timeout  If positive, block for up to &lt;tt&gt;timeout&lt;/tt&gt;</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>     *                  milliseconds, more or less, while waiting for a</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>     *                  channel to become ready; if zero, block indefinitely;</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>     *                  must not be negative</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>     *</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>     * @return  The number of keys, possibly zero,</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>     *          whose ready-operation sets were updated</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     *</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>     * @throws  IOException</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     *          If an I/O error occurs</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     *</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     * @throws  ClosedSelectorException</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>     *          If this selector is closed</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     *</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     *          If the value of the timeout argument is negative</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     */</em>
+<a id='L329' name='L329'></a> 329     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/26712.html' title='Multiple referred from 97 places.'>select</a>(<strong class='reserved'>long</strong> timeout)
+<a id='L330' name='L330'></a> 330         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L331' name='L331'></a> 331 
+<a id='L332' name='L332'></a> 332     <em class='comment'>/**</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     * Selects a set of keys whose corresponding channels are ready for I/O</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     * operations.</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>     *</em>
+<a id='L336' name='L336'></a> 336 <em class='comment'>     * &lt;p&gt; This method performs a blocking &lt;a href="#selop"&gt;selection</em>
+<a id='L337' name='L337'></a> 337 <em class='comment'>     * operation&lt;/a&gt;.  It returns only after at least one channel is selected,</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * this selector's {@link #wakeup wakeup} method is invoked, or the current</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     * thread is interrupted, whichever comes first.  &lt;/p&gt;</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     *</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     * @return  The number of keys, possibly zero,</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     *          whose ready-operation sets were updated</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     *</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * @throws  IOException</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     *          If an I/O error occurs</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     *</em>
+<a id='L347' name='L347'></a> 347 <em class='comment'>     * @throws  ClosedSelectorException</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>     *          If this selector is closed</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     */</em>
+<a id='L350' name='L350'></a> 350     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/26712.html' title='Multiple referred from 97 places.'>select</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L351' name='L351'></a> 351 
+<a id='L352' name='L352'></a> 352     <em class='comment'>/**</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>     * Causes the first selection operation that has not yet returned to return</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>     * immediately.</em>
+<a id='L355' name='L355'></a> 355 <em class='comment'>     *</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>     * &lt;p&gt; If another thread is currently blocked in an invocation of the</em>
+<a id='L357' name='L357'></a> 357 <em class='comment'>     * {@link #select()} or {@link #select(long)} methods then that invocation</em>
+<a id='L358' name='L358'></a> 358 <em class='comment'>     * will return immediately.  If no selection operation is currently in</em>
+<a id='L359' name='L359'></a> 359 <em class='comment'>     * progress then the next invocation of one of these methods will return</em>
+<a id='L360' name='L360'></a> 360 <em class='comment'>     * immediately unless the {@link #selectNow()} method is invoked in the</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>     * meantime.  In any case the value returned by that invocation may be</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * non-zero.  Subsequent invocations of the {@link #select()} or {@link</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     * #select(long)} methods will block as usual unless this method is invoked</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>     * again in the meantime.</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     *</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * &lt;p&gt; Invoking this method more than once between two successive selection</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     * operations has the same effect as invoking it just once.  &lt;/p&gt;</em>
+<a id='L368' name='L368'></a> 368 <em class='comment'>     *</em>
+<a id='L369' name='L369'></a> 369 <em class='comment'>     * @return  This selector</em>
+<a id='L370' name='L370'></a> 370 <em class='comment'>     */</em>
+<a id='L371' name='L371'></a> 371     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/7704.html' title='Multiple defined in 3 places.'>Selector</a> <a href='../R/30426.html' title='Multiple referred from 8 places.'>wakeup</a>();
+<a id='L372' name='L372'></a> 372 
+<a id='L373' name='L373'></a> 373     <em class='comment'>/**</em>
+<a id='L374' name='L374'></a> 374 <em class='comment'>     * Closes this selector.</em>
+<a id='L375' name='L375'></a> 375 <em class='comment'>     *</em>
+<a id='L376' name='L376'></a> 376 <em class='comment'>     * &lt;p&gt; If a thread is currently blocked in one of this selector's selection</em>
+<a id='L377' name='L377'></a> 377 <em class='comment'>     * methods then it is interrupted as if by invoking the selector's {@link</em>
+<a id='L378' name='L378'></a> 378 <em class='comment'>     * #wakeup wakeup} method.</em>
+<a id='L379' name='L379'></a> 379 <em class='comment'>     *</em>
+<a id='L380' name='L380'></a> 380 <em class='comment'>     * &lt;p&gt; Any uncancelled keys still associated with this selector are</em>
+<a id='L381' name='L381'></a> 381 <em class='comment'>     * invalidated, their channels are deregistered, and any other resources</em>
+<a id='L382' name='L382'></a> 382 <em class='comment'>     * associated with this selector are released.</em>
+<a id='L383' name='L383'></a> 383 <em class='comment'>     *</em>
+<a id='L384' name='L384'></a> 384 <em class='comment'>     * &lt;p&gt; If this selector is already closed then invoking this method has no</em>
+<a id='L385' name='L385'></a> 385 <em class='comment'>     * effect.</em>
+<a id='L386' name='L386'></a> 386 <em class='comment'>     *</em>
+<a id='L387' name='L387'></a> 387 <em class='comment'>     * &lt;p&gt; After a selector is closed, any further attempt to use it, except by</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'>     * invoking this method or the {@link #wakeup wakeup} method, will cause a</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'>     * {@link ClosedSelectorException} to be thrown. &lt;/p&gt;</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     *</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     * @throws  IOException</em>
+<a id='L392' name='L392'></a> 392 <em class='comment'>     *          If an I/O error occurs</em>
+<a id='L393' name='L393'></a> 393 <em class='comment'>     */</em>
+<a id='L394' name='L394'></a> 394     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L395' name='L395'></a> 395 
+<a id='L396' name='L396'></a> 396 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L226'>[^]</a><a href='#L394'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

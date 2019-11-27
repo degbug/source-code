@@ -1,0 +1,373 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/sound/midi/Sequence.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8098.html'>sound</a>/<a href='../files/8099.html'>midi</a>/Sequence.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L222'>[^]</a><a href='#L335'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L222' title='Defined at 222.'>getDivisionType</a></li>
+<li><a href='#L237' title='Defined at 237.'>getResolution</a></li>
+<li><a href='#L250' title='Defined at 250.'>createTrack</a></li>
+<li><a href='#L268' title='Defined at 268.'>deleteTrack</a></li>
+<li><a href='#L285' title='Defined at 285.'>getTracks</a></li>
+<li><a href='#L295' title='Defined at 295.'>getMicrosecondLength</a></li>
+<li><a href='#L308' title='Defined at 308.'>getTickLength</a></li>
+<li><a href='#L335' title='Defined at 335.'>getPatchList</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.sound.midi;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Vector;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.media.sound.MidiUtils;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <em class='comment'>/**</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * A &lt;code&gt;Sequence&lt;/code&gt; is a data structure containing musical</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * information (often an entire song or composition) that can be played</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * back by a &lt;code&gt;{@link Sequencer}&lt;/code&gt; object. Specifically, the</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * &lt;code&gt;Sequence&lt;/code&gt; contains timing</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * information and one or more tracks.  Each &lt;code&gt;{@link Track track}&lt;/code&gt; consists of a</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * series of MIDI events (such as note-ons, note-offs, program changes, and meta-events).</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * The sequence's timing information specifies the type of unit that is used</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * to time-stamp the events in the sequence.</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;p&gt;</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * A &lt;code&gt;Sequence&lt;/code&gt; can be created from a MIDI file by reading the file</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * into an input stream and invoking one of the &lt;code&gt;getSequence&lt;/code&gt; methods of</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * {@link MidiSystem}.  A sequence can also be built from scratch by adding new</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * &lt;code&gt;Tracks&lt;/code&gt; to an empty &lt;code&gt;Sequence&lt;/code&gt;, and adding</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * &lt;code&gt;{@link MidiEvent}&lt;/code&gt; objects to these &lt;code&gt;Tracks&lt;/code&gt;.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * @see Sequencer#setSequence(java.io.InputStream stream)</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * @see Sequencer#setSequence(Sequence sequence)</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * @see Track#add(MidiEvent)</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * @see MidiFileFormat</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> *</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * @author Kara Kytle</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> */</em>
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/7027.html' title='Multiple referred from 21 places.'>Sequence</a> <em class='brace'>{</em>
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58     <em class='comment'>// Timing types</em>
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <em class='comment'>/**</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * The tempo-based timing type, for which the resolution is expressed in pulses (ticks) per quarter note.</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     */</em>
+<a id='L64' name='L64'></a>  64     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>float</strong> PPQ                                                       = 0.0f;
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66     <em class='comment'>/**</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * The SMPTE-based timing type with 24 frames per second (resolution is expressed in ticks per frame).</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     */</em>
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>float</strong> SMPTE_24                                          = 24.0f;
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <em class='comment'>/**</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * The SMPTE-based timing type with 25 frames per second (resolution is expressed in ticks per frame).</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     */</em>
+<a id='L76' name='L76'></a>  76     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>float</strong> SMPTE_25                                          = 25.0f;
+<a id='L77' name='L77'></a>  77 
+<a id='L78' name='L78'></a>  78     <em class='comment'>/**</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * The SMPTE-based timing type with 29.97 frames per second (resolution is expressed in ticks per frame).</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     */</em>
+<a id='L82' name='L82'></a>  82     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>float</strong> SMPTE_30DROP                                      = 29.97f;
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <em class='comment'>/**</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * The SMPTE-based timing type with 30 frames per second (resolution is expressed in ticks per frame).</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     */</em>
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>float</strong> SMPTE_30                                          = 30.0f;
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <em class='comment'>// Variables</em>
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93     <em class='comment'>/**</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * The timing division type of the sequence.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * @see #PPQ</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * @see #SMPTE_24</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * @see #SMPTE_25</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * @see #SMPTE_30DROP</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * @see #SMPTE_30</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * @see #getDivisionType</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     */</em>
+<a id='L102' name='L102'></a> 102     <strong class='reserved'>protected</strong> <strong class='reserved'>float</strong> divisionType;
+<a id='L103' name='L103'></a> 103 
+<a id='L104' name='L104'></a> 104     <em class='comment'>/**</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * The timing resolution of the sequence.</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * @see #getResolution</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     */</em>
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> resolution;
+<a id='L109' name='L109'></a> 109 
+<a id='L110' name='L110'></a> 110     <em class='comment'>/**</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * The MIDI tracks in this sequence.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * @see #getTracks</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     */</em>
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>protected</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>&gt; tracks = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>&gt;();
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117     <em class='comment'>/**</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * Constructs a new MIDI sequence with the specified timing division</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * type and timing resolution.  The division type must be one of the</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * recognized MIDI timing types.  For tempo-based timing,</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * &lt;code&gt;divisionType&lt;/code&gt; is PPQ (pulses per quarter note) and</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * the resolution is specified in ticks per beat.  For SMTPE timing,</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     * &lt;code&gt;divisionType&lt;/code&gt; specifies the number of frames per</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * second and the resolution is specified in ticks per frame.</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * The sequence will contain no initial tracks.  Tracks may be</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * added to or removed from the sequence using &lt;code&gt;{@link #createTrack}&lt;/code&gt;</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * and &lt;code&gt;{@link #deleteTrack}&lt;/code&gt;.</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     *</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * @param divisionType the timing division type (PPQ or one of the SMPTE types)</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @param resolution the timing resolution</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * @throws InvalidMidiDataException if &lt;code&gt;divisionType&lt;/code&gt; is not valid</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     *</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * @see #PPQ</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * @see #SMPTE_24</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     * @see #SMPTE_25</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * @see #SMPTE_30DROP</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * @see #SMPTE_30</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * @see #getDivisionType</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * @see #getResolution</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * @see #getTracks</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     */</em>
+<a id='L142' name='L142'></a> 142     <strong class='reserved'>public</strong> Sequence(<strong class='reserved'>float</strong> divisionType, <strong class='reserved'>int</strong> resolution) <strong class='reserved'>throws</strong> <a href='../S/4406.html#L41' title='Defined at 41 in src/javax/sound/midi/InvalidMidiDataException.java.'>InvalidMidiDataException</a> <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143 
+<a id='L144' name='L144'></a> 144         <strong class='reserved'>if</strong> (divisionType == PPQ)
+<a id='L145' name='L145'></a> 145             <strong class='reserved'>this</strong>.divisionType = PPQ;
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_24)
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>this</strong>.divisionType = SMPTE_24;
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_25)
+<a id='L149' name='L149'></a> 149             <strong class='reserved'>this</strong>.divisionType = SMPTE_25;
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_30DROP)
+<a id='L151' name='L151'></a> 151             <strong class='reserved'>this</strong>.divisionType = SMPTE_30DROP;
+<a id='L152' name='L152'></a> 152         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_30)
+<a id='L153' name='L153'></a> 153             <strong class='reserved'>this</strong>.divisionType = SMPTE_30;
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>else</strong> <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4406.html#L41' title='Defined at 41 in src/javax/sound/midi/InvalidMidiDataException.java.'>InvalidMidiDataException</a>("Unsupported division type: " + divisionType);
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156         <strong class='reserved'>this</strong>.resolution = resolution;
+<a id='L157' name='L157'></a> 157     <em class='brace'>}</em>
+<a id='L158' name='L158'></a> 158 
+<a id='L159' name='L159'></a> 159 
+<a id='L160' name='L160'></a> 160     <em class='comment'>/**</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * Constructs a new MIDI sequence with the specified timing division</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * type, timing resolution, and number of tracks.  The division type must be one of the</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * recognized MIDI timing types.  For tempo-based timing,</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * &lt;code&gt;divisionType&lt;/code&gt; is PPQ (pulses per quarter note) and</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * the resolution is specified in ticks per beat.  For SMTPE timing,</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * &lt;code&gt;divisionType&lt;/code&gt; specifies the number of frames per</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * second and the resolution is specified in ticks per frame.</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     * The sequence will be initialized with the number of tracks specified by</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * &lt;code&gt;numTracks&lt;/code&gt;. These tracks are initially empty (i.e.</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * they contain only the meta-event End of Track).</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * The tracks may be retrieved for editing using the &lt;code&gt;{@link #getTracks}&lt;/code&gt;</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * method.  Additional tracks may be added, or existing tracks removed,</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * using &lt;code&gt;{@link #createTrack}&lt;/code&gt; and &lt;code&gt;{@link #deleteTrack}&lt;/code&gt;.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     *</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * @param divisionType the timing division type (PPQ or one of the SMPTE types)</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * @param resolution the timing resolution</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     * @param numTracks the initial number of tracks in the sequence.</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * @throws InvalidMidiDataException if &lt;code&gt;divisionType&lt;/code&gt; is not valid</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     *</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * @see #PPQ</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * @see #SMPTE_24</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * @see #SMPTE_25</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * @see #SMPTE_30DROP</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * @see #SMPTE_30</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * @see #getDivisionType</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * @see #getResolution</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     */</em>
+<a id='L188' name='L188'></a> 188     <strong class='reserved'>public</strong> Sequence(<strong class='reserved'>float</strong> divisionType, <strong class='reserved'>int</strong> resolution, <strong class='reserved'>int</strong> numTracks) <strong class='reserved'>throws</strong> <a href='../S/4406.html#L41' title='Defined at 41 in src/javax/sound/midi/InvalidMidiDataException.java.'>InvalidMidiDataException</a> <em class='brace'>{</em>
+<a id='L189' name='L189'></a> 189 
+<a id='L190' name='L190'></a> 190         <strong class='reserved'>if</strong> (divisionType == PPQ)
+<a id='L191' name='L191'></a> 191             <strong class='reserved'>this</strong>.divisionType = PPQ;
+<a id='L192' name='L192'></a> 192         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_24)
+<a id='L193' name='L193'></a> 193             <strong class='reserved'>this</strong>.divisionType = SMPTE_24;
+<a id='L194' name='L194'></a> 194         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_25)
+<a id='L195' name='L195'></a> 195             <strong class='reserved'>this</strong>.divisionType = SMPTE_25;
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_30DROP)
+<a id='L197' name='L197'></a> 197             <strong class='reserved'>this</strong>.divisionType = SMPTE_30DROP;
+<a id='L198' name='L198'></a> 198         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (divisionType == SMPTE_30)
+<a id='L199' name='L199'></a> 199             <strong class='reserved'>this</strong>.divisionType = SMPTE_30;
+<a id='L200' name='L200'></a> 200         <strong class='reserved'>else</strong> <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4406.html#L41' title='Defined at 41 in src/javax/sound/midi/InvalidMidiDataException.java.'>InvalidMidiDataException</a>("Unsupported division type: " + divisionType);
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202         <strong class='reserved'>this</strong>.resolution = resolution;
+<a id='L203' name='L203'></a> 203 
+<a id='L204' name='L204'></a> 204         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; numTracks; i++) <em class='brace'>{</em>
+<a id='L205' name='L205'></a> 205             tracks.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(<strong class='reserved'>new</strong> <a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>());
+<a id='L206' name='L206'></a> 206         <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207     <em class='brace'>}</em>
+<a id='L208' name='L208'></a> 208 
+<a id='L209' name='L209'></a> 209 
+<a id='L210' name='L210'></a> 210     <em class='comment'>/**</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * Obtains the timing division type for this sequence.</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * @return the division type (PPQ or one of the SMPTE types)</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     *</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * @see #PPQ</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * @see #SMPTE_24</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * @see #SMPTE_25</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * @see #SMPTE_30DROP</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * @see #SMPTE_30</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * @see MidiFileFormat#getDivisionType()</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     */</em>
+<a id='L222' name='L222'></a> 222     <strong class='reserved'>public</strong> <strong class='reserved'>float</strong> getDivisionType() <em class='brace'>{</em>
+<a id='L223' name='L223'></a> 223         <strong class='reserved'>return</strong> divisionType;
+<a id='L224' name='L224'></a> 224     <em class='brace'>}</em>
+<a id='L225' name='L225'></a> 225 
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227     <em class='comment'>/**</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * Obtains the timing resolution for this sequence.</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * If the sequence's division type is PPQ, the resolution is specified in ticks per beat.</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * For SMTPE timing, the resolution is specified in ticks per frame.</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     *</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * @return the number of ticks per beat (PPQ) or per frame (SMPTE)</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * @see #getDivisionType</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @see #Sequence(float, int)</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * @see MidiFileFormat#getResolution()</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     */</em>
+<a id='L237' name='L237'></a> 237     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> getResolution() <em class='brace'>{</em>
+<a id='L238' name='L238'></a> 238         <strong class='reserved'>return</strong> resolution;
+<a id='L239' name='L239'></a> 239     <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241 
+<a id='L242' name='L242'></a> 242     <em class='comment'>/**</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * Creates a new, initially empty track as part of this sequence.</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * The track initially contains the meta-event End of Track.</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * The newly created track is returned.  All tracks in the sequence</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * may be retrieved using &lt;code&gt;{@link #getTracks}&lt;/code&gt;.  Tracks may be</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * removed from the sequence using &lt;code&gt;{@link #deleteTrack}&lt;/code&gt;.</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * @return the newly created track</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     */</em>
+<a id='L250' name='L250'></a> 250     <strong class='reserved'>public</strong> <a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a> createTrack() <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251 
+<a id='L252' name='L252'></a> 252         <a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a> track = <strong class='reserved'>new</strong> <a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>();
+<a id='L253' name='L253'></a> 253         tracks.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(track);
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255         <strong class='reserved'>return</strong> track;
+<a id='L256' name='L256'></a> 256     <em class='brace'>}</em>
+<a id='L257' name='L257'></a> 257 
+<a id='L258' name='L258'></a> 258 
+<a id='L259' name='L259'></a> 259     <em class='comment'>/**</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * Removes the specified track from the sequence.</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     * @param track the track to remove</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the track existed in the track and was removed,</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * otherwise &lt;code&gt;false&lt;/code&gt;.</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     *</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * @see #createTrack</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * @see #getTracks</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     */</em>
+<a id='L268' name='L268'></a> 268     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> deleteTrack(<a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a> track) <em class='brace'>{</em>
+<a id='L269' name='L269'></a> 269 
+<a id='L270' name='L270'></a> 270         <strong class='reserved'>synchronized</strong>(tracks) <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271 
+<a id='L272' name='L272'></a> 272             <strong class='reserved'>return</strong> tracks.<a href='../D/30774.html' title='Multiple defined in 14 places.'>removeElement</a>(track);
+<a id='L273' name='L273'></a> 273         <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274     <em class='brace'>}</em>
+<a id='L275' name='L275'></a> 275 
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277     <em class='comment'>/**</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * Obtains an array containing all the tracks in this sequence.</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * If the sequence contains no tracks, an array of length 0 is returned.</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * @return the array of tracks</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     *</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * @see #createTrack</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * @see #deleteTrack</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     */</em>
+<a id='L285' name='L285'></a> 285     <strong class='reserved'>public</strong> <a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>[] getTracks() <em class='brace'>{</em>
+<a id='L286' name='L286'></a> 286 
+<a id='L287' name='L287'></a> 287         <strong class='reserved'>return</strong> (<a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>[]) tracks.<a href='../D/35348.html' title='Multiple defined in 117 places.'>toArray</a>(<strong class='reserved'>new</strong> <a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>[tracks.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()]);
+<a id='L288' name='L288'></a> 288     <em class='brace'>}</em>
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290 
+<a id='L291' name='L291'></a> 291     <em class='comment'>/**</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     * Obtains the duration of this sequence, expressed in microseconds.</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * @return this sequence's duration in microseconds.</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     */</em>
+<a id='L295' name='L295'></a> 295     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> getMicrosecondLength() <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296 
+<a id='L297' name='L297'></a> 297         <strong class='reserved'>return</strong> com.sun.media.sound.MidiUtils.tick2microsecond(<strong class='reserved'>this</strong>, <a href='../D/23128.html' title='Multiple defined in 4 places.'>getTickLength</a>(), <strong class='reserved'>null</strong>);
+<a id='L298' name='L298'></a> 298     <em class='brace'>}</em>
+<a id='L299' name='L299'></a> 299 
+<a id='L300' name='L300'></a> 300 
+<a id='L301' name='L301'></a> 301     <em class='comment'>/**</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     * Obtains the duration of this sequence, expressed in MIDI ticks.</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     *</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     * @return this sequence's length in ticks</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     *</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * @see #getMicrosecondLength</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     */</em>
+<a id='L308' name='L308'></a> 308     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/19484.html' title='Multiple referred from 10 places.'>getTickLength</a>() <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309 
+<a id='L310' name='L310'></a> 310         <strong class='reserved'>long</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = 0;
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312         <strong class='reserved'>synchronized</strong>(tracks) <em class='brace'>{</em>
+<a id='L313' name='L313'></a> 313 
+<a id='L314' name='L314'></a> 314             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i&lt;tracks.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>(); i++ ) <em class='brace'>{</em>
+<a id='L315' name='L315'></a> 315                 <strong class='reserved'>long</strong> temp = ((<a href='../S/4408.html#L64' title='Defined at 64 in src/javax/sound/midi/Track.java.'>Track</a>)tracks.<a href='../D/15289.html' title='Multiple defined in 23 places.'>elementAt</a>(i)).<a href='../S/4408.html#L252' title='Defined at 252 in src/javax/sound/midi/Track.java.'>ticks</a>();
+<a id='L316' name='L316'></a> 316                 <strong class='reserved'>if</strong>( temp&gt;<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ) <em class='brace'>{</em>
+<a id='L317' name='L317'></a> 317                     <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = temp;
+<a id='L318' name='L318'></a> 318                 <em class='brace'>}</em>
+<a id='L319' name='L319'></a> 319             <em class='brace'>}</em>
+<a id='L320' name='L320'></a> 320             <strong class='reserved'>return</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L321' name='L321'></a> 321         <em class='brace'>}</em>
+<a id='L322' name='L322'></a> 322     <em class='brace'>}</em>
+<a id='L323' name='L323'></a> 323 
+<a id='L324' name='L324'></a> 324 
+<a id='L325' name='L325'></a> 325     <em class='comment'>/**</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     * Obtains a list of patches referenced in this sequence.</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * This patch list may be used to load the required</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     * &lt;code&gt;{@link Instrument}&lt;/code&gt; objects</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     * into a &lt;code&gt;{@link Synthesizer}&lt;/code&gt;.</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     *</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * @return an array of &lt;code&gt;{@link Patch}&lt;/code&gt; objects used in this sequence</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     *</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     * @see Synthesizer#loadInstruments(Soundbank, Patch[])</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     */</em>
+<a id='L335' name='L335'></a> 335     <strong class='reserved'>public</strong> <a href='../S/4405.html#L59' title='Defined at 59 in src/javax/sound/midi/Patch.java.'>Patch</a>[] getPatchList() <em class='brace'>{</em>
+<a id='L336' name='L336'></a> 336 
+<a id='L337' name='L337'></a> 337         <em class='comment'>// $$kk: 04.09.99: need to implement!!</em>
+<a id='L338' name='L338'></a> 338         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/4405.html#L59' title='Defined at 59 in src/javax/sound/midi/Patch.java.'>Patch</a>[0];
+<a id='L339' name='L339'></a> 339     <em class='brace'>}</em>
+<a id='L340' name='L340'></a> 340 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L222'>[^]</a><a href='#L335'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

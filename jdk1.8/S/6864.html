@@ -1,0 +1,1060 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7740.html'>interceptors</a>/PIHandlerImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L93'>[^]</a><a href='#L988'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L93' title='Defined at 93.'>printPush</a></li>
+<li><a href='#L100' title='Defined at 100.'>printPop</a></li>
+<li><a href='#L107' title='Defined at 107.'>printSpaces</a></li>
+<li><a href='#L180' title='Defined at 180.'>close</a></li>
+<li><a href='#L238' title='Defined at 238.'>initialize</a></li>
+<li><a href='#L295' title='Defined at 295.'>destroyInterceptors</a></li>
+<li><a href='#L299' title='Defined at 299.'>objectAdapterCreated</a></li>
+<li><a href='#L307' title='Defined at 307.'>adapterManagerStateChanged</a></li>
+<li><a href='#L316' title='Defined at 316.'>adapterStateChanged</a></li>
+<li><a href='#L330' title='Defined at 330.'>disableInterceptorsThisThread</a></li>
+<li><a href='#L338' title='Defined at 338.'>enableInterceptorsThisThread</a></li>
+<li><a href='#L346' title='Defined at 346.'>invokeClientPIStartingPoint</a></li>
+<li><a href='#L392' title='Defined at 392.'>makeCompletedClientRequest</a></li>
+<li><a href='#L399' title='Defined at 399.'>invokeClientPIEndingPoint</a></li>
+<li><a href='#L406' title='Defined at 406.'>handleClientPIEndingPoint</a></li>
+<li><a href='#L452' title='Defined at 452.'>initiateClientPIRequest</a></li>
+<li><a href='#L501' title='Defined at 501.'>cleanupClientPIRequest</a></li>
+<li><a href='#L541' title='Defined at 541.'>setClientPIInfo</a></li>
+<li><a href='#L549' title='Defined at 549.'>setClientPIInfo</a></li>
+<li><a href='#L561' title='Defined at 561.'>invokeServerPIStartingPoint</a></li>
+<li><a href='#L572' title='Defined at 572.'>invokeServerPIIntermediatePoint</a></li>
+<li><a href='#L587' title='Defined at 587.'>invokeServerPIEndingPoint</a></li>
+<li><a href='#L666' title='Defined at 666.'>setServerPIInfo</a></li>
+<li><a href='#L673' title='Defined at 673.'>setServerPIInfo</a></li>
+<li><a href='#L681' title='Defined at 681.'>setServerPIExceptionInfo</a></li>
+<li><a href='#L689' title='Defined at 689.'>setServerPIInfo</a></li>
+<li><a href='#L697' title='Defined at 697.'>initializeServerPIInfo</a></li>
+<li><a href='#L715' title='Defined at 715.'>setServerPIInfo</a></li>
+<li><a href='#L724' title='Defined at 724.'>cleanupServerPIRequest</a></li>
+<li><a href='#L745' title='Defined at 745.'>serverPIHandleExceptions</a></li>
+<li><a href='#L769' title='Defined at 769.'>convertPIReplyStatusToReplyMessage</a></li>
+<li><a href='#L785' title='Defined at 785.'>peekClientRequestInfoImplStack</a></li>
+<li><a href='#L802' title='Defined at 802.'>peekServerRequestInfoImplStack</a></li>
+<li><a href='#L820' title='Defined at 820.'>isClientPIEnabledForThisThread</a></li>
+<li><a href='#L829' title='Defined at 829.'>preInitORBInitializers</a></li>
+<li><a href='#L854' title='Defined at 854.'>postInitORBInitializers</a></li>
+<li><a href='#L880' title='Defined at 880.'>createORBInitInfo</a></li>
+<li><a href='#L907' title='Defined at 907.'>register_interceptor</a></li>
+<li><a href='#L926' title='Defined at 926.'>getPICurrent</a></li>
+<li><a href='#L934' title='Defined at 934.'>nullParam</a></li>
+<li><a href='#L948' title='Defined at 948.'>create_policy</a></li>
+<li><a href='#L974' title='Defined at 974.'>registerPolicyFactory</a></li>
+<li><a href='#L988' title='Defined at 988.'>allocateServerRequestId</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.interceptors;
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.util.*;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.CORBA.Any;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_PARAM;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_POLICY;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_INV_ORDER;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.omg.CORBA.COMM_FAILURE;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.omg.CORBA.CompletionStatus;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.omg.CORBA.INTERNAL;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.CORBA.NVList;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> org.omg.CORBA.OBJECT_NOT_EXIST;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.omg.CORBA.ORBPackage.InvalidName;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> org.omg.CORBA.SystemException;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> org.omg.CORBA.UserException;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> org.omg.CORBA.UNKNOWN;
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> org.omg.CORBA.portable.ApplicationException;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> org.omg.CORBA.portable.RemarshalException;
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> org.omg.IOP.CodecFactory;
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ForwardRequest;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.Current;
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.Interceptor;
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.LOCATION_FORWARD;
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ORBInitializer;
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ORBInitInfo;
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ORBInitInfoPackage.DuplicateName;
+<a id='L56' name='L56'></a>  56 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.SUCCESSFUL;
+<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+<a id='L58' name='L58'></a>  58 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.TRANSPORT_RETRY;
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.USER_EXCEPTION;
+<a id='L60' name='L60'></a>  60 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.PolicyFactory;
+<a id='L61' name='L61'></a>  61 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ObjectReferenceTemplate;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63 <strong class='reserved'>import</strong> com.sun.corba.se.pept.encoding.OutputObject;
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IOR;
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKeyTemplate;
+<a id='L67' name='L67'></a>  67 <strong class='reserved'>import</strong> com.sun.corba.se.spi.oa.ObjectAdapter;
+<a id='L68' name='L68'></a>  68 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L69' name='L69'></a>  69 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orbutil.closure.ClosureFactory;
+<a id='L70' name='L70'></a>  70 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.CorbaMessageMediator;
+<a id='L71' name='L71'></a>  71 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.ForwardException;
+<a id='L72' name='L72'></a>  72 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.PIHandler;
+<a id='L73' name='L73'></a>  73 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.RetryType;
+<a id='L74' name='L74'></a>  74 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains;
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.InterceptorsSystemException;
+<a id='L77' name='L77'></a>  77 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException;
+<a id='L78' name='L78'></a>  78 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.OMGSystemException;
+<a id='L79' name='L79'></a>  79 <strong class='reserved'>import</strong> com.sun.corba.se.impl.corba.RequestImpl;
+<a id='L80' name='L80'></a>  80 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBConstants;
+<a id='L81' name='L81'></a>  81 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L82' name='L82'></a>  82 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.StackImpl;
+<a id='L83' name='L83'></a>  83 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.ReplyMessage;
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85 <em class='comment'>/**</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * Provides portable interceptor functionality.</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> */</em>
+<a id='L88' name='L88'></a>  88 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/5898.html' title='Multiple referred from 2 places.'>PIHandlerImpl</a> <strong class='reserved'>implements</strong> <a href='../S/7517.html#L56' title='Defined at 56 in src/com/sun/corba/se/spi/protocol/PIHandler.java.'>PIHandler</a>
+<a id='L89' name='L89'></a>  89 <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90     <em class='comment'>// REVISIT - delete these after framework merging.</em>
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>boolean</strong> printPushPopEnabled = <strong class='reserved'>false</strong>;
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>int</strong> pushLevel = 0;
+<a id='L93' name='L93'></a>  93     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25036.html' title='Multiple referred from 2 places.'>printPush</a>()
+<a id='L94' name='L94'></a>  94     <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>if</strong> (! printPushPopEnabled) <strong class='reserved'>return</strong>;
+<a id='L96' name='L96'></a>  96         <a href='../S/6864.html#L107' title='Defined at 107 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>printSpaces</a>(pushLevel);
+<a id='L97' name='L97'></a>  97         pushLevel++;
+<a id='L98' name='L98'></a>  98         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("PUSH");
+<a id='L99' name='L99'></a>  99     <em class='brace'>}</em>
+<a id='L100' name='L100'></a> 100     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25035.html' title='Multiple referred from 2 places.'>printPop</a>()
+<a id='L101' name='L101'></a> 101     <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102         <strong class='reserved'>if</strong> (! printPushPopEnabled) <strong class='reserved'>return</strong>;
+<a id='L103' name='L103'></a> 103         pushLevel--;
+<a id='L104' name='L104'></a> 104         <a href='../S/6864.html#L107' title='Defined at 107 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>printSpaces</a>(pushLevel);
+<a id='L105' name='L105'></a> 105         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("POP");
+<a id='L106' name='L106'></a> 106     <em class='brace'>}</em>
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25042.html' title='Multiple referred from 2 places.'>printSpaces</a>(<strong class='reserved'>int</strong> n)
+<a id='L108' name='L108'></a> 108     <em class='brace'>{</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; n; i++) <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>(" ");
+<a id='L111' name='L111'></a> 111         <em class='brace'>}</em>
+<a id='L112' name='L112'></a> 112     <em class='brace'>}</em>
+<a id='L113' name='L113'></a> 113 
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>private</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L115' name='L115'></a> 115     <a href='../S/7266.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/InterceptorsSystemException.java.'>InterceptorsSystemException</a> wrapper;
+<a id='L116' name='L116'></a> 116     <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> orbutilWrapper;
+<a id='L117' name='L117'></a> 117     <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a> omgWrapper;
+<a id='L118' name='L118'></a> 118 
+<a id='L119' name='L119'></a> 119     <em class='comment'>// A unique id used in ServerRequestInfo.</em>
+<a id='L120' name='L120'></a> 120     <em class='comment'>// This does not correspond to the GIOP request id.</em>
+<a id='L121' name='L121'></a> 121     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> serverRequestIdCounter = 0;
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123     <em class='comment'>// Stores the codec factory for producing codecs</em>
+<a id='L124' name='L124'></a> 124     <a href='../S/610.html#L17' title='Defined at 17 in src/org/omg/IOP/CodecFactory.java.'>CodecFactory</a> codecFactory = <strong class='reserved'>null</strong>;
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126     <em class='comment'>// The arguments passed to the application's main method.  May be null.</em>
+<a id='L127' name='L127'></a> 127     <em class='comment'>// This is used for ORBInitializers and set from set_parameters.</em>
+<a id='L128' name='L128'></a> 128     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../D/11487.html' title='Multiple defined in 15 places.'>arguments</a> = <strong class='reserved'>null</strong>;
+<a id='L129' name='L129'></a> 129 
+<a id='L130' name='L130'></a> 130     <em class='comment'>// The list of portable interceptors, organized by type:</em>
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>private</strong> <a href='../S/6865.html#L50' title='Defined at 50 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>InterceptorList</a> interceptorList;
+<a id='L132' name='L132'></a> 132 
+<a id='L133' name='L133'></a> 133     <em class='comment'>// Cached information for optimization - do we have any interceptors</em>
+<a id='L134' name='L134'></a> 134     <em class='comment'>// registered of the given types?  Set during ORB initialization.</em>
+<a id='L135' name='L135'></a> 135     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> hasIORInterceptors;
+<a id='L136' name='L136'></a> 136     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> hasClientInterceptors;  <em class='comment'>// temp always true</em>
+<a id='L137' name='L137'></a> 137     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> hasServerInterceptors;
+<a id='L138' name='L138'></a> 138 
+<a id='L139' name='L139'></a> 139     <em class='comment'>// The class responsible for invoking interceptors</em>
+<a id='L140' name='L140'></a> 140     <strong class='reserved'>private</strong> <a href='../S/6860.html#L57' title='Defined at 57 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>InterceptorInvoker</a> interceptorInvoker;
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142     <em class='comment'>// There will be one PICurrent instantiated for every ORB.</em>
+<a id='L143' name='L143'></a> 143     <strong class='reserved'>private</strong> <a href='../S/6872.html#L45' title='Defined at 45 in src/com/sun/corba/se/impl/interceptors/PICurrent.java.'>PICurrent</a> <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a>;
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145     <em class='comment'>// This table contains a list of PolicyFactories registered using</em>
+<a id='L146' name='L146'></a> 146     <em class='comment'>// ORBInitInfo.registerPolicyFactory() method.</em>
+<a id='L147' name='L147'></a> 147     <em class='comment'>// Key for the table is PolicyType which is an Integer</em>
+<a id='L148' name='L148'></a> 148     <em class='comment'>// Value is PolicyFactory.</em>
+<a id='L149' name='L149'></a> 149     <strong class='reserved'>private</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a> policyFactoryTable;
+<a id='L150' name='L150'></a> 150 
+<a id='L151' name='L151'></a> 151     <em class='comment'>// Table to convert from a ReplyMessage.? to a PI replyStatus short.</em>
+<a id='L152' name='L152'></a> 152     <em class='comment'>// Note that this table relies on the order and constants of</em>
+<a id='L153' name='L153'></a> 153     <em class='comment'>// ReplyMessage not to change.</em>
+<a id='L154' name='L154'></a> 154     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>short</strong> REPLY_MESSAGE_TO_PI_REPLY_STATUS[] = <em class='brace'>{</em>
+<a id='L155' name='L155'></a> 155         <a href='../S/472.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/SUCCESSFUL.java.'>SUCCESSFUL</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>,       <em class='comment'>// = ReplyMessage.NO_EXCEPTION</em>
+<a id='L156' name='L156'></a> 156         <a href='../S/464.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/USER_EXCEPTION.java.'>USER_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>,   <em class='comment'>// = ReplyMessage.USER_EXCEPTION</em>
+<a id='L157' name='L157'></a> 157         <a href='../S/457.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/SYSTEM_EXCEPTION.java.'>SYSTEM_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <em class='comment'>// = ReplyMessage.SYSTEM_EXCEPTION</em>
+<a id='L158' name='L158'></a> 158         <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <em class='comment'>// = ReplyMessage.LOCATION_FORWARD</em>
+<a id='L159' name='L159'></a> 159         <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <em class='comment'>// = ReplyMessage.LOCATION_FORWARD_PERM</em>
+<a id='L160' name='L160'></a> 160         <a href='../S/479.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/TRANSPORT_RETRY.java.'>TRANSPORT_RETRY</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>   <em class='comment'>// = ReplyMessage.NEEDS_ADDRESSING_MODE</em>
+<a id='L161' name='L161'></a> 161     <em class='brace'>}</em>;
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163     <em class='comment'>// ThreadLocal containing a stack to store client request info objects</em>
+<a id='L164' name='L164'></a> 164     <em class='comment'>// and a disable count.</em>
+<a id='L165' name='L165'></a> 165     <strong class='reserved'>private</strong> <a href='../S/1738.html#L74' title='Defined at 74 in src/java/lang/ThreadLocal.java.'>ThreadLocal</a> threadLocalClientRequestInfoStack =
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>new</strong> <a href='../S/1738.html#L74' title='Defined at 74 in src/java/lang/ThreadLocal.java.'>ThreadLocal</a>() <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167             <strong class='reserved'>protected</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/24645.html' title='Multiple defined in 4 places.'>initialValue</a>() <em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>();
+<a id='L169' name='L169'></a> 169             <em class='brace'>}</em>
+<a id='L170' name='L170'></a> 170         <em class='brace'>}</em>;
+<a id='L171' name='L171'></a> 171 
+<a id='L172' name='L172'></a> 172     <em class='comment'>// ThreadLocal containing the current server request info object.</em>
+<a id='L173' name='L173'></a> 173     <strong class='reserved'>private</strong> <a href='../S/1738.html#L74' title='Defined at 74 in src/java/lang/ThreadLocal.java.'>ThreadLocal</a> threadLocalServerRequestInfoStack =
+<a id='L174' name='L174'></a> 174         <strong class='reserved'>new</strong> <a href='../S/1738.html#L74' title='Defined at 74 in src/java/lang/ThreadLocal.java.'>ThreadLocal</a>() <em class='brace'>{</em>
+<a id='L175' name='L175'></a> 175             <strong class='reserved'>protected</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/24645.html' title='Multiple defined in 4 places.'>initialValue</a>() <em class='brace'>{</em>
+<a id='L176' name='L176'></a> 176                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>();
+<a id='L177' name='L177'></a> 177             <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178         <em class='brace'>}</em>;
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>() <em class='brace'>{</em>
+<a id='L181' name='L181'></a> 181         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <strong class='reserved'>null</strong>;
+<a id='L182' name='L182'></a> 182         wrapper = <strong class='reserved'>null</strong>;
+<a id='L183' name='L183'></a> 183         orbutilWrapper = <strong class='reserved'>null</strong>;
+<a id='L184' name='L184'></a> 184         omgWrapper = <strong class='reserved'>null</strong>;
+<a id='L185' name='L185'></a> 185         codecFactory = <strong class='reserved'>null</strong>;
+<a id='L186' name='L186'></a> 186         <a href='../D/11487.html' title='Multiple defined in 15 places.'>arguments</a> = <strong class='reserved'>null</strong>;
+<a id='L187' name='L187'></a> 187         interceptorList = <strong class='reserved'>null</strong>;
+<a id='L188' name='L188'></a> 188         interceptorInvoker = <strong class='reserved'>null</strong>;
+<a id='L189' name='L189'></a> 189         <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a> = <strong class='reserved'>null</strong>;
+<a id='L190' name='L190'></a> 190         policyFactoryTable = <strong class='reserved'>null</strong>;
+<a id='L191' name='L191'></a> 191         threadLocalClientRequestInfoStack = <strong class='reserved'>null</strong>;
+<a id='L192' name='L192'></a> 192         threadLocalServerRequestInfoStack = <strong class='reserved'>null</strong>;
+<a id='L193' name='L193'></a> 193     <em class='brace'>}</em>
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195     <em class='comment'>// Class to contain all ThreadLocal data for ClientRequestInfo</em>
+<a id='L196' name='L196'></a> 196     <em class='comment'>// maintenance.</em>
+<a id='L197' name='L197'></a> 197     <em class='comment'>//</em>
+<a id='L198' name='L198'></a> 198     <em class='comment'>// We use an ArrayList instead since it is not thread-safe.</em>
+<a id='L199' name='L199'></a> 199     <em class='comment'>// RequestInfoStack is used quite frequently.</em>
+<a id='L200' name='L200'></a> 200     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/6651.html' title='Multiple referred from 20 places.'>RequestInfoStack</a> <strong class='reserved'>extends</strong> <a href='../S/1186.html#L49' title='Defined at 49 in src/java/util/Stack.java.'>Stack</a> <em class='brace'>{</em>
+<a id='L201' name='L201'></a> 201         <em class='comment'>// Number of times a request has been made to disable interceptors.</em>
+<a id='L202' name='L202'></a> 202         <em class='comment'>// When this reaches 0, interception hooks are disabled.  Any higher</em>
+<a id='L203' name='L203'></a> 203         <em class='comment'>// value indicates they are enabled.</em>
+<a id='L204' name='L204'></a> 204         <em class='comment'>// NOTE: The is only currently used on the client side.</em>
+<a id='L205' name='L205'></a> 205         <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> disableCount = 0;
+<a id='L206' name='L206'></a> 206     <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>public</strong> PIHandlerImpl( <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] args ) <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ;
+<a id='L210' name='L210'></a> 210         wrapper = <a href='../S/7266.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/InterceptorsSystemException.java.'>InterceptorsSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L211' name='L211'></a> 211             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PROTOCOL ) ;
+<a id='L212' name='L212'></a> 212         orbutilWrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L213' name='L213'></a> 213             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PROTOCOL ) ;
+<a id='L214' name='L214'></a> 214         omgWrapper = <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L215' name='L215'></a> 215             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PROTOCOL ) ;
+<a id='L216' name='L216'></a> 216         <a href='../D/11487.html' title='Multiple defined in 15 places.'>arguments</a> = args ;
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218         <em class='comment'>// Create codec factory:</em>
+<a id='L219' name='L219'></a> 219         codecFactory = <strong class='reserved'>new</strong> <a href='../S/6859.html#L45' title='Defined at 45 in src/com/sun/corba/se/impl/interceptors/CodecFactoryImpl.java.'>CodecFactoryImpl</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> );
+<a id='L220' name='L220'></a> 220 
+<a id='L221' name='L221'></a> 221         <em class='comment'>// Create new interceptor list:</em>
+<a id='L222' name='L222'></a> 222         interceptorList = <strong class='reserved'>new</strong> <a href='../S/6865.html#L50' title='Defined at 50 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>InterceptorList</a>( wrapper );
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224         <em class='comment'>// Create a new PICurrent.</em>
+<a id='L225' name='L225'></a> 225         <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a> = <strong class='reserved'>new</strong> <a href='../S/6872.html#L45' title='Defined at 45 in src/com/sun/corba/se/impl/interceptors/PICurrent.java.'>PICurrent</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> );
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227         <em class='comment'>// Create new interceptor invoker, initially disabled:</em>
+<a id='L228' name='L228'></a> 228         interceptorInvoker = <strong class='reserved'>new</strong> <a href='../S/6860.html#L57' title='Defined at 57 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>InterceptorInvoker</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, interceptorList,
+<a id='L229' name='L229'></a> 229                                                      <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a> );
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231         <em class='comment'>// Register the PI current and Codec factory objects</em>
+<a id='L232' name='L232'></a> 232         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20212.html' title='Multiple defined in 3 places.'>getLocalResolver</a>().<a href='../D/30517.html' title='Multiple defined in 40 places.'>register</a>( <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.PI_CURRENT_NAME,
+<a id='L233' name='L233'></a> 233             <a href='../S/7334.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/orbutil/closure/ClosureFactory.java.'>ClosureFactory</a>.<a href='../S/7334.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/orbutil/closure/ClosureFactory.java.'>makeConstant</a>( <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a> ) ) ;
+<a id='L234' name='L234'></a> 234         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20212.html' title='Multiple defined in 3 places.'>getLocalResolver</a>().<a href='../D/30517.html' title='Multiple defined in 40 places.'>register</a>( <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.CODEC_FACTORY_NAME,
+<a id='L235' name='L235'></a> 235             <a href='../S/7334.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/orbutil/closure/ClosureFactory.java.'>ClosureFactory</a>.<a href='../S/7334.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/orbutil/closure/ClosureFactory.java.'>makeConstant</a>( codecFactory ) ) ;
+<a id='L236' name='L236'></a> 236     <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20681.html' title='Multiple referred from 99 places.'>initialize</a>() <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239         <em class='comment'>// If we have any orb initializers, make use of them:</em>
+<a id='L240' name='L240'></a> 240         <strong class='reserved'>if</strong>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21111.html' title='Multiple defined in 2 places.'>getORBInitializers</a>() != <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241             <em class='comment'>// Create the ORBInitInfo object to pass to ORB intializers:</em>
+<a id='L242' name='L242'></a> 242             <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a> orbInitInfo = <a href='../S/6864.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>createORBInitInfo</a>();
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244             <em class='comment'>// Make sure get_slot and set_slot are not called from within</em>
+<a id='L245' name='L245'></a> 245             <em class='comment'>// ORB initializers:</em>
+<a id='L246' name='L246'></a> 246             <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a>.<a href='../S/6872.html#L167' title='Defined at 167 in src/com/sun/corba/se/impl/interceptors/PICurrent.java.'>setORBInitializing</a>( <strong class='reserved'>true</strong> );
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248             <em class='comment'>// Call pre_init on all ORB initializers:</em>
+<a id='L249' name='L249'></a> 249             <a href='../S/6864.html#L829' title='Defined at 829 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>preInitORBInitializers</a>( orbInitInfo );
+<a id='L250' name='L250'></a> 250 
+<a id='L251' name='L251'></a> 251             <em class='comment'>// Call post_init on all ORB initializers:</em>
+<a id='L252' name='L252'></a> 252             <a href='../S/6864.html#L854' title='Defined at 854 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>postInitORBInitializers</a>( orbInitInfo );
+<a id='L253' name='L253'></a> 253 
+<a id='L254' name='L254'></a> 254             <em class='comment'>// Proprietary: sort interceptors:</em>
+<a id='L255' name='L255'></a> 255             interceptorList.<a href='../S/6865.html#L218' title='Defined at 218 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>sortInterceptors</a>();
+<a id='L256' name='L256'></a> 256 
+<a id='L257' name='L257'></a> 257             <em class='comment'>// Re-enable get_slot and set_slot to be called from within</em>
+<a id='L258' name='L258'></a> 258             <em class='comment'>// ORB initializers:</em>
+<a id='L259' name='L259'></a> 259             <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a>.<a href='../S/6872.html#L167' title='Defined at 167 in src/com/sun/corba/se/impl/interceptors/PICurrent.java.'>setORBInitializing</a>( <strong class='reserved'>false</strong> );
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261             <em class='comment'>// Ensure nobody makes any more calls on this object.</em>
+<a id='L262' name='L262'></a> 262             orbInitInfo.<a href='../S/6868.html#L129' title='Defined at 129 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>setStage</a>( <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a>.STAGE_CLOSED );
+<a id='L263' name='L263'></a> 263 
+<a id='L264' name='L264'></a> 264             <em class='comment'>// Set cached flags indicating whether we have interceptors</em>
+<a id='L265' name='L265'></a> 265             <em class='comment'>// registered of a given type.</em>
+<a id='L266' name='L266'></a> 266             hasIORInterceptors = interceptorList.<a href='../S/6865.html#L165' title='Defined at 165 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>hasInterceptorsOfType</a>(
+<a id='L267' name='L267'></a> 267                 <a href='../S/6865.html#L50' title='Defined at 50 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>InterceptorList</a>.INTERCEPTOR_TYPE_IOR );
+<a id='L268' name='L268'></a> 268             <em class='comment'>// XXX This must always be true, so that using the new generic</em>
+<a id='L269' name='L269'></a> 269             <em class='comment'>// RPC framework can pass info between the PI stack and the</em>
+<a id='L270' name='L270'></a> 270             <em class='comment'>// framework invocation stack.  Temporary until Harold fixes</em>
+<a id='L271' name='L271'></a> 271             <em class='comment'>// this.  Note that this must never be true until after the</em>
+<a id='L272' name='L272'></a> 272             <em class='comment'>// ORBInitializer instances complete executing.</em>
+<a id='L273' name='L273'></a> 273             <em class='comment'>//hasClientInterceptors = interceptorList.hasInterceptorsOfType(</em>
+<a id='L274' name='L274'></a> 274                 <em class='comment'>//InterceptorList.INTERCEPTOR_TYPE_CLIENT );</em>
+<a id='L275' name='L275'></a> 275             hasClientInterceptors = <strong class='reserved'>true</strong>;
+<a id='L276' name='L276'></a> 276             hasServerInterceptors = interceptorList.<a href='../S/6865.html#L165' title='Defined at 165 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>hasInterceptorsOfType</a>(
+<a id='L277' name='L277'></a> 277                 <a href='../S/6865.html#L50' title='Defined at 50 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>InterceptorList</a>.INTERCEPTOR_TYPE_SERVER );
+<a id='L278' name='L278'></a> 278 
+<a id='L279' name='L279'></a> 279             <em class='comment'>// Enable interceptor invoker (not necessary if no interceptors</em>
+<a id='L280' name='L280'></a> 280             <em class='comment'>// are registered).  This should be the last stage of ORB</em>
+<a id='L281' name='L281'></a> 281             <em class='comment'>// initialization.</em>
+<a id='L282' name='L282'></a> 282             interceptorInvoker.<a href='../D/32569.html' title='Multiple defined in 31 places.'>setEnabled</a>( <strong class='reserved'>true</strong> );
+<a id='L283' name='L283'></a> 283         <em class='brace'>}</em>
+<a id='L284' name='L284'></a> 284     <em class='brace'>}</em>
+<a id='L285' name='L285'></a> 285 
+<a id='L286' name='L286'></a> 286     <em class='comment'>/**</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     *  ptc/00-08-06 p 205: "When an application calls ORB::destroy, the ORB</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     *  1) waits for all requests in progress to complete</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     *  2) calls the Interceptor::destroy operation for each interceptor</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     *  3) completes destruction of the ORB"</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     *</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     * This must be called at the end of ORB.destroy.  Note that this is not</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * part of the PIHandler interface, since ORBImpl implements the ORB interface.</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     */</em>
+<a id='L295' name='L295'></a> 295     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7231.html#L1396' title='Referred from 1396 in src/com/sun/corba/se/impl/orb/ORBImpl.java.'>destroyInterceptors</a>() <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296         interceptorList.<a href='../S/6865.html#L204' title='Defined at 204 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>destroyAll</a>();
+<a id='L297' name='L297'></a> 297     <em class='brace'>}</em>
+<a id='L298' name='L298'></a> 298 
+<a id='L299' name='L299'></a> 299     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/23871.html' title='Multiple referred from 4 places.'>objectAdapterCreated</a>( <a href='../S/7536.html#L161' title='Defined at 161 in src/com/sun/corba/se/spi/oa/ObjectAdapter.java.'>ObjectAdapter</a> <a href='../S/7537.html#L81' title='Defined at 81 in src/com/sun/corba/se/spi/oa/OAInvocationInfo.java.'>oa</a> )
+<a id='L300' name='L300'></a> 300     <em class='brace'>{</em>
+<a id='L301' name='L301'></a> 301         <strong class='reserved'>if</strong> (!hasIORInterceptors)
+<a id='L302' name='L302'></a> 302             <strong class='reserved'>return</strong> ;
+<a id='L303' name='L303'></a> 303 
+<a id='L304' name='L304'></a> 304         interceptorInvoker.<a href='../D/28390.html' title='Multiple defined in 4 places.'>objectAdapterCreated</a>( <a href='../S/7537.html#L81' title='Defined at 81 in src/com/sun/corba/se/spi/oa/OAInvocationInfo.java.'>oa</a> ) ;
+<a id='L305' name='L305'></a> 305     <em class='brace'>}</em>
+<a id='L306' name='L306'></a> 306 
+<a id='L307' name='L307'></a> 307     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/9587.html' title='Multiple referred from 5 places.'>adapterManagerStateChanged</a>( <strong class='reserved'>int</strong> managerId,
+<a id='L308' name='L308'></a> 308         <strong class='reserved'>short</strong> newState )
+<a id='L309' name='L309'></a> 309     <em class='brace'>{</em>
+<a id='L310' name='L310'></a> 310         <strong class='reserved'>if</strong> (!hasIORInterceptors)
+<a id='L311' name='L311'></a> 311             <strong class='reserved'>return</strong> ;
+<a id='L312' name='L312'></a> 312 
+<a id='L313' name='L313'></a> 313         interceptorInvoker.<a href='../D/10625.html' title='Multiple defined in 4 places.'>adapterManagerStateChanged</a>( managerId, newState ) ;
+<a id='L314' name='L314'></a> 314     <em class='brace'>}</em>
+<a id='L315' name='L315'></a> 315 
+<a id='L316' name='L316'></a> 316     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/9588.html' title='Multiple referred from 2 places.'>adapterStateChanged</a>( <a href='../S/458.html#L19' title='Defined at 19 in src/org/omg/PortableInterceptor/ObjectReferenceTemplate.java.'>ObjectReferenceTemplate</a>[]
+<a id='L317' name='L317'></a> 317         templates, <strong class='reserved'>short</strong> newState )
+<a id='L318' name='L318'></a> 318     <em class='brace'>{</em>
+<a id='L319' name='L319'></a> 319         <strong class='reserved'>if</strong> (!hasIORInterceptors)
+<a id='L320' name='L320'></a> 320             <strong class='reserved'>return</strong> ;
+<a id='L321' name='L321'></a> 321 
+<a id='L322' name='L322'></a> 322         interceptorInvoker.<a href='../D/10626.html' title='Multiple defined in 4 places.'>adapterStateChanged</a>( templates, newState ) ;
+<a id='L323' name='L323'></a> 323     <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324 
+<a id='L325' name='L325'></a> 325     <em class='comment'>/*</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     *****************</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * Client PI hooks</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     *****************/</em>
+<a id='L329' name='L329'></a> 329 
+<a id='L330' name='L330'></a> 330     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> disableInterceptorsThisThread() <em class='brace'>{</em>
+<a id='L331' name='L331'></a> 331         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L332' name='L332'></a> 332 
+<a id='L333' name='L333'></a> 333         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L334' name='L334'></a> 334             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalClientRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L335' name='L335'></a> 335         infoStack.disableCount++;
+<a id='L336' name='L336'></a> 336     <em class='brace'>}</em>
+<a id='L337' name='L337'></a> 337 
+<a id='L338' name='L338'></a> 338     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> enableInterceptorsThisThread() <em class='brace'>{</em>
+<a id='L339' name='L339'></a> 339         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L340' name='L340'></a> 340 
+<a id='L341' name='L341'></a> 341         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L342' name='L342'></a> 342             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalClientRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L343' name='L343'></a> 343         infoStack.disableCount--;
+<a id='L344' name='L344'></a> 344     <em class='brace'>}</em>
+<a id='L345' name='L345'></a> 345 
+<a id='L346' name='L346'></a> 346     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7080.html#L293' title='Referred from 293 in src/com/sun/corba/se/impl/protocol/CorbaClientRequestDispatcherImpl.java.'>invokeClientPIStartingPoint</a>()
+<a id='L347' name='L347'></a> 347         <strong class='reserved'>throws</strong> <a href='../S/308.html#L39' title='Defined at 39 in src/org/omg/CORBA/portable/RemarshalException.java.'>RemarshalException</a>
+<a id='L348' name='L348'></a> 348     <em class='brace'>{</em>
+<a id='L349' name='L349'></a> 349         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L350' name='L350'></a> 350         <strong class='reserved'>if</strong>( !<a href='../S/6864.html#L820' title='Defined at 820 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>isClientPIEnabledForThisThread</a>() ) <strong class='reserved'>return</strong>;
+<a id='L351' name='L351'></a> 351 
+<a id='L352' name='L352'></a> 352         <em class='comment'>// Invoke the starting interception points and record exception</em>
+<a id='L353' name='L353'></a> 353         <em class='comment'>// and reply status info in the info object:</em>
+<a id='L354' name='L354'></a> 354         <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L785' title='Defined at 785 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekClientRequestInfoImplStack</a>();
+<a id='L355' name='L355'></a> 355         interceptorInvoker.<a href='../S/6860.html#L214' title='Defined at 214 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>invokeClientInterceptorStartingPoint</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L356' name='L356'></a> 356 
+<a id='L357' name='L357'></a> 357         <em class='comment'>// Check reply status.  If we will not have another chance later</em>
+<a id='L358' name='L358'></a> 358         <em class='comment'>// to invoke the client ending points, do it now.</em>
+<a id='L359' name='L359'></a> 359         <strong class='reserved'>short</strong> replyStatus = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/21989.html' title='Multiple defined in 8 places.'>getReplyStatus</a>();
+<a id='L360' name='L360'></a> 360         <strong class='reserved'>if</strong>( (replyStatus == <a href='../S/457.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/SYSTEM_EXCEPTION.java.'>SYSTEM_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) ||
+<a id='L361' name='L361'></a> 361             (replyStatus == <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) )
+<a id='L362' name='L362'></a> 362         <em class='brace'>{</em>
+<a id='L363' name='L363'></a> 363             <em class='comment'>// Note: Transport retry cannot happen here since this happens</em>
+<a id='L364' name='L364'></a> 364             <em class='comment'>// before the request hits the wire.</em>
+<a id='L365' name='L365'></a> 365 
+<a id='L366' name='L366'></a> 366             <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> = <a href='../D/25061.html' title='Multiple defined in 3 places.'>invokeClientPIEndingPoint</a>(
+<a id='L367' name='L367'></a> 367                 <a href='../S/6864.html#L769' title='Defined at 769 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>convertPIReplyStatusToReplyMessage</a>( replyStatus ),
+<a id='L368' name='L368'></a> 368                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>() );
+<a id='L369' name='L369'></a> 369             <strong class='reserved'>if</strong>( <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L370' name='L370'></a> 370                 <em class='comment'>// Do not throw anything.  Otherwise, it must be a</em>
+<a id='L371' name='L371'></a> 371                 <em class='comment'>// SystemException, UserException or RemarshalException.</em>
+<a id='L372' name='L372'></a> 372             <em class='brace'>}</em> <strong class='reserved'>if</strong>( <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> <strong class='reserved'>instanceof</strong> <a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a> ) <em class='brace'>{</em>
+<a id='L373' name='L373'></a> 373                 <strong class='reserved'>throw</strong> (<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>)<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L374' name='L374'></a> 374             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>( <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> <strong class='reserved'>instanceof</strong> <a href='../S/308.html#L39' title='Defined at 39 in src/org/omg/CORBA/portable/RemarshalException.java.'>RemarshalException</a> ) <em class='brace'>{</em>
+<a id='L375' name='L375'></a> 375                 <strong class='reserved'>throw</strong> (<a href='../S/308.html#L39' title='Defined at 39 in src/org/omg/CORBA/portable/RemarshalException.java.'>RemarshalException</a>)<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L376' name='L376'></a> 376             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>( (<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> <strong class='reserved'>instanceof</strong> <a href='../S/267.html#L37' title='Defined at 37 in src/org/omg/CORBA/UserException.java.'>UserException</a>) ||
+<a id='L377' name='L377'></a> 377                      (<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> <strong class='reserved'>instanceof</strong> <a href='../S/312.html#L32' title='Defined at 32 in src/org/omg/CORBA/portable/ApplicationException.java.'>ApplicationException</a>) ) <em class='brace'>{</em>
+<a id='L378' name='L378'></a> 378                 <em class='comment'>// It should not be possible for an interceptor to throw</em>
+<a id='L379' name='L379'></a> 379                 <em class='comment'>// a UserException.  By asserting instead of throwing the</em>
+<a id='L380' name='L380'></a> 380                 <em class='comment'>// UserException, we need not declare anything but</em>
+<a id='L381' name='L381'></a> 381                 <em class='comment'>// RemarshalException in the throws clause.</em>
+<a id='L382' name='L382'></a> 382                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/15776.html' title='Multiple defined in 4 places.'>exceptionInvalid</a>() ;
+<a id='L383' name='L383'></a> 383             <em class='brace'>}</em>
+<a id='L384' name='L384'></a> 384         <em class='brace'>}</em>
+<a id='L385' name='L385'></a> 385         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>( replyStatus != <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a>.UNINITIALIZED ) <em class='brace'>{</em>
+<a id='L386' name='L386'></a> 386             <strong class='reserved'>throw</strong> wrapper.<a href='../D/31082.html' title='Multiple defined in 4 places.'>replyStatusNotInit</a>() ;
+<a id='L387' name='L387'></a> 387         <em class='brace'>}</em>
+<a id='L388' name='L388'></a> 388     <em class='brace'>}</em>
+<a id='L389' name='L389'></a> 389 
+<a id='L390' name='L390'></a> 390     <em class='comment'>// Needed when an error forces a retry AFTER initiateClientPIRequest</em>
+<a id='L391' name='L391'></a> 391     <em class='comment'>// but BEFORE invokeClientPIStartingPoint.</em>
+<a id='L392' name='L392'></a> 392     <strong class='reserved'>public</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/7080.html#L320' title='Referred from 320 in src/com/sun/corba/se/impl/protocol/CorbaClientRequestDispatcherImpl.java.'>makeCompletedClientRequest</a>( <strong class='reserved'>int</strong> replyStatus,
+<a id='L393' name='L393'></a> 393         <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> ) <em class='brace'>{</em>
+<a id='L394' name='L394'></a> 394 
+<a id='L395' name='L395'></a> 395         <em class='comment'>// 6763340</em>
+<a id='L396' name='L396'></a> 396         <strong class='reserved'>return</strong> <a href='../S/6864.html#L406' title='Defined at 406 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>handleClientPIEndingPoint</a>( replyStatus, <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>, <strong class='reserved'>false</strong> ) ;
+<a id='L397' name='L397'></a> 397     <em class='brace'>}</em>
+<a id='L398' name='L398'></a> 398 
+<a id='L399' name='L399'></a> 399     <strong class='reserved'>public</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/21062.html' title='Multiple referred from 13 places.'>invokeClientPIEndingPoint</a>( <strong class='reserved'>int</strong> replyStatus,
+<a id='L400' name='L400'></a> 400         <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> ) <em class='brace'>{</em>
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402         <em class='comment'>// 6763340</em>
+<a id='L403' name='L403'></a> 403         <strong class='reserved'>return</strong> <a href='../S/6864.html#L406' title='Defined at 406 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>handleClientPIEndingPoint</a>( replyStatus, <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>, <strong class='reserved'>true</strong> ) ;
+<a id='L404' name='L404'></a> 404     <em class='brace'>}</em>
+<a id='L405' name='L405'></a> 405 
+<a id='L406' name='L406'></a> 406     <strong class='reserved'>public</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/20071.html' title='Multiple referred from 2 places.'>handleClientPIEndingPoint</a>(
+<a id='L407' name='L407'></a> 407         <strong class='reserved'>int</strong> replyStatus, <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>, <strong class='reserved'>boolean</strong> invokeEndingPoint ) <em class='brace'>{</em>
+<a id='L408' name='L408'></a> 408         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L409' name='L409'></a> 409         <strong class='reserved'>if</strong>( !<a href='../S/6864.html#L820' title='Defined at 820 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>isClientPIEnabledForThisThread</a>() ) <strong class='reserved'>return</strong> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L410' name='L410'></a> 410 
+<a id='L411' name='L411'></a> 411         <em class='comment'>// Translate ReplyMessage.replyStatus into PI replyStatus:</em>
+<a id='L412' name='L412'></a> 412         <em class='comment'>// Note: this is also an assertion to make sure a valid replyStatus</em>
+<a id='L413' name='L413'></a> 413         <em class='comment'>// is passed in (IndexOutOfBoundsException will be thrown otherwise)</em>
+<a id='L414' name='L414'></a> 414         <strong class='reserved'>short</strong> piReplyStatus = REPLY_MESSAGE_TO_PI_REPLY_STATUS[replyStatus];
+<a id='L415' name='L415'></a> 415 
+<a id='L416' name='L416'></a> 416         <em class='comment'>// Invoke the ending interception points and record exception</em>
+<a id='L417' name='L417'></a> 417         <em class='comment'>// and reply status info in the info object:</em>
+<a id='L418' name='L418'></a> 418         <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L785' title='Defined at 785 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekClientRequestInfoImplStack</a>();
+<a id='L419' name='L419'></a> 419         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/33703.html' title='Multiple defined in 3 places.'>setReplyStatus</a>( piReplyStatus );
+<a id='L420' name='L420'></a> 420         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32637.html' title='Multiple defined in 4 places.'>setException</a>( <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> );
+<a id='L421' name='L421'></a> 421 
+<a id='L422' name='L422'></a> 422         <strong class='reserved'>if</strong> (invokeEndingPoint) <em class='brace'>{</em>
+<a id='L423' name='L423'></a> 423             <em class='comment'>// 6763340</em>
+<a id='L424' name='L424'></a> 424             interceptorInvoker.<a href='../S/6860.html#L315' title='Defined at 315 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>invokeClientInterceptorEndingPoint</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L425' name='L425'></a> 425             piReplyStatus = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/21989.html' title='Multiple defined in 8 places.'>getReplyStatus</a>();
+<a id='L426' name='L426'></a> 426         <em class='brace'>}</em>
+<a id='L427' name='L427'></a> 427 
+<a id='L428' name='L428'></a> 428         <em class='comment'>// Check reply status:</em>
+<a id='L429' name='L429'></a> 429         <strong class='reserved'>if</strong>( (piReplyStatus == <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) ||
+<a id='L430' name='L430'></a> 430             (piReplyStatus == <a href='../S/479.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/TRANSPORT_RETRY.java.'>TRANSPORT_RETRY</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) ) <em class='brace'>{</em>
+<a id='L431' name='L431'></a> 431             <em class='comment'>// If this is a forward or a retry, reset and reuse</em>
+<a id='L432' name='L432'></a> 432             <em class='comment'>// info object:</em>
+<a id='L433' name='L433'></a> 433             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L434' name='L434'></a> 434 
+<a id='L435' name='L435'></a> 435             <em class='comment'>// fix for 6763340:</em>
+<a id='L436' name='L436'></a> 436             <strong class='reserved'>if</strong> (invokeEndingPoint) <em class='brace'>{</em>
+<a id='L437' name='L437'></a> 437                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L829' title='Defined at 829 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>setRetryRequest</a>( <a href='../S/7522.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>RetryType</a>.<a href='../S/7522.html#L40' title='Defined at 40 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>AFTER_RESPONSE</a> ) ;
+<a id='L438' name='L438'></a> 438             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L439' name='L439'></a> 439                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L829' title='Defined at 829 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>setRetryRequest</a>( <a href='../S/7522.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>RetryType</a>.<a href='../S/7522.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>BEFORE_RESPONSE</a> ) ;
+<a id='L440' name='L440'></a> 440             <em class='brace'>}</em>
+<a id='L441' name='L441'></a> 441 
+<a id='L442' name='L442'></a> 442             <em class='comment'>// ... and return a RemarshalException so the orb internals know</em>
+<a id='L443' name='L443'></a> 443             <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> = <strong class='reserved'>new</strong> <a href='../S/308.html#L39' title='Defined at 39 in src/org/omg/CORBA/portable/RemarshalException.java.'>RemarshalException</a>();
+<a id='L444' name='L444'></a> 444         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>( (piReplyStatus == <a href='../S/457.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/SYSTEM_EXCEPTION.java.'>SYSTEM_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) ||
+<a id='L445' name='L445'></a> 445                  (piReplyStatus == <a href='../S/464.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/USER_EXCEPTION.java.'>USER_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) ) <em class='brace'>{</em>
+<a id='L446' name='L446'></a> 446             <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
+<a id='L447' name='L447'></a> 447         <em class='brace'>}</em>
+<a id='L448' name='L448'></a> 448 
+<a id='L449' name='L449'></a> 449         <strong class='reserved'>return</strong> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L450' name='L450'></a> 450     <em class='brace'>}</em>
+<a id='L451' name='L451'></a> 451 
+<a id='L452' name='L452'></a> 452     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20732.html' title='Multiple referred from 2 places.'>initiateClientPIRequest</a>( <strong class='reserved'>boolean</strong> diiRequest ) <em class='brace'>{</em>
+<a id='L453' name='L453'></a> 453         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L454' name='L454'></a> 454         <strong class='reserved'>if</strong>( !<a href='../S/6864.html#L820' title='Defined at 820 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>isClientPIEnabledForThisThread</a>() ) <strong class='reserved'>return</strong>;
+<a id='L455' name='L455'></a> 455 
+<a id='L456' name='L456'></a> 456         <em class='comment'>// Get the most recent info object from the thread local</em>
+<a id='L457' name='L457'></a> 457         <em class='comment'>// ClientRequestInfoImpl stack:</em>
+<a id='L458' name='L458'></a> 458         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L459' name='L459'></a> 459             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalClientRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L460' name='L460'></a> 460         <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <strong class='reserved'>null</strong>;
+<a id='L461' name='L461'></a> 461 
+<a id='L462' name='L462'></a> 462         <strong class='reserved'>if</strong> (!infoStack.<a href='../D/15347.html' title='Multiple defined in 24 places.'>empty</a>() ) <em class='brace'>{</em>
+<a id='L463' name='L463'></a> 463             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = (<a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a>)infoStack.<a href='../D/29287.html' title='Multiple defined in 50 places.'>peek</a>();
+<a id='L464' name='L464'></a> 464         <em class='brace'>}</em>
+<a id='L465' name='L465'></a> 465 
+<a id='L466' name='L466'></a> 466         <strong class='reserved'>if</strong> (!diiRequest &amp;&amp; (<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> != <strong class='reserved'>null</strong>) &amp;&amp; <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L902' title='Defined at 902 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>isDIIInitiate</a>() ) <em class='brace'>{</em>
+<a id='L467' name='L467'></a> 467             <em class='comment'>// In RequestImpl.doInvocation we already called</em>
+<a id='L468' name='L468'></a> 468             <em class='comment'>// initiateClientPIRequest( true ), so ignore this initiate.</em>
+<a id='L469' name='L469'></a> 469             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L895' title='Defined at 895 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>setDIIInitiate</a>( <strong class='reserved'>false</strong> );
+<a id='L470' name='L470'></a> 470         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L471' name='L471'></a> 471             <em class='comment'>// If there is no info object or if we are not retrying a request,</em>
+<a id='L472' name='L472'></a> 472             <em class='comment'>// push a new ClientRequestInfoImpl on the stack:</em>
+<a id='L473' name='L473'></a> 473 
+<a id='L474' name='L474'></a> 474             <em class='comment'>// 6763340: don't push unless this is not a retry</em>
+<a id='L475' name='L475'></a> 475             <strong class='reserved'>if</strong>( (<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> == <strong class='reserved'>null</strong>) || !<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L836' title='Defined at 836 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>getRetryRequest</a>().<a href='../S/7522.html#L48' title='Defined at 48 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>isRetry</a>() ) <em class='brace'>{</em>
+<a id='L476' name='L476'></a> 476                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <strong class='reserved'>new</strong> <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> );
+<a id='L477' name='L477'></a> 477                 infoStack.<a href='../D/29933.html' title='Multiple defined in 37 places.'>push</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L478' name='L478'></a> 478                 <a href='../S/6864.html#L93' title='Defined at 93 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>printPush</a>();
+<a id='L479' name='L479'></a> 479                 <em class='comment'>// Note: the entry count is automatically initialized to 0.</em>
+<a id='L480' name='L480'></a> 480             <em class='brace'>}</em>
+<a id='L481' name='L481'></a> 481 
+<a id='L482' name='L482'></a> 482             <em class='comment'>// Reset the retry request flag so that recursive calls will</em>
+<a id='L483' name='L483'></a> 483             <em class='comment'>// push a new info object, and bump up entry count so we know</em>
+<a id='L484' name='L484'></a> 484             <em class='comment'>// when to pop this info object:</em>
+<a id='L485' name='L485'></a> 485             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L829' title='Defined at 829 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>setRetryRequest</a>( <a href='../S/7522.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>RetryType</a>.<a href='../D/5884.html' title='Multiple defined in 2 places.'>NONE</a> );
+<a id='L486' name='L486'></a> 486             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/24450.html' title='Multiple defined in 3 places.'>incrementEntryCount</a>();
+<a id='L487' name='L487'></a> 487 
+<a id='L488' name='L488'></a> 488             <em class='comment'>// KMC 6763340: I don't know why this wasn't set earlier,</em>
+<a id='L489' name='L489'></a> 489             <em class='comment'>// but we do not want a retry to pick up the previous</em>
+<a id='L490' name='L490'></a> 490             <em class='comment'>// reply status, so clear it here.  Most likely a new</em>
+<a id='L491' name='L491'></a> 491             <em class='comment'>// info was pushed before, so that this was not a problem.</em>
+<a id='L492' name='L492'></a> 492             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/33703.html' title='Multiple defined in 3 places.'>setReplyStatus</a>( <a href='../S/6869.html#L101' title='Defined at 101 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>RequestInfoImpl</a>.UNINITIALIZED ) ;
+<a id='L493' name='L493'></a> 493 
+<a id='L494' name='L494'></a> 494             <em class='comment'>// If this is a DII request, make sure we ignore the next initiate.</em>
+<a id='L495' name='L495'></a> 495             <strong class='reserved'>if</strong>( diiRequest ) <em class='brace'>{</em>
+<a id='L496' name='L496'></a> 496                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L895' title='Defined at 895 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>setDIIInitiate</a>( <strong class='reserved'>true</strong> );
+<a id='L497' name='L497'></a> 497             <em class='brace'>}</em>
+<a id='L498' name='L498'></a> 498         <em class='brace'>}</em>
+<a id='L499' name='L499'></a> 499     <em class='brace'>}</em>
+<a id='L500' name='L500'></a> 500 
+<a id='L501' name='L501'></a> 501     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11492.html' title='Multiple referred from 2 places.'>cleanupClientPIRequest</a>() <em class='brace'>{</em>
+<a id='L502' name='L502'></a> 502         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L503' name='L503'></a> 503         <strong class='reserved'>if</strong>( !<a href='../S/6864.html#L820' title='Defined at 820 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>isClientPIEnabledForThisThread</a>() ) <strong class='reserved'>return</strong>;
+<a id='L504' name='L504'></a> 504 
+<a id='L505' name='L505'></a> 505         <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L785' title='Defined at 785 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekClientRequestInfoImplStack</a>();
+<a id='L506' name='L506'></a> 506         <a href='../S/7522.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>RetryType</a> rt = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L836' title='Defined at 836 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>getRetryRequest</a>() ;
+<a id='L507' name='L507'></a> 507 
+<a id='L508' name='L508'></a> 508         <em class='comment'>// fix for 6763340</em>
+<a id='L509' name='L509'></a> 509         <strong class='reserved'>if</strong> (!rt.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>( <a href='../S/7522.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>RetryType</a>.<a href='../S/7522.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>BEFORE_RESPONSE</a> )) <em class='brace'>{</em>
+<a id='L510' name='L510'></a> 510 
+<a id='L511' name='L511'></a> 511             <em class='comment'>// If the replyStatus has not yet been set, this is an indication</em>
+<a id='L512' name='L512'></a> 512             <em class='comment'>// that the ORB threw an exception before we had a chance to</em>
+<a id='L513' name='L513'></a> 513             <em class='comment'>// invoke the client interceptor ending points.</em>
+<a id='L514' name='L514'></a> 514             <em class='comment'>//</em>
+<a id='L515' name='L515'></a> 515             <em class='comment'>// _REVISIT_ We cannot handle any exceptions or ForwardRequests</em>
+<a id='L516' name='L516'></a> 516             <em class='comment'>// flagged by the ending points here because there is no way</em>
+<a id='L517' name='L517'></a> 517             <em class='comment'>// to gracefully handle this in any of the calling code.</em>
+<a id='L518' name='L518'></a> 518             <em class='comment'>// This is a rare corner case, so we will ignore this for now.</em>
+<a id='L519' name='L519'></a> 519             <strong class='reserved'>short</strong> replyStatus = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/21989.html' title='Multiple defined in 8 places.'>getReplyStatus</a>();
+<a id='L520' name='L520'></a> 520             <strong class='reserved'>if</strong> (replyStatus == <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.UNINITIALIZED ) <em class='brace'>{</em>
+<a id='L521' name='L521'></a> 521                 <a href='../D/25061.html' title='Multiple defined in 3 places.'>invokeClientPIEndingPoint</a>( <a href='../S/7095.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/ReplyMessage.java.'>ReplyMessage</a>.<a href='../S/457.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/SYSTEM_EXCEPTION.java.'>SYSTEM_EXCEPTION</a>,
+<a id='L522' name='L522'></a> 522                     wrapper.<a href='../D/35898.html' title='Multiple defined in 4 places.'>unknownRequestInvoke</a>(
+<a id='L523' name='L523'></a> 523                         <a href='../S/238.html#L53' title='Defined at 53 in src/org/omg/CORBA/CompletionStatus.java.'>CompletionStatus</a>.COMPLETED_MAYBE ) ) ;
+<a id='L524' name='L524'></a> 524             <em class='brace'>}</em>
+<a id='L525' name='L525'></a> 525         <em class='brace'>}</em>
+<a id='L526' name='L526'></a> 526 
+<a id='L527' name='L527'></a> 527         <em class='comment'>// Decrement entry count, and if it is zero, pop it from the stack.</em>
+<a id='L528' name='L528'></a> 528         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/14707.html' title='Multiple defined in 3 places.'>decrementEntryCount</a>();
+<a id='L529' name='L529'></a> 529 
+<a id='L530' name='L530'></a> 530         <em class='comment'>// fix for 6763340, and probably other cases (non-recursive retry)</em>
+<a id='L531' name='L531'></a> 531         <strong class='reserved'>if</strong> (<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/18813.html' title='Multiple defined in 4 places.'>getEntryCount</a>() == 0 &amp;&amp; !<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6866.html#L836' title='Defined at 836 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>getRetryRequest</a>().<a href='../S/7522.html#L48' title='Defined at 48 in src/com/sun/corba/se/spi/protocol/RetryType.java.'>isRetry</a>()) <em class='brace'>{</em>
+<a id='L532' name='L532'></a> 532             <em class='comment'>// RequestInfoStack&lt;ClientRequestInfoImpl&gt; infoStack =</em>
+<a id='L533' name='L533'></a> 533             <em class='comment'>//     threadLocalClientRequestInfoStack.get();</em>
+<a id='L534' name='L534'></a> 534             <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L535' name='L535'></a> 535                 (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalClientRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L536' name='L536'></a> 536             infoStack.<a href='../D/29416.html' title='Multiple defined in 30 places.'>pop</a>();
+<a id='L537' name='L537'></a> 537             <a href='../S/6864.html#L100' title='Defined at 100 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>printPop</a>();
+<a id='L538' name='L538'></a> 538         <em class='brace'>}</em>
+<a id='L539' name='L539'></a> 539     <em class='brace'>}</em>
+<a id='L540' name='L540'></a> 540 
+<a id='L541' name='L541'></a> 541     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27044.html' title='Multiple referred from 2 places.'>setClientPIInfo</a>(<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> messageMediator)
+<a id='L542' name='L542'></a> 542     <em class='brace'>{</em>
+<a id='L543' name='L543'></a> 543         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L544' name='L544'></a> 544         <strong class='reserved'>if</strong>( !<a href='../S/6864.html#L820' title='Defined at 820 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>isClientPIEnabledForThisThread</a>() ) <strong class='reserved'>return</strong>;
+<a id='L545' name='L545'></a> 545 
+<a id='L546' name='L546'></a> 546         <a href='../S/6864.html#L785' title='Defined at 785 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekClientRequestInfoImplStack</a>().<a href='../D/32934.html' title='Multiple defined in 4 places.'>setInfo</a>(messageMediator);
+<a id='L547' name='L547'></a> 547     <em class='brace'>}</em>
+<a id='L548' name='L548'></a> 548 
+<a id='L549' name='L549'></a> 549     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27044.html' title='Multiple referred from 2 places.'>setClientPIInfo</a>( <a href='../S/7146.html#L69' title='Defined at 69 in src/com/sun/corba/se/impl/corba/RequestImpl.java.'>RequestImpl</a> requestImpl ) <em class='brace'>{</em>
+<a id='L550' name='L550'></a> 550         <strong class='reserved'>if</strong>( !hasClientInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L551' name='L551'></a> 551         <strong class='reserved'>if</strong>( !<a href='../S/6864.html#L820' title='Defined at 820 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>isClientPIEnabledForThisThread</a>() ) <strong class='reserved'>return</strong>;
+<a id='L552' name='L552'></a> 552 
+<a id='L553' name='L553'></a> 553         <a href='../S/6864.html#L785' title='Defined at 785 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekClientRequestInfoImplStack</a>().<a href='../S/6866.html#L886' title='Defined at 886 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>setDIIRequest</a>( requestImpl );
+<a id='L554' name='L554'></a> 554     <em class='brace'>}</em>
+<a id='L555' name='L555'></a> 555 
+<a id='L556' name='L556'></a> 556     <em class='comment'>/*</em>
+<a id='L557' name='L557'></a> 557 <em class='comment'>     *****************</em>
+<a id='L558' name='L558'></a> 558 <em class='comment'>     * Server PI hooks</em>
+<a id='L559' name='L559'></a> 559 <em class='comment'>     *****************/</em>
+<a id='L560' name='L560'></a> 560 
+<a id='L561' name='L561'></a> 561     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7085.html#L350' title='Referred from 350 in src/com/sun/corba/se/impl/protocol/CorbaServerRequestDispatcherImpl.java.'>invokeServerPIStartingPoint</a>()
+<a id='L562' name='L562'></a> 562     <em class='brace'>{</em>
+<a id='L563' name='L563'></a> 563         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L564' name='L564'></a> 564 
+<a id='L565' name='L565'></a> 565         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L566' name='L566'></a> 566         interceptorInvoker.<a href='../S/6860.html#L409' title='Defined at 409 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>invokeServerInterceptorStartingPoint</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L567' name='L567'></a> 567 
+<a id='L568' name='L568'></a> 568         <em class='comment'>// Handle SystemException or ForwardRequest:</em>
+<a id='L569' name='L569'></a> 569         <a href='../S/6864.html#L745' title='Defined at 745 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>serverPIHandleExceptions</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L570' name='L570'></a> 570     <em class='brace'>}</em>
+<a id='L571' name='L571'></a> 571 
+<a id='L572' name='L572'></a> 572     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/21090.html' title='Multiple referred from 3 places.'>invokeServerPIIntermediatePoint</a>()
+<a id='L573' name='L573'></a> 573     <em class='brace'>{</em>
+<a id='L574' name='L574'></a> 574         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L575' name='L575'></a> 575 
+<a id='L576' name='L576'></a> 576         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L577' name='L577'></a> 577         interceptorInvoker.<a href='../S/6860.html#L502' title='Defined at 502 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>invokeServerInterceptorIntermediatePoint</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L578' name='L578'></a> 578 
+<a id='L579' name='L579'></a> 579         <em class='comment'>// Clear servant from info object so that the user has control over</em>
+<a id='L580' name='L580'></a> 580         <em class='comment'>// its lifetime:</em>
+<a id='L581' name='L581'></a> 581         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/30653.html' title='Multiple defined in 2 places.'>releaseServant</a>();
+<a id='L582' name='L582'></a> 582 
+<a id='L583' name='L583'></a> 583         <em class='comment'>// Handle SystemException or ForwardRequest:</em>
+<a id='L584' name='L584'></a> 584         <a href='../S/6864.html#L745' title='Defined at 745 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>serverPIHandleExceptions</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L585' name='L585'></a> 585     <em class='brace'>}</em>
+<a id='L586' name='L586'></a> 586 
+<a id='L587' name='L587'></a> 587     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7132.html#L2278' title='Referred from 2278 in src/com/sun/corba/se/impl/protocol/CorbaMessageMediatorImpl.java.'>invokeServerPIEndingPoint</a>( <a href='../S/7095.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/ReplyMessage.java.'>ReplyMessage</a> replyMessage )
+<a id='L588' name='L588'></a> 588     <em class='brace'>{</em>
+<a id='L589' name='L589'></a> 589         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L590' name='L590'></a> 590         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L591' name='L591'></a> 591 
+<a id='L592' name='L592'></a> 592         <em class='comment'>// REVISIT: This needs to be done "early" for the following workaround.</em>
+<a id='L593' name='L593'></a> 593         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6871.html#L815' title='Defined at 815 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>setReplyMessage</a>( replyMessage );
+<a id='L594' name='L594'></a> 594 
+<a id='L595' name='L595'></a> 595         <em class='comment'>// REVISIT: This was done inside of invokeServerInterceptorEndingPoint</em>
+<a id='L596' name='L596'></a> 596         <em class='comment'>// but needs to be here for now.  See comment in that method for why.</em>
+<a id='L597' name='L597'></a> 597         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32305.html' title='Multiple defined in 2 places.'>setCurrentExecutionPoint</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.EXECUTION_POINT_ENDING );
+<a id='L598' name='L598'></a> 598 
+<a id='L599' name='L599'></a> 599         <em class='comment'>// It is possible we might have entered this method more than</em>
+<a id='L600' name='L600'></a> 600         <em class='comment'>// once (e.g. if an ending point threw a SystemException, then</em>
+<a id='L601' name='L601'></a> 601         <em class='comment'>// a new ServerResponseImpl is created).</em>
+<a id='L602' name='L602'></a> 602         <strong class='reserved'>if</strong>( !<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6869.html#L800' title='Defined at 800 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>getAlreadyExecuted</a>() ) <em class='brace'>{</em>
+<a id='L603' name='L603'></a> 603             <strong class='reserved'>int</strong> replyStatus = replyMessage.<a href='../D/21989.html' title='Multiple defined in 8 places.'>getReplyStatus</a>();
+<a id='L604' name='L604'></a> 604 
+<a id='L605' name='L605'></a> 605             <em class='comment'>// Translate ReplyMessage.replyStatus into PI replyStatus:</em>
+<a id='L606' name='L606'></a> 606             <em class='comment'>// Note: this is also an assertion to make sure a valid</em>
+<a id='L607' name='L607'></a> 607             <em class='comment'>// replyStatus is passed in (IndexOutOfBoundsException will be</em>
+<a id='L608' name='L608'></a> 608             <em class='comment'>// thrown otherwise)</em>
+<a id='L609' name='L609'></a> 609             <strong class='reserved'>short</strong> piReplyStatus =
+<a id='L610' name='L610'></a> 610                 REPLY_MESSAGE_TO_PI_REPLY_STATUS[replyStatus];
+<a id='L611' name='L611'></a> 611 
+<a id='L612' name='L612'></a> 612             <em class='comment'>// Make forwarded IOR available to interceptors, if applicable:</em>
+<a id='L613' name='L613'></a> 613             <strong class='reserved'>if</strong>( ( piReplyStatus == <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> ) ||
+<a id='L614' name='L614'></a> 614                 ( piReplyStatus == <a href='../S/479.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/TRANSPORT_RETRY.java.'>TRANSPORT_RETRY</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> ) )
+<a id='L615' name='L615'></a> 615             <em class='brace'>{</em>
+<a id='L616' name='L616'></a> 616                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32775.html' title='Multiple defined in 2 places.'>setForwardRequest</a>( replyMessage.<a href='../D/19533.html' title='Multiple defined in 12 places.'>getIOR</a>() );
+<a id='L617' name='L617'></a> 617             <em class='brace'>}</em>
+<a id='L618' name='L618'></a> 618 
+<a id='L619' name='L619'></a> 619             <em class='comment'>// REVISIT: Do early above for now.</em>
+<a id='L620' name='L620'></a> 620             <em class='comment'>// Make reply message available to interceptors:</em>
+<a id='L621' name='L621'></a> 621             <em class='comment'>//info.setReplyMessage( replyMessage );</em>
+<a id='L622' name='L622'></a> 622 
+<a id='L623' name='L623'></a> 623             <em class='comment'>// Remember exception so we can tell if an interceptor changed it.</em>
+<a id='L624' name='L624'></a> 624             <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> prevException = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
+<a id='L625' name='L625'></a> 625 
+<a id='L626' name='L626'></a> 626             <em class='comment'>// _REVISIT_ We do not have access to the User Exception at</em>
+<a id='L627' name='L627'></a> 627             <em class='comment'>// this point, so treat it as an UNKNOWN for now.</em>
+<a id='L628' name='L628'></a> 628             <em class='comment'>// Note that if this is a DSI call, we do have the user exception.</em>
+<a id='L629' name='L629'></a> 629             <strong class='reserved'>if</strong>( !<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/25479.html' title='Multiple defined in 5 places.'>isDynamic</a>() &amp;&amp;
+<a id='L630' name='L630'></a> 630                 (piReplyStatus == <a href='../S/464.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/USER_EXCEPTION.java.'>USER_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) )
+<a id='L631' name='L631'></a> 631             <em class='brace'>{</em>
+<a id='L632' name='L632'></a> 632                 <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32637.html' title='Multiple defined in 4 places.'>setException</a>( omgWrapper.<a href='../D/35903.html' title='Multiple defined in 4 places.'>unknownUserException</a>(
+<a id='L633' name='L633'></a> 633                     <a href='../S/238.html#L53' title='Defined at 53 in src/org/omg/CORBA/CompletionStatus.java.'>CompletionStatus</a>.COMPLETED_MAYBE ) ) ;
+<a id='L634' name='L634'></a> 634             <em class='brace'>}</em>
+<a id='L635' name='L635'></a> 635 
+<a id='L636' name='L636'></a> 636             <em class='comment'>// Invoke the ending interception points:</em>
+<a id='L637' name='L637'></a> 637             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/33703.html' title='Multiple defined in 3 places.'>setReplyStatus</a>( piReplyStatus );
+<a id='L638' name='L638'></a> 638             interceptorInvoker.<a href='../S/6860.html#L561' title='Defined at 561 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>invokeServerInterceptorEndingPoint</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L639' name='L639'></a> 639             <strong class='reserved'>short</strong> newPIReplyStatus = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/21989.html' title='Multiple defined in 8 places.'>getReplyStatus</a>();
+<a id='L640' name='L640'></a> 640             <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> newException = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
+<a id='L641' name='L641'></a> 641 
+<a id='L642' name='L642'></a> 642             <em class='comment'>// Check reply status.  If an interceptor threw a SystemException</em>
+<a id='L643' name='L643'></a> 643             <em class='comment'>// and it is different than the one that we came in with,</em>
+<a id='L644' name='L644'></a> 644             <em class='comment'>// rethrow it so the proper response can be constructed:</em>
+<a id='L645' name='L645'></a> 645             <strong class='reserved'>if</strong>( ( newPIReplyStatus == <a href='../S/457.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/SYSTEM_EXCEPTION.java.'>SYSTEM_EXCEPTION</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> ) &amp;&amp;
+<a id='L646' name='L646'></a> 646                 ( newException != prevException ) )
+<a id='L647' name='L647'></a> 647             <em class='brace'>{</em>
+<a id='L648' name='L648'></a> 648                 <strong class='reserved'>throw</strong> (<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>)newException;
+<a id='L649' name='L649'></a> 649             <em class='brace'>}</em>
+<a id='L650' name='L650'></a> 650 
+<a id='L651' name='L651'></a> 651             <em class='comment'>// If we are to forward the location:</em>
+<a id='L652' name='L652'></a> 652             <strong class='reserved'>if</strong>( newPIReplyStatus == <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> ) <em class='brace'>{</em>
+<a id='L653' name='L653'></a> 653                 <strong class='reserved'>if</strong>( piReplyStatus != <a href='../S/456.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/LOCATION_FORWARD.java.'>LOCATION_FORWARD</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> ) <em class='brace'>{</em>
+<a id='L654' name='L654'></a> 654                     <em class='comment'>// Treat a ForwardRequest as a ForwardException.</em>
+<a id='L655' name='L655'></a> 655                     <a href='../D/3967.html' title='Multiple defined in 3 places.'>IOR</a> <a href='../D/25124.html' title='Multiple defined in 2 places.'>ior</a> = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6869.html#L864' title='Defined at 864 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>getForwardRequestIOR</a>();
+<a id='L656' name='L656'></a> 656                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/7519.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/protocol/ForwardException.java.'>ForwardException</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/25124.html' title='Multiple defined in 2 places.'>ior</a> ) ;
+<a id='L657' name='L657'></a> 657                 <em class='brace'>}</em>
+<a id='L658' name='L658'></a> 658                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6871.html#L860' title='Defined at 860 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>isForwardRequestRaisedInEnding</a>() ) <em class='brace'>{</em>
+<a id='L659' name='L659'></a> 659                     <em class='comment'>// Treat a ForwardRequest by changing the IOR.</em>
+<a id='L660' name='L660'></a> 660                     replyMessage.<a href='../D/32874.html' title='Multiple defined in 4 places.'>setIOR</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6869.html#L864' title='Defined at 864 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>getForwardRequestIOR</a>() );
+<a id='L661' name='L661'></a> 661                 <em class='brace'>}</em>
+<a id='L662' name='L662'></a> 662             <em class='brace'>}</em>
+<a id='L663' name='L663'></a> 663         <em class='brace'>}</em>
+<a id='L664' name='L664'></a> 664     <em class='brace'>}</em>
+<a id='L665' name='L665'></a> 665 
+<a id='L666' name='L666'></a> 666     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28165.html' title='Multiple referred from 4 places.'>setServerPIInfo</a>( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> ) <em class='brace'>{</em>
+<a id='L667' name='L667'></a> 667         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L668' name='L668'></a> 668 
+<a id='L669' name='L669'></a> 669         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L670' name='L670'></a> 670         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32637.html' title='Multiple defined in 4 places.'>setException</a>( <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> );
+<a id='L671' name='L671'></a> 671     <em class='brace'>}</em>
+<a id='L672' name='L672'></a> 672 
+<a id='L673' name='L673'></a> 673     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28165.html' title='Multiple referred from 4 places.'>setServerPIInfo</a>( <a href='../S/274.html#L93' title='Defined at 93 in src/org/omg/CORBA/NVList.java.'>NVList</a> <a href='../D/11487.html' title='Multiple defined in 15 places.'>arguments</a> )
+<a id='L674' name='L674'></a> 674     <em class='brace'>{</em>
+<a id='L675' name='L675'></a> 675         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L676' name='L676'></a> 676 
+<a id='L677' name='L677'></a> 677         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L678' name='L678'></a> 678         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6871.html#L763' title='Defined at 763 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>setDSIArguments</a>( <a href='../D/11487.html' title='Multiple defined in 15 places.'>arguments</a> );
+<a id='L679' name='L679'></a> 679     <em class='brace'>}</em>
+<a id='L680' name='L680'></a> 680 
+<a id='L681' name='L681'></a> 681     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7141.html#L166' title='Referred from 166 in src/com/sun/corba/se/impl/corba/ServerRequestImpl.java.'>setServerPIExceptionInfo</a>( <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> )
+<a id='L682' name='L682'></a> 682     <em class='brace'>{</em>
+<a id='L683' name='L683'></a> 683         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L684' name='L684'></a> 684 
+<a id='L685' name='L685'></a> 685         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L686' name='L686'></a> 686         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6871.html#L770' title='Defined at 770 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>setDSIException</a>( <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> );
+<a id='L687' name='L687'></a> 687     <em class='brace'>}</em>
+<a id='L688' name='L688'></a> 688 
+<a id='L689' name='L689'></a> 689     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28165.html' title='Multiple referred from 4 places.'>setServerPIInfo</a>( <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> )
+<a id='L690' name='L690'></a> 690     <em class='brace'>{</em>
+<a id='L691' name='L691'></a> 691         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L692' name='L692'></a> 692 
+<a id='L693' name='L693'></a> 693         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L694' name='L694'></a> 694         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6871.html#L780' title='Defined at 780 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>setDSIResult</a>( <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> );
+<a id='L695' name='L695'></a> 695     <em class='brace'>}</em>
+<a id='L696' name='L696'></a> 696 
+<a id='L697' name='L697'></a> 697     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7085.html#L348' title='Referred from 348 in src/com/sun/corba/se/impl/protocol/CorbaServerRequestDispatcherImpl.java.'>initializeServerPIInfo</a>( <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> <a href='../D/31115.html' title='Multiple defined in 8 places.'>request</a>,
+<a id='L698' name='L698'></a> 698         <a href='../S/7536.html#L161' title='Defined at 161 in src/com/sun/corba/se/spi/oa/ObjectAdapter.java.'>ObjectAdapter</a> <a href='../S/7537.html#L81' title='Defined at 81 in src/com/sun/corba/se/spi/oa/OAInvocationInfo.java.'>oa</a>, <strong class='reserved'>byte</strong>[] objectId, <a href='../S/7480.html#L40' title='Defined at 40 in src/com/sun/corba/se/spi/ior/ObjectKeyTemplate.java.'>ObjectKeyTemplate</a> oktemp )
+<a id='L699' name='L699'></a> 699     <em class='brace'>{</em>
+<a id='L700' name='L700'></a> 700         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L701' name='L701'></a> 701 
+<a id='L702' name='L702'></a> 702         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L703' name='L703'></a> 703             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalServerRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L704' name='L704'></a> 704         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <strong class='reserved'>new</strong> <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> );
+<a id='L705' name='L705'></a> 705         infoStack.<a href='../D/29933.html' title='Multiple defined in 37 places.'>push</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L706' name='L706'></a> 706         <a href='../S/6864.html#L93' title='Defined at 93 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>printPush</a>();
+<a id='L707' name='L707'></a> 707 
+<a id='L708' name='L708'></a> 708         <em class='comment'>// Notify request object that once response is constructed, make</em>
+<a id='L709' name='L709'></a> 709         <em class='comment'>// sure we execute ending points.</em>
+<a id='L710' name='L710'></a> 710         <a href='../D/31115.html' title='Multiple defined in 8 places.'>request</a>.<a href='../D/32651.html' title='Multiple defined in 2 places.'>setExecutePIInResponseConstructor</a>( <strong class='reserved'>true</strong> );
+<a id='L711' name='L711'></a> 711 
+<a id='L712' name='L712'></a> 712         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32934.html' title='Multiple defined in 4 places.'>setInfo</a>( <a href='../D/31115.html' title='Multiple defined in 8 places.'>request</a>, <a href='../S/7537.html#L81' title='Defined at 81 in src/com/sun/corba/se/spi/oa/OAInvocationInfo.java.'>oa</a>, objectId, oktemp );
+<a id='L713' name='L713'></a> 713     <em class='brace'>}</em>
+<a id='L714' name='L714'></a> 714 
+<a id='L715' name='L715'></a> 715     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28165.html' title='Multiple referred from 4 places.'>setServerPIInfo</a>( <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> servant,
+<a id='L716' name='L716'></a> 716                                           <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> targetMostDerivedInterface )
+<a id='L717' name='L717'></a> 717     <em class='brace'>{</em>
+<a id='L718' name='L718'></a> 718         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L719' name='L719'></a> 719 
+<a id='L720' name='L720'></a> 720         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../S/6864.html#L802' title='Defined at 802 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>peekServerRequestInfoImplStack</a>();
+<a id='L721' name='L721'></a> 721         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/32934.html' title='Multiple defined in 4 places.'>setInfo</a>( servant, targetMostDerivedInterface );
+<a id='L722' name='L722'></a> 722     <em class='brace'>}</em>
+<a id='L723' name='L723'></a> 723 
+<a id='L724' name='L724'></a> 724     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7132.html#L2284' title='Referred from 2284 in src/com/sun/corba/se/impl/protocol/CorbaMessageMediatorImpl.java.'>cleanupServerPIRequest</a>() <em class='brace'>{</em>
+<a id='L725' name='L725'></a> 725         <strong class='reserved'>if</strong>( !hasServerInterceptors ) <strong class='reserved'>return</strong>;
+<a id='L726' name='L726'></a> 726 
+<a id='L727' name='L727'></a> 727         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L728' name='L728'></a> 728             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalServerRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L729' name='L729'></a> 729         infoStack.<a href='../D/29416.html' title='Multiple defined in 30 places.'>pop</a>();
+<a id='L730' name='L730'></a> 730         <a href='../S/6864.html#L100' title='Defined at 100 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>printPop</a>();
+<a id='L731' name='L731'></a> 731     <em class='brace'>}</em>
+<a id='L732' name='L732'></a> 732 
+<a id='L733' name='L733'></a> 733     <em class='comment'>/*</em>
+<a id='L734' name='L734'></a> 734 <em class='comment'>     **********************************************************************</em>
+<a id='L735' name='L735'></a> 735 <em class='comment'>     *  The following methods are private utility methods.</em>
+<a id='L736' name='L736'></a> 736 <em class='comment'>     ************************************************************************/</em>
+<a id='L737' name='L737'></a> 737 
+<a id='L738' name='L738'></a> 738     <em class='comment'>/**</em>
+<a id='L739' name='L739'></a> 739 <em class='comment'>     * Handles exceptions for the starting and intermediate points for</em>
+<a id='L740' name='L740'></a> 740 <em class='comment'>     * server request interceptors.  This is common code that has been</em>
+<a id='L741' name='L741'></a> 741 <em class='comment'>     * factored out into this utility method.</em>
+<a id='L742' name='L742'></a> 742 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L743' name='L743'></a> 743 <em class='comment'>     * This method will NOT work for ending points.</em>
+<a id='L744' name='L744'></a> 744 <em class='comment'>     */</em>
+<a id='L745' name='L745'></a> 745     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/26839.html' title='Multiple referred from 2 places.'>serverPIHandleExceptions</a>( <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> )
+<a id='L746' name='L746'></a> 746     <em class='brace'>{</em>
+<a id='L747' name='L747'></a> 747         <strong class='reserved'>int</strong> endingPointCall = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6869.html#L760' title='Defined at 760 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>getEndingPointCall</a>();
+<a id='L748' name='L748'></a> 748         <strong class='reserved'>if</strong>(endingPointCall == <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a>.CALL_SEND_EXCEPTION) <em class='brace'>{</em>
+<a id='L749' name='L749'></a> 749             <em class='comment'>// If a system exception was thrown, throw it to caller:</em>
+<a id='L750' name='L750'></a> 750             <strong class='reserved'>throw</strong> (<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>)<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
+<a id='L751' name='L751'></a> 751         <em class='brace'>}</em>
+<a id='L752' name='L752'></a> 752         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>( (endingPointCall == <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a>.CALL_SEND_OTHER) &amp;&amp;
+<a id='L753' name='L753'></a> 753                  (<a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6869.html#L848' title='Defined at 848 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>getForwardRequestException</a>() != <strong class='reserved'>null</strong>) )
+<a id='L754' name='L754'></a> 754         <em class='brace'>{</em>
+<a id='L755' name='L755'></a> 755             <em class='comment'>// If an interceptor throws a forward request, convert it</em>
+<a id='L756' name='L756'></a> 756             <em class='comment'>// into a ForwardException for easier handling:</em>
+<a id='L757' name='L757'></a> 757             <a href='../D/3967.html' title='Multiple defined in 3 places.'>IOR</a> <a href='../D/25124.html' title='Multiple defined in 2 places.'>ior</a> = <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6869.html#L864' title='Defined at 864 in src/com/sun/corba/se/impl/interceptors/RequestInfoImpl.java.'>getForwardRequestIOR</a>();
+<a id='L758' name='L758'></a> 758             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/7519.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/protocol/ForwardException.java.'>ForwardException</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/25124.html' title='Multiple defined in 2 places.'>ior</a> );
+<a id='L759' name='L759'></a> 759         <em class='brace'>}</em>
+<a id='L760' name='L760'></a> 760     <em class='brace'>}</em>
+<a id='L761' name='L761'></a> 761 
+<a id='L762' name='L762'></a> 762     <em class='comment'>/**</em>
+<a id='L763' name='L763'></a> 763 <em class='comment'>     * Utility method to convert a PI reply status short to a ReplyMessage</em>
+<a id='L764' name='L764'></a> 764 <em class='comment'>     * constant.  This is a reverse lookup on the table defined in</em>
+<a id='L765' name='L765'></a> 765 <em class='comment'>     * REPLY_MESSAGE_TO_PI_REPLY_STATUS.  The reverse lookup need not be</em>
+<a id='L766' name='L766'></a> 766 <em class='comment'>     * performed as quickly since it is only executed in exception</em>
+<a id='L767' name='L767'></a> 767 <em class='comment'>     * conditions.</em>
+<a id='L768' name='L768'></a> 768 <em class='comment'>     */</em>
+<a id='L769' name='L769'></a> 769     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../S/6864.html#L367' title='Referred from 367 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>convertPIReplyStatusToReplyMessage</a>( <strong class='reserved'>short</strong> replyStatus ) <em class='brace'>{</em>
+<a id='L770' name='L770'></a> 770         <strong class='reserved'>int</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = 0;
+<a id='L771' name='L771'></a> 771         <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> i = 0; i &lt; REPLY_MESSAGE_TO_PI_REPLY_STATUS.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++ ) <em class='brace'>{</em>
+<a id='L772' name='L772'></a> 772             <strong class='reserved'>if</strong>( REPLY_MESSAGE_TO_PI_REPLY_STATUS[i] == replyStatus ) <em class='brace'>{</em>
+<a id='L773' name='L773'></a> 773                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = i;
+<a id='L774' name='L774'></a> 774                 <strong class='reserved'>break</strong>;
+<a id='L775' name='L775'></a> 775             <em class='brace'>}</em>
+<a id='L776' name='L776'></a> 776         <em class='brace'>}</em>
+<a id='L777' name='L777'></a> 777         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L778' name='L778'></a> 778     <em class='brace'>}</em>
+<a id='L779' name='L779'></a> 779 
+<a id='L780' name='L780'></a> 780     <em class='comment'>/**</em>
+<a id='L781' name='L781'></a> 781 <em class='comment'>     * Convenience method to get the ClientRequestInfoImpl object off the</em>
+<a id='L782' name='L782'></a> 782 <em class='comment'>     * top of the ThreadLocal stack.  Throws an INTERNAL exception if</em>
+<a id='L783' name='L783'></a> 783 <em class='comment'>     * the Info stack is empty.</em>
+<a id='L784' name='L784'></a> 784 <em class='comment'>     */</em>
+<a id='L785' name='L785'></a> 785     <strong class='reserved'>private</strong> <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a> <a href='../R/24692.html' title='Multiple referred from 5 places.'>peekClientRequestInfoImplStack</a>() <em class='brace'>{</em>
+<a id='L786' name='L786'></a> 786         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L787' name='L787'></a> 787             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalClientRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L788' name='L788'></a> 788         <a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <strong class='reserved'>null</strong>;
+<a id='L789' name='L789'></a> 789         <strong class='reserved'>if</strong>( !infoStack.<a href='../D/15347.html' title='Multiple defined in 24 places.'>empty</a>() ) <em class='brace'>{</em>
+<a id='L790' name='L790'></a> 790             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = (<a href='../S/6866.html#L92' title='Defined at 92 in src/com/sun/corba/se/impl/interceptors/ClientRequestInfoImpl.java.'>ClientRequestInfoImpl</a>)infoStack.<a href='../D/29287.html' title='Multiple defined in 50 places.'>peek</a>();
+<a id='L791' name='L791'></a> 791         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L792' name='L792'></a> 792             <strong class='reserved'>throw</strong> wrapper.<a href='../D/12877.html' title='Multiple defined in 4 places.'>clientInfoStackNull</a>() ;
+<a id='L793' name='L793'></a> 793         <em class='brace'>}</em>
+<a id='L794' name='L794'></a> 794 
+<a id='L795' name='L795'></a> 795         <strong class='reserved'>return</strong> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>;
+<a id='L796' name='L796'></a> 796     <em class='brace'>}</em>
+<a id='L797' name='L797'></a> 797 
+<a id='L798' name='L798'></a> 798     <em class='comment'>/**</em>
+<a id='L799' name='L799'></a> 799 <em class='comment'>     * Convenience method to get the ServerRequestInfoImpl object off the</em>
+<a id='L800' name='L800'></a> 800 <em class='comment'>     * top of the ThreadLocal stack.  Returns null if there are none.</em>
+<a id='L801' name='L801'></a> 801 <em class='comment'>     */</em>
+<a id='L802' name='L802'></a> 802     <strong class='reserved'>private</strong> <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../R/24703.html' title='Multiple referred from 8 places.'>peekServerRequestInfoImplStack</a>() <em class='brace'>{</em>
+<a id='L803' name='L803'></a> 803         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L804' name='L804'></a> 804             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalServerRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L805' name='L805'></a> 805         <a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <strong class='reserved'>null</strong>;
+<a id='L806' name='L806'></a> 806 
+<a id='L807' name='L807'></a> 807         <strong class='reserved'>if</strong>( !infoStack.<a href='../D/15347.html' title='Multiple defined in 24 places.'>empty</a>() ) <em class='brace'>{</em>
+<a id='L808' name='L808'></a> 808             <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = (<a href='../S/6871.html#L73' title='Defined at 73 in src/com/sun/corba/se/impl/interceptors/ServerRequestInfoImpl.java.'>ServerRequestInfoImpl</a>)infoStack.<a href='../D/29287.html' title='Multiple defined in 50 places.'>peek</a>();
+<a id='L809' name='L809'></a> 809         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L810' name='L810'></a> 810             <strong class='reserved'>throw</strong> wrapper.<a href='../D/31813.html' title='Multiple defined in 4 places.'>serverInfoStackNull</a>() ;
+<a id='L811' name='L811'></a> 811         <em class='brace'>}</em>
+<a id='L812' name='L812'></a> 812 
+<a id='L813' name='L813'></a> 813         <strong class='reserved'>return</strong> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>;
+<a id='L814' name='L814'></a> 814     <em class='brace'>}</em>
+<a id='L815' name='L815'></a> 815 
+<a id='L816' name='L816'></a> 816     <em class='comment'>/**</em>
+<a id='L817' name='L817'></a> 817 <em class='comment'>     * Convenience method to determine whether Client PI is enabled</em>
+<a id='L818' name='L818'></a> 818 <em class='comment'>     * for requests on this thread.</em>
+<a id='L819' name='L819'></a> 819 <em class='comment'>     */</em>
+<a id='L820' name='L820'></a> 820     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../R/21254.html' title='Multiple referred from 6 places.'>isClientPIEnabledForThisThread</a>() <em class='brace'>{</em>
+<a id='L821' name='L821'></a> 821         <a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a> infoStack =
+<a id='L822' name='L822'></a> 822             (<a href='../S/6864.html#L200' title='Defined at 200 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>RequestInfoStack</a>)threadLocalClientRequestInfoStack.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L823' name='L823'></a> 823         <strong class='reserved'>return</strong> (infoStack.disableCount == 0);
+<a id='L824' name='L824'></a> 824     <em class='brace'>}</em>
+<a id='L825' name='L825'></a> 825 
+<a id='L826' name='L826'></a> 826     <em class='comment'>/**</em>
+<a id='L827' name='L827'></a> 827 <em class='comment'>     * Call pre_init on all ORB initializers</em>
+<a id='L828' name='L828'></a> 828 <em class='comment'>     */</em>
+<a id='L829' name='L829'></a> 829     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6864.html#L249' title='Referred from 249 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>preInitORBInitializers</a>( <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> ) <em class='brace'>{</em>
+<a id='L830' name='L830'></a> 830 
+<a id='L831' name='L831'></a> 831         <em class='comment'>// Inform ORBInitInfo we are in pre_init stage</em>
+<a id='L832' name='L832'></a> 832         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6868.html#L129' title='Defined at 129 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>setStage</a>( <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a>.STAGE_PRE_INIT );
+<a id='L833' name='L833'></a> 833 
+<a id='L834' name='L834'></a> 834         <em class='comment'>// Step through each initializer instantiation and call its</em>
+<a id='L835' name='L835'></a> 835         <em class='comment'>// pre_init.  Ignore any exceptions.</em>
+<a id='L836' name='L836'></a> 836         <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21111.html' title='Multiple defined in 2 places.'>getORBInitializers</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L837' name='L837'></a> 837             i++ ) <em class='brace'>{</em>
+<a id='L838' name='L838'></a> 838             <a href='../S/494.html#L122' title='Defined at 122 in src/org/omg/PortableInterceptor/ORBInitializer.java.'>ORBInitializer</a> <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21111.html' title='Multiple defined in 2 places.'>getORBInitializers</a>()[i];
+<a id='L839' name='L839'></a> 839             <strong class='reserved'>if</strong>( <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> != <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L840' name='L840'></a> 840                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L841' name='L841'></a> 841                     <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>.<a href='../D/29528.html' title='Multiple defined in 3 places.'>pre_init</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L842' name='L842'></a> 842                 <em class='brace'>}</em>
+<a id='L843' name='L843'></a> 843                 <strong class='reserved'>catch</strong>( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e ) <em class='brace'>{</em>
+<a id='L844' name='L844'></a> 844                     <em class='comment'>// As per orbos/99-12-02, section 9.3.1.2, "If there are</em>
+<a id='L845' name='L845'></a> 845                     <em class='comment'>// any exceptions, the ORB shall ignore them and proceed."</em>
+<a id='L846' name='L846'></a> 846                 <em class='brace'>}</em>
+<a id='L847' name='L847'></a> 847             <em class='brace'>}</em>
+<a id='L848' name='L848'></a> 848         <em class='brace'>}</em>
+<a id='L849' name='L849'></a> 849     <em class='brace'>}</em>
+<a id='L850' name='L850'></a> 850 
+<a id='L851' name='L851'></a> 851     <em class='comment'>/**</em>
+<a id='L852' name='L852'></a> 852 <em class='comment'>     * Call post_init on all ORB initializers</em>
+<a id='L853' name='L853'></a> 853 <em class='comment'>     */</em>
+<a id='L854' name='L854'></a> 854     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6864.html#L252' title='Referred from 252 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>postInitORBInitializers</a>( <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> ) <em class='brace'>{</em>
+<a id='L855' name='L855'></a> 855 
+<a id='L856' name='L856'></a> 856         <em class='comment'>// Inform ORBInitInfo we are in post_init stage</em>
+<a id='L857' name='L857'></a> 857         <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../S/6868.html#L129' title='Defined at 129 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>setStage</a>( <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a>.STAGE_POST_INIT );
+<a id='L858' name='L858'></a> 858 
+<a id='L859' name='L859'></a> 859         <em class='comment'>// Step through each initializer instantiation and call its post_init.</em>
+<a id='L860' name='L860'></a> 860         <em class='comment'>// Ignore any exceptions.</em>
+<a id='L861' name='L861'></a> 861         <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21111.html' title='Multiple defined in 2 places.'>getORBInitializers</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L862' name='L862'></a> 862             i++ ) <em class='brace'>{</em>
+<a id='L863' name='L863'></a> 863             <a href='../S/494.html#L122' title='Defined at 122 in src/org/omg/PortableInterceptor/ORBInitializer.java.'>ORBInitializer</a> <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21111.html' title='Multiple defined in 2 places.'>getORBInitializers</a>()[i];
+<a id='L864' name='L864'></a> 864             <strong class='reserved'>if</strong>( <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> != <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L865' name='L865'></a> 865                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L866' name='L866'></a> 866                     <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>.<a href='../D/29498.html' title='Multiple defined in 3 places.'>post_init</a>( <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> );
+<a id='L867' name='L867'></a> 867                 <em class='brace'>}</em>
+<a id='L868' name='L868'></a> 868                 <strong class='reserved'>catch</strong>( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e ) <em class='brace'>{</em>
+<a id='L869' name='L869'></a> 869                     <em class='comment'>// As per orbos/99-12-02, section 9.3.1.2, "If there are</em>
+<a id='L870' name='L870'></a> 870                     <em class='comment'>// any exceptions, the ORB shall ignore them and proceed."</em>
+<a id='L871' name='L871'></a> 871                 <em class='brace'>}</em>
+<a id='L872' name='L872'></a> 872             <em class='brace'>}</em>
+<a id='L873' name='L873'></a> 873         <em class='brace'>}</em>
+<a id='L874' name='L874'></a> 874     <em class='brace'>}</em>
+<a id='L875' name='L875'></a> 875 
+<a id='L876' name='L876'></a> 876     <em class='comment'>/**</em>
+<a id='L877' name='L877'></a> 877 <em class='comment'>     * Creates the ORBInitInfo object to be passed to ORB intializers'</em>
+<a id='L878' name='L878'></a> 878 <em class='comment'>     * pre_init and post_init methods</em>
+<a id='L879' name='L879'></a> 879 <em class='comment'>     */</em>
+<a id='L880' name='L880'></a> 880     <strong class='reserved'>private</strong> <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a> <a href='../S/6864.html#L242' title='Referred from 242 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>createORBInitInfo</a>() <em class='brace'>{</em>
+<a id='L881' name='L881'></a> 881         <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>null</strong>;
+<a id='L882' name='L882'></a> 882 
+<a id='L883' name='L883'></a> 883         <em class='comment'>// arguments comes from set_parameters.  May be null.</em>
+<a id='L884' name='L884'></a> 884 
+<a id='L885' name='L885'></a> 885         <em class='comment'>// _REVISIT_ The spec does not specify which ID this is to be.</em>
+<a id='L886' name='L886'></a> 886         <em class='comment'>// We currently get this from the corba.ORB, which reads it from</em>
+<a id='L887' name='L887'></a> 887         <em class='comment'>// the ORB_ID_PROPERTY property.</em>
+<a id='L888' name='L888'></a> 888         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> orbId = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/21107.html' title='Multiple defined in 5 places.'>getORBId</a>() ;
+<a id='L889' name='L889'></a> 889 
+<a id='L890' name='L890'></a> 890         <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>new</strong> <a href='../S/6868.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>ORBInitInfoImpl</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11487.html' title='Multiple defined in 15 places.'>arguments</a>, orbId, codecFactory );
+<a id='L891' name='L891'></a> 891 
+<a id='L892' name='L892'></a> 892         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L893' name='L893'></a> 893     <em class='brace'>}</em>
+<a id='L894' name='L894'></a> 894 
+<a id='L895' name='L895'></a> 895     <em class='comment'>/**</em>
+<a id='L896' name='L896'></a> 896 <em class='comment'>     * Called by ORBInitInfo when an interceptor needs to be registered.</em>
+<a id='L897' name='L897'></a> 897 <em class='comment'>     * The type is one of:</em>
+<a id='L898' name='L898'></a> 898 <em class='comment'>     * &lt;ul&gt;</em>
+<a id='L899' name='L899'></a> 899 <em class='comment'>     *   &lt;li&gt;INTERCEPTOR_TYPE_CLIENT - ClientRequestInterceptor</em>
+<a id='L900' name='L900'></a> 900 <em class='comment'>     *   &lt;li&gt;INTERCEPTOR_TYPE_SERVER - ServerRequestInterceptor</em>
+<a id='L901' name='L901'></a> 901 <em class='comment'>     *   &lt;li&gt;INTERCEPTOR_TYPE_IOR - IORInterceptor</em>
+<a id='L902' name='L902'></a> 902 <em class='comment'>     * &lt;/ul&gt;</em>
+<a id='L903' name='L903'></a> 903 <em class='comment'>     *</em>
+<a id='L904' name='L904'></a> 904 <em class='comment'>     * @exception DuplicateName Thrown if an interceptor of the given</em>
+<a id='L905' name='L905'></a> 905 <em class='comment'>     *     name already exists for the given type.</em>
+<a id='L906' name='L906'></a> 906 <em class='comment'>     */</em>
+<a id='L907' name='L907'></a> 907     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25831.html' title='Multiple referred from 4 places.'>register_interceptor</a>( <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a> interceptor, <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> )
+<a id='L908' name='L908'></a> 908         <strong class='reserved'>throws</strong> <a href='../S/477.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateName.java.'>DuplicateName</a>
+<a id='L909' name='L909'></a> 909     <em class='brace'>{</em>
+<a id='L910' name='L910'></a> 910         <em class='comment'>// We will assume interceptor is not null, since it is called</em>
+<a id='L911' name='L911'></a> 911         <em class='comment'>// internally.</em>
+<a id='L912' name='L912'></a> 912         <strong class='reserved'>if</strong>( (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> &gt;= <a href='../S/6865.html#L50' title='Defined at 50 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>InterceptorList</a>.NUM_INTERCEPTOR_TYPES) || (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> &lt; 0) ) <em class='brace'>{</em>
+<a id='L913' name='L913'></a> 913             <strong class='reserved'>throw</strong> wrapper.<a href='../D/35769.html' title='Multiple defined in 4 places.'>typeOutOfRange</a>( <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>( <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> ) ) ;
+<a id='L914' name='L914'></a> 914         <em class='brace'>}</em>
+<a id='L915' name='L915'></a> 915 
+<a id='L916' name='L916'></a> 916         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> interceptorName = interceptor.<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>();
+<a id='L917' name='L917'></a> 917 
+<a id='L918' name='L918'></a> 918         <strong class='reserved'>if</strong>( interceptorName == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L919' name='L919'></a> 919             <strong class='reserved'>throw</strong> wrapper.<a href='../D/27861.html' title='Multiple defined in 4 places.'>nameNull</a>() ;
+<a id='L920' name='L920'></a> 920         <em class='brace'>}</em>
+<a id='L921' name='L921'></a> 921 
+<a id='L922' name='L922'></a> 922         <em class='comment'>// Register with interceptor list:</em>
+<a id='L923' name='L923'></a> 923         interceptorList.<a href='../D/30614.html' title='Multiple defined in 4 places.'>register_interceptor</a>( interceptor, <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> );
+<a id='L924' name='L924'></a> 924     <em class='brace'>}</em>
+<a id='L925' name='L925'></a> 925 
+<a id='L926' name='L926'></a> 926     <strong class='reserved'>public</strong> <a href='../D/1976.html' title='Multiple defined in 3 places.'>Current</a> <a href='../R/18209.html' title='Multiple referred from 2 places.'>getPICurrent</a>( ) <em class='brace'>{</em>
+<a id='L927' name='L927'></a> 927         <strong class='reserved'>return</strong> <a href='../D/14417.html' title='Multiple defined in 10 places.'>current</a>;
+<a id='L928' name='L928'></a> 928     <em class='brace'>}</em>
+<a id='L929' name='L929'></a> 929 
+<a id='L930' name='L930'></a> 930     <em class='comment'>/**</em>
+<a id='L931' name='L931'></a> 931 <em class='comment'>     * Called when an invalid null parameter was passed.  Throws a</em>
+<a id='L932' name='L932'></a> 932 <em class='comment'>     * BAD_PARAM with a minor code of 1</em>
+<a id='L933' name='L933'></a> 933 <em class='comment'>     */</em>
+<a id='L934' name='L934'></a> 934     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/23843.html' title='Multiple referred from 47 places.'>nullParam</a>()
+<a id='L935' name='L935'></a> 935         <strong class='reserved'>throws</strong> <a href='../S/432.html#L47' title='Defined at 47 in src/org/omg/CORBA/BAD_PARAM.java.'>BAD_PARAM</a>
+<a id='L936' name='L936'></a> 936     <em class='brace'>{</em>
+<a id='L937' name='L937'></a> 937         <strong class='reserved'>throw</strong> orbutilWrapper.<a href='../D/28353.html' title='Multiple defined in 8 places.'>nullParam</a>() ;
+<a id='L938' name='L938'></a> 938     <em class='brace'>}</em>
+<a id='L939' name='L939'></a> 939 
+<a id='L940' name='L940'></a> 940     <em class='comment'>/** This is the implementation of standard API defined in org.omg.CORBA.ORB</em>
+<a id='L941' name='L941'></a> 941 <em class='comment'>     *  class. This method finds the Policy Factory for the given Policy Type</em>
+<a id='L942' name='L942'></a> 942 <em class='comment'>     *  and instantiates the Policy object from the Factory. It will throw</em>
+<a id='L943' name='L943'></a> 943 <em class='comment'>     *  PolicyError exception, If the PolicyFactory for the given type is</em>
+<a id='L944' name='L944'></a> 944 <em class='comment'>     *  not registered.</em>
+<a id='L945' name='L945'></a> 945 <em class='comment'>     *  _REVISIT_, Once Policy Framework work is completed, Reorganize</em>
+<a id='L946' name='L946'></a> 946 <em class='comment'>     *  this method to com.sun.corba.se.spi.orb.ORB.</em>
+<a id='L947' name='L947'></a> 947 <em class='comment'>     */</em>
+<a id='L948' name='L948'></a> 948     <strong class='reserved'>public</strong> org.omg.CORBA.<a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> <a href='../R/12831.html' title='Multiple referred from 2 places.'>create_policy</a>(<strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, org.omg.CORBA.<a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../S/1444.html#L56' title='Defined at 56 in src/java/io/ExpiringCache.java.'>val</a>)
+<a id='L949' name='L949'></a> 949         <strong class='reserved'>throws</strong> org.omg.CORBA.<a href='../S/391.html#L35' title='Defined at 35 in src/org/omg/CORBA/PolicyError.java.'>PolicyError</a>
+<a id='L950' name='L950'></a> 950     <em class='brace'>{</em>
+<a id='L951' name='L951'></a> 951         <strong class='reserved'>if</strong>( <a href='../S/1444.html#L56' title='Defined at 56 in src/java/io/ExpiringCache.java.'>val</a> == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L952' name='L952'></a> 952             <a href='../D/28353.html' title='Multiple defined in 8 places.'>nullParam</a>( );
+<a id='L953' name='L953'></a> 953         <em class='brace'>}</em>
+<a id='L954' name='L954'></a> 954         <strong class='reserved'>if</strong>( policyFactoryTable == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L955' name='L955'></a> 955             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> org.omg.CORBA.<a href='../S/391.html#L35' title='Defined at 35 in src/org/omg/CORBA/PolicyError.java.'>PolicyError</a>(
+<a id='L956' name='L956'></a> 956                 "There is no PolicyFactory Registered for type " + <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>,
+<a id='L957' name='L957'></a> 957                 <a href='../S/236.html#L34' title='Defined at 34 in src/org/omg/CORBA/BAD_POLICY.java.'>BAD_POLICY</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> );
+<a id='L958' name='L958'></a> 958         <em class='brace'>}</em>
+<a id='L959' name='L959'></a> 959         <a href='../S/491.html#L25' title='Defined at 25 in src/org/omg/PortableInterceptor/PolicyFactory.java.'>PolicyFactory</a> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> = (<a href='../S/491.html#L25' title='Defined at 25 in src/org/omg/PortableInterceptor/PolicyFactory.java.'>PolicyFactory</a>)policyFactoryTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(
+<a id='L960' name='L960'></a> 960             <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) );
+<a id='L961' name='L961'></a> 961         <strong class='reserved'>if</strong>( <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L962' name='L962'></a> 962             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> org.omg.CORBA.<a href='../S/391.html#L35' title='Defined at 35 in src/org/omg/CORBA/PolicyError.java.'>PolicyError</a>(
+<a id='L963' name='L963'></a> 963                 " Could Not Find PolicyFactory for the Type " + <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>,
+<a id='L964' name='L964'></a> 964                 <a href='../S/236.html#L34' title='Defined at 34 in src/org/omg/CORBA/BAD_POLICY.java.'>BAD_POLICY</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L965' name='L965'></a> 965         <em class='brace'>}</em>
+<a id='L966' name='L966'></a> 966         org.omg.CORBA.<a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> policy = <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a>.<a href='../D/14386.html' title='Multiple defined in 7 places.'>create_policy</a>( <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, <a href='../S/1444.html#L56' title='Defined at 56 in src/java/io/ExpiringCache.java.'>val</a> );
+<a id='L967' name='L967'></a> 967         <strong class='reserved'>return</strong> policy;
+<a id='L968' name='L968'></a> 968     <em class='brace'>}</em>
+<a id='L969' name='L969'></a> 969 
+<a id='L970' name='L970'></a> 970     <em class='comment'>/** This method registers the Policy Factory in the policyFactoryTable,</em>
+<a id='L971' name='L971'></a> 971 <em class='comment'>     *  which is a HashMap. This method is made package private, because</em>
+<a id='L972' name='L972'></a> 972 <em class='comment'>     *  it is used internally by the  Interceptors.</em>
+<a id='L973' name='L973'></a> 973 <em class='comment'>     */</em>
+<a id='L974' name='L974'></a> 974     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/6868.html#L368' title='Referred from 368 in src/com/sun/corba/se/impl/interceptors/ORBInitInfoImpl.java.'>registerPolicyFactory</a>( <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, <a href='../S/491.html#L25' title='Defined at 25 in src/org/omg/PortableInterceptor/PolicyFactory.java.'>PolicyFactory</a> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> ) <em class='brace'>{</em>
+<a id='L975' name='L975'></a> 975         <strong class='reserved'>if</strong>( policyFactoryTable == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L976' name='L976'></a> 976             policyFactoryTable = <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>();
+<a id='L977' name='L977'></a> 977         <em class='brace'>}</em>
+<a id='L978' name='L978'></a> 978         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>( <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> );
+<a id='L979' name='L979'></a> 979         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/1444.html#L56' title='Defined at 56 in src/java/io/ExpiringCache.java.'>val</a> = policyFactoryTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> );
+<a id='L980' name='L980'></a> 980         <strong class='reserved'>if</strong>( <a href='../S/1444.html#L56' title='Defined at 56 in src/java/io/ExpiringCache.java.'>val</a> == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L981' name='L981'></a> 981             policyFactoryTable.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>( <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>, <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> );
+<a id='L982' name='L982'></a> 982         <em class='brace'>}</em>
+<a id='L983' name='L983'></a> 983         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L984' name='L984'></a> 984             <strong class='reserved'>throw</strong> omgWrapper.<a href='../D/29397.html' title='Multiple defined in 4 places.'>policyFactoryRegFailed</a>( <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>( <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> ) ) ;
+<a id='L985' name='L985'></a> 985         <em class='brace'>}</em>
+<a id='L986' name='L986'></a> 986     <em class='brace'>}</em>
+<a id='L987' name='L987'></a> 987 
+<a id='L988' name='L988'></a> 988     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>int</strong> <a href='../R/10144.html' title='Multiple referred from 2 places.'>allocateServerRequestId</a> ()
+<a id='L989' name='L989'></a> 989     <em class='brace'>{</em>
+<a id='L990' name='L990'></a> 990         <strong class='reserved'>return</strong> serverRequestIdCounter++;
+<a id='L991' name='L991'></a> 991     <em class='brace'>}</em>
+<a id='L992' name='L992'></a> 992 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L93'>[^]</a><a href='#L988'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

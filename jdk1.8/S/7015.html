@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/encoding/CDRInputStream_1_1.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7739.html'>encoding</a>/CDRInputStream_1_1.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L34'>[^]</a><a href='#L159'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L34' title='Defined at 34.'>getGIOPVersion</a></li>
+<li><a href='#L39' title='Defined at 39.'>dup</a></li>
+<li><a href='#L47' title='Defined at 47.'>get_offset</a></li>
+<li><a href='#L51' title='Defined at 51.'>alignAndCheck</a></li>
+<li><a href='#L85' title='Defined at 85.'>grow</a></li>
+<li><a href='#L124' title='Defined at 124.'>createStreamMemento</a></li>
+<li><a href='#L128' title='Defined at 128.'>restoreInternalState</a></li>
+<li><a href='#L138' title='Defined at 138.'>read_wchar</a></li>
+<li><a href='#L159' title='Defined at 159.'>read_wstring</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>;
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.GIOPVersion;
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/1005.html' title='Multiple referred from 3 places.'>CDRInputStream_1_1</a> <strong class='reserved'>extends</strong> <a href='../S/7013.html#L137' title='Defined at 137 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_0.java.'>CDRInputStream_1_0</a>
+<a id='L30' name='L30'></a>  30 <em class='brace'>{</em>
+<a id='L31' name='L31'></a>  31     <em class='comment'>// See notes in CDROutputStream</em>
+<a id='L32' name='L32'></a>  32     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> fragmentOffset = 0;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34     <strong class='reserved'>public</strong> <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> <a href='../R/16750.html' title='Multiple referred from 47 places.'>getGIOPVersion</a>() <em class='brace'>{</em>
+<a id='L35' name='L35'></a>  35         <strong class='reserved'>return</strong> <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>.V1_1;
+<a id='L36' name='L36'></a>  36     <em class='brace'>}</em>
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38     <em class='comment'>// Template method</em>
+<a id='L39' name='L39'></a>  39     <strong class='reserved'>public</strong> <a href='../S/6982.html#L46' title='Defined at 46 in src/com/sun/corba/se/impl/encoding/CDRInputStreamBase.java.'>CDRInputStreamBase</a> <a href='../R/13607.html' title='Multiple referred from 19 places.'>dup</a>() <em class='brace'>{</em>
+<a id='L40' name='L40'></a>  40         <a href='../S/6982.html#L46' title='Defined at 46 in src/com/sun/corba/se/impl/encoding/CDRInputStreamBase.java.'>CDRInputStreamBase</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>super</strong>.<a href='../D/15262.html' title='Multiple defined in 9 places.'>dup</a>();
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42         ((<a href='../S/7015.html#L29' title='Defined at 29 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_1.java.'>CDRInputStream_1_1</a>)<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>).fragmentOffset = <strong class='reserved'>this</strong>.fragmentOffset;
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L45' name='L45'></a>  45     <em class='brace'>}</em>
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> <a href='../R/19994.html' title='Multiple referred from 42 places.'>get_offset</a>() <em class='brace'>{</em>
+<a id='L48' name='L48'></a>  48         <strong class='reserved'>return</strong> bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>() + fragmentOffset;
+<a id='L49' name='L49'></a>  49     <em class='brace'>}</em>
+<a id='L50' name='L50'></a>  50 
+<a id='L51' name='L51'></a>  51     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/10124.html' title='Multiple referred from 8 places.'>alignAndCheck</a>(<strong class='reserved'>int</strong> <a href='../D/11271.html' title='Multiple defined in 4 places.'>align</a>, <strong class='reserved'>int</strong> n) <em class='brace'>{</em>
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54         <a href='../S/7013.html#L301' title='Defined at 301 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_0.java.'>checkBlockLength</a>(<a href='../D/11271.html' title='Multiple defined in 4 places.'>align</a>, n);
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56         <em class='comment'>// WARNING: Must compute real alignment after calling</em>
+<a id='L57' name='L57'></a>  57         <em class='comment'>// checkBlockLength since it may move the position</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>int</strong> alignment = <a href='../D/13163.html' title='Multiple defined in 2 places.'>computeAlignment</a>(bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(), <a href='../D/11271.html' title='Multiple defined in 4 places.'>align</a>);
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60         <strong class='reserved'>if</strong> (bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>() + n + alignment  &gt; bbwi.buflen) <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61 
+<a id='L62' name='L62'></a>  62             <em class='comment'>// Some other ORBs may have found a way to send 1.1</em>
+<a id='L63' name='L63'></a>  63             <em class='comment'>// fragments which put alignment bytes at the end</em>
+<a id='L64' name='L64'></a>  64             <em class='comment'>// of a fragment</em>
+<a id='L65' name='L65'></a>  65             <strong class='reserved'>if</strong> (bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>() + alignment == bbwi.buflen)
+<a id='L66' name='L66'></a>  66             <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67                 bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>() + alignment);
+<a id='L68' name='L68'></a>  68             <em class='brace'>}</em>
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70             <a href='../D/23921.html' title='Multiple defined in 19 places.'>grow</a>(<a href='../D/11271.html' title='Multiple defined in 4 places.'>align</a>, n);
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72             <em class='comment'>// We must recalculate the alignment after a possible</em>
+<a id='L73' name='L73'></a>  73             <em class='comment'>// fragmentation since the new bbwi.position() (after the header)</em>
+<a id='L74' name='L74'></a>  74             <em class='comment'>// may require a different alignment.</em>
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76             alignment = <a href='../D/13163.html' title='Multiple defined in 2 places.'>computeAlignment</a>(bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(), <a href='../D/11271.html' title='Multiple defined in 4 places.'>align</a>);
+<a id='L77' name='L77'></a>  77         <em class='brace'>}</em>
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79         bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>() + alignment);
+<a id='L80' name='L80'></a>  80     <em class='brace'>}</em>
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <em class='comment'>//</em>
+<a id='L83' name='L83'></a>  83     <em class='comment'>// This can be overridden....</em>
+<a id='L84' name='L84'></a>  84     <em class='comment'>//</em>
+<a id='L85' name='L85'></a>  85     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/20041.html' title='Multiple referred from 53 places.'>grow</a>(<strong class='reserved'>int</strong> <a href='../D/11271.html' title='Multiple defined in 4 places.'>align</a>, <strong class='reserved'>int</strong> n) <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87         bbwi.needed = n;
+<a id='L88' name='L88'></a>  88 
+<a id='L89' name='L89'></a>  89         <em class='comment'>// Save the size of the current buffer for</em>
+<a id='L90' name='L90'></a>  90         <em class='comment'>// possible fragmentOffset calculation</em>
+<a id='L91' name='L91'></a>  91         <strong class='reserved'>int</strong> oldSize = bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>();
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93         bbwi = bufferManagerRead.<a href='../D/35819.html' title='Multiple defined in 3 places.'>underflow</a>(bbwi);
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>if</strong> (bbwi.fragmented) <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96 
+<a id='L97' name='L97'></a>  97             <em class='comment'>// By this point we should be guaranteed to have</em>
+<a id='L98' name='L98'></a>  98             <em class='comment'>// a new fragment whose header has already been</em>
+<a id='L99' name='L99'></a>  99             <em class='comment'>// unmarshalled.  bbwi.position() should point to the</em>
+<a id='L100' name='L100'></a> 100             <em class='comment'>// end of the header.</em>
+<a id='L101' name='L101'></a> 101             fragmentOffset += (oldSize - bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>());
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103             markAndResetHandler.<a href='../D/16573.html' title='Multiple defined in 3 places.'>fragmentationOccured</a>(bbwi);
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105             <em class='comment'>// Clear the flag</em>
+<a id='L106' name='L106'></a> 106             bbwi.fragmented = <strong class='reserved'>false</strong>;
+<a id='L107' name='L107'></a> 107         <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108     <em class='brace'>}</em>
+<a id='L109' name='L109'></a> 109 
+<a id='L110' name='L110'></a> 110     <em class='comment'>// Mark/reset ---------------------------------------</em>
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112     <strong class='reserved'>private</strong> <strong class='reserved'>class</strong> <a href='../R/3119.html' title='Multiple referred from 2 places.'>FragmentableStreamMemento</a> <strong class='reserved'>extends</strong> <a href='../S/7013.html#L2020' title='Defined at 2020 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_0.java.'>StreamMemento</a>
+<a id='L113' name='L113'></a> 113     <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> fragmentOffset_;
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116         <strong class='reserved'>public</strong> FragmentableStreamMemento()
+<a id='L117' name='L117'></a> 117         <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118             <strong class='reserved'>super</strong>();
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120             fragmentOffset_ = fragmentOffset;
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122     <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123 
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>public</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/12705.html' title='Multiple referred from 2 places.'>createStreamMemento</a>() <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7015.html#L112' title='Defined at 112 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_1.java.'>FragmentableStreamMemento</a>();
+<a id='L126' name='L126'></a> 126     <em class='brace'>}</em>
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26428.html' title='Multiple referred from 3 places.'>restoreInternalState</a>(<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> streamMemento)
+<a id='L129' name='L129'></a> 129     <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130         <strong class='reserved'>super</strong>.<a href='../D/31353.html' title='Multiple defined in 3 places.'>restoreInternalState</a>(streamMemento);
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132         fragmentOffset
+<a id='L133' name='L133'></a> 133             = ((<a href='../S/7015.html#L112' title='Defined at 112 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_1.java.'>FragmentableStreamMemento</a>)streamMemento).fragmentOffset_;
+<a id='L134' name='L134'></a> 134     <em class='brace'>}</em>
+<a id='L135' name='L135'></a> 135 
+<a id='L136' name='L136'></a> 136     <em class='comment'>// --------------------------------------------------</em>
+<a id='L137' name='L137'></a> 137 
+<a id='L138' name='L138'></a> 138     <strong class='reserved'>public</strong> <strong class='reserved'>char</strong> <a href='../R/25620.html' title='Multiple referred from 18 places.'>read_wchar</a>() <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139         <em class='comment'>// In GIOP 1.1, interoperability with wchar is limited</em>
+<a id='L140' name='L140'></a> 140         <em class='comment'>// to 2 byte fixed width encodings.  CORBA formal 99-10-07 15.3.1.6.</em>
+<a id='L141' name='L141'></a> 141         <em class='comment'>// WARNING:  For UTF-16, this means that there can be no</em>
+<a id='L142' name='L142'></a> 142         <em class='comment'>// byte order marker, so it must default to big endian!</em>
+<a id='L143' name='L143'></a> 143         <a href='../D/11274.html' title='Multiple defined in 3 places.'>alignAndCheck</a>(2, 2);
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145         <em class='comment'>// Because of the alignAndCheck, we should be guaranteed</em>
+<a id='L146' name='L146'></a> 146         <em class='comment'>// 2 bytes of real data.</em>
+<a id='L147' name='L147'></a> 147         <strong class='reserved'>char</strong>[] <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/7013.html#L2197' title='Defined at 2197 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_0.java.'>getConvertedChars</a>(2, <a href='../D/23647.html' title='Multiple defined in 2 places.'>getWCharConverter</a>());
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149         <em class='comment'>// Did the provided bytes convert to more than one</em>
+<a id='L150' name='L150'></a> 150         <em class='comment'>// character?  This may come up as more unicode values are</em>
+<a id='L151' name='L151'></a> 151         <em class='comment'>// assigned, and a single 16 bit Java char isn't enough.</em>
+<a id='L152' name='L152'></a> 152         <em class='comment'>// Better to use strings for i18n purposes.</em>
+<a id='L153' name='L153'></a> 153         <strong class='reserved'>if</strong> (<a href='../D/23647.html' title='Multiple defined in 2 places.'>getWCharConverter</a>().<a href='../D/21059.html' title='Multiple defined in 3 places.'>getNumChars</a>() &gt; 1)
+<a id='L154' name='L154'></a> 154             <strong class='reserved'>throw</strong> wrapper.<a href='../D/11926.html' title='Multiple defined in 4 places.'>btcResultMoreThanOneChar</a>() ;
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>[0];
+<a id='L157' name='L157'></a> 157     <em class='brace'>}</em>
+<a id='L158' name='L158'></a> 158 
+<a id='L159' name='L159'></a> 159     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/25622.html' title='Multiple referred from 11 places.'>read_wstring</a>() <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160         <em class='comment'>// In GIOP 1.1, interoperability with wchar is limited</em>
+<a id='L161' name='L161'></a> 161         <em class='comment'>// to 2 byte fixed width encodings.  CORBA formal 99-10-07 15.3.1.6.</em>
+<a id='L162' name='L162'></a> 162         <strong class='reserved'>int</strong> len = <a href='../D/30324.html' title='Multiple defined in 9 places.'>read_long</a>();
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164         <em class='comment'>// Workaround for ORBs which send string lengths of</em>
+<a id='L165' name='L165'></a> 165         <em class='comment'>// zero to mean empty string.</em>
+<a id='L166' name='L166'></a> 166         <em class='comment'>//</em>
+<a id='L167' name='L167'></a> 167         <em class='comment'>// IMPORTANT: Do not replace 'new String("")' with "", it may result</em>
+<a id='L168' name='L168'></a> 168         <em class='comment'>// in a Serialization bug (See serialization.zerolengthstring) and</em>
+<a id='L169' name='L169'></a> 169         <em class='comment'>// bug id: 4728756 for details</em>
+<a id='L170' name='L170'></a> 170         <strong class='reserved'>if</strong> (len == 0)
+<a id='L171' name='L171'></a> 171             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>("");
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173         <a href='../S/7013.html#L545' title='Defined at 545 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_0.java.'>checkForNegativeLength</a>(len);
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175         <em class='comment'>// Don't include the two byte null for the</em>
+<a id='L176' name='L176'></a> 176         <em class='comment'>// following computations.  Remember that since we're limited</em>
+<a id='L177' name='L177'></a> 177         <em class='comment'>// to a 2 byte fixed width code set, the "length" was the</em>
+<a id='L178' name='L178'></a> 178         <em class='comment'>// number of such 2 byte code points plus a 2 byte null.</em>
+<a id='L179' name='L179'></a> 179         len = len - 1;
+<a id='L180' name='L180'></a> 180 
+<a id='L181' name='L181'></a> 181         <strong class='reserved'>char</strong>[] <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/7013.html#L2197' title='Defined at 2197 in src/com/sun/corba/se/impl/encoding/CDRInputStream_1_0.java.'>getConvertedChars</a>(len * 2, <a href='../D/23647.html' title='Multiple defined in 2 places.'>getWCharConverter</a>());
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183         <em class='comment'>// Skip over the 2 byte null</em>
+<a id='L184' name='L184'></a> 184         <a href='../D/30334.html' title='Multiple defined in 9 places.'>read_short</a>();
+<a id='L185' name='L185'></a> 185 
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>(<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>, 0, <a href='../D/23647.html' title='Multiple defined in 2 places.'>getWCharConverter</a>().<a href='../D/21059.html' title='Multiple defined in 3 places.'>getNumChars</a>());
+<a id='L187' name='L187'></a> 187     <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L34'>[^]</a><a href='#L159'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

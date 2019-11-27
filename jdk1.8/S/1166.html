@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/util/logging/XMLFormatter.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8038.html'>util</a>/<a href='../files/8044.html'>logging</a>/XMLFormatter.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L50'>[^]</a><a href='#L266'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L50' title='Defined at 50.'>a2</a></li>
+<li><a href='#L58' title='Defined at 58.'>appendISO8601</a></li>
+<li><a href='#L77' title='Defined at 77.'>escape</a></li>
+<li><a href='#L105' title='Defined at 105.'>format</a></li>
+<li><a href='#L227' title='Defined at 227.'>getHead</a></li>
+<li><a href='#L266' title='Defined at 266.'>getTail</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.logging;
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.io.*;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.nio.charset.Charset;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.*;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <em class='comment'>/**</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * Format a LogRecord into a standard XML format.</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * &lt;p&gt;</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * The DTD specification is provided as Appendix A to the</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * Java Logging APIs specification.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * &lt;p&gt;</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * The XMLFormatter can be used with arbitrary character encodings,</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * but it is recommended that it normally be used with UTF-8.  The</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * character encoding can be set on the output Handler.</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> *</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * @since 1.4</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> */</em>
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/9014.html' title='Multiple referred from 2 places.'>XMLFormatter</a> <strong class='reserved'>extends</strong> <a href='../D/3384.html' title='Multiple defined in 2 places.'>Formatter</a> <em class='brace'>{</em>
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>private</strong> <a href='../S/1171.html#L145' title='Defined at 145 in src/java/util/logging/LogManager.java.'>LogManager</a> manager = <a href='../S/1171.html#L145' title='Defined at 145 in src/java/util/logging/LogManager.java.'>LogManager</a>.<a href='../S/1171.html#L376' title='Defined at 376 in src/java/util/logging/LogManager.java.'>getLogManager</a>();
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49     <em class='comment'>// Append a two digit number.</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/9492.html' title='Multiple referred from 165 places.'>a2</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb, <strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) <em class='brace'>{</em>
+<a id='L51' name='L51'></a>  51         <strong class='reserved'>if</strong> (<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; 10) <em class='brace'>{</em>
+<a id='L52' name='L52'></a>  52             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('0');
+<a id='L53' name='L53'></a>  53         <em class='brace'>}</em>
+<a id='L54' name='L54'></a>  54         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>);
+<a id='L55' name='L55'></a>  55     <em class='brace'>}</em>
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <em class='comment'>// Append the time and date in ISO 8601 format</em>
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1166.html#L110' title='Referred from 110 in src/java/util/logging/XMLFormatter.java.'>appendISO8601</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb, <strong class='reserved'>long</strong> <a href='../D/27696.html' title='Multiple defined in 5 places.'>millis</a>) <em class='brace'>{</em>
+<a id='L59' name='L59'></a>  59         <a href='../S/1130.html#L330' title='Defined at 330 in src/java/util/GregorianCalendar.java.'>GregorianCalendar</a> cal = <strong class='reserved'>new</strong> <a href='../S/1130.html#L330' title='Defined at 330 in src/java/util/GregorianCalendar.java.'>GregorianCalendar</a>();
+<a id='L60' name='L60'></a>  60         cal.<a href='../S/866.html#L1794' title='Defined at 1794 in src/java/util/Calendar.java.'>setTimeInMillis</a>(<a href='../D/27696.html' title='Multiple defined in 5 places.'>millis</a>);
+<a id='L61' name='L61'></a>  61         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(cal.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/866.html#L313' title='Defined at 313 in src/java/util/Calendar.java.'>Calendar</a>.<a href='../S/1483.html#L545' title='Defined at 545 in src/java/time/temporal/ChronoField.java.'>YEAR</a>));
+<a id='L62' name='L62'></a>  62         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('-');
+<a id='L63' name='L63'></a>  63         <a href='../S/1166.html#L50' title='Defined at 50 in src/java/util/logging/XMLFormatter.java.'>a2</a>(sb, cal.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/866.html#L313' title='Defined at 313 in src/java/util/Calendar.java.'>Calendar</a>.MONTH) + 1);
+<a id='L64' name='L64'></a>  64         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('-');
+<a id='L65' name='L65'></a>  65         <a href='../S/1166.html#L50' title='Defined at 50 in src/java/util/logging/XMLFormatter.java.'>a2</a>(sb, cal.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/866.html#L313' title='Defined at 313 in src/java/util/Calendar.java.'>Calendar</a>.<a href='../S/1483.html#L395' title='Defined at 395 in src/java/time/temporal/ChronoField.java.'>DAY_OF_MONTH</a>));
+<a id='L66' name='L66'></a>  66         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('T');
+<a id='L67' name='L67'></a>  67         <a href='../S/1166.html#L50' title='Defined at 50 in src/java/util/logging/XMLFormatter.java.'>a2</a>(sb, cal.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/866.html#L313' title='Defined at 313 in src/java/util/Calendar.java.'>Calendar</a>.<a href='../S/1483.html#L303' title='Defined at 303 in src/java/time/temporal/ChronoField.java.'>HOUR_OF_DAY</a>));
+<a id='L68' name='L68'></a>  68         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(':');
+<a id='L69' name='L69'></a>  69         <a href='../S/1166.html#L50' title='Defined at 50 in src/java/util/logging/XMLFormatter.java.'>a2</a>(sb, cal.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/866.html#L313' title='Defined at 313 in src/java/util/Calendar.java.'>Calendar</a>.MINUTE));
+<a id='L70' name='L70'></a>  70         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(':');
+<a id='L71' name='L71'></a>  71         <a href='../S/1166.html#L50' title='Defined at 50 in src/java/util/logging/XMLFormatter.java.'>a2</a>(sb, cal.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/866.html#L313' title='Defined at 313 in src/java/util/Calendar.java.'>Calendar</a>.SECOND));
+<a id='L72' name='L72'></a>  72     <em class='brace'>}</em>
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <em class='comment'>// Append to the given StringBuilder an escaped version of the</em>
+<a id='L75' name='L75'></a>  75     <em class='comment'>// given text string where XML special characters have been escaped.</em>
+<a id='L76' name='L76'></a>  76     <em class='comment'>// For a null string we append "&lt;null&gt;"</em>
+<a id='L77' name='L77'></a>  77     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/14030.html' title='Multiple referred from 43 places.'>escape</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>) <em class='brace'>{</em>
+<a id='L78' name='L78'></a>  78         <strong class='reserved'>if</strong> (<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L79' name='L79'></a>  79             <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> = "&lt;null&gt;";
+<a id='L80' name='L80'></a>  80         <em class='brace'>}</em>
+<a id='L81' name='L81'></a>  81         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>(); i++) <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82             <strong class='reserved'>char</strong> ch = <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i);
+<a id='L83' name='L83'></a>  83             <strong class='reserved'>if</strong> (ch == '&lt;') <em class='brace'>{</em>
+<a id='L84' name='L84'></a>  84                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;lt;");
+<a id='L85' name='L85'></a>  85             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (ch == '&gt;') <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;gt;");
+<a id='L87' name='L87'></a>  87             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (ch == '&amp;') <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;amp;");
+<a id='L89' name='L89'></a>  89             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(ch);
+<a id='L91' name='L91'></a>  91             <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92         <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93     <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95     <em class='comment'>/**</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * Format the given message to XML.</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * This method can be overridden in a subclass.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * It is recommended to use the {@link Formatter#formatMessage}</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * convenience method to localize and format the message field.</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     *</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * @param record the log record to be formatted.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * @return a formatted log record</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     */</em>
+<a id='L105' name='L105'></a> 105     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/14747.html' title='Multiple referred from 768 places.'>format</a>(<a href='../S/1169.html#L71' title='Defined at 71 in src/java/util/logging/LogRecord.java.'>LogRecord</a> record) <em class='brace'>{</em>
+<a id='L106' name='L106'></a> 106         <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>(500);
+<a id='L107' name='L107'></a> 107         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;record&gt;\n");
+<a id='L108' name='L108'></a> 108 
+<a id='L109' name='L109'></a> 109         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;date&gt;");
+<a id='L110' name='L110'></a> 110         <a href='../S/1166.html#L58' title='Defined at 58 in src/java/util/logging/XMLFormatter.java.'>appendISO8601</a>(sb, record.<a href='../S/1169.html#L425' title='Defined at 425 in src/java/util/logging/LogRecord.java.'>getMillis</a>());
+<a id='L111' name='L111'></a> 111         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/date&gt;\n");
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;millis&gt;");
+<a id='L114' name='L114'></a> 114         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(record.<a href='../S/1169.html#L425' title='Defined at 425 in src/java/util/logging/LogRecord.java.'>getMillis</a>());
+<a id='L115' name='L115'></a> 115         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/millis&gt;\n");
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;sequence&gt;");
+<a id='L118' name='L118'></a> 118         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(record.<a href='../D/22398.html' title='Multiple defined in 2 places.'>getSequenceNumber</a>());
+<a id='L119' name='L119'></a> 119         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/sequence&gt;\n");
+<a id='L120' name='L120'></a> 120 
+<a id='L121' name='L121'></a> 121         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = record.<a href='../S/1169.html#L194' title='Defined at 194 in src/java/util/logging/LogRecord.java.'>getLoggerName</a>();
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L123' name='L123'></a> 123             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;logger&gt;");
+<a id='L124' name='L124'></a> 124             <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L125' name='L125'></a> 125             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/logger&gt;\n");
+<a id='L126' name='L126'></a> 126         <em class='brace'>}</em>
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;level&gt;");
+<a id='L129' name='L129'></a> 129         <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, record.<a href='../D/20078.html' title='Multiple defined in 14 places.'>getLevel</a>().<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L130' name='L130'></a> 130         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/level&gt;\n");
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132         <strong class='reserved'>if</strong> (record.<a href='../S/1169.html#L306' title='Defined at 306 in src/java/util/logging/LogRecord.java.'>getSourceClassName</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L133' name='L133'></a> 133             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;class&gt;");
+<a id='L134' name='L134'></a> 134             <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, record.<a href='../S/1169.html#L306' title='Defined at 306 in src/java/util/logging/LogRecord.java.'>getSourceClassName</a>());
+<a id='L135' name='L135'></a> 135             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/class&gt;\n");
+<a id='L136' name='L136'></a> 136         <em class='brace'>}</em>
+<a id='L137' name='L137'></a> 137 
+<a id='L138' name='L138'></a> 138         <strong class='reserved'>if</strong> (record.<a href='../S/1169.html#L337' title='Defined at 337 in src/java/util/logging/LogRecord.java.'>getSourceMethodName</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;method&gt;");
+<a id='L140' name='L140'></a> 140             <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, record.<a href='../S/1169.html#L337' title='Defined at 337 in src/java/util/logging/LogRecord.java.'>getSourceMethodName</a>());
+<a id='L141' name='L141'></a> 141             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/method&gt;\n");
+<a id='L142' name='L142'></a> 142         <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143 
+<a id='L144' name='L144'></a> 144         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;thread&gt;");
+<a id='L145' name='L145'></a> 145         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(record.<a href='../S/1169.html#L408' title='Defined at 408 in src/java/util/logging/LogRecord.java.'>getThreadID</a>());
+<a id='L146' name='L146'></a> 146         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/thread&gt;\n");
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>if</strong> (record.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149             <em class='comment'>// Format the message string and its accompanying parameters.</em>
+<a id='L150' name='L150'></a> 150             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a> = <a href='../D/16540.html' title='Multiple defined in 20 places.'>formatMessage</a>(record);
+<a id='L151' name='L151'></a> 151             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;message&gt;");
+<a id='L152' name='L152'></a> 152             <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>);
+<a id='L153' name='L153'></a> 153             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/message&gt;");
+<a id='L154' name='L154'></a> 154             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\n");
+<a id='L155' name='L155'></a> 155         <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157         <em class='comment'>// If the message is being localized, output the key, resource</em>
+<a id='L158' name='L158'></a> 158         <em class='comment'>// bundle name, and params.</em>
+<a id='L159' name='L159'></a> 159         <a href='../S/853.html#L287' title='Defined at 287 in src/java/util/ResourceBundle.java.'>ResourceBundle</a> bundle = record.<a href='../D/22048.html' title='Multiple defined in 9 places.'>getResourceBundle</a>();
+<a id='L160' name='L160'></a> 160         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161             <strong class='reserved'>if</strong> (bundle != <strong class='reserved'>null</strong> &amp;&amp; bundle.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>(record.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>()) != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L162' name='L162'></a> 162                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;key&gt;");
+<a id='L163' name='L163'></a> 163                 <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, record.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
+<a id='L164' name='L164'></a> 164                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/key&gt;\n");
+<a id='L165' name='L165'></a> 165                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;catalog&gt;");
+<a id='L166' name='L166'></a> 166                 <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, record.<a href='../D/22049.html' title='Multiple defined in 3 places.'>getResourceBundleName</a>());
+<a id='L167' name='L167'></a> 167                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/catalog&gt;\n");
+<a id='L168' name='L168'></a> 168             <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170             <em class='comment'>// The message is not in the catalog.  Drop through.</em>
+<a id='L171' name='L171'></a> 171         <em class='brace'>}</em>
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>[] = record.<a href='../D/21383.html' title='Multiple defined in 13 places.'>getParameters</a>();
+<a id='L174' name='L174'></a> 174         <em class='comment'>//  Check to see if the parameter was not a messagetext format</em>
+<a id='L175' name='L175'></a> 175         <em class='comment'>//  or was not null or empty</em>
+<a id='L176' name='L176'></a> 176         <strong class='reserved'>if</strong> ( <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a> != <strong class='reserved'>null</strong> &amp;&amp; <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != 0
+<a id='L177' name='L177'></a> 177                 &amp;&amp; record.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>().<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>("{") == -1 ) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;param&gt;");
+<a id='L180' name='L180'></a> 180                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L181' name='L181'></a> 181                     <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, <a href='../D/29062.html' title='Multiple defined in 2 places.'>parameters</a>[i].<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L182' name='L182'></a> 182                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("???");
+<a id='L184' name='L184'></a> 184                 <em class='brace'>}</em>
+<a id='L185' name='L185'></a> 185                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/param&gt;\n");
+<a id='L186' name='L186'></a> 186             <em class='brace'>}</em>
+<a id='L187' name='L187'></a> 187         <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>if</strong> (record.<a href='../S/1169.html#L446' title='Defined at 446 in src/java/util/logging/LogRecord.java.'>getThrown</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190             <em class='comment'>// Report on the state of the throwable.</em>
+<a id='L191' name='L191'></a> 191             <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> th = record.<a href='../S/1169.html#L446' title='Defined at 446 in src/java/util/logging/LogRecord.java.'>getThrown</a>();
+<a id='L192' name='L192'></a> 192             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;exception&gt;\n");
+<a id='L193' name='L193'></a> 193             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("    &lt;message&gt;");
+<a id='L194' name='L194'></a> 194             <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, th.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L195' name='L195'></a> 195             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/message&gt;\n");
+<a id='L196' name='L196'></a> 196             <a href='../S/1579.html#L42' title='Defined at 42 in src/java/lang/StackTraceElement.java.'>StackTraceElement</a> <a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>[] = th.<a href='../D/22687.html' title='Multiple defined in 3 places.'>getStackTrace</a>();
+<a id='L197' name='L197'></a> 197             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198                 <a href='../S/1579.html#L42' title='Defined at 42 in src/java/lang/StackTraceElement.java.'>StackTraceElement</a> <a href='../S/6658.html#L461' title='Defined at 461 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>frame</a> = <a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>[i];
+<a id='L199' name='L199'></a> 199                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("    &lt;frame&gt;\n");
+<a id='L200' name='L200'></a> 200                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("      &lt;class&gt;");
+<a id='L201' name='L201'></a> 201                 <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, <a href='../S/6658.html#L461' title='Defined at 461 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>frame</a>.<a href='../D/17698.html' title='Multiple defined in 41 places.'>getClassName</a>());
+<a id='L202' name='L202'></a> 202                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/class&gt;\n");
+<a id='L203' name='L203'></a> 203                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("      &lt;method&gt;");
+<a id='L204' name='L204'></a> 204                 <a href='../D/15727.html' title='Multiple defined in 5 places.'>escape</a>(sb, <a href='../S/6658.html#L461' title='Defined at 461 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>frame</a>.<a href='../D/20592.html' title='Multiple defined in 5 places.'>getMethodName</a>());
+<a id='L205' name='L205'></a> 205                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/method&gt;\n");
+<a id='L206' name='L206'></a> 206                 <em class='comment'>// Check for a line number.</em>
+<a id='L207' name='L207'></a> 207                 <strong class='reserved'>if</strong> (<a href='../S/6658.html#L461' title='Defined at 461 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>frame</a>.<a href='../D/20122.html' title='Multiple defined in 41 places.'>getLineNumber</a>() &gt;= 0) <em class='brace'>{</em>
+<a id='L208' name='L208'></a> 208                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("      &lt;line&gt;");
+<a id='L209' name='L209'></a> 209                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/6658.html#L461' title='Defined at 461 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>frame</a>.<a href='../D/20122.html' title='Multiple defined in 41 places.'>getLineNumber</a>());
+<a id='L210' name='L210'></a> 210                     sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/line&gt;\n");
+<a id='L211' name='L211'></a> 211                 <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("    &lt;/frame&gt;\n");
+<a id='L213' name='L213'></a> 213             <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("  &lt;/exception&gt;\n");
+<a id='L215' name='L215'></a> 215         <em class='brace'>}</em>
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/record&gt;\n");
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>return</strong> sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L219' name='L219'></a> 219     <em class='brace'>}</em>
+<a id='L220' name='L220'></a> 220 
+<a id='L221' name='L221'></a> 221     <em class='comment'>/**</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * Return the header string for a set of XML formatted records.</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     *</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * @param   h  The target handler (can be null)</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * @return  a valid XML string</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     */</em>
+<a id='L227' name='L227'></a> 227     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16858.html' title='Multiple referred from 2 places.'>getHead</a>(<a href='../D/3727.html' title='Multiple defined in 33 places.'>Handler</a> h) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228         <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>();
+<a id='L229' name='L229'></a> 229         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>;
+<a id='L230' name='L230'></a> 230         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;?xml version=\"1.0\"");
+<a id='L231' name='L231'></a> 231 
+<a id='L232' name='L232'></a> 232         <strong class='reserved'>if</strong> (h != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = h.<a href='../D/18747.html' title='Multiple defined in 37 places.'>getEncoding</a>();
+<a id='L234' name='L234'></a> 234         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L235' name='L235'></a> 235             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <strong class='reserved'>null</strong>;
+<a id='L236' name='L236'></a> 236         <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238         <strong class='reserved'>if</strong> (<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239             <em class='comment'>// Figure out the default encoding.</em>
+<a id='L240' name='L240'></a> 240             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.nio.<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../S/2005.html#L271' title='Defined at 271 in src/java/nio/charset/Charset.java.'>Charset</a>.<a href='../S/2005.html#L604' title='Defined at 604 in src/java/nio/charset/Charset.java.'>defaultCharset</a>().<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>();
+<a id='L241' name='L241'></a> 241         <em class='brace'>}</em>
+<a id='L242' name='L242'></a> 242         <em class='comment'>// Try to map the encoding name to a canonical name.</em>
+<a id='L243' name='L243'></a> 243         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L244' name='L244'></a> 244             <a href='../S/2005.html#L271' title='Defined at 271 in src/java/nio/charset/Charset.java.'>Charset</a> cs = <a href='../S/2005.html#L271' title='Defined at 271 in src/java/nio/charset/Charset.java.'>Charset</a>.<a href='../D/16518.html' title='Multiple defined in 6 places.'>forName</a>(<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>);
+<a id='L245' name='L245'></a> 245             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = cs.<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>();
+<a id='L246' name='L246'></a> 246         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L247' name='L247'></a> 247             <em class='comment'>// We hit problems finding a canonical name.</em>
+<a id='L248' name='L248'></a> 248             <em class='comment'>// Just use the raw encoding name.</em>
+<a id='L249' name='L249'></a> 249         <em class='brace'>}</em>
+<a id='L250' name='L250'></a> 250 
+<a id='L251' name='L251'></a> 251         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" encoding=\"");
+<a id='L252' name='L252'></a> 252         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>);
+<a id='L253' name='L253'></a> 253         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\"");
+<a id='L254' name='L254'></a> 254         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" standalone=\"no\"?&gt;\n");
+<a id='L255' name='L255'></a> 255         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;!DOCTYPE log SYSTEM \"logger.dtd\"&gt;\n");
+<a id='L256' name='L256'></a> 256         sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;log&gt;\n");
+<a id='L257' name='L257'></a> 257         <strong class='reserved'>return</strong> sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L258' name='L258'></a> 258     <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260     <em class='comment'>/**</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     * Return the tail string for a set of XML formatted records.</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     *</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * @param   h  The target handler (can be null)</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * @return  a valid XML string</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     */</em>
+<a id='L266' name='L266'></a> 266     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1168.html#L276' title='Referred from 276 in src/java/util/logging/StreamHandler.java.'>getTail</a>(<a href='../D/3727.html' title='Multiple defined in 33 places.'>Handler</a> h) <em class='brace'>{</em>
+<a id='L267' name='L267'></a> 267         <strong class='reserved'>return</strong> "&lt;/log&gt;\n";
+<a id='L268' name='L268'></a> 268     <em class='brace'>}</em>
+<a id='L269' name='L269'></a> 269 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L50'>[^]</a><a href='#L266'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

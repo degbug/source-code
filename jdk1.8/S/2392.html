@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/awt/LinearGradientPaintContext.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/7986.html'>awt</a>/LinearGradientPaintContext.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L133'>[^]</a>[v][top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L133' title='Defined at 133.'>fillRaster</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.awt;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.MultipleGradientPaint.CycleMethod;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.MultipleGradientPaint.ColorSpaceType;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.awt.geom.AffineTransform;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.awt.geom.Point2D;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.awt.geom.Rectangle2D;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.awt.image.ColorModel;
+<a id='L34' name='L34'></a>  34 
+<a id='L35' name='L35'></a>  35 <em class='comment'>/**</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * Provides the actual implementation for the LinearGradientPaint.</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * This is where the pixel processing is done.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> *</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * @see java.awt.LinearGradientPaint</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * @see java.awt.PaintContext</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * @see java.awt.Paint</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * @author Nicholas Talian, Vincent Hardy, Jim Graham, Jerry Evans</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> */</em>
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../S/2304.html#L355' title='Referred from 355 in src/java/awt/LinearGradientPaint.java.'>LinearGradientPaintContext</a> <strong class='reserved'>extends</strong> <a href='../S/2113.html#L53' title='Defined at 53 in src/java/awt/MultipleGradientPaintContext.java.'>MultipleGradientPaintContext</a> <em class='brace'>{</em>
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46     <em class='comment'>/**</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'>     * The following invariants are used to process the gradient value from</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'>     * a device space coordinate, (X, Y):</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'>     *     g(X, Y) = dgdX*X + dgdY*Y + gc</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'>     */</em>
+<a id='L51' name='L51'></a>  51     <strong class='reserved'>private</strong> <strong class='reserved'>float</strong> dgdX, dgdY, <a href='../D/16627.html' title='Multiple defined in 3 places.'>gc</a>;
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53     <em class='comment'>/**</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>     * Constructor for LinearGradientPaintContext.</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     *</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     * @param paint the {@code LinearGradientPaint} from which this context</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     *              is created</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * @param cm {@code ColorModel} that receives</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     *           the &lt;code&gt;Paint&lt;/code&gt; data. This is used only as a hint.</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     * @param deviceBounds the device space bounding box of the</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     *                     graphics primitive being rendered</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * @param userBounds the user space bounding box of the</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     *                   graphics primitive being rendered</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * @param t the {@code AffineTransform} from user</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     *          space into device space (gradientTransform should be</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     *          concatenated with this)</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * @param hints the hints that the context object uses to choose</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     *              between rendering alternatives</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     * @param start gradient start point, in user space</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * @param end gradient end point, in user space</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * @param fractions the fractions specifying the gradient distribution</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * @param colors the gradient colors</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * @param cycleMethod either NO_CYCLE, REFLECT, or REPEAT</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     * @param colorSpace which colorspace to use for interpolation,</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     *                   either SRGB or LINEAR_RGB</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     */</em>
+<a id='L77' name='L77'></a>  77     LinearGradientPaintContext(<a href='../S/2304.html#L104' title='Defined at 104 in src/java/awt/LinearGradientPaint.java.'>LinearGradientPaint</a> <a href='../D/28657.html' title='Multiple defined in 228 places.'>paint</a>,
+<a id='L78' name='L78'></a>  78                                <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> cm,
+<a id='L79' name='L79'></a>  79                                <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> deviceBounds,
+<a id='L80' name='L80'></a>  80                                <a href='../S/2335.html#L43' title='Defined at 43 in src/java/awt/geom/Rectangle2D.java.'>Rectangle2D</a> userBounds,
+<a id='L81' name='L81'></a>  81                                <a href='../S/2328.html#L114' title='Defined at 114 in src/java/awt/geom/AffineTransform.java.'>AffineTransform</a> t,
+<a id='L82' name='L82'></a>  82                                <a href='../S/2116.html#L82' title='Defined at 82 in src/java/awt/RenderingHints.java.'>RenderingHints</a> hints,
+<a id='L83' name='L83'></a>  83                                <a href='../S/2319.html#L42' title='Defined at 42 in src/java/awt/geom/Point2D.java.'>Point2D</a> <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>,
+<a id='L84' name='L84'></a>  84                                <a href='../S/2319.html#L42' title='Defined at 42 in src/java/awt/geom/Point2D.java.'>Point2D</a> <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>,
+<a id='L85' name='L85'></a>  85                                <strong class='reserved'>float</strong>[] fractions,
+<a id='L86' name='L86'></a>  86                                <a href='../S/2447.html#L60' title='Defined at 60 in src/java/awt/Color.java.'>Color</a>[] colors,
+<a id='L87' name='L87'></a>  87                                <a href='../S/2387.html#L47' title='Defined at 47 in src/java/awt/MultipleGradientPaint.java.'>CycleMethod</a> cycleMethod,
+<a id='L88' name='L88'></a>  88                                <a href='../S/2387.html#L69' title='Defined at 69 in src/java/awt/MultipleGradientPaint.java.'>ColorSpaceType</a> colorSpace)
+<a id='L89' name='L89'></a>  89     <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90         <strong class='reserved'>super</strong>(<a href='../D/28657.html' title='Multiple defined in 228 places.'>paint</a>, cm, deviceBounds, userBounds, t, hints, fractions,
+<a id='L91' name='L91'></a>  91               colors, cycleMethod, colorSpace);
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93         <em class='comment'>// A given point in the raster should take on the same color as its</em>
+<a id='L94' name='L94'></a>  94         <em class='comment'>// projection onto the gradient vector.</em>
+<a id='L95' name='L95'></a>  95         <em class='comment'>// Thus, we want the projection of the current position vector</em>
+<a id='L96' name='L96'></a>  96         <em class='comment'>// onto the gradient vector, then normalized with respect to the</em>
+<a id='L97' name='L97'></a>  97         <em class='comment'>// length of the gradient vector, giving a value which can be mapped</em>
+<a id='L98' name='L98'></a>  98         <em class='comment'>// into the range 0-1.</em>
+<a id='L99' name='L99'></a>  99         <em class='comment'>//    projection =</em>
+<a id='L100' name='L100'></a> 100         <em class='comment'>//        currentVector dot gradientVector / length(gradientVector)</em>
+<a id='L101' name='L101'></a> 101         <em class='comment'>//    normalized = projection / length(gradientVector)</em>
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103         <strong class='reserved'>float</strong> startx = (<strong class='reserved'>float</strong>)<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>.<a href='../D/23738.html' title='Multiple defined in 24 places.'>getX</a>();
+<a id='L104' name='L104'></a> 104         <strong class='reserved'>float</strong> starty = (<strong class='reserved'>float</strong>)<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>.<a href='../D/23797.html' title='Multiple defined in 24 places.'>getY</a>();
+<a id='L105' name='L105'></a> 105         <strong class='reserved'>float</strong> endx = (<strong class='reserved'>float</strong>)<a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>.<a href='../D/23738.html' title='Multiple defined in 24 places.'>getX</a>();
+<a id='L106' name='L106'></a> 106         <strong class='reserved'>float</strong> endy = (<strong class='reserved'>float</strong>)<a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>.<a href='../D/23797.html' title='Multiple defined in 24 places.'>getY</a>();
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108         <strong class='reserved'>float</strong> dx = endx - startx;  <em class='comment'>// change in x from start to end</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>float</strong> dy = endy - starty;  <em class='comment'>// change in y from start to end</em>
+<a id='L110' name='L110'></a> 110         <strong class='reserved'>float</strong> dSq = dx*dx + dy*dy; <em class='comment'>// total distance squared</em>
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112         <em class='comment'>// avoid repeated calculations by doing these divides once</em>
+<a id='L113' name='L113'></a> 113         <strong class='reserved'>float</strong> constX = dx/dSq;
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>float</strong> constY = dy/dSq;
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116         <em class='comment'>// incremental change along gradient for +x</em>
+<a id='L117' name='L117'></a> 117         dgdX = a00*constX + a10*constY;
+<a id='L118' name='L118'></a> 118         <em class='comment'>// incremental change along gradient for +y</em>
+<a id='L119' name='L119'></a> 119         dgdY = a01*constX + a11*constY;
+<a id='L120' name='L120'></a> 120 
+<a id='L121' name='L121'></a> 121         <em class='comment'>// constant, incorporates the translation components from the matrix</em>
+<a id='L122' name='L122'></a> 122         <a href='../D/16627.html' title='Multiple defined in 3 places.'>gc</a> = (a02-startx)*constX + (a12-starty)*constY;
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <em class='comment'>/**</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * Return a Raster containing the colors generated for the graphics</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * operation.  This is where the area is filled with colors distributed</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * linearly.</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     *</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @param x,y,w,h the area in device space for which colors are</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * generated.</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     */</em>
+<a id='L133' name='L133'></a> 133     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../S/2113.html#L649' title='Referred from 649 in src/java/awt/MultipleGradientPaintContext.java.'>fillRaster</a>(<strong class='reserved'>int</strong>[] pixels, <strong class='reserved'>int</strong> off, <strong class='reserved'>int</strong> <a href='../D/11206.html' title='Multiple defined in 2 places.'>adjust</a>,
+<a id='L134' name='L134'></a> 134                               <strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, <strong class='reserved'>int</strong> y, <strong class='reserved'>int</strong> w, <strong class='reserved'>int</strong> h)
+<a id='L135' name='L135'></a> 135     <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136         <em class='comment'>// current value for row gradients</em>
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>float</strong> g = 0;
+<a id='L138' name='L138'></a> 138 
+<a id='L139' name='L139'></a> 139         <em class='comment'>// used to end iteration on rows</em>
+<a id='L140' name='L140'></a> 140         <strong class='reserved'>int</strong> rowLimit = off + w;
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142         <em class='comment'>// constant which can be pulled out of the inner loop</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>float</strong> initConst = (dgdX*<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) + <a href='../D/16627.html' title='Multiple defined in 3 places.'>gc</a>;
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; h; i++) <em class='brace'>{</em> <em class='comment'>// for every row</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147             <em class='comment'>// initialize current value to be start</em>
+<a id='L148' name='L148'></a> 148             g = initConst + dgdY*(y+i);
+<a id='L149' name='L149'></a> 149 
+<a id='L150' name='L150'></a> 150             <strong class='reserved'>while</strong> (off &lt; rowLimit) <em class='brace'>{</em> <em class='comment'>// for every pixel in this row</em>
+<a id='L151' name='L151'></a> 151                 <em class='comment'>// get the color</em>
+<a id='L152' name='L152'></a> 152                 pixels[off++] = <a href='../S/2113.html#L522' title='Defined at 522 in src/java/awt/MultipleGradientPaintContext.java.'>indexIntoGradientsArrays</a>(g);
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154                 <em class='comment'>// incremental change in g</em>
+<a id='L155' name='L155'></a> 155                 g += dgdX;
+<a id='L156' name='L156'></a> 156             <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158             <em class='comment'>// change in off from row to row</em>
+<a id='L159' name='L159'></a> 159             off += <a href='../D/11206.html' title='Multiple defined in 2 places.'>adjust</a>;
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161             <em class='comment'>//rowlimit is width + offset</em>
+<a id='L162' name='L162'></a> 162             rowLimit = off + w;
+<a id='L163' name='L163'></a> 163         <em class='brace'>}</em>
+<a id='L164' name='L164'></a> 164     <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;][^]<a href='#L133'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

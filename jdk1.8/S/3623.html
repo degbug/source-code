@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/management/remote/rmi/RMIIIOPServerImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8067.html'>management</a>/<a href='../files/8073.html'>remote</a>/<a href='../files/8074.html'>rmi</a>/RMIIIOPServerImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L68'>[^]</a><a href='#L158'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L68' title='Defined at 68.'>export</a></li>
+<li><a href='#L72' title='Defined at 72.'>getProtocol</a></li>
+<li><a href='#L84' title='Defined at 84.'>toStub</a></li>
+<li><a href='#L112' title='Defined at 112.'>makeClient</a></li>
+<li><a href='#L125' title='Defined at 125.'>closeClient</a></li>
+<li><a href='#L137' title='Defined at 137.'>closeServer</a></li>
+<li><a href='#L142' title='Defined at 142.'>doNewClient</a></li>
+<li><a href='#L158' title='Defined at 158.'>superDoNewClient</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.management.remote.rmi;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.rmi.Remote;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.security.AccessControlContext;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.security.AccessController;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.security.PrivilegedActionException;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.security.PrivilegedExceptionAction;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.util.Map;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.util.Collections;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> javax.security.auth.Subject;
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.jmx.remote.internal.IIOPHelper;
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <em class='comment'>/**</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;p&gt;An {@link RMIServerImpl} that is exported through IIOP and that</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * creates client connections as RMI objects exported through IIOP.</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * User code does not usually reference this class directly.&lt;/p&gt;</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * @see RMIServerImpl</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> *</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * @since 1.5</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> */</em>
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../S/3633.html#L766' title='Referred from 766 in src/javax/management/remote/rmi/RMIConnectorServer.java.'>RMIIIOPServerImpl</a> <strong class='reserved'>extends</strong> <a href='../S/3627.html#L69' title='Defined at 69 in src/javax/management/remote/rmi/RMIServerImpl.java.'>RMIServerImpl</a> <em class='brace'>{</em>
+<a id='L50' name='L50'></a>  50     <em class='comment'>/**</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     * &lt;p&gt;Creates a new {@link RMIServerImpl}.&lt;/p&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>     *</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'>     * @param env the environment containing attributes for the new</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>     * &lt;code&gt;RMIServerImpl&lt;/code&gt;.  Can be null, which is equivalent</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     * to an empty Map.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     *</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     * @exception IOException if the RMI object cannot be created.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     */</em>
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>public</strong> RMIIIOPServerImpl(<a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>,?&gt; <a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>)
+<a id='L60' name='L60'></a>  60             <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61         <strong class='reserved'>super</strong>(<a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>);
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63         <strong class='reserved'>this</strong>.<a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a> = (<a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a> == <strong class='reserved'>null</strong>) ? <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>&gt;<a href='../S/1147.html#L4519' title='Defined at 4519 in src/java/util/Collections.java.'>emptyMap</a>() : <a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>;
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65         callerACC = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
+<a id='L66' name='L66'></a>  66     <em class='brace'>}</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/14158.html' title='Multiple referred from 5 places.'>export</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L69' name='L69'></a>  69         <a href='../S/6502.html#L40' title='Defined at 40 in src/com/sun/jmx/remote/internal/IIOPHelper.java.'>IIOPHelper</a>.<a href='../D/15882.html' title='Multiple defined in 17 places.'>exportObject</a>(<strong class='reserved'>this</strong>);
+<a id='L70' name='L70'></a>  70     <em class='brace'>}</em>
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18529.html' title='Multiple referred from 40 places.'>getProtocol</a>() <em class='brace'>{</em>
+<a id='L73' name='L73'></a>  73         <strong class='reserved'>return</strong> "iiop";
+<a id='L74' name='L74'></a>  74     <em class='brace'>}</em>
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>/**</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * &lt;p&gt;Returns an IIOP stub.&lt;/p&gt;</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * The stub might not yet be connected to the ORB. The stub will</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * be serializable only if it is connected to the ORB.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * @return an IIOP stub.</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * @exception IOException if the stub cannot be created - e.g the</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     *            RMIIIOPServerImpl has not been exported yet.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     **/</em>
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>public</strong> <a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> <a href='../R/29340.html' title='Multiple referred from 10 places.'>toStub</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L85' name='L85'></a>  85         <em class='comment'>// javax.rmi.CORBA.Stub stub =</em>
+<a id='L86' name='L86'></a>  86         <em class='comment'>//    (javax.rmi.CORBA.Stub) PortableRemoteObject.toStub(this);</em>
+<a id='L87' name='L87'></a>  87         <strong class='reserved'>final</strong> <a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> stub = <a href='../S/6502.html#L40' title='Defined at 40 in src/com/sun/jmx/remote/internal/IIOPHelper.java.'>IIOPHelper</a>.<a href='../D/35496.html' title='Multiple defined in 10 places.'>toStub</a>(<strong class='reserved'>this</strong>);
+<a id='L88' name='L88'></a>  88         <em class='comment'>// java.lang.System.out.println("NON CONNECTED STUB " + stub);</em>
+<a id='L89' name='L89'></a>  89         <em class='comment'>// org.omg.CORBA.ORB orb =</em>
+<a id='L90' name='L90'></a>  90         <em class='comment'>//    org.omg.CORBA.ORB.init((String[])null, (Properties)null);</em>
+<a id='L91' name='L91'></a>  91         <em class='comment'>// stub.connect(orb);</em>
+<a id='L92' name='L92'></a>  92         <em class='comment'>// java.lang.System.out.println("CONNECTED STUB " + stub);</em>
+<a id='L93' name='L93'></a>  93         <strong class='reserved'>return</strong> stub;
+<a id='L94' name='L94'></a>  94     <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <em class='comment'>/**</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * &lt;p&gt;Creates a new client connection as an RMI object exported</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * through IIOP.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     *</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * @param connectionId the ID of the new connection.  Every</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * connection opened by this connector server will have a</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * different ID.  The behavior is unspecified if this parameter is</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * null.</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     *</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * @param subject the authenticated subject.  Can be null.</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     *</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * @return the newly-created &lt;code&gt;RMIConnection&lt;/code&gt;.</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     *</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * @exception IOException if the new client object cannot be</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * created or exported.</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     */</em>
+<a id='L112' name='L112'></a> 112     <strong class='reserved'>protected</strong> <a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a> <a href='../S/3627.html#L250' title='Referred from 250 in src/javax/management/remote/rmi/RMIServerImpl.java.'>makeClient</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> connectionId, <a href='../S/2639.html#L100' title='Defined at 100 in src/javax/security/auth/Subject.java.'>Subject</a> subject)
+<a id='L113' name='L113'></a> 113             <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>if</strong> (connectionId == <strong class='reserved'>null</strong>)
+<a id='L116' name='L116'></a> 116             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("Null connectionId");
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118         <a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a> client =
+<a id='L119' name='L119'></a> 119             <strong class='reserved'>new</strong> <a href='../S/3632.html#L76' title='Defined at 76 in src/javax/management/remote/rmi/RMIConnectionImpl.java.'>RMIConnectionImpl</a>(<strong class='reserved'>this</strong>, connectionId, <a href='../S/3627.html#L124' title='Defined at 124 in src/javax/management/remote/rmi/RMIServerImpl.java.'>getDefaultClassLoader</a>(),
+<a id='L120' name='L120'></a> 120                                   subject, <a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>);
+<a id='L121' name='L121'></a> 121         <a href='../S/6502.html#L40' title='Defined at 40 in src/com/sun/jmx/remote/internal/IIOPHelper.java.'>IIOPHelper</a>.<a href='../D/15882.html' title='Multiple defined in 17 places.'>exportObject</a>(client);
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>return</strong> client;
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../S/3627.html#L361' title='Referred from 361 in src/javax/management/remote/rmi/RMIServerImpl.java.'>closeClient</a>(<a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a> client) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L126' name='L126'></a> 126         <a href='../S/6502.html#L40' title='Defined at 40 in src/com/sun/jmx/remote/internal/IIOPHelper.java.'>IIOPHelper</a>.<a href='../D/35838.html' title='Multiple defined in 12 places.'>unexportObject</a>(client);
+<a id='L127' name='L127'></a> 127     <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <em class='comment'>/**</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * &lt;p&gt;Called by {@link #close()} to close the connector server by</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * unexporting this object.  After returning from this method, the</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * connector server must not accept any new connections.&lt;/p&gt;</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     *</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * @exception IOException if the attempt to close the connector</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     * server failed.</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     */</em>
+<a id='L137' name='L137'></a> 137     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../S/3627.html#L407' title='Referred from 407 in src/javax/management/remote/rmi/RMIServerImpl.java.'>closeServer</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138         <a href='../S/6502.html#L40' title='Defined at 40 in src/com/sun/jmx/remote/internal/IIOPHelper.java.'>IIOPHelper</a>.<a href='../D/35838.html' title='Multiple defined in 12 places.'>unexportObject</a>(<strong class='reserved'>this</strong>);
+<a id='L139' name='L139'></a> 139     <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140 
+<a id='L141' name='L141'></a> 141     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L142' name='L142'></a> 142     <a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a> <a href='../R/13415.html' title='Multiple referred from 2 places.'>doNewClient</a>(<strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> credentials) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>if</strong> (callerACC == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a>("AccessControlContext cannot be null");
+<a id='L145' name='L145'></a> 145         <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>return</strong> <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
+<a id='L148' name='L148'></a> 148                 <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a>&gt;() <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149                     <strong class='reserved'>public</strong> <a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150                         <strong class='reserved'>return</strong> <a href='../S/3623.html#L158' title='Defined at 158 in src/javax/management/remote/rmi/RMIIIOPServerImpl.java.'>superDoNewClient</a>(credentials);
+<a id='L151' name='L151'></a> 151                     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152             <em class='brace'>}</em>, callerACC);
+<a id='L153' name='L153'></a> 153         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a> pae) <em class='brace'>{</em>
+<a id='L154' name='L154'></a> 154             <strong class='reserved'>throw</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>) pae.<a href='../D/17525.html' title='Multiple defined in 41 places.'>getCause</a>();
+<a id='L155' name='L155'></a> 155         <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156     <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158     <a href='../S/3624.html#L94' title='Defined at 94 in src/javax/management/remote/rmi/RMIConnection.java.'>RMIConnection</a> <a href='../S/3623.html#L150' title='Referred from 150 in src/javax/management/remote/rmi/RMIIIOPServerImpl.java.'>superDoNewClient</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> credentials) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159         <strong class='reserved'>return</strong> <strong class='reserved'>super</strong>.<a href='../D/15054.html' title='Multiple defined in 2 places.'>doNewClient</a>(credentials);
+<a id='L160' name='L160'></a> 160     <em class='brace'>}</em>
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>, ?&gt; <a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>;
+<a id='L163' name='L163'></a> 163     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1212.html#L77' title='Defined at 77 in src/java/security/AccessControlContext.java.'>AccessControlContext</a> callerACC;
+<a id='L164' name='L164'></a> 164 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L68'>[^]</a><a href='#L158'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

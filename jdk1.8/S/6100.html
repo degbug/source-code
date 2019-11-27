@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7870.html'>xalan</a>/<a href='../files/7871.html'>internal</a>/<a href='../files/7878.html'>xsltc</a>/<a href='../files/7881.html'>compiler</a>/<a href='../files/7882.html'>util</a>/ErrorMsg.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L251'>[^]</a><a href='#L323'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L251' title='Defined at 251.'>getCause</a></li>
+<li><a href='#L255' title='Defined at 255.'>getFileName</a></li>
+<li><a href='#L263' title='Defined at 263.'>formatLine</a></li>
+<li><a href='#L282' title='Defined at 282.'>toString</a></li>
+<li><a href='#L289' title='Defined at 289.'>toString</a></li>
+<li><a href='#L296' title='Defined at 296.'>toString</a></li>
+<li><a href='#L311' title='Defined at 311.'>getErrorMessage</a></li>
+<li><a href='#L319' title='Defined at 319.'>setWarningError</a></li>
+<li><a href='#L323' title='Defined at 323.'>isWarningError</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2001-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: ErrorMsg.java,v 1.2.4.1 2005/09/15 10:18:01 pvedula Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>package</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util;
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.text.MessageFormat;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Locale;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.ResourceBundle;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.Stylesheet;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.SyntaxTreeNode;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <em class='comment'>/**</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * @author Jacek Ambroziak</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * @author Santiago Pericas-Geertsen</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * @author G. Todd Miller</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * @author Erwin Bolwidt &lt;ejb@klomp.org&gt;</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * @author Morten Jorgensen</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> */</em>
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/2732.html' title='Multiple referred from 1862 places.'>ErrorMsg</a> <em class='brace'>{</em>
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> _code;
+<a id='L44' name='L44'></a>  44     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> _line;
+<a id='L45' name='L45'></a>  45     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> _message = <strong class='reserved'>null</strong>;
+<a id='L46' name='L46'></a>  46     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> _url = <strong class='reserved'>null</strong>;
+<a id='L47' name='L47'></a>  47     <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] _params = <strong class='reserved'>null</strong>;
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> _isWarningError;
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> _cause;
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52     <em class='comment'>// Compiler error messages</em>
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> MULTIPLE_STYLESHEET_ERR = "MULTIPLE_STYLESHEET_ERR";
+<a id='L54' name='L54'></a>  54     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TEMPLATE_REDEF_ERR = "TEMPLATE_REDEF_ERR";
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TEMPLATE_UNDEF_ERR = "TEMPLATE_UNDEF_ERR";
+<a id='L56' name='L56'></a>  56     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> VARIABLE_REDEF_ERR = "VARIABLE_REDEF_ERR";
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> VARIABLE_UNDEF_ERR = "VARIABLE_UNDEF_ERR";
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> CLASS_NOT_FOUND_ERR = "CLASS_NOT_FOUND_ERR";
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> METHOD_NOT_FOUND_ERR = "METHOD_NOT_FOUND_ERR";
+<a id='L60' name='L60'></a>  60     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ARGUMENT_CONVERSION_ERR = "ARGUMENT_CONVERSION_ERR";
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> FILE_NOT_FOUND_ERR = "FILE_NOT_FOUND_ERR";
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> INVALID_URI_ERR = "INVALID_URI_ERR";
+<a id='L63' name='L63'></a>  63     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> FILE_ACCESS_ERR = "FILE_ACCESS_ERR";
+<a id='L64' name='L64'></a>  64     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> MISSING_ROOT_ERR = "MISSING_ROOT_ERR";
+<a id='L65' name='L65'></a>  65     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAMESPACE_UNDEF_ERR = "NAMESPACE_UNDEF_ERR";
+<a id='L66' name='L66'></a>  66     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> FUNCTION_RESOLVE_ERR = "FUNCTION_RESOLVE_ERR";
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NEED_LITERAL_ERR = "NEED_LITERAL_ERR";
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> XPATH_PARSER_ERR = "XPATH_PARSER_ERR";
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> REQUIRED_ATTR_ERR = "REQUIRED_ATTR_ERR";
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_CHAR_ERR = "ILLEGAL_CHAR_ERR";
+<a id='L71' name='L71'></a>  71     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_PI_ERR = "ILLEGAL_PI_ERR";
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> STRAY_ATTRIBUTE_ERR = "STRAY_ATTRIBUTE_ERR";
+<a id='L73' name='L73'></a>  73     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_ATTRIBUTE_ERR = "ILLEGAL_ATTRIBUTE_ERR";
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> CIRCULAR_INCLUDE_ERR = "CIRCULAR_INCLUDE_ERR";
+<a id='L75' name='L75'></a>  75     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> RESULT_TREE_SORT_ERR = "RESULT_TREE_SORT_ERR";
+<a id='L76' name='L76'></a>  76     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> SYMBOLS_REDEF_ERR = "SYMBOLS_REDEF_ERR";
+<a id='L77' name='L77'></a>  77     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> XSL_VERSION_ERR = "XSL_VERSION_ERR";
+<a id='L78' name='L78'></a>  78     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> CIRCULAR_VARIABLE_ERR = "CIRCULAR_VARIABLE_ERR";
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_BINARY_OP_ERR = "ILLEGAL_BINARY_OP_ERR";
+<a id='L80' name='L80'></a>  80     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_ARG_ERR = "ILLEGAL_ARG_ERR";
+<a id='L81' name='L81'></a>  81     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DOCUMENT_ARG_ERR = "DOCUMENT_ARG_ERR";
+<a id='L82' name='L82'></a>  82     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> MISSING_WHEN_ERR = "MISSING_WHEN_ERR";
+<a id='L83' name='L83'></a>  83     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> MULTIPLE_OTHERWISE_ERR = "MULTIPLE_OTHERWISE_ERR";
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> STRAY_OTHERWISE_ERR = "STRAY_OTHERWISE_ERR";
+<a id='L85' name='L85'></a>  85     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> STRAY_WHEN_ERR = "STRAY_WHEN_ERR";
+<a id='L86' name='L86'></a>  86     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> WHEN_ELEMENT_ERR = "WHEN_ELEMENT_ERR";
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> UNNAMED_ATTRIBSET_ERR = "UNNAMED_ATTRIBSET_ERR";
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_CHILD_ERR = "ILLEGAL_CHILD_ERR";
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_ELEM_NAME_ERR = "ILLEGAL_ELEM_NAME_ERR";
+<a id='L90' name='L90'></a>  90     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_ATTR_NAME_ERR = "ILLEGAL_ATTR_NAME_ERR";
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_TEXT_NODE_ERR = "ILLEGAL_TEXT_NODE_ERR";
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> SAX_PARSER_CONFIG_ERR = "SAX_PARSER_CONFIG_ERR";
+<a id='L93' name='L93'></a>  93     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> INTERNAL_ERR = "INTERNAL_ERR";
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> UNSUPPORTED_XSL_ERR = "UNSUPPORTED_XSL_ERR";
+<a id='L95' name='L95'></a>  95     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> UNSUPPORTED_EXT_ERR = "UNSUPPORTED_EXT_ERR";
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> MISSING_XSLT_URI_ERR = "MISSING_XSLT_URI_ERR";
+<a id='L97' name='L97'></a>  97     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> MISSING_XSLT_TARGET_ERR = "MISSING_XSLT_TARGET_ERR";
+<a id='L98' name='L98'></a>  98     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ACCESSING_XSLT_TARGET_ERR = "ACCESSING_XSLT_TARGET_ERR";
+<a id='L99' name='L99'></a>  99     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NOT_IMPLEMENTED_ERR = "NOT_IMPLEMENTED_ERR";
+<a id='L100' name='L100'></a> 100     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NOT_STYLESHEET_ERR = "NOT_STYLESHEET_ERR";
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ELEMENT_PARSE_ERR = "ELEMENT_PARSE_ERR";
+<a id='L102' name='L102'></a> 102     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> KEY_USE_ATTR_ERR = "KEY_USE_ATTR_ERR";
+<a id='L103' name='L103'></a> 103     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> OUTPUT_VERSION_ERR = "OUTPUT_VERSION_ERR";
+<a id='L104' name='L104'></a> 104     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_RELAT_OP_ERR = "ILLEGAL_RELAT_OP_ERR";
+<a id='L105' name='L105'></a> 105     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ATTRIBSET_UNDEF_ERR = "ATTRIBSET_UNDEF_ERR";
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ATTR_VAL_TEMPLATE_ERR = "ATTR_VAL_TEMPLATE_ERR";
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> UNKNOWN_SIG_TYPE_ERR = "UNKNOWN_SIG_TYPE_ERR";
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DATA_CONVERSION_ERR = "DATA_CONVERSION_ERR";
+<a id='L109' name='L109'></a> 109 
+<a id='L110' name='L110'></a> 110     <em class='comment'>// JAXP/TrAX error messages</em>
+<a id='L111' name='L111'></a> 111     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NO_TRANSLET_CLASS_ERR = "NO_TRANSLET_CLASS_ERR";
+<a id='L112' name='L112'></a> 112     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NO_MAIN_TRANSLET_ERR = "NO_MAIN_TRANSLET_ERR";
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TRANSLET_CLASS_ERR = "TRANSLET_CLASS_ERR";
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TRANSLET_OBJECT_ERR = "TRANSLET_OBJECT_ERR";
+<a id='L115' name='L115'></a> 115     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ERROR_LISTENER_NULL_ERR = "ERROR_LISTENER_NULL_ERR";
+<a id='L116' name='L116'></a> 116     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_UNKNOWN_SOURCE_ERR = "JAXP_UNKNOWN_SOURCE_ERR";
+<a id='L117' name='L117'></a> 117     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_NO_SOURCE_ERR = "JAXP_NO_SOURCE_ERR";
+<a id='L118' name='L118'></a> 118     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_COMPILE_ERR = "JAXP_COMPILE_ERR";
+<a id='L119' name='L119'></a> 119     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_INVALID_ATTR_ERR = "JAXP_INVALID_ATTR_ERR";
+<a id='L120' name='L120'></a> 120     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_INVALID_ATTR_VALUE_ERR = "JAXP_INVALID_ATTR_VALUE_ERR";
+<a id='L121' name='L121'></a> 121     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_SET_RESULT_ERR = "JAXP_SET_RESULT_ERR";
+<a id='L122' name='L122'></a> 122     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_NO_TRANSLET_ERR = "JAXP_NO_TRANSLET_ERR";
+<a id='L123' name='L123'></a> 123     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_NO_HANDLER_ERR = "JAXP_NO_HANDLER_ERR";
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_NO_RESULT_ERR = "JAXP_NO_RESULT_ERR";
+<a id='L125' name='L125'></a> 125     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_UNKNOWN_PROP_ERR = "JAXP_UNKNOWN_PROP_ERR";
+<a id='L126' name='L126'></a> 126     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> SAX2DOM_ADAPTER_ERR = "SAX2DOM_ADAPTER_ERR";
+<a id='L127' name='L127'></a> 127     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> XSLTC_SOURCE_ERR = "XSLTC_SOURCE_ERR";
+<a id='L128' name='L128'></a> 128     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ER_RESULT_NULL = "ER_RESULT_NULL";
+<a id='L129' name='L129'></a> 129     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_INVALID_SET_PARAM_VALUE = "JAXP_INVALID_SET_PARAM_VALUE";
+<a id='L130' name='L130'></a> 130     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_SET_FEATURE_NULL_NAME = "JAXP_SET_FEATURE_NULL_NAME";
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_GET_FEATURE_NULL_NAME = "JAXP_GET_FEATURE_NULL_NAME";
+<a id='L132' name='L132'></a> 132     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_UNSUPPORTED_FEATURE = "JAXP_UNSUPPORTED_FEATURE";
+<a id='L133' name='L133'></a> 133     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAXP_SECUREPROCESSING_FEATURE = "JAXP_SECUREPROCESSING_FEATURE";
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135     <em class='comment'>// Command-line error messages</em>
+<a id='L136' name='L136'></a> 136     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> COMPILE_STDIN_ERR = "COMPILE_STDIN_ERR";
+<a id='L137' name='L137'></a> 137     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> COMPILE_USAGE_STR = "COMPILE_USAGE_STR";
+<a id='L138' name='L138'></a> 138     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TRANSFORM_USAGE_STR = "TRANSFORM_USAGE_STR";
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140     <em class='comment'>// Recently added error messages</em>
+<a id='L141' name='L141'></a> 141     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> STRAY_SORT_ERR = "STRAY_SORT_ERR";
+<a id='L142' name='L142'></a> 142     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> UNSUPPORTED_ENCODING = "UNSUPPORTED_ENCODING";
+<a id='L143' name='L143'></a> 143     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> SYNTAX_ERR = "SYNTAX_ERR";
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> CONSTRUCTOR_NOT_FOUND = "CONSTRUCTOR_NOT_FOUND";
+<a id='L145' name='L145'></a> 145     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NO_JAVA_FUNCT_THIS_REF = "NO_JAVA_FUNCT_THIS_REF";
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TYPE_CHECK_ERR = "TYPE_CHECK_ERR";
+<a id='L147' name='L147'></a> 147     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TYPE_CHECK_UNK_LOC_ERR = "TYPE_CHECK_UNK_LOC_ERR";
+<a id='L148' name='L148'></a> 148     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ILLEGAL_CMDLINE_OPTION_ERR = "ILLEGAL_CMDLINE_OPTION_ERR";
+<a id='L149' name='L149'></a> 149     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> CMDLINE_OPT_MISSING_ARG_ERR = "CMDLINE_OPT_MISSING_ARG_ERR";
+<a id='L150' name='L150'></a> 150     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> WARNING_PLUS_WRAPPED_MSG = "WARNING_PLUS_WRAPPED_MSG";
+<a id='L151' name='L151'></a> 151     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> WARNING_MSG = "WARNING_MSG";
+<a id='L152' name='L152'></a> 152     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> FATAL_ERR_PLUS_WRAPPED_MSG = "FATAL_ERR_PLUS_WRAPPED_MSG";
+<a id='L153' name='L153'></a> 153     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> FATAL_ERR_MSG = "FATAL_ERR_MSG";
+<a id='L154' name='L154'></a> 154     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ERROR_PLUS_WRAPPED_MSG = "ERROR_PLUS_WRAPPED_MSG";
+<a id='L155' name='L155'></a> 155     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ERROR_MSG = "ERROR_MSG";
+<a id='L156' name='L156'></a> 156     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TRANSFORM_WITH_TRANSLET_STR = "TRANSFORM_WITH_TRANSLET_STR";
+<a id='L157' name='L157'></a> 157     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TRANSFORM_WITH_JAR_STR = "TRANSFORM_WITH_JAR_STR";
+<a id='L158' name='L158'></a> 158     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> COULD_NOT_CREATE_TRANS_FACT = "COULD_NOT_CREATE_TRANS_FACT";
+<a id='L159' name='L159'></a> 159     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> TRANSLET_NAME_JAVA_CONFLICT =
+<a id='L160' name='L160'></a> 160                                                  "TRANSLET_NAME_JAVA_CONFLICT";
+<a id='L161' name='L161'></a> 161     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> INVALID_QNAME_ERR = "INVALID_QNAME_ERR";
+<a id='L162' name='L162'></a> 162     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> INVALID_NCNAME_ERR = "INVALID_NCNAME_ERR";
+<a id='L163' name='L163'></a> 163     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> INVALID_METHOD_IN_OUTPUT = "INVALID_METHOD_IN_OUTPUT";
+<a id='L164' name='L164'></a> 164 
+<a id='L165' name='L165'></a> 165     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> OUTLINE_ERR_TRY_CATCH = "OUTLINE_ERR_TRY_CATCH";
+<a id='L166' name='L166'></a> 166     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> OUTLINE_ERR_UNBALANCED_MARKERS =
+<a id='L167' name='L167'></a> 167                                             "OUTLINE_ERR_UNBALANCED_MARKERS";
+<a id='L168' name='L168'></a> 168     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> OUTLINE_ERR_DELETED_TARGET =
+<a id='L169' name='L169'></a> 169                                             "OUTLINE_ERR_DELETED_TARGET";
+<a id='L170' name='L170'></a> 170     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> OUTLINE_ERR_METHOD_TOO_BIG =
+<a id='L171' name='L171'></a> 171                                             "OUTLINE_ERR_METHOD_TOO_BIG";
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DESERIALIZE_TRANSLET_ERR = "DESERIALIZE_TEMPLATES_ERR";
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175     <em class='comment'>// All error messages are localized and are stored in resource bundles.</em>
+<a id='L176' name='L176'></a> 176     <em class='comment'>// This array and the following 4 strings are read from that bundle.</em>
+<a id='L177' name='L177'></a> 177     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/853.html#L287' title='Defined at 287 in src/java/util/ResourceBundle.java.'>ResourceBundle</a> _bundle;
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> ERROR_MESSAGES_KEY   = "ERROR_MESSAGES_KEY";
+<a id='L180' name='L180'></a> 180     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> COMPILER_ERROR_KEY   = "COMPILER_ERROR_KEY";
+<a id='L181' name='L181'></a> 181     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> COMPILER_WARNING_KEY = "COMPILER_WARNING_KEY";
+<a id='L182' name='L182'></a> 182     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> RUNTIME_ERROR_KEY    = "RUNTIME_ERROR_KEY";
+<a id='L183' name='L183'></a> 183 
+<a id='L184' name='L184'></a> 184     <strong class='reserved'>static</strong> <em class='brace'>{</em>
+<a id='L185' name='L185'></a> 185         _bundle = <a href='../D/7684.html' title='Multiple defined in 12 places.'>SecuritySupport</a>.<a href='../D/22048.html' title='Multiple defined in 9 places.'>getResourceBundle</a>(
+<a id='L186' name='L186'></a> 186                           "com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMessages",
+<a id='L187' name='L187'></a> 187                           <a href='../S/1034.html#L484' title='Defined at 484 in src/java/util/Locale.java.'>Locale</a>.<a href='../D/18273.html' title='Multiple defined in 13 places.'>getDefault</a>());
+<a id='L188' name='L188'></a> 188     <em class='brace'>}</em>
+<a id='L189' name='L189'></a> 189 
+<a id='L190' name='L190'></a> 190     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code) <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191         _code = code;
+<a id='L192' name='L192'></a> 192         _line = 0;
+<a id='L193' name='L193'></a> 193     <em class='brace'>}</em>
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> e) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196         _code = code;
+<a id='L197' name='L197'></a> 197         _message = e.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>();
+<a id='L198' name='L198'></a> 198         _line = 0;
+<a id='L199' name='L199'></a> 199         _cause = e;
+<a id='L200' name='L200'></a> 200     <em class='brace'>}</em>
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>, <strong class='reserved'>int</strong> <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>) <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203         _code = <strong class='reserved'>null</strong>;
+<a id='L204' name='L204'></a> 204         _message = <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>;
+<a id='L205' name='L205'></a> 205         _line = <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>;
+<a id='L206' name='L206'></a> 206     <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <strong class='reserved'>int</strong> <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param) <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209         _code = code;
+<a id='L210' name='L210'></a> 210         _line = <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>;
+<a id='L211' name='L211'></a> 211         _params = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> param <em class='brace'>}</em>;
+<a id='L212' name='L212'></a> 212     <em class='brace'>}</em>
+<a id='L213' name='L213'></a> 213 
+<a id='L214' name='L214'></a> 214     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param) <em class='brace'>{</em>
+<a id='L215' name='L215'></a> 215         <strong class='reserved'>this</strong>(code);
+<a id='L216' name='L216'></a> 216         _params = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[1];
+<a id='L217' name='L217'></a> 217         _params[0] = param;
+<a id='L218' name='L218'></a> 218     <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219 
+<a id='L220' name='L220'></a> 220     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param1, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param2) <em class='brace'>{</em>
+<a id='L221' name='L221'></a> 221         <strong class='reserved'>this</strong>(code);
+<a id='L222' name='L222'></a> 222         _params = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[2];
+<a id='L223' name='L223'></a> 223         _params[0] = param1;
+<a id='L224' name='L224'></a> 224         _params[1] = param2;
+<a id='L225' name='L225'></a> 225     <em class='brace'>}</em>
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228         _code = code;
+<a id='L229' name='L229'></a> 229         _url  = <a href='../D/19055.html' title='Multiple defined in 13 places.'>getFileName</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L230' name='L230'></a> 230         _line = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/20122.html' title='Multiple defined in 41 places.'>getLineNumber</a>();
+<a id='L231' name='L231'></a> 231     <em class='brace'>}</em>
+<a id='L232' name='L232'></a> 232 
+<a id='L233' name='L233'></a> 233     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param1, <a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <em class='brace'>{</em>
+<a id='L234' name='L234'></a> 234         _code = code;
+<a id='L235' name='L235'></a> 235         _url  = <a href='../D/19055.html' title='Multiple defined in 13 places.'>getFileName</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L236' name='L236'></a> 236         _line = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/20122.html' title='Multiple defined in 41 places.'>getLineNumber</a>();
+<a id='L237' name='L237'></a> 237         _params = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[1];
+<a id='L238' name='L238'></a> 238         _params[0] = param1;
+<a id='L239' name='L239'></a> 239     <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241     <strong class='reserved'>public</strong> ErrorMsg(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> code, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param1, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> param2,
+<a id='L242' name='L242'></a> 242                     <a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <em class='brace'>{</em>
+<a id='L243' name='L243'></a> 243         _code = code;
+<a id='L244' name='L244'></a> 244         _url  = <a href='../D/19055.html' title='Multiple defined in 13 places.'>getFileName</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L245' name='L245'></a> 245         _line = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/20122.html' title='Multiple defined in 41 places.'>getLineNumber</a>();
+<a id='L246' name='L246'></a> 246         _params = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[2];
+<a id='L247' name='L247'></a> 247         _params[0] = param1;
+<a id='L248' name='L248'></a> 248         _params[1] = param2;
+<a id='L249' name='L249'></a> 249     <em class='brace'>}</em>
+<a id='L250' name='L250'></a> 250 
+<a id='L251' name='L251'></a> 251     <strong class='reserved'>public</strong> <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> <a href='../R/15467.html' title='Multiple referred from 93 places.'>getCause</a>() <em class='brace'>{</em>
+<a id='L252' name='L252'></a> 252         <strong class='reserved'>return</strong> _cause;
+<a id='L253' name='L253'></a> 253     <em class='brace'>}</em>
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16578.html' title='Multiple referred from 15 places.'>getFileName</a>(<a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <em class='brace'>{</em>
+<a id='L256' name='L256'></a> 256         <a href='../S/6198.html#L68' title='Defined at 68 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Stylesheet.java.'>Stylesheet</a> stylesheet = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/22812.html' title='Multiple defined in 7 places.'>getStylesheet</a>();
+<a id='L257' name='L257'></a> 257         <strong class='reserved'>if</strong> (stylesheet != <strong class='reserved'>null</strong>)
+<a id='L258' name='L258'></a> 258             <strong class='reserved'>return</strong> stylesheet.<a href='../D/22911.html' title='Multiple defined in 50 places.'>getSystemId</a>();
+<a id='L259' name='L259'></a> 259         <strong class='reserved'>else</strong>
+<a id='L260' name='L260'></a> 260             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L261' name='L261'></a> 261     <em class='brace'>}</em>
+<a id='L262' name='L262'></a> 262 
+<a id='L263' name='L263'></a> 263     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/14753.html' title='Multiple referred from 3 places.'>formatLine</a>() <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264         <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>();
+<a id='L265' name='L265'></a> 265         <strong class='reserved'>if</strong> (_url != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L266' name='L266'></a> 266             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(_url);
+<a id='L267' name='L267'></a> 267             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(": ");
+<a id='L268' name='L268'></a> 268         <em class='brace'>}</em>
+<a id='L269' name='L269'></a> 269         <strong class='reserved'>if</strong> (_line &gt; 0) <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("line ");
+<a id='L271' name='L271'></a> 271             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(_line));
+<a id='L272' name='L272'></a> 272             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(": ");
+<a id='L273' name='L273'></a> 273         <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L275' name='L275'></a> 275     <em class='brace'>}</em>
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277     <em class='comment'>/**</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * This version of toString() uses the _params instance variable</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * to format the message. If the &lt;code&gt;_code&lt;/code&gt; is negative</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * the use _message as the error string.</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     */</em>
+<a id='L282' name='L282'></a> 282     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> suffix = (_params == <strong class='reserved'>null</strong>) ?
+<a id='L284' name='L284'></a> 284             (<strong class='reserved'>null</strong> != _code ? <a href='../S/6100.html#L311' title='Defined at 311 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>getErrorMessage</a>() : _message)
+<a id='L285' name='L285'></a> 285             : <a href='../S/2460.html#L344' title='Defined at 344 in src/java/text/MessageFormat.java.'>MessageFormat</a>.<a href='../D/16531.html' title='Multiple defined in 87 places.'>format</a>(<a href='../S/6100.html#L311' title='Defined at 311 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>getErrorMessage</a>(), _params);
+<a id='L286' name='L286'></a> 286         <strong class='reserved'>return</strong> <a href='../S/6100.html#L263' title='Defined at 263 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>formatLine</a>() + suffix;
+<a id='L287' name='L287'></a> 287     <em class='brace'>}</em>
+<a id='L288' name='L288'></a> 288 
+<a id='L289' name='L289'></a> 289     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[] = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[1];
+<a id='L291' name='L291'></a> 291         <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[0] = obj.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L292' name='L292'></a> 292         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> suffix = <a href='../S/2460.html#L344' title='Defined at 344 in src/java/text/MessageFormat.java.'>MessageFormat</a>.<a href='../D/16531.html' title='Multiple defined in 87 places.'>format</a>(<a href='../S/6100.html#L311' title='Defined at 311 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>getErrorMessage</a>(), <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>);
+<a id='L293' name='L293'></a> 293         <strong class='reserved'>return</strong> <a href='../S/6100.html#L263' title='Defined at 263 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>formatLine</a>() + suffix;
+<a id='L294' name='L294'></a> 294     <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj0, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj1) <em class='brace'>{</em>
+<a id='L297' name='L297'></a> 297         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[] = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[2];
+<a id='L298' name='L298'></a> 298         <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[0] = obj0.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L299' name='L299'></a> 299         <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[1] = obj1.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L300' name='L300'></a> 300         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> suffix = <a href='../S/2460.html#L344' title='Defined at 344 in src/java/text/MessageFormat.java.'>MessageFormat</a>.<a href='../D/16531.html' title='Multiple defined in 87 places.'>format</a>(<a href='../S/6100.html#L311' title='Defined at 311 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>getErrorMessage</a>(), <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>);
+<a id='L301' name='L301'></a> 301         <strong class='reserved'>return</strong> <a href='../S/6100.html#L263' title='Defined at 263 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>formatLine</a>() + suffix;
+<a id='L302' name='L302'></a> 302     <em class='brace'>}</em>
+<a id='L303' name='L303'></a> 303 
+<a id='L304' name='L304'></a> 304     <em class='comment'>/**</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     * Return an ErrorMessages string corresponding to the _code</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * This function is temporary until the three special-cased keys</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     * below are moved into ErrorMessages</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'>     *</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>     * @return ErrorMessages string</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>     */</em>
+<a id='L311' name='L311'></a> 311     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16434.html' title='Multiple referred from 5 places.'>getErrorMessage</a>() <em class='brace'>{</em>
+<a id='L312' name='L312'></a> 312       <strong class='reserved'>return</strong> _bundle.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>(_code);
+<a id='L313' name='L313'></a> 313     <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314 
+<a id='L315' name='L315'></a> 315     <em class='comment'>// If the _isWarningError flag is true, the error is treated as</em>
+<a id='L316' name='L316'></a> 316     <em class='comment'>// a warning by the compiler, but should be reported as an error</em>
+<a id='L317' name='L317'></a> 317     <em class='comment'>// to the ErrorListener. This is a workaround for the TCK failure</em>
+<a id='L318' name='L318'></a> 318     <em class='comment'>// ErrorListener.errorTests.error001.</em>
+<a id='L319' name='L319'></a> 319     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/6089.html#L1081' title='Referred from 1081 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Parser.java.'>setWarningError</a>(<strong class='reserved'>boolean</strong> flag) <em class='brace'>{</em>
+<a id='L320' name='L320'></a> 320         _isWarningError = flag;
+<a id='L321' name='L321'></a> 321 <em class='brace'>}</em>
+<a id='L322' name='L322'></a> 322 
+<a id='L323' name='L323'></a> 323     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../S/6006.html#L813' title='Referred from 813 in src/com/sun/org/apache/xalan/internal/xsltc/trax/TransformerFactoryImpl.java.'>isWarningError</a>() <em class='brace'>{</em>
+<a id='L324' name='L324'></a> 324         <strong class='reserved'>return</strong> _isWarningError;
+<a id='L325' name='L325'></a> 325     <em class='brace'>}</em>
+<a id='L326' name='L326'></a> 326 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L251'>[^]</a><a href='#L323'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,1207 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/imageio/plugins/common/ImageUtil.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7817.html'>imageio</a>/<a href='../files/7818.html'>plugins</a>/<a href='../files/7820.html'>common</a>/ImageUtil.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L139'>[^]</a><a href='#L1127'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L139' title='Defined at 139.'>createColorModel</a></li>
+<li><a href='#L259' title='Defined at 259.'>getPackedBinaryData</a></li>
+<li><a href='#L444' title='Defined at 444.'>getUnpackedBinaryData</a></li>
+<li><a href='#L526' title='Defined at 526.'>setPackedBinaryData</a></li>
+<li><a href='#L776' title='Defined at 776.'>setUnpackedBinaryData</a></li>
+<li><a href='#L848' title='Defined at 848.'>isBinary</a></li>
+<li><a href='#L854' title='Defined at 854.'>createColorModel</a></li>
+<li><a href='#L953' title='Defined at 953.'>getElementSize</a></li>
+<li><a href='#L970' title='Defined at 970.'>getTileSize</a></li>
+<li><a href='#L1012' title='Defined at 1012.'>getBandSize</a></li>
+<li><a href='#L1038' title='Defined at 1038.'>isIndicesForGrayscale</a></li>
+<li><a href='#L1058' title='Defined at 1058.'>convertObjectToString</a></li>
+<li><a href='#L1095' title='Defined at 1095.'>canEncodeImage</a></li>
+<li><a href='#L1114' title='Defined at 1114.'>canEncodeImage</a></li>
+<li><a href='#L1127' title='Defined at 1127.'>imageIsContiguous</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.imageio.plugins.common;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.Point;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.Rectangle;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.awt.Transparency;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.awt.color.ColorSpace;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.awt.image.BufferedImage;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.awt.image.ColorModel;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.awt.image.ComponentColorModel;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.awt.image.ComponentSampleModel;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.awt.image.DataBuffer;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.awt.image.DataBufferByte;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.awt.image.DataBufferInt;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.awt.image.DataBufferShort;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.awt.image.DataBufferUShort;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> java.awt.image.DirectColorModel;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> java.awt.image.IndexColorModel;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> java.awt.image.MultiPixelPackedSampleModel;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> java.awt.image.Raster;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> java.awt.image.RenderedImage;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> java.awt.image.SampleModel;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> java.awt.image.SinglePixelPackedSampleModel;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> java.awt.image.WritableRaster;
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> java.util.Arrays;
+<a id='L50' name='L50'></a>  50 
+<a id='L51' name='L51'></a>  51 <em class='comment'>//import javax.imageio.ImageTypeSpecifier;</em>
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> javax.imageio.IIOException;
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> javax.imageio.IIOImage;
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> javax.imageio.ImageTypeSpecifier;
+<a id='L56' name='L56'></a>  56 <strong class='reserved'>import</strong> javax.imageio.ImageWriter;
+<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> javax.imageio.spi.ImageWriterSpi;
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/3735.html' title='Multiple referred from 11 places.'>ImageUtil</a> <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60     <em class='comment'>/* XXX testing only</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>    public static void main(String[] args) {</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>        ImageTypeSpecifier bilevel =</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>            ImageTypeSpecifier.createIndexed(new byte[] {(byte)0, (byte)255},</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>                                             new byte[] {(byte)0, (byte)255},</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>                                             new byte[] {(byte)0, (byte)255},</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>                                             null, 1,</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>                                             DataBuffer.TYPE_BYTE);</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>        ImageTypeSpecifier gray =</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>            ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false);</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>        ImageTypeSpecifier grayAlpha =</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>            ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false,</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>                                               false);</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>        ImageTypeSpecifier rgb =</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>            ImageTypeSpecifier.createInterleaved(ColorSpace.getInstance(ColorSpace.CS_sRGB),</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>                                                 new int[] {0, 1, 2},</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>                                                 DataBuffer.TYPE_BYTE,</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>                                                 false,</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>                                                 false);</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>        ImageTypeSpecifier rgba =</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>            ImageTypeSpecifier.createInterleaved(ColorSpace.getInstance(ColorSpace.CS_sRGB),</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>                                                 new int[] {0, 1, 2, 3},</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>                                                 DataBuffer.TYPE_BYTE,</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>                                                 true,</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>                                                 false);</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>        ImageTypeSpecifier packed =</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>            ImageTypeSpecifier.createPacked(ColorSpace.getInstance(ColorSpace.CS_sRGB),</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>                                            0xff000000,</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>                                            0x00ff0000,</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>                                            0x0000ff00,</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>                                            0x000000ff,</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>                                            DataBuffer.TYPE_BYTE,</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>                                            false);</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'></em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>        SampleModel bandedSM =</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>            new java.awt.image.BandedSampleModel(DataBuffer.TYPE_BYTE,</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>                                                 1, 1, 15);</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'></em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>        System.out.println(createColorModel(bilevel.getSampleModel()));</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>        System.out.println(createColorModel(gray.getSampleModel()));</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>        System.out.println(createColorModel(grayAlpha.getSampleModel()));</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>        System.out.println(createColorModel(rgb.getSampleModel()));</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>        System.out.println(createColorModel(rgba.getSampleModel()));</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>        System.out.println(createColorModel(packed.getSampleModel()));</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>        System.out.println(createColorModel(bandedSM));</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>    }</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>    */</em>
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108     <em class='comment'>/**</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * Creates a &lt;code&gt;ColorModel&lt;/code&gt; that may be used with the</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * specified &lt;code&gt;SampleModel&lt;/code&gt;.  If a suitable</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * &lt;code&gt;ColorModel&lt;/code&gt; cannot be found, this method returns</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * &lt;p&gt; Suitable &lt;code&gt;ColorModel&lt;/code&gt;s are guaranteed to exist</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * for all instances of &lt;code&gt;ComponentSampleModel&lt;/code&gt;.</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * For 1- and 3- banded &lt;code&gt;SampleModel&lt;/code&gt;s, the returned</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * &lt;code&gt;ColorModel&lt;/code&gt; will be opaque.  For 2- and 4-banded</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * &lt;code&gt;SampleModel&lt;/code&gt;s, the output will use alpha transparency</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * which is not premultiplied.  1- and 2-banded data will use a</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * grayscale &lt;code&gt;ColorSpace&lt;/code&gt;, and 3- and 4-banded data a sRGB</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * &lt;code&gt;ColorSpace&lt;/code&gt;. Data with 5 or more bands will have a</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * &lt;code&gt;BogusColorSpace&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     *</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * &lt;p&gt;An instance of &lt;code&gt;DirectColorModel&lt;/code&gt; will be created for</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * instances of &lt;code&gt;SinglePixelPackedSampleModel&lt;/code&gt; with no more</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * than 4 bands.&lt;/p&gt;</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     *</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * &lt;p&gt;An instance of &lt;code&gt;IndexColorModel&lt;/code&gt; will be created for</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * instances of &lt;code&gt;MultiPixelPackedSampleModel&lt;/code&gt;. The colormap</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * will be a grayscale ramp with &lt;code&gt;1&amp;nbsp;&lt;&lt;&amp;nbsp;numberOfBits&lt;/code&gt;</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * entries ranging from zero to at most 255.&lt;/p&gt;</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     *</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * @return An instance of &lt;code&gt;ColorModel&lt;/code&gt; that is suitable for</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     *         the supplied &lt;code&gt;SampleModel&lt;/code&gt;, or &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     *</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * @throws IllegalArgumentException  If &lt;code&gt;sampleModel&lt;/code&gt; is</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     *         &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     */</em>
+<a id='L139' name='L139'></a> 139     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> <a href='../R/12280.html' title='Multiple referred from 3 places.'>createColorModel</a>(<a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sampleModel) <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140         <em class='comment'>// Check the parameter.</em>
+<a id='L141' name='L141'></a> 141         <strong class='reserved'>if</strong>(sampleModel == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L142' name='L142'></a> 142             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("sampleModel == null!");
+<a id='L143' name='L143'></a> 143         <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145         <em class='comment'>// Get the data type.</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>int</strong> dataType = sampleModel.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>();
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148         <em class='comment'>// Check the data type</em>
+<a id='L149' name='L149'></a> 149         <strong class='reserved'>switch</strong>(dataType) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>case</strong> <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE:
+<a id='L151' name='L151'></a> 151         <strong class='reserved'>case</strong> <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_USHORT:
+<a id='L152' name='L152'></a> 152         <strong class='reserved'>case</strong> <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_SHORT:
+<a id='L153' name='L153'></a> 153         <strong class='reserved'>case</strong> <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_INT:
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>case</strong> <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_FLOAT:
+<a id='L155' name='L155'></a> 155         <strong class='reserved'>case</strong> <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_DOUBLE:
+<a id='L156' name='L156'></a> 156             <strong class='reserved'>break</strong>;
+<a id='L157' name='L157'></a> 157         <strong class='reserved'>default</strong>:
+<a id='L158' name='L158'></a> 158             <em class='comment'>// Return null for other types.</em>
+<a id='L159' name='L159'></a> 159             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L160' name='L160'></a> 160         <em class='brace'>}</em>
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162         <em class='comment'>// The return variable.</em>
+<a id='L163' name='L163'></a> 163         <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> colorModel = <strong class='reserved'>null</strong>;
+<a id='L164' name='L164'></a> 164 
+<a id='L165' name='L165'></a> 165         <em class='comment'>// Get the sample size.</em>
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>int</strong>[] sampleSize = sampleModel.<a href='../D/22227.html' title='Multiple defined in 8 places.'>getSampleSize</a>();
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168         <em class='comment'>// Create a Component ColorModel.</em>
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>if</strong>(sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>) <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170             <em class='comment'>// Get the number of bands.</em>
+<a id='L171' name='L171'></a> 171             <strong class='reserved'>int</strong> numBands = sampleModel.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>();
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173             <em class='comment'>// Determine the color space.</em>
+<a id='L174' name='L174'></a> 174             <a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a> colorSpace = <strong class='reserved'>null</strong>;
+<a id='L175' name='L175'></a> 175             <strong class='reserved'>if</strong>(numBands &lt;= 2) <em class='brace'>{</em>
+<a id='L176' name='L176'></a> 176                 colorSpace = <a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(<a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.CS_GRAY);
+<a id='L177' name='L177'></a> 177             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(numBands &lt;= 4) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178                 colorSpace = <a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(<a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.CS_sRGB);
+<a id='L179' name='L179'></a> 179             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L180' name='L180'></a> 180                 colorSpace = <strong class='reserved'>new</strong> <a href='../S/6788.html#L34' title='Defined at 34 in src/com/sun/imageio/plugins/common/BogusColorSpace.java.'>BogusColorSpace</a>(numBands);
+<a id='L181' name='L181'></a> 181             <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>boolean</strong> <a href='../S/2256.html#L406' title='Defined at 406 in src/java/awt/image/ColorModel.java.'>hasAlpha</a> = (numBands == 2) || (numBands == 4);
+<a id='L184' name='L184'></a> 184             <strong class='reserved'>boolean</strong> <a href='../D/25179.html' title='Multiple defined in 2 places.'>isAlphaPremultiplied</a> = <strong class='reserved'>false</strong>;
+<a id='L185' name='L185'></a> 185             <strong class='reserved'>int</strong> transparency = <a href='../S/2256.html#L406' title='Defined at 406 in src/java/awt/image/ColorModel.java.'>hasAlpha</a> ?
+<a id='L186' name='L186'></a> 186                 <a href='../S/2170.html#L34' title='Defined at 34 in src/java/awt/Transparency.java.'>Transparency</a>.TRANSLUCENT : <a href='../S/2170.html#L34' title='Defined at 34 in src/java/awt/Transparency.java.'>Transparency</a>.OPAQUE;
+<a id='L187' name='L187'></a> 187 
+<a id='L188' name='L188'></a> 188             colorModel = <strong class='reserved'>new</strong> <a href='../S/2267.html#L177' title='Defined at 177 in src/java/awt/image/ComponentColorModel.java.'>ComponentColorModel</a>(colorSpace,
+<a id='L189' name='L189'></a> 189                                                  sampleSize,
+<a id='L190' name='L190'></a> 190                                                  <a href='../S/2256.html#L406' title='Defined at 406 in src/java/awt/image/ColorModel.java.'>hasAlpha</a>,
+<a id='L191' name='L191'></a> 191                                                  <a href='../D/25179.html' title='Multiple defined in 2 places.'>isAlphaPremultiplied</a>,
+<a id='L192' name='L192'></a> 192                                                  transparency,
+<a id='L193' name='L193'></a> 193                                                  dataType);
+<a id='L194' name='L194'></a> 194         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sampleModel.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>() &lt;= 4 &amp;&amp;
+<a id='L195' name='L195'></a> 195                    sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196             <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a> sppsm =
+<a id='L197' name='L197'></a> 197                 (<a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>)sampleModel;
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199             <strong class='reserved'>int</strong>[] bitMasks = sppsm.<a href='../S/2273.html#L285' title='Defined at 285 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>getBitMasks</a>();
+<a id='L200' name='L200'></a> 200             <strong class='reserved'>int</strong> rmask = 0;
+<a id='L201' name='L201'></a> 201             <strong class='reserved'>int</strong> gmask = 0;
+<a id='L202' name='L202'></a> 202             <strong class='reserved'>int</strong> bmask = 0;
+<a id='L203' name='L203'></a> 203             <strong class='reserved'>int</strong> amask = 0;
+<a id='L204' name='L204'></a> 204 
+<a id='L205' name='L205'></a> 205             <strong class='reserved'>int</strong> numBands = bitMasks.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L206' name='L206'></a> 206             <strong class='reserved'>if</strong> (numBands &lt;= 2) <em class='brace'>{</em>
+<a id='L207' name='L207'></a> 207                 rmask = gmask = bmask = bitMasks[0];
+<a id='L208' name='L208'></a> 208                 <strong class='reserved'>if</strong> (numBands == 2) <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209                     amask = bitMasks[1];
+<a id='L210' name='L210'></a> 210                 <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L212' name='L212'></a> 212                 rmask = bitMasks[0];
+<a id='L213' name='L213'></a> 213                 gmask = bitMasks[1];
+<a id='L214' name='L214'></a> 214                 bmask = bitMasks[2];
+<a id='L215' name='L215'></a> 215                 <strong class='reserved'>if</strong> (numBands == 4) <em class='brace'>{</em>
+<a id='L216' name='L216'></a> 216                     amask = bitMasks[3];
+<a id='L217' name='L217'></a> 217                 <em class='brace'>}</em>
+<a id='L218' name='L218'></a> 218             <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219 
+<a id='L220' name='L220'></a> 220             <strong class='reserved'>int</strong> bits = 0;
+<a id='L221' name='L221'></a> 221             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; sampleSize.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L222' name='L222'></a> 222                 bits += sampleSize[i];
+<a id='L223' name='L223'></a> 223             <em class='brace'>}</em>
+<a id='L224' name='L224'></a> 224 
+<a id='L225' name='L225'></a> 225             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2270.html#L109' title='Defined at 109 in src/java/awt/image/DirectColorModel.java.'>DirectColorModel</a>(bits, rmask, gmask, bmask, amask);
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228             <em class='comment'>// Load the colormap with a ramp.</em>
+<a id='L229' name='L229'></a> 229             <strong class='reserved'>int</strong> bitsPerSample = sampleSize[0];
+<a id='L230' name='L230'></a> 230             <strong class='reserved'>int</strong> numEntries = 1 &lt;&lt; bitsPerSample;
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>byte</strong>[] <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[numEntries];
+<a id='L232' name='L232'></a> 232             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; numEntries; i++) <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233                 <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>[i] = (<strong class='reserved'>byte</strong>)(i*255/(numEntries - 1));
+<a id='L234' name='L234'></a> 234             <em class='brace'>}</em>
+<a id='L235' name='L235'></a> 235 
+<a id='L236' name='L236'></a> 236             colorModel = <strong class='reserved'>new</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>(bitsPerSample, numEntries,
+<a id='L237' name='L237'></a> 237                                              <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>, <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>, <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>);
+<a id='L238' name='L238'></a> 238 
+<a id='L239' name='L239'></a> 239         <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241         <strong class='reserved'>return</strong> colorModel;
+<a id='L242' name='L242'></a> 242     <em class='brace'>}</em>
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244     <em class='comment'>/**</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * For the case of binary data (&lt;code&gt;isBinary()&lt;/code&gt; returns</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * &lt;code&gt;true&lt;/code&gt;), return the binary data as a packed byte array.</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * The data will be packed as eight bits per byte with no bit offset,</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * i.e., the first bit in each image line will be the left-most of the</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * first byte of the line.  The line stride in bytes will be</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * &lt;code&gt;(int)((getWidth()+7)/8)&lt;/code&gt;.  The length of the returned</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     * array will be the line stride multiplied by &lt;code&gt;getHeight()&lt;/code&gt;</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     *</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     * @return the binary data as a packed array of bytes with zero offset</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * of &lt;code&gt;null&lt;/code&gt; if the data are not binary.</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     * @throws IllegalArgumentException if &lt;code&gt;isBinary()&lt;/code&gt; returns</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; with the &lt;code&gt;SampleModel&lt;/code&gt; of the</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     * supplied &lt;code&gt;Raster&lt;/code&gt; as argument.</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     */</em>
+<a id='L259' name='L259'></a> 259     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>byte</strong>[] getPackedBinaryData(<a href='../S/2238.html#L126' title='Defined at 126 in src/java/awt/image/Raster.java.'>Raster</a> raster,
+<a id='L260' name='L260'></a> 260                                              <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> rect) <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm = raster.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
+<a id='L262' name='L262'></a> 262         <strong class='reserved'>if</strong>(!<a href='../S/6793.html#L848' title='Defined at 848 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>isBinary</a>(sm)) <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("ImageUtil0"));
+<a id='L264' name='L264'></a> 264         <em class='brace'>}</em>
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266         <strong class='reserved'>int</strong> rectX = rect.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
+<a id='L267' name='L267'></a> 267         <strong class='reserved'>int</strong> rectY = rect.y;
+<a id='L268' name='L268'></a> 268         <strong class='reserved'>int</strong> rectWidth = rect.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>;
+<a id='L269' name='L269'></a> 269         <strong class='reserved'>int</strong> rectHeight = rect.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>;
+<a id='L270' name='L270'></a> 270 
+<a id='L271' name='L271'></a> 271         <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a> dataBuffer = raster.<a href='../S/2238.html#L1429' title='Defined at 1429 in src/java/awt/image/Raster.java.'>getDataBuffer</a>();
+<a id='L272' name='L272'></a> 272 
+<a id='L273' name='L273'></a> 273         <strong class='reserved'>int</strong> dx = rectX - raster.<a href='../S/2238.html#L1142' title='Defined at 1142 in src/java/awt/image/Raster.java.'>getSampleModelTranslateX</a>();
+<a id='L274' name='L274'></a> 274         <strong class='reserved'>int</strong> dy = rectY - raster.<a href='../S/2238.html#L1154' title='Defined at 1154 in src/java/awt/image/Raster.java.'>getSampleModelTranslateY</a>();
+<a id='L275' name='L275'></a> 275 
+<a id='L276' name='L276'></a> 276         <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> mpp = (<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm;
+<a id='L277' name='L277'></a> 277         <strong class='reserved'>int</strong> lineStride = mpp.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
+<a id='L278' name='L278'></a> 278         <strong class='reserved'>int</strong> eltOffset = dataBuffer.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>() + mpp.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>(dx, dy);
+<a id='L279' name='L279'></a> 279         <strong class='reserved'>int</strong> bitOffset = mpp.<a href='../D/17263.html' title='Multiple defined in 3 places.'>getBitOffset</a>(dx);
+<a id='L280' name='L280'></a> 280 
+<a id='L281' name='L281'></a> 281         <strong class='reserved'>int</strong> numBytesPerRow = (rectWidth + 7)/8;
+<a id='L282' name='L282'></a> 282         <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a> &amp;&amp;
+<a id='L283' name='L283'></a> 283            eltOffset == 0 &amp;&amp; bitOffset == 0 &amp;&amp;
+<a id='L284' name='L284'></a> 284            numBytesPerRow == lineStride &amp;&amp;
+<a id='L285' name='L285'></a> 285            ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ==
+<a id='L286' name='L286'></a> 286            numBytesPerRow*rectHeight) <em class='brace'>{</em>
+<a id='L287' name='L287'></a> 287             <strong class='reserved'>return</strong> ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L288' name='L288'></a> 288         <em class='brace'>}</em>
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290         <strong class='reserved'>byte</strong>[] binaryDataArray = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[numBytesPerRow*rectHeight];
+<a id='L291' name='L291'></a> 291 
+<a id='L292' name='L292'></a> 292         <strong class='reserved'>int</strong> b = 0;
+<a id='L293' name='L293'></a> 293 
+<a id='L294' name='L294'></a> 294         <strong class='reserved'>if</strong>(bitOffset == 0) <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295             <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>) <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296                 <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L297' name='L297'></a> 297                 <strong class='reserved'>int</strong> stride = numBytesPerRow;
+<a id='L298' name='L298'></a> 298                 <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = 0;
+<a id='L299' name='L299'></a> 299                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, eltOffset,
+<a id='L301' name='L301'></a> 301                                      binaryDataArray, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L302' name='L302'></a> 302                                      stride);
+<a id='L303' name='L303'></a> 303                     <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += stride;
+<a id='L304' name='L304'></a> 304                     eltOffset += lineStride;
+<a id='L305' name='L305'></a> 305                 <em class='brace'>}</em>
+<a id='L306' name='L306'></a> 306             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ||
+<a id='L307' name='L307'></a> 307                       dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>) <em class='brace'>{</em>
+<a id='L308' name='L308'></a> 308                 <strong class='reserved'>short</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ?
+<a id='L309' name='L309'></a> 309                     ((<a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>() :
+<a id='L310' name='L310'></a> 310                     ((<a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L313' name='L313'></a> 313                     <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L314' name='L314'></a> 314                     <strong class='reserved'>int</strong> i = eltOffset;
+<a id='L315' name='L315'></a> 315                     <strong class='reserved'>while</strong>(xRemaining &gt; 8) <em class='brace'>{</em>
+<a id='L316' name='L316'></a> 316                         <strong class='reserved'>short</strong> datum = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i++];
+<a id='L317' name='L317'></a> 317                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)((datum &gt;&gt;&gt; 8) &amp; 0xFF);
+<a id='L318' name='L318'></a> 318                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)(datum &amp; 0xFF);
+<a id='L319' name='L319'></a> 319                         xRemaining -= 16;
+<a id='L320' name='L320'></a> 320                     <em class='brace'>}</em>
+<a id='L321' name='L321'></a> 321                     <strong class='reserved'>if</strong>(xRemaining &gt; 0) <em class='brace'>{</em>
+<a id='L322' name='L322'></a> 322                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &gt;&gt;&gt; 8) &amp; 0XFF);
+<a id='L323' name='L323'></a> 323                     <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324                     eltOffset += lineStride;
+<a id='L325' name='L325'></a> 325                 <em class='brace'>}</em>
+<a id='L326' name='L326'></a> 326             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>) <em class='brace'>{</em>
+<a id='L327' name='L327'></a> 327                 <strong class='reserved'>int</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L328' name='L328'></a> 328 
+<a id='L329' name='L329'></a> 329                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L330' name='L330'></a> 330                     <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L331' name='L331'></a> 331                     <strong class='reserved'>int</strong> i = eltOffset;
+<a id='L332' name='L332'></a> 332                     <strong class='reserved'>while</strong>(xRemaining &gt; 24) <em class='brace'>{</em>
+<a id='L333' name='L333'></a> 333                         <strong class='reserved'>int</strong> datum = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i++];
+<a id='L334' name='L334'></a> 334                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)((datum &gt;&gt;&gt; 24) &amp; 0xFF);
+<a id='L335' name='L335'></a> 335                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)((datum &gt;&gt;&gt; 16) &amp; 0xFF);
+<a id='L336' name='L336'></a> 336                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)((datum &gt;&gt;&gt; 8) &amp; 0xFF);
+<a id='L337' name='L337'></a> 337                         binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)(datum &amp; 0xFF);
+<a id='L338' name='L338'></a> 338                         xRemaining -= 32;
+<a id='L339' name='L339'></a> 339                     <em class='brace'>}</em>
+<a id='L340' name='L340'></a> 340                     <strong class='reserved'>int</strong> <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a> = 24;
+<a id='L341' name='L341'></a> 341                     <strong class='reserved'>while</strong>(xRemaining &gt; 0) <em class='brace'>{</em>
+<a id='L342' name='L342'></a> 342                         binaryDataArray[b++] =
+<a id='L343' name='L343'></a> 343                             (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &gt;&gt;&gt; <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a>) &amp; 0xFF);
+<a id='L344' name='L344'></a> 344                         <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a> -= 8;
+<a id='L345' name='L345'></a> 345                         xRemaining -= 8;
+<a id='L346' name='L346'></a> 346                     <em class='brace'>}</em>
+<a id='L347' name='L347'></a> 347                     eltOffset += lineStride;
+<a id='L348' name='L348'></a> 348                 <em class='brace'>}</em>
+<a id='L349' name='L349'></a> 349             <em class='brace'>}</em>
+<a id='L350' name='L350'></a> 350         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em> <em class='comment'>// bitOffset != 0</em>
+<a id='L351' name='L351'></a> 351             <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>) <em class='brace'>{</em>
+<a id='L352' name='L352'></a> 352                 <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L353' name='L353'></a> 353 
+<a id='L354' name='L354'></a> 354                 <strong class='reserved'>if</strong>((bitOffset &amp; 7) == 0) <em class='brace'>{</em>
+<a id='L355' name='L355'></a> 355                     <strong class='reserved'>int</strong> stride = numBytesPerRow;
+<a id='L356' name='L356'></a> 356                     <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = 0;
+<a id='L357' name='L357'></a> 357                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L358' name='L358'></a> 358                         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, eltOffset,
+<a id='L359' name='L359'></a> 359                                          binaryDataArray, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L360' name='L360'></a> 360                                          stride);
+<a id='L361' name='L361'></a> 361                         <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += stride;
+<a id='L362' name='L362'></a> 362                         eltOffset += lineStride;
+<a id='L363' name='L363'></a> 363                     <em class='brace'>}</em>
+<a id='L364' name='L364'></a> 364                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em> <em class='comment'>// bitOffset % 8 != 0</em>
+<a id='L365' name='L365'></a> 365                     <strong class='reserved'>int</strong> <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> = bitOffset &amp; 7;
+<a id='L366' name='L366'></a> 366                     <strong class='reserved'>int</strong> <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a> = 8 - <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>;
+<a id='L367' name='L367'></a> 367                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L368' name='L368'></a> 368                         <strong class='reserved'>int</strong> i = eltOffset;
+<a id='L369' name='L369'></a> 369                         <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L370' name='L370'></a> 370                         <strong class='reserved'>while</strong>(xRemaining &gt; 0) <em class='brace'>{</em>
+<a id='L371' name='L371'></a> 371                             <strong class='reserved'>if</strong>(xRemaining &gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>) <em class='brace'>{</em>
+<a id='L372' name='L372'></a> 372                                 binaryDataArray[b++] =
+<a id='L373' name='L373'></a> 373                                     (<strong class='reserved'>byte</strong>)(((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i++]&amp;0xFF) &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>) |
+<a id='L374' name='L374'></a> 374                                            ((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i]&amp;0xFF) &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>));
+<a id='L375' name='L375'></a> 375                             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L376' name='L376'></a> 376                                 binaryDataArray[b++] =
+<a id='L377' name='L377'></a> 377                                     (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i]&amp;0xFF) &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>);
+<a id='L378' name='L378'></a> 378                             <em class='brace'>}</em>
+<a id='L379' name='L379'></a> 379                             xRemaining -= 8;
+<a id='L380' name='L380'></a> 380                         <em class='brace'>}</em>
+<a id='L381' name='L381'></a> 381                         eltOffset += lineStride;
+<a id='L382' name='L382'></a> 382                     <em class='brace'>}</em>
+<a id='L383' name='L383'></a> 383                 <em class='brace'>}</em>
+<a id='L384' name='L384'></a> 384             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ||
+<a id='L385' name='L385'></a> 385                       dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>) <em class='brace'>{</em>
+<a id='L386' name='L386'></a> 386                 <strong class='reserved'>short</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ?
+<a id='L387' name='L387'></a> 387                     ((<a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>() :
+<a id='L388' name='L388'></a> 388                     ((<a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L389' name='L389'></a> 389 
+<a id='L390' name='L390'></a> 390                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L391' name='L391'></a> 391                     <strong class='reserved'>int</strong> bOffset = bitOffset;
+<a id='L392' name='L392'></a> 392                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> += 8, bOffset += 8) <em class='brace'>{</em>
+<a id='L393' name='L393'></a> 393                         <strong class='reserved'>int</strong> i = eltOffset + bOffset/16;
+<a id='L394' name='L394'></a> 394                         <strong class='reserved'>int</strong> <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> = bOffset % 16;
+<a id='L395' name='L395'></a> 395                         <strong class='reserved'>int</strong> left = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; 0xFFFF;
+<a id='L396' name='L396'></a> 396                         <strong class='reserved'>if</strong>(<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> &lt;= 8) <em class='brace'>{</em>
+<a id='L397' name='L397'></a> 397                             binaryDataArray[b++] = (<strong class='reserved'>byte</strong>)(left &gt;&gt;&gt; (8 - <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a>));
+<a id='L398' name='L398'></a> 398                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L399' name='L399'></a> 399                             <strong class='reserved'>int</strong> delta = <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> - 8;
+<a id='L400' name='L400'></a> 400                             <strong class='reserved'>int</strong> right = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i+1] &amp; 0xFFFF;
+<a id='L401' name='L401'></a> 401                             binaryDataArray[b++] =
+<a id='L402' name='L402'></a> 402                                 (<strong class='reserved'>byte</strong>)((left &lt;&lt; delta) |
+<a id='L403' name='L403'></a> 403                                        (right &gt;&gt;&gt; (16 - delta)));
+<a id='L404' name='L404'></a> 404                         <em class='brace'>}</em>
+<a id='L405' name='L405'></a> 405                     <em class='brace'>}</em>
+<a id='L406' name='L406'></a> 406                     eltOffset += lineStride;
+<a id='L407' name='L407'></a> 407                 <em class='brace'>}</em>
+<a id='L408' name='L408'></a> 408             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>) <em class='brace'>{</em>
+<a id='L409' name='L409'></a> 409                 <strong class='reserved'>int</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L410' name='L410'></a> 410 
+<a id='L411' name='L411'></a> 411                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L412' name='L412'></a> 412                     <strong class='reserved'>int</strong> bOffset = bitOffset;
+<a id='L413' name='L413'></a> 413                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> += 8, bOffset += 8) <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414                         <strong class='reserved'>int</strong> i = eltOffset + bOffset/32;
+<a id='L415' name='L415'></a> 415                         <strong class='reserved'>int</strong> <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> = bOffset % 32;
+<a id='L416' name='L416'></a> 416                         <strong class='reserved'>int</strong> left = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i];
+<a id='L417' name='L417'></a> 417                         <strong class='reserved'>if</strong>(<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> &lt;= 24) <em class='brace'>{</em>
+<a id='L418' name='L418'></a> 418                             binaryDataArray[b++] =
+<a id='L419' name='L419'></a> 419                                 (<strong class='reserved'>byte</strong>)(left &gt;&gt;&gt; (24 - <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a>));
+<a id='L420' name='L420'></a> 420                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L421' name='L421'></a> 421                             <strong class='reserved'>int</strong> delta = <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> - 24;
+<a id='L422' name='L422'></a> 422                             <strong class='reserved'>int</strong> right = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i+1];
+<a id='L423' name='L423'></a> 423                             binaryDataArray[b++] =
+<a id='L424' name='L424'></a> 424                                 (<strong class='reserved'>byte</strong>)((left &lt;&lt; delta) |
+<a id='L425' name='L425'></a> 425                                        (right &gt;&gt;&gt; (32 - delta)));
+<a id='L426' name='L426'></a> 426                         <em class='brace'>}</em>
+<a id='L427' name='L427'></a> 427                     <em class='brace'>}</em>
+<a id='L428' name='L428'></a> 428                     eltOffset += lineStride;
+<a id='L429' name='L429'></a> 429                 <em class='brace'>}</em>
+<a id='L430' name='L430'></a> 430             <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431         <em class='brace'>}</em>
+<a id='L432' name='L432'></a> 432 
+<a id='L433' name='L433'></a> 433         <strong class='reserved'>return</strong> binaryDataArray;
+<a id='L434' name='L434'></a> 434     <em class='brace'>}</em>
+<a id='L435' name='L435'></a> 435 
+<a id='L436' name='L436'></a> 436     <em class='comment'>/**</em>
+<a id='L437' name='L437'></a> 437 <em class='comment'>     * Returns the binary data unpacked into an array of bytes.</em>
+<a id='L438' name='L438'></a> 438 <em class='comment'>     * The line stride will be the width of the &lt;code&gt;Raster&lt;/code&gt;.</em>
+<a id='L439' name='L439'></a> 439 <em class='comment'>     *</em>
+<a id='L440' name='L440'></a> 440 <em class='comment'>     * @throws IllegalArgumentException if &lt;code&gt;isBinary()&lt;/code&gt; returns</em>
+<a id='L441' name='L441'></a> 441 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; with the &lt;code&gt;SampleModel&lt;/code&gt; of the</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'>     * supplied &lt;code&gt;Raster&lt;/code&gt; as argument.</em>
+<a id='L443' name='L443'></a> 443 <em class='comment'>     */</em>
+<a id='L444' name='L444'></a> 444     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>byte</strong>[] getUnpackedBinaryData(<a href='../S/2238.html#L126' title='Defined at 126 in src/java/awt/image/Raster.java.'>Raster</a> raster,
+<a id='L445' name='L445'></a> 445                                                <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> rect) <em class='brace'>{</em>
+<a id='L446' name='L446'></a> 446         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm = raster.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
+<a id='L447' name='L447'></a> 447         <strong class='reserved'>if</strong>(!<a href='../S/6793.html#L848' title='Defined at 848 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>isBinary</a>(sm)) <em class='brace'>{</em>
+<a id='L448' name='L448'></a> 448             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("ImageUtil0"));
+<a id='L449' name='L449'></a> 449         <em class='brace'>}</em>
+<a id='L450' name='L450'></a> 450 
+<a id='L451' name='L451'></a> 451         <strong class='reserved'>int</strong> rectX = rect.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
+<a id='L452' name='L452'></a> 452         <strong class='reserved'>int</strong> rectY = rect.y;
+<a id='L453' name='L453'></a> 453         <strong class='reserved'>int</strong> rectWidth = rect.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>;
+<a id='L454' name='L454'></a> 454         <strong class='reserved'>int</strong> rectHeight = rect.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>;
+<a id='L455' name='L455'></a> 455 
+<a id='L456' name='L456'></a> 456         <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a> dataBuffer = raster.<a href='../S/2238.html#L1429' title='Defined at 1429 in src/java/awt/image/Raster.java.'>getDataBuffer</a>();
+<a id='L457' name='L457'></a> 457 
+<a id='L458' name='L458'></a> 458         <strong class='reserved'>int</strong> dx = rectX - raster.<a href='../S/2238.html#L1142' title='Defined at 1142 in src/java/awt/image/Raster.java.'>getSampleModelTranslateX</a>();
+<a id='L459' name='L459'></a> 459         <strong class='reserved'>int</strong> dy = rectY - raster.<a href='../S/2238.html#L1154' title='Defined at 1154 in src/java/awt/image/Raster.java.'>getSampleModelTranslateY</a>();
+<a id='L460' name='L460'></a> 460 
+<a id='L461' name='L461'></a> 461         <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> mpp = (<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm;
+<a id='L462' name='L462'></a> 462         <strong class='reserved'>int</strong> lineStride = mpp.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
+<a id='L463' name='L463'></a> 463         <strong class='reserved'>int</strong> eltOffset = dataBuffer.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>() + mpp.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>(dx, dy);
+<a id='L464' name='L464'></a> 464         <strong class='reserved'>int</strong> bitOffset = mpp.<a href='../D/17263.html' title='Multiple defined in 3 places.'>getBitOffset</a>(dx);
+<a id='L465' name='L465'></a> 465 
+<a id='L466' name='L466'></a> 466         <strong class='reserved'>byte</strong>[] bdata = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[rectWidth*rectHeight];
+<a id='L467' name='L467'></a> 467         <strong class='reserved'>int</strong> maxY = rectY + rectHeight;
+<a id='L468' name='L468'></a> 468         <strong class='reserved'>int</strong> maxX = rectX + rectWidth;
+<a id='L469' name='L469'></a> 469         <strong class='reserved'>int</strong> k = 0;
+<a id='L470' name='L470'></a> 470 
+<a id='L471' name='L471'></a> 471         <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>) <em class='brace'>{</em>
+<a id='L472' name='L472'></a> 472             <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L473' name='L473'></a> 473             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = rectY; y &lt; maxY; y++) <em class='brace'>{</em>
+<a id='L474' name='L474'></a> 474                 <strong class='reserved'>int</strong> bOffset = eltOffset*8 + bitOffset;
+<a id='L475' name='L475'></a> 475                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = rectX; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; maxX; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>++) <em class='brace'>{</em>
+<a id='L476' name='L476'></a> 476                     <strong class='reserved'>byte</strong> b = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[bOffset/8];
+<a id='L477' name='L477'></a> 477                     bdata[k++] =
+<a id='L478' name='L478'></a> 478                         (<strong class='reserved'>byte</strong>)((b &gt;&gt;&gt; (7 - bOffset &amp; 7)) &amp; 0x0000001);
+<a id='L479' name='L479'></a> 479                     bOffset++;
+<a id='L480' name='L480'></a> 480                 <em class='brace'>}</em>
+<a id='L481' name='L481'></a> 481                 eltOffset += lineStride;
+<a id='L482' name='L482'></a> 482             <em class='brace'>}</em>
+<a id='L483' name='L483'></a> 483         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ||
+<a id='L484' name='L484'></a> 484                   dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>) <em class='brace'>{</em>
+<a id='L485' name='L485'></a> 485             <strong class='reserved'>short</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ?
+<a id='L486' name='L486'></a> 486                 ((<a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>() :
+<a id='L487' name='L487'></a> 487                 ((<a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L488' name='L488'></a> 488             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = rectY; y &lt; maxY; y++) <em class='brace'>{</em>
+<a id='L489' name='L489'></a> 489                 <strong class='reserved'>int</strong> bOffset = eltOffset*16 + bitOffset;
+<a id='L490' name='L490'></a> 490                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = rectX; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; maxX; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>++) <em class='brace'>{</em>
+<a id='L491' name='L491'></a> 491                     <strong class='reserved'>short</strong> s = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[bOffset/16];
+<a id='L492' name='L492'></a> 492                     bdata[k++] =
+<a id='L493' name='L493'></a> 493                         (<strong class='reserved'>byte</strong>)((s &gt;&gt;&gt; (15 - bOffset % 16)) &amp;
+<a id='L494' name='L494'></a> 494                                0x0000001);
+<a id='L495' name='L495'></a> 495                     bOffset++;
+<a id='L496' name='L496'></a> 496                 <em class='brace'>}</em>
+<a id='L497' name='L497'></a> 497                 eltOffset += lineStride;
+<a id='L498' name='L498'></a> 498             <em class='brace'>}</em>
+<a id='L499' name='L499'></a> 499         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>) <em class='brace'>{</em>
+<a id='L500' name='L500'></a> 500             <strong class='reserved'>int</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L501' name='L501'></a> 501             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = rectY; y &lt; maxY; y++) <em class='brace'>{</em>
+<a id='L502' name='L502'></a> 502                 <strong class='reserved'>int</strong> bOffset = eltOffset*32 + bitOffset;
+<a id='L503' name='L503'></a> 503                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = rectX; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; maxX; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>++) <em class='brace'>{</em>
+<a id='L504' name='L504'></a> 504                     <strong class='reserved'>int</strong> i = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[bOffset/32];
+<a id='L505' name='L505'></a> 505                     bdata[k++] =
+<a id='L506' name='L506'></a> 506                         (<strong class='reserved'>byte</strong>)((i &gt;&gt;&gt; (31 - bOffset % 32)) &amp;
+<a id='L507' name='L507'></a> 507                                0x0000001);
+<a id='L508' name='L508'></a> 508                     bOffset++;
+<a id='L509' name='L509'></a> 509                 <em class='brace'>}</em>
+<a id='L510' name='L510'></a> 510                 eltOffset += lineStride;
+<a id='L511' name='L511'></a> 511             <em class='brace'>}</em>
+<a id='L512' name='L512'></a> 512         <em class='brace'>}</em>
+<a id='L513' name='L513'></a> 513 
+<a id='L514' name='L514'></a> 514         <strong class='reserved'>return</strong> bdata;
+<a id='L515' name='L515'></a> 515     <em class='brace'>}</em>
+<a id='L516' name='L516'></a> 516 
+<a id='L517' name='L517'></a> 517     <em class='comment'>/**</em>
+<a id='L518' name='L518'></a> 518 <em class='comment'>     * Sets the supplied &lt;code&gt;Raster&lt;/code&gt;'s data from an array</em>
+<a id='L519' name='L519'></a> 519 <em class='comment'>     * of packed binary data of the form returned by</em>
+<a id='L520' name='L520'></a> 520 <em class='comment'>     * &lt;code&gt;getPackedBinaryData()&lt;/code&gt;.</em>
+<a id='L521' name='L521'></a> 521 <em class='comment'>     *</em>
+<a id='L522' name='L522'></a> 522 <em class='comment'>     * @throws IllegalArgumentException if &lt;code&gt;isBinary()&lt;/code&gt; returns</em>
+<a id='L523' name='L523'></a> 523 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; with the &lt;code&gt;SampleModel&lt;/code&gt; of the</em>
+<a id='L524' name='L524'></a> 524 <em class='comment'>     * supplied &lt;code&gt;Raster&lt;/code&gt; as argument.</em>
+<a id='L525' name='L525'></a> 525 <em class='comment'>     */</em>
+<a id='L526' name='L526'></a> 526     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> setPackedBinaryData(<strong class='reserved'>byte</strong>[] binaryDataArray,
+<a id='L527' name='L527'></a> 527                                            <a href='../S/2280.html#L49' title='Defined at 49 in src/java/awt/image/WritableRaster.java.'>WritableRaster</a> raster,
+<a id='L528' name='L528'></a> 528                                            <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> rect) <em class='brace'>{</em>
+<a id='L529' name='L529'></a> 529         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm = raster.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
+<a id='L530' name='L530'></a> 530         <strong class='reserved'>if</strong>(!<a href='../S/6793.html#L848' title='Defined at 848 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>isBinary</a>(sm)) <em class='brace'>{</em>
+<a id='L531' name='L531'></a> 531             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("ImageUtil0"));
+<a id='L532' name='L532'></a> 532         <em class='brace'>}</em>
+<a id='L533' name='L533'></a> 533 
+<a id='L534' name='L534'></a> 534         <strong class='reserved'>int</strong> rectX = rect.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
+<a id='L535' name='L535'></a> 535         <strong class='reserved'>int</strong> rectY = rect.y;
+<a id='L536' name='L536'></a> 536         <strong class='reserved'>int</strong> rectWidth = rect.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>;
+<a id='L537' name='L537'></a> 537         <strong class='reserved'>int</strong> rectHeight = rect.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>;
+<a id='L538' name='L538'></a> 538 
+<a id='L539' name='L539'></a> 539         <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a> dataBuffer = raster.<a href='../S/2238.html#L1429' title='Defined at 1429 in src/java/awt/image/Raster.java.'>getDataBuffer</a>();
+<a id='L540' name='L540'></a> 540 
+<a id='L541' name='L541'></a> 541         <strong class='reserved'>int</strong> dx = rectX - raster.<a href='../S/2238.html#L1142' title='Defined at 1142 in src/java/awt/image/Raster.java.'>getSampleModelTranslateX</a>();
+<a id='L542' name='L542'></a> 542         <strong class='reserved'>int</strong> dy = rectY - raster.<a href='../S/2238.html#L1154' title='Defined at 1154 in src/java/awt/image/Raster.java.'>getSampleModelTranslateY</a>();
+<a id='L543' name='L543'></a> 543 
+<a id='L544' name='L544'></a> 544         <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> mpp = (<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm;
+<a id='L545' name='L545'></a> 545         <strong class='reserved'>int</strong> lineStride = mpp.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
+<a id='L546' name='L546'></a> 546         <strong class='reserved'>int</strong> eltOffset = dataBuffer.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>() + mpp.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>(dx, dy);
+<a id='L547' name='L547'></a> 547         <strong class='reserved'>int</strong> bitOffset = mpp.<a href='../D/17263.html' title='Multiple defined in 3 places.'>getBitOffset</a>(dx);
+<a id='L548' name='L548'></a> 548 
+<a id='L549' name='L549'></a> 549         <strong class='reserved'>int</strong> b = 0;
+<a id='L550' name='L550'></a> 550 
+<a id='L551' name='L551'></a> 551         <strong class='reserved'>if</strong>(bitOffset == 0) <em class='brace'>{</em>
+<a id='L552' name='L552'></a> 552             <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>) <em class='brace'>{</em>
+<a id='L553' name='L553'></a> 553                 <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L554' name='L554'></a> 554                 <strong class='reserved'>if</strong>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> == binaryDataArray) <em class='brace'>{</em>
+<a id='L555' name='L555'></a> 555                     <em class='comment'>// Optimal case: simply return.</em>
+<a id='L556' name='L556'></a> 556                     <strong class='reserved'>return</strong>;
+<a id='L557' name='L557'></a> 557                 <em class='brace'>}</em>
+<a id='L558' name='L558'></a> 558                 <strong class='reserved'>int</strong> stride = (rectWidth + 7)/8;
+<a id='L559' name='L559'></a> 559                 <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = 0;
+<a id='L560' name='L560'></a> 560                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L561' name='L561'></a> 561                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(binaryDataArray, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L562' name='L562'></a> 562                                      <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, eltOffset,
+<a id='L563' name='L563'></a> 563                                      stride);
+<a id='L564' name='L564'></a> 564                     <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += stride;
+<a id='L565' name='L565'></a> 565                     eltOffset += lineStride;
+<a id='L566' name='L566'></a> 566                 <em class='brace'>}</em>
+<a id='L567' name='L567'></a> 567             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ||
+<a id='L568' name='L568'></a> 568                       dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>) <em class='brace'>{</em>
+<a id='L569' name='L569'></a> 569                 <strong class='reserved'>short</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ?
+<a id='L570' name='L570'></a> 570                     ((<a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>() :
+<a id='L571' name='L571'></a> 571                     ((<a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L572' name='L572'></a> 572 
+<a id='L573' name='L573'></a> 573                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L574' name='L574'></a> 574                     <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L575' name='L575'></a> 575                     <strong class='reserved'>int</strong> i = eltOffset;
+<a id='L576' name='L576'></a> 576                     <strong class='reserved'>while</strong>(xRemaining &gt; 8) <em class='brace'>{</em>
+<a id='L577' name='L577'></a> 577                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i++] =
+<a id='L578' name='L578'></a> 578                             (<strong class='reserved'>short</strong>)(((binaryDataArray[b++] &amp; 0xFF) &lt;&lt; 8) |
+<a id='L579' name='L579'></a> 579                                     (binaryDataArray[b++] &amp; 0xFF));
+<a id='L580' name='L580'></a> 580                         xRemaining -= 16;
+<a id='L581' name='L581'></a> 581                     <em class='brace'>}</em>
+<a id='L582' name='L582'></a> 582                     <strong class='reserved'>if</strong>(xRemaining &gt; 0) <em class='brace'>{</em>
+<a id='L583' name='L583'></a> 583                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i++] =
+<a id='L584' name='L584'></a> 584                             (<strong class='reserved'>short</strong>)((binaryDataArray[b++] &amp; 0xFF) &lt;&lt; 8);
+<a id='L585' name='L585'></a> 585                     <em class='brace'>}</em>
+<a id='L586' name='L586'></a> 586                     eltOffset += lineStride;
+<a id='L587' name='L587'></a> 587                 <em class='brace'>}</em>
+<a id='L588' name='L588'></a> 588             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>) <em class='brace'>{</em>
+<a id='L589' name='L589'></a> 589                 <strong class='reserved'>int</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L590' name='L590'></a> 590 
+<a id='L591' name='L591'></a> 591                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L592' name='L592'></a> 592                     <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L593' name='L593'></a> 593                     <strong class='reserved'>int</strong> i = eltOffset;
+<a id='L594' name='L594'></a> 594                     <strong class='reserved'>while</strong>(xRemaining &gt; 24) <em class='brace'>{</em>
+<a id='L595' name='L595'></a> 595                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i++] =
+<a id='L596' name='L596'></a> 596                             (<strong class='reserved'>int</strong>)(((binaryDataArray[b++] &amp; 0xFF) &lt;&lt; 24) |
+<a id='L597' name='L597'></a> 597                                   ((binaryDataArray[b++] &amp; 0xFF) &lt;&lt; 16) |
+<a id='L598' name='L598'></a> 598                                   ((binaryDataArray[b++] &amp; 0xFF) &lt;&lt; 8) |
+<a id='L599' name='L599'></a> 599                                   (binaryDataArray[b++] &amp; 0xFF));
+<a id='L600' name='L600'></a> 600                         xRemaining -= 32;
+<a id='L601' name='L601'></a> 601                     <em class='brace'>}</em>
+<a id='L602' name='L602'></a> 602                     <strong class='reserved'>int</strong> <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a> = 24;
+<a id='L603' name='L603'></a> 603                     <strong class='reserved'>while</strong>(xRemaining &gt; 0) <em class='brace'>{</em>
+<a id='L604' name='L604'></a> 604                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] |=
+<a id='L605' name='L605'></a> 605                             (<strong class='reserved'>int</strong>)((binaryDataArray[b++] &amp; 0xFF) &lt;&lt; <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a>);
+<a id='L606' name='L606'></a> 606                         <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a> -= 8;
+<a id='L607' name='L607'></a> 607                         xRemaining -= 8;
+<a id='L608' name='L608'></a> 608                     <em class='brace'>}</em>
+<a id='L609' name='L609'></a> 609                     eltOffset += lineStride;
+<a id='L610' name='L610'></a> 610                 <em class='brace'>}</em>
+<a id='L611' name='L611'></a> 611             <em class='brace'>}</em>
+<a id='L612' name='L612'></a> 612         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em> <em class='comment'>// bitOffset != 0</em>
+<a id='L613' name='L613'></a> 613             <strong class='reserved'>int</strong> stride = (rectWidth + 7)/8;
+<a id='L614' name='L614'></a> 614             <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = 0;
+<a id='L615' name='L615'></a> 615             <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>) <em class='brace'>{</em>
+<a id='L616' name='L616'></a> 616                 <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L617' name='L617'></a> 617 
+<a id='L618' name='L618'></a> 618                 <strong class='reserved'>if</strong>((bitOffset &amp; 7) == 0) <em class='brace'>{</em>
+<a id='L619' name='L619'></a> 619                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L620' name='L620'></a> 620                         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(binaryDataArray, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>,
+<a id='L621' name='L621'></a> 621                                          <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, eltOffset,
+<a id='L622' name='L622'></a> 622                                          stride);
+<a id='L623' name='L623'></a> 623                         <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += stride;
+<a id='L624' name='L624'></a> 624                         eltOffset += lineStride;
+<a id='L625' name='L625'></a> 625                     <em class='brace'>}</em>
+<a id='L626' name='L626'></a> 626                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em> <em class='comment'>// bitOffset % 8 != 0</em>
+<a id='L627' name='L627'></a> 627                     <strong class='reserved'>int</strong> <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a> = bitOffset &amp; 7;
+<a id='L628' name='L628'></a> 628                     <strong class='reserved'>int</strong> <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> = 8 - <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>;
+<a id='L629' name='L629'></a> 629                     <strong class='reserved'>int</strong> leftShift8 = 8 + <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>;
+<a id='L630' name='L630'></a> 630                     <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = (<strong class='reserved'>byte</strong>)(255&lt;&lt;<a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>);
+<a id='L631' name='L631'></a> 631                     <strong class='reserved'>int</strong> mask1 = (<strong class='reserved'>byte</strong>)~<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L632' name='L632'></a> 632 
+<a id='L633' name='L633'></a> 633                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L634' name='L634'></a> 634                         <strong class='reserved'>int</strong> i = eltOffset;
+<a id='L635' name='L635'></a> 635                         <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L636' name='L636'></a> 636                         <strong class='reserved'>while</strong>(xRemaining &gt; 0) <em class='brace'>{</em>
+<a id='L637' name='L637'></a> 637                             <strong class='reserved'>byte</strong> datum = binaryDataArray[b++];
+<a id='L638' name='L638'></a> 638 
+<a id='L639' name='L639'></a> 639                             <strong class='reserved'>if</strong> (xRemaining &gt; leftShift8) <em class='brace'>{</em>
+<a id='L640' name='L640'></a> 640                                 <em class='comment'>// when all the bits in this BYTE will be set</em>
+<a id='L641' name='L641'></a> 641                                 <em class='comment'>// into the data buffer.</em>
+<a id='L642' name='L642'></a> 642                                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> ) |
+<a id='L643' name='L643'></a> 643                                     ((datum&amp;0xFF) &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>));
+<a id='L644' name='L644'></a> 644                                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[++i] = (<strong class='reserved'>byte</strong>)((datum &amp; 0xFF) &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>);
+<a id='L645' name='L645'></a> 645                             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (xRemaining &gt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>) <em class='brace'>{</em>
+<a id='L646' name='L646'></a> 646                                 <em class='comment'>// All the "leftShift" high bits will be set</em>
+<a id='L647' name='L647'></a> 647                                 <em class='comment'>// into the data buffer.  But not all the</em>
+<a id='L648' name='L648'></a> 648                                 <em class='comment'>// "rightShift" low bits will be set.</em>
+<a id='L649' name='L649'></a> 649                                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> ) |
+<a id='L650' name='L650'></a> 650                                     ((datum&amp;0xFF) &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>));
+<a id='L651' name='L651'></a> 651                                 i++;
+<a id='L652' name='L652'></a> 652                                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] =
+<a id='L653' name='L653'></a> 653                                     (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; mask1) | ((datum &amp; 0xFF) &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>));
+<a id='L654' name='L654'></a> 654                             <em class='brace'>}</em>
+<a id='L655' name='L655'></a> 655                             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L656' name='L656'></a> 656                                 <em class='comment'>// Less than "leftShift" high bits will be set.</em>
+<a id='L657' name='L657'></a> 657                                 <strong class='reserved'>int</strong> remainMask = (1 &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> - xRemaining) - 1;
+<a id='L658' name='L658'></a> 658                                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] =
+<a id='L659' name='L659'></a> 659                                     (<strong class='reserved'>byte</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; (<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> | remainMask)) |
+<a id='L660' name='L660'></a> 660                                     (datum&amp;0xFF) &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a> &amp; ~remainMask);
+<a id='L661' name='L661'></a> 661                             <em class='brace'>}</em>
+<a id='L662' name='L662'></a> 662                             xRemaining -= 8;
+<a id='L663' name='L663'></a> 663                         <em class='brace'>}</em>
+<a id='L664' name='L664'></a> 664                         eltOffset += lineStride;
+<a id='L665' name='L665'></a> 665                     <em class='brace'>}</em>
+<a id='L666' name='L666'></a> 666                 <em class='brace'>}</em>
+<a id='L667' name='L667'></a> 667             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ||
+<a id='L668' name='L668'></a> 668                       dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>) <em class='brace'>{</em>
+<a id='L669' name='L669'></a> 669                 <strong class='reserved'>short</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ?
+<a id='L670' name='L670'></a> 670                     ((<a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>() :
+<a id='L671' name='L671'></a> 671                     ((<a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L672' name='L672'></a> 672 
+<a id='L673' name='L673'></a> 673                 <strong class='reserved'>int</strong> <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a> = bitOffset &amp; 7;
+<a id='L674' name='L674'></a> 674                 <strong class='reserved'>int</strong> <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> = 8 - <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>;
+<a id='L675' name='L675'></a> 675                 <strong class='reserved'>int</strong> leftShift16 = 16 + <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>;
+<a id='L676' name='L676'></a> 676                 <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = (<strong class='reserved'>short</strong>)(~(255 &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>));
+<a id='L677' name='L677'></a> 677                 <strong class='reserved'>int</strong> mask1 = (<strong class='reserved'>short</strong>)(65535 &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>);
+<a id='L678' name='L678'></a> 678                 <strong class='reserved'>int</strong> mask2 = (<strong class='reserved'>short</strong>)~mask1;
+<a id='L679' name='L679'></a> 679 
+<a id='L680' name='L680'></a> 680                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L681' name='L681'></a> 681                     <strong class='reserved'>int</strong> bOffset = bitOffset;
+<a id='L682' name='L682'></a> 682                     <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L683' name='L683'></a> 683                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth;
+<a id='L684' name='L684'></a> 684                         <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> += 8, bOffset += 8, xRemaining -= 8) <em class='brace'>{</em>
+<a id='L685' name='L685'></a> 685                         <strong class='reserved'>int</strong> i = eltOffset + (bOffset &gt;&gt; 4);
+<a id='L686' name='L686'></a> 686                         <strong class='reserved'>int</strong> <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> = bOffset &amp; 15;
+<a id='L687' name='L687'></a> 687                         <strong class='reserved'>int</strong> datum = binaryDataArray[b++] &amp; 0xFF;
+<a id='L688' name='L688'></a> 688                         <strong class='reserved'>if</strong>(<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> &lt;= 8) <em class='brace'>{</em>
+<a id='L689' name='L689'></a> 689                             <em class='comment'>// This BYTE is set into one SHORT</em>
+<a id='L690' name='L690'></a> 690                             <strong class='reserved'>if</strong> (xRemaining &lt; 8) <em class='brace'>{</em>
+<a id='L691' name='L691'></a> 691                                 <em class='comment'>// Mask the bits to be set.</em>
+<a id='L692' name='L692'></a> 692                                 datum &amp;= 255 &lt;&lt; 8 - xRemaining;
+<a id='L693' name='L693'></a> 693                             <em class='brace'>}</em>
+<a id='L694' name='L694'></a> 694                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<strong class='reserved'>short</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) | (datum &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>));
+<a id='L695' name='L695'></a> 695                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (xRemaining &gt; leftShift16) <em class='brace'>{</em>
+<a id='L696' name='L696'></a> 696                             <em class='comment'>// This BYTE will be set into two SHORTs</em>
+<a id='L697' name='L697'></a> 697                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<strong class='reserved'>short</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; mask1) | ((datum &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>)&amp;0xFFFF));
+<a id='L698' name='L698'></a> 698                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[++i] =
+<a id='L699' name='L699'></a> 699                                 (<strong class='reserved'>short</strong>)((datum &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>)&amp;0xFFFF);
+<a id='L700' name='L700'></a> 700                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (xRemaining &gt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>) <em class='brace'>{</em>
+<a id='L701' name='L701'></a> 701                             <em class='comment'>// This BYTE will be set into two SHORTs;</em>
+<a id='L702' name='L702'></a> 702                             <em class='comment'>// But not all the low bits will be set into SHORT</em>
+<a id='L703' name='L703'></a> 703                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<strong class='reserved'>short</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; mask1) | ((datum &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>)&amp;0xFFFF));
+<a id='L704' name='L704'></a> 704                             i++;
+<a id='L705' name='L705'></a> 705                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] =
+<a id='L706' name='L706'></a> 706                                 (<strong class='reserved'>short</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; mask2) | ((datum &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>)&amp;0xFFFF));
+<a id='L707' name='L707'></a> 707                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L708' name='L708'></a> 708                             <em class='comment'>// Only some of the high bits will be set into</em>
+<a id='L709' name='L709'></a> 709                             <em class='comment'>// SHORTs</em>
+<a id='L710' name='L710'></a> 710                             <strong class='reserved'>int</strong> remainMask = (1 &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> - xRemaining) - 1;
+<a id='L711' name='L711'></a> 711                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<strong class='reserved'>short</strong>)((<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; (mask1 | remainMask)) |
+<a id='L712' name='L712'></a> 712                                       ((datum &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>)&amp;0xFFFF &amp; ~remainMask));
+<a id='L713' name='L713'></a> 713                         <em class='brace'>}</em>
+<a id='L714' name='L714'></a> 714                     <em class='brace'>}</em>
+<a id='L715' name='L715'></a> 715                     eltOffset += lineStride;
+<a id='L716' name='L716'></a> 716                 <em class='brace'>}</em>
+<a id='L717' name='L717'></a> 717             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>) <em class='brace'>{</em>
+<a id='L718' name='L718'></a> 718                 <strong class='reserved'>int</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L719' name='L719'></a> 719                 <strong class='reserved'>int</strong> <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a> = bitOffset &amp; 7;
+<a id='L720' name='L720'></a> 720                 <strong class='reserved'>int</strong> <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> = 8 - <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>;
+<a id='L721' name='L721'></a> 721                 <strong class='reserved'>int</strong> leftShift32 = 32 + <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>;
+<a id='L722' name='L722'></a> 722                 <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = 0xFFFFFFFF &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>;
+<a id='L723' name='L723'></a> 723                 <strong class='reserved'>int</strong> mask1 = ~<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L724' name='L724'></a> 724 
+<a id='L725' name='L725'></a> 725                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L726' name='L726'></a> 726                     <strong class='reserved'>int</strong> bOffset = bitOffset;
+<a id='L727' name='L727'></a> 727                     <strong class='reserved'>int</strong> xRemaining = rectWidth;
+<a id='L728' name='L728'></a> 728                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth;
+<a id='L729' name='L729'></a> 729                         <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> += 8, bOffset += 8, xRemaining -= 8) <em class='brace'>{</em>
+<a id='L730' name='L730'></a> 730                         <strong class='reserved'>int</strong> i = eltOffset + (bOffset &gt;&gt; 5);
+<a id='L731' name='L731'></a> 731                         <strong class='reserved'>int</strong> <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> = bOffset &amp; 31;
+<a id='L732' name='L732'></a> 732                         <strong class='reserved'>int</strong> datum = binaryDataArray[b++] &amp; 0xFF;
+<a id='L733' name='L733'></a> 733                         <strong class='reserved'>if</strong>(<a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a> &lt;= 24) <em class='brace'>{</em>
+<a id='L734' name='L734'></a> 734                             <em class='comment'>// This BYTE is set into one INT</em>
+<a id='L735' name='L735'></a> 735                             <strong class='reserved'>int</strong> <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a> = 24 - <a href='../D/27733.html' title='Multiple defined in 4 places.'>mod</a>;
+<a id='L736' name='L736'></a> 736                             <strong class='reserved'>if</strong> (xRemaining &lt; 8) <em class='brace'>{</em>
+<a id='L737' name='L737'></a> 737                                 <em class='comment'>// Mask the bits to be set.</em>
+<a id='L738' name='L738'></a> 738                                 datum &amp;= 255 &lt;&lt; 8 - xRemaining;
+<a id='L739' name='L739'></a> 739                             <em class='brace'>}</em>
+<a id='L740' name='L740'></a> 740                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; (~(255 &lt;&lt; <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a>))) | (datum &lt;&lt; <a href='../S/4397.html#L337' title='Defined at 337 in src/javax/sound/sampled/FloatControl.java.'>shift</a>);
+<a id='L741' name='L741'></a> 741                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (xRemaining &gt; leftShift32) <em class='brace'>{</em>
+<a id='L742' name='L742'></a> 742                             <em class='comment'>// All the bits of this BYTE will be set into two INTs</em>
+<a id='L743' name='L743'></a> 743                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) | (datum &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>);
+<a id='L744' name='L744'></a> 744                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[++i] = datum &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>;
+<a id='L745' name='L745'></a> 745                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (xRemaining &gt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>) <em class='brace'>{</em>
+<a id='L746' name='L746'></a> 746                             <em class='comment'>// This BYTE will be set into two INTs;</em>
+<a id='L747' name='L747'></a> 747                             <em class='comment'>// But not all the low bits will be set into INT</em>
+<a id='L748' name='L748'></a> 748                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) | (datum &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a>);
+<a id='L749' name='L749'></a> 749                             i++;
+<a id='L750' name='L750'></a> 750                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; mask1) | (datum &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a>);
+<a id='L751' name='L751'></a> 751                         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L752' name='L752'></a> 752                             <em class='comment'>// Only some of the high bits will be set into INT</em>
+<a id='L753' name='L753'></a> 753                             <strong class='reserved'>int</strong> remainMask = (1 &lt;&lt; <a href='../D/26803.html' title='Multiple defined in 2 places.'>leftShift</a> - xRemaining) - 1;
+<a id='L754' name='L754'></a> 754                             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &amp; (<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> | remainMask)) |
+<a id='L755' name='L755'></a> 755                                       (datum &gt;&gt;&gt; <a href='../S/1466.html#L537' title='Defined at 537 in src/java/math/MutableBigInteger.java.'>rightShift</a> &amp; ~remainMask);
+<a id='L756' name='L756'></a> 756                         <em class='brace'>}</em>
+<a id='L757' name='L757'></a> 757                     <em class='brace'>}</em>
+<a id='L758' name='L758'></a> 758                     eltOffset += lineStride;
+<a id='L759' name='L759'></a> 759                 <em class='brace'>}</em>
+<a id='L760' name='L760'></a> 760             <em class='brace'>}</em>
+<a id='L761' name='L761'></a> 761         <em class='brace'>}</em>
+<a id='L762' name='L762'></a> 762     <em class='brace'>}</em>
+<a id='L763' name='L763'></a> 763 
+<a id='L764' name='L764'></a> 764     <em class='comment'>/**</em>
+<a id='L765' name='L765'></a> 765 <em class='comment'>     * Copies data into the packed array of the &lt;code&gt;Raster&lt;/code&gt;</em>
+<a id='L766' name='L766'></a> 766 <em class='comment'>     * from an array of unpacked data of the form returned by</em>
+<a id='L767' name='L767'></a> 767 <em class='comment'>     * &lt;code&gt;getUnpackedBinaryData()&lt;/code&gt;.</em>
+<a id='L768' name='L768'></a> 768 <em class='comment'>     *</em>
+<a id='L769' name='L769'></a> 769 <em class='comment'>     * &lt;p&gt; If the data are binary, then the target bit will be set if</em>
+<a id='L770' name='L770'></a> 770 <em class='comment'>     * and only if the corresponding byte is non-zero.</em>
+<a id='L771' name='L771'></a> 771 <em class='comment'>     *</em>
+<a id='L772' name='L772'></a> 772 <em class='comment'>     * @throws IllegalArgumentException if &lt;code&gt;isBinary()&lt;/code&gt; returns</em>
+<a id='L773' name='L773'></a> 773 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; with the &lt;code&gt;SampleModel&lt;/code&gt; of the</em>
+<a id='L774' name='L774'></a> 774 <em class='comment'>     * supplied &lt;code&gt;Raster&lt;/code&gt; as argument.</em>
+<a id='L775' name='L775'></a> 775 <em class='comment'>     */</em>
+<a id='L776' name='L776'></a> 776     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> setUnpackedBinaryData(<strong class='reserved'>byte</strong>[] bdata,
+<a id='L777' name='L777'></a> 777                                              <a href='../S/2280.html#L49' title='Defined at 49 in src/java/awt/image/WritableRaster.java.'>WritableRaster</a> raster,
+<a id='L778' name='L778'></a> 778                                              <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> rect) <em class='brace'>{</em>
+<a id='L779' name='L779'></a> 779         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm = raster.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
+<a id='L780' name='L780'></a> 780         <strong class='reserved'>if</strong>(!<a href='../S/6793.html#L848' title='Defined at 848 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>isBinary</a>(sm)) <em class='brace'>{</em>
+<a id='L781' name='L781'></a> 781             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("ImageUtil0"));
+<a id='L782' name='L782'></a> 782         <em class='brace'>}</em>
+<a id='L783' name='L783'></a> 783 
+<a id='L784' name='L784'></a> 784         <strong class='reserved'>int</strong> rectX = rect.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
+<a id='L785' name='L785'></a> 785         <strong class='reserved'>int</strong> rectY = rect.y;
+<a id='L786' name='L786'></a> 786         <strong class='reserved'>int</strong> rectWidth = rect.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>;
+<a id='L787' name='L787'></a> 787         <strong class='reserved'>int</strong> rectHeight = rect.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>;
+<a id='L788' name='L788'></a> 788 
+<a id='L789' name='L789'></a> 789         <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a> dataBuffer = raster.<a href='../S/2238.html#L1429' title='Defined at 1429 in src/java/awt/image/Raster.java.'>getDataBuffer</a>();
+<a id='L790' name='L790'></a> 790 
+<a id='L791' name='L791'></a> 791         <strong class='reserved'>int</strong> dx = rectX - raster.<a href='../S/2238.html#L1142' title='Defined at 1142 in src/java/awt/image/Raster.java.'>getSampleModelTranslateX</a>();
+<a id='L792' name='L792'></a> 792         <strong class='reserved'>int</strong> dy = rectY - raster.<a href='../S/2238.html#L1154' title='Defined at 1154 in src/java/awt/image/Raster.java.'>getSampleModelTranslateY</a>();
+<a id='L793' name='L793'></a> 793 
+<a id='L794' name='L794'></a> 794         <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> mpp = (<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm;
+<a id='L795' name='L795'></a> 795         <strong class='reserved'>int</strong> lineStride = mpp.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
+<a id='L796' name='L796'></a> 796         <strong class='reserved'>int</strong> eltOffset = dataBuffer.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>() + mpp.<a href='../D/21176.html' title='Multiple defined in 43 places.'>getOffset</a>(dx, dy);
+<a id='L797' name='L797'></a> 797         <strong class='reserved'>int</strong> bitOffset = mpp.<a href='../D/17263.html' title='Multiple defined in 3 places.'>getBitOffset</a>(dx);
+<a id='L798' name='L798'></a> 798 
+<a id='L799' name='L799'></a> 799         <strong class='reserved'>int</strong> k = 0;
+<a id='L800' name='L800'></a> 800 
+<a id='L801' name='L801'></a> 801         <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>) <em class='brace'>{</em>
+<a id='L802' name='L802'></a> 802             <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L803' name='L803'></a> 803             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L804' name='L804'></a> 804                 <strong class='reserved'>int</strong> bOffset = eltOffset*8 + bitOffset;
+<a id='L805' name='L805'></a> 805                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>++) <em class='brace'>{</em>
+<a id='L806' name='L806'></a> 806                     <strong class='reserved'>if</strong>(bdata[k++] != (<strong class='reserved'>byte</strong>)0) <em class='brace'>{</em>
+<a id='L807' name='L807'></a> 807                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[bOffset/8] |=
+<a id='L808' name='L808'></a> 808                             (<strong class='reserved'>byte</strong>)(0x00000001 &lt;&lt; (7 - bOffset &amp; 7));
+<a id='L809' name='L809'></a> 809                     <em class='brace'>}</em>
+<a id='L810' name='L810'></a> 810                     bOffset++;
+<a id='L811' name='L811'></a> 811                 <em class='brace'>}</em>
+<a id='L812' name='L812'></a> 812                 eltOffset += lineStride;
+<a id='L813' name='L813'></a> 813             <em class='brace'>}</em>
+<a id='L814' name='L814'></a> 814         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ||
+<a id='L815' name='L815'></a> 815                   dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>) <em class='brace'>{</em>
+<a id='L816' name='L816'></a> 816             <strong class='reserved'>short</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a> ?
+<a id='L817' name='L817'></a> 817                 ((<a href='../S/2271.html#L58' title='Defined at 58 in src/java/awt/image/DataBufferShort.java.'>DataBufferShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>() :
+<a id='L818' name='L818'></a> 818                 ((<a href='../S/2259.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferUShort.java.'>DataBufferUShort</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L819' name='L819'></a> 819             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L820' name='L820'></a> 820                 <strong class='reserved'>int</strong> bOffset = eltOffset*16 + bitOffset;
+<a id='L821' name='L821'></a> 821                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>++) <em class='brace'>{</em>
+<a id='L822' name='L822'></a> 822                     <strong class='reserved'>if</strong>(bdata[k++] != (<strong class='reserved'>byte</strong>)0) <em class='brace'>{</em>
+<a id='L823' name='L823'></a> 823                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[bOffset/16] |=
+<a id='L824' name='L824'></a> 824                             (<strong class='reserved'>short</strong>)(0x00000001 &lt;&lt;
+<a id='L825' name='L825'></a> 825                                     (15 - bOffset % 16));
+<a id='L826' name='L826'></a> 826                     <em class='brace'>}</em>
+<a id='L827' name='L827'></a> 827                     bOffset++;
+<a id='L828' name='L828'></a> 828                 <em class='brace'>}</em>
+<a id='L829' name='L829'></a> 829                 eltOffset += lineStride;
+<a id='L830' name='L830'></a> 830             <em class='brace'>}</em>
+<a id='L831' name='L831'></a> 831         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong>(dataBuffer <strong class='reserved'>instanceof</strong> <a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>) <em class='brace'>{</em>
+<a id='L832' name='L832'></a> 832             <strong class='reserved'>int</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2243.html#L59' title='Defined at 59 in src/java/awt/image/DataBufferInt.java.'>DataBufferInt</a>)dataBuffer).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
+<a id='L833' name='L833'></a> 833             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> y = 0; y &lt; rectHeight; y++) <em class='brace'>{</em>
+<a id='L834' name='L834'></a> 834                 <strong class='reserved'>int</strong> bOffset = eltOffset*32 + bitOffset;
+<a id='L835' name='L835'></a> 835                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; rectWidth; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>++) <em class='brace'>{</em>
+<a id='L836' name='L836'></a> 836                     <strong class='reserved'>if</strong>(bdata[k++] != (<strong class='reserved'>byte</strong>)0) <em class='brace'>{</em>
+<a id='L837' name='L837'></a> 837                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[bOffset/32] |=
+<a id='L838' name='L838'></a> 838                             (<strong class='reserved'>int</strong>)(0x00000001 &lt;&lt;
+<a id='L839' name='L839'></a> 839                                   (31 - bOffset % 32));
+<a id='L840' name='L840'></a> 840                     <em class='brace'>}</em>
+<a id='L841' name='L841'></a> 841                     bOffset++;
+<a id='L842' name='L842'></a> 842                 <em class='brace'>}</em>
+<a id='L843' name='L843'></a> 843                 eltOffset += lineStride;
+<a id='L844' name='L844'></a> 844             <em class='brace'>}</em>
+<a id='L845' name='L845'></a> 845         <em class='brace'>}</em>
+<a id='L846' name='L846'></a> 846     <em class='brace'>}</em>
+<a id='L847' name='L847'></a> 847 
+<a id='L848' name='L848'></a> 848     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21206.html' title='Multiple referred from 5 places.'>isBinary</a>(<a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm) <em class='brace'>{</em>
+<a id='L849' name='L849'></a> 849         <strong class='reserved'>return</strong> sm <strong class='reserved'>instanceof</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> &amp;&amp;
+<a id='L850' name='L850'></a> 850             ((<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm).<a href='../S/2229.html#L283' title='Defined at 283 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>getPixelBitStride</a>() == 1 &amp;&amp;
+<a id='L851' name='L851'></a> 851             sm.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>() == 1;
+<a id='L852' name='L852'></a> 852     <em class='brace'>}</em>
+<a id='L853' name='L853'></a> 853 
+<a id='L854' name='L854'></a> 854     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> <a href='../R/12280.html' title='Multiple referred from 3 places.'>createColorModel</a>(<a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a> colorSpace,
+<a id='L855' name='L855'></a> 855                                               <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sampleModel) <em class='brace'>{</em>
+<a id='L856' name='L856'></a> 856         <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> colorModel = <strong class='reserved'>null</strong>;
+<a id='L857' name='L857'></a> 857 
+<a id='L858' name='L858'></a> 858         <strong class='reserved'>if</strong>(sampleModel == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L859' name='L859'></a> 859             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("ImageUtil1"));
+<a id='L860' name='L860'></a> 860         <em class='brace'>}</em>
+<a id='L861' name='L861'></a> 861 
+<a id='L862' name='L862'></a> 862         <strong class='reserved'>int</strong> numBands = sampleModel.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>();
+<a id='L863' name='L863'></a> 863         <strong class='reserved'>if</strong> (numBands &lt; 1 || numBands &gt; 4) <em class='brace'>{</em>
+<a id='L864' name='L864'></a> 864             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L865' name='L865'></a> 865         <em class='brace'>}</em>
+<a id='L866' name='L866'></a> 866 
+<a id='L867' name='L867'></a> 867         <strong class='reserved'>int</strong> dataType = sampleModel.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>();
+<a id='L868' name='L868'></a> 868         <strong class='reserved'>if</strong> (sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>) <em class='brace'>{</em>
+<a id='L869' name='L869'></a> 869             <strong class='reserved'>if</strong> (dataType &lt; <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE ||
+<a id='L870' name='L870'></a> 870                 <em class='comment'>//dataType == DataBuffer.TYPE_SHORT ||</em>
+<a id='L871' name='L871'></a> 871                 dataType &gt; <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_DOUBLE) <em class='brace'>{</em>
+<a id='L872' name='L872'></a> 872                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L873' name='L873'></a> 873             <em class='brace'>}</em>
+<a id='L874' name='L874'></a> 874 
+<a id='L875' name='L875'></a> 875             <strong class='reserved'>if</strong> (colorSpace == <strong class='reserved'>null</strong>)
+<a id='L876' name='L876'></a> 876                 colorSpace =
+<a id='L877' name='L877'></a> 877                     numBands &lt;= 2 ?
+<a id='L878' name='L878'></a> 878                     <a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(<a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.CS_GRAY) :
+<a id='L879' name='L879'></a> 879                     <a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(<a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.CS_sRGB);
+<a id='L880' name='L880'></a> 880 
+<a id='L881' name='L881'></a> 881             <strong class='reserved'>boolean</strong> useAlpha = (numBands == 2) || (numBands == 4);
+<a id='L882' name='L882'></a> 882             <strong class='reserved'>int</strong> transparency = useAlpha ?
+<a id='L883' name='L883'></a> 883                                <a href='../S/2170.html#L34' title='Defined at 34 in src/java/awt/Transparency.java.'>Transparency</a>.TRANSLUCENT : <a href='../S/2170.html#L34' title='Defined at 34 in src/java/awt/Transparency.java.'>Transparency</a>.OPAQUE;
+<a id='L884' name='L884'></a> 884 
+<a id='L885' name='L885'></a> 885             <strong class='reserved'>boolean</strong> premultiplied = <strong class='reserved'>false</strong>;
+<a id='L886' name='L886'></a> 886 
+<a id='L887' name='L887'></a> 887             <strong class='reserved'>int</strong> dataTypeSize = <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.<a href='../S/2284.html#L120' title='Defined at 120 in src/java/awt/image/DataBuffer.java.'>getDataTypeSize</a>(dataType);
+<a id='L888' name='L888'></a> 888             <strong class='reserved'>int</strong>[] bits = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[numBands];
+<a id='L889' name='L889'></a> 889             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; numBands; i++) <em class='brace'>{</em>
+<a id='L890' name='L890'></a> 890                 bits[i] = dataTypeSize;
+<a id='L891' name='L891'></a> 891             <em class='brace'>}</em>
+<a id='L892' name='L892'></a> 892 
+<a id='L893' name='L893'></a> 893             colorModel = <strong class='reserved'>new</strong> <a href='../S/2267.html#L177' title='Defined at 177 in src/java/awt/image/ComponentColorModel.java.'>ComponentColorModel</a>(colorSpace,
+<a id='L894' name='L894'></a> 894                                                  bits,
+<a id='L895' name='L895'></a> 895                                                  useAlpha,
+<a id='L896' name='L896'></a> 896                                                  premultiplied,
+<a id='L897' name='L897'></a> 897                                                  transparency,
+<a id='L898' name='L898'></a> 898                                                  dataType);
+<a id='L899' name='L899'></a> 899         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L900' name='L900'></a> 900             <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a> sppsm =
+<a id='L901' name='L901'></a> 901                 (<a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>)sampleModel;
+<a id='L902' name='L902'></a> 902 
+<a id='L903' name='L903'></a> 903             <strong class='reserved'>int</strong>[] bitMasks = sppsm.<a href='../S/2273.html#L285' title='Defined at 285 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>getBitMasks</a>();
+<a id='L904' name='L904'></a> 904             <strong class='reserved'>int</strong> rmask = 0;
+<a id='L905' name='L905'></a> 905             <strong class='reserved'>int</strong> gmask = 0;
+<a id='L906' name='L906'></a> 906             <strong class='reserved'>int</strong> bmask = 0;
+<a id='L907' name='L907'></a> 907             <strong class='reserved'>int</strong> amask = 0;
+<a id='L908' name='L908'></a> 908 
+<a id='L909' name='L909'></a> 909             numBands = bitMasks.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L910' name='L910'></a> 910             <strong class='reserved'>if</strong> (numBands &lt;= 2) <em class='brace'>{</em>
+<a id='L911' name='L911'></a> 911                 rmask = gmask = bmask = bitMasks[0];
+<a id='L912' name='L912'></a> 912                 <strong class='reserved'>if</strong> (numBands == 2) <em class='brace'>{</em>
+<a id='L913' name='L913'></a> 913                     amask = bitMasks[1];
+<a id='L914' name='L914'></a> 914                 <em class='brace'>}</em>
+<a id='L915' name='L915'></a> 915             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L916' name='L916'></a> 916                 rmask = bitMasks[0];
+<a id='L917' name='L917'></a> 917                 gmask = bitMasks[1];
+<a id='L918' name='L918'></a> 918                 bmask = bitMasks[2];
+<a id='L919' name='L919'></a> 919                 <strong class='reserved'>if</strong> (numBands == 4) <em class='brace'>{</em>
+<a id='L920' name='L920'></a> 920                     amask = bitMasks[3];
+<a id='L921' name='L921'></a> 921                 <em class='brace'>}</em>
+<a id='L922' name='L922'></a> 922             <em class='brace'>}</em>
+<a id='L923' name='L923'></a> 923 
+<a id='L924' name='L924'></a> 924             <strong class='reserved'>int</strong>[] sampleSize = sppsm.<a href='../D/22227.html' title='Multiple defined in 8 places.'>getSampleSize</a>();
+<a id='L925' name='L925'></a> 925             <strong class='reserved'>int</strong> bits = 0;
+<a id='L926' name='L926'></a> 926             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; sampleSize.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L927' name='L927'></a> 927                 bits += sampleSize[i];
+<a id='L928' name='L928'></a> 928             <em class='brace'>}</em>
+<a id='L929' name='L929'></a> 929 
+<a id='L930' name='L930'></a> 930             <strong class='reserved'>if</strong> (colorSpace == <strong class='reserved'>null</strong>)
+<a id='L931' name='L931'></a> 931                 colorSpace = <a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(<a href='../S/2159.html#L98' title='Defined at 98 in src/java/awt/color/ColorSpace.java.'>ColorSpace</a>.CS_sRGB);
+<a id='L932' name='L932'></a> 932 
+<a id='L933' name='L933'></a> 933             colorModel =
+<a id='L934' name='L934'></a> 934                 <strong class='reserved'>new</strong> <a href='../S/2270.html#L109' title='Defined at 109 in src/java/awt/image/DirectColorModel.java.'>DirectColorModel</a>(colorSpace,
+<a id='L935' name='L935'></a> 935                                      bits, rmask, gmask, bmask, amask,
+<a id='L936' name='L936'></a> 936                                      <strong class='reserved'>false</strong>,
+<a id='L937' name='L937'></a> 937                                      sampleModel.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>());
+<a id='L938' name='L938'></a> 938         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L939' name='L939'></a> 939             <strong class='reserved'>int</strong> bits =
+<a id='L940' name='L940'></a> 940                 ((<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sampleModel).<a href='../S/2229.html#L283' title='Defined at 283 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>getPixelBitStride</a>();
+<a id='L941' name='L941'></a> 941             <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = 1 &lt;&lt; bits;
+<a id='L942' name='L942'></a> 942             <strong class='reserved'>byte</strong>[] comp = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>];
+<a id='L943' name='L943'></a> 943 
+<a id='L944' name='L944'></a> 944             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>; i++)
+<a id='L945' name='L945'></a> 945                 comp[i] = (<strong class='reserved'>byte</strong>)(255 * i / (<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> - 1));
+<a id='L946' name='L946'></a> 946 
+<a id='L947' name='L947'></a> 947             colorModel = <strong class='reserved'>new</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>(bits, <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>, comp, comp, comp);
+<a id='L948' name='L948'></a> 948         <em class='brace'>}</em>
+<a id='L949' name='L949'></a> 949 
+<a id='L950' name='L950'></a> 950         <strong class='reserved'>return</strong> colorModel;
+<a id='L951' name='L951'></a> 951     <em class='brace'>}</em>
+<a id='L952' name='L952'></a> 952 
+<a id='L953' name='L953'></a> 953     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> getElementSize(<a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm) <em class='brace'>{</em>
+<a id='L954' name='L954'></a> 954         <strong class='reserved'>int</strong> elementSize = <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.<a href='../S/2284.html#L120' title='Defined at 120 in src/java/awt/image/DataBuffer.java.'>getDataTypeSize</a>(sm.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>());
+<a id='L955' name='L955'></a> 955 
+<a id='L956' name='L956'></a> 956         <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L957' name='L957'></a> 957             <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> mppsm =
+<a id='L958' name='L958'></a> 958                 (<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm;
+<a id='L959' name='L959'></a> 959             <strong class='reserved'>return</strong> mppsm.<a href='../D/22227.html' title='Multiple defined in 8 places.'>getSampleSize</a>(0) * mppsm.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>();
+<a id='L960' name='L960'></a> 960         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>) <em class='brace'>{</em>
+<a id='L961' name='L961'></a> 961             <strong class='reserved'>return</strong> sm.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>() * elementSize;
+<a id='L962' name='L962'></a> 962         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L963' name='L963'></a> 963             <strong class='reserved'>return</strong> elementSize;
+<a id='L964' name='L964'></a> 964         <em class='brace'>}</em>
+<a id='L965' name='L965'></a> 965 
+<a id='L966' name='L966'></a> 966         <strong class='reserved'>return</strong> elementSize * sm.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>();
+<a id='L967' name='L967'></a> 967 
+<a id='L968' name='L968'></a> 968     <em class='brace'>}</em>
+<a id='L969' name='L969'></a> 969 
+<a id='L970' name='L970'></a> 970     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>long</strong> <a href='../S/6793.html#L1027' title='Referred from 1027 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>getTileSize</a>(<a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm) <em class='brace'>{</em>
+<a id='L971' name='L971'></a> 971         <strong class='reserved'>int</strong> elementSize = <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.<a href='../S/2284.html#L120' title='Defined at 120 in src/java/awt/image/DataBuffer.java.'>getDataTypeSize</a>(sm.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>());
+<a id='L972' name='L972'></a> 972 
+<a id='L973' name='L973'></a> 973         <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L974' name='L974'></a> 974             <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a> mppsm =
+<a id='L975' name='L975'></a> 975                 (<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sm;
+<a id='L976' name='L976'></a> 976             <strong class='reserved'>return</strong> (mppsm.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>() * mppsm.<a href='../D/19442.html' title='Multiple defined in 56 places.'>getHeight</a>() +
+<a id='L977' name='L977'></a> 977                    (mppsm.<a href='../S/2229.html#L292' title='Defined at 292 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>getDataBitOffset</a>() + elementSize -1) / elementSize) *
+<a id='L978' name='L978'></a> 978                    ((elementSize + 7) / 8);
+<a id='L979' name='L979'></a> 979         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>) <em class='brace'>{</em>
+<a id='L980' name='L980'></a> 980             <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a> csm = (<a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>)sm;
+<a id='L981' name='L981'></a> 981             <strong class='reserved'>int</strong>[] bandOffsets = csm.<a href='../S/2254.html#L535' title='Defined at 535 in src/java/awt/image/ComponentSampleModel.java.'>getBandOffsets</a>();
+<a id='L982' name='L982'></a> 982             <strong class='reserved'>int</strong> maxBandOff = bandOffsets[0];
+<a id='L983' name='L983'></a> 983             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=1; i&lt;bandOffsets.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L984' name='L984'></a> 984                 maxBandOff = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(maxBandOff, bandOffsets[i]);
+<a id='L985' name='L985'></a> 985 
+<a id='L986' name='L986'></a> 986             <strong class='reserved'>long</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = 0;
+<a id='L987' name='L987'></a> 987             <strong class='reserved'>int</strong> pixelStride = csm.<a href='../S/2254.html#L549' title='Defined at 549 in src/java/awt/image/ComponentSampleModel.java.'>getPixelStride</a>();
+<a id='L988' name='L988'></a> 988             <strong class='reserved'>int</strong> scanlineStride = csm.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
+<a id='L989' name='L989'></a> 989             <strong class='reserved'>if</strong> (maxBandOff &gt;= 0)
+<a id='L990' name='L990'></a> 990                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> += maxBandOff + 1;
+<a id='L991' name='L991'></a> 991             <strong class='reserved'>if</strong> (pixelStride &gt; 0)
+<a id='L992' name='L992'></a> 992                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> += pixelStride * (sm.<a href='../D/23687.html' title='Multiple defined in 56 places.'>getWidth</a>() - 1);
+<a id='L993' name='L993'></a> 993             <strong class='reserved'>if</strong> (scanlineStride &gt; 0)
+<a id='L994' name='L994'></a> 994                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> += scanlineStride * (sm.<a href='../D/19442.html' title='Multiple defined in 56 places.'>getHeight</a>() - 1);
+<a id='L995' name='L995'></a> 995 
+<a id='L996' name='L996'></a> 996             <strong class='reserved'>int</strong>[] bankIndices = csm.<a href='../S/2254.html#L528' title='Defined at 528 in src/java/awt/image/ComponentSampleModel.java.'>getBankIndices</a>();
+<a id='L997' name='L997'></a> 997             maxBandOff = bankIndices[0];
+<a id='L998' name='L998'></a> 998             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=1; i&lt;bankIndices.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L999' name='L999'></a> 999                 maxBandOff = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(maxBandOff, bankIndices[i]);
+<a id='L1000' name='L1000'></a>1000             <strong class='reserved'>return</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> * (maxBandOff + 1) * ((elementSize + 7) / 8);
+<a id='L1001' name='L1001'></a>1001         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>) <em class='brace'>{</em>
+<a id='L1002' name='L1002'></a>1002             <a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a> sppsm =
+<a id='L1003' name='L1003'></a>1003                 (<a href='../S/2273.html#L66' title='Defined at 66 in src/java/awt/image/SinglePixelPackedSampleModel.java.'>SinglePixelPackedSampleModel</a>)sm;
+<a id='L1004' name='L1004'></a>1004             <strong class='reserved'>long</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = sppsm.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>() * (sppsm.<a href='../D/19442.html' title='Multiple defined in 56 places.'>getHeight</a>() - 1) +
+<a id='L1005' name='L1005'></a>1005                         sppsm.<a href='../D/23687.html' title='Multiple defined in 56 places.'>getWidth</a>();
+<a id='L1006' name='L1006'></a>1006             <strong class='reserved'>return</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> * ((elementSize + 7) / 8);
+<a id='L1007' name='L1007'></a>1007         <em class='brace'>}</em>
+<a id='L1008' name='L1008'></a>1008 
+<a id='L1009' name='L1009'></a>1009         <strong class='reserved'>return</strong> 0;
+<a id='L1010' name='L1010'></a>1010     <em class='brace'>}</em>
+<a id='L1011' name='L1011'></a>1011 
+<a id='L1012' name='L1012'></a>1012     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>long</strong> getBandSize(<a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm) <em class='brace'>{</em>
+<a id='L1013' name='L1013'></a>1013         <strong class='reserved'>int</strong> elementSize = <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.<a href='../S/2284.html#L120' title='Defined at 120 in src/java/awt/image/DataBuffer.java.'>getDataTypeSize</a>(sm.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>());
+<a id='L1014' name='L1014'></a>1014 
+<a id='L1015' name='L1015'></a>1015         <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>) <em class='brace'>{</em>
+<a id='L1016' name='L1016'></a>1016             <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a> csm = (<a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>)sm;
+<a id='L1017' name='L1017'></a>1017             <strong class='reserved'>int</strong> pixelStride = csm.<a href='../S/2254.html#L549' title='Defined at 549 in src/java/awt/image/ComponentSampleModel.java.'>getPixelStride</a>();
+<a id='L1018' name='L1018'></a>1018             <strong class='reserved'>int</strong> scanlineStride = csm.<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
+<a id='L1019' name='L1019'></a>1019             <strong class='reserved'>long</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(pixelStride, scanlineStride);
+<a id='L1020' name='L1020'></a>1020 
+<a id='L1021' name='L1021'></a>1021             <strong class='reserved'>if</strong> (pixelStride &gt; 0)
+<a id='L1022' name='L1022'></a>1022                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> += pixelStride * (sm.<a href='../D/23687.html' title='Multiple defined in 56 places.'>getWidth</a>() - 1);
+<a id='L1023' name='L1023'></a>1023             <strong class='reserved'>if</strong> (scanlineStride &gt; 0)
+<a id='L1024' name='L1024'></a>1024                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> += scanlineStride * (sm.<a href='../D/19442.html' title='Multiple defined in 56 places.'>getHeight</a>() - 1);
+<a id='L1025' name='L1025'></a>1025             <strong class='reserved'>return</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> * ((elementSize + 7) / 8);
+<a id='L1026' name='L1026'></a>1026         <em class='brace'>}</em> <strong class='reserved'>else</strong>
+<a id='L1027' name='L1027'></a>1027             <strong class='reserved'>return</strong> <a href='../S/6793.html#L970' title='Defined at 970 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>getTileSize</a>(sm);
+<a id='L1028' name='L1028'></a>1028     <em class='brace'>}</em>
+<a id='L1029' name='L1029'></a>1029     <em class='comment'>/**</em>
+<a id='L1030' name='L1030'></a>1030 <em class='comment'>     * Tests whether the color indices represent a gray-scale image.</em>
+<a id='L1031' name='L1031'></a>1031 <em class='comment'>     *</em>
+<a id='L1032' name='L1032'></a>1032 <em class='comment'>     * @param r The red channel color indices.</em>
+<a id='L1033' name='L1033'></a>1033 <em class='comment'>     * @param g The green channel color indices.</em>
+<a id='L1034' name='L1034'></a>1034 <em class='comment'>     * @param b The blue channel color indices.</em>
+<a id='L1035' name='L1035'></a>1035 <em class='comment'>     * @return If all the indices have 256 entries, and are identical mappings,</em>
+<a id='L1036' name='L1036'></a>1036 <em class='comment'>     *         return &lt;code&gt;true&lt;/code&gt;; otherwise, return &lt;code&gt;false&lt;/code&gt;.</em>
+<a id='L1037' name='L1037'></a>1037 <em class='comment'>     */</em>
+<a id='L1038' name='L1038'></a>1038     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../S/6834.html#L619' title='Referred from 619 in src/com/sun/imageio/plugins/bmp/BMPImageReader.java.'>isIndicesForGrayscale</a>(<strong class='reserved'>byte</strong>[] r, <strong class='reserved'>byte</strong>[] g, <strong class='reserved'>byte</strong>[] b) <em class='brace'>{</em>
+<a id='L1039' name='L1039'></a>1039         <strong class='reserved'>if</strong> (r.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != g.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> || r.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != b.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>)
+<a id='L1040' name='L1040'></a>1040             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L1041' name='L1041'></a>1041 
+<a id='L1042' name='L1042'></a>1042         <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = r.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L1043' name='L1043'></a>1043 
+<a id='L1044' name='L1044'></a>1044         <strong class='reserved'>if</strong> (<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> != 256)
+<a id='L1045' name='L1045'></a>1045             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L1046' name='L1046'></a>1046 
+<a id='L1047' name='L1047'></a>1047         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>; i++) <em class='brace'>{</em>
+<a id='L1048' name='L1048'></a>1048             <strong class='reserved'>byte</strong> temp = (<strong class='reserved'>byte</strong>) i;
+<a id='L1049' name='L1049'></a>1049 
+<a id='L1050' name='L1050'></a>1050             <strong class='reserved'>if</strong> (r[i] != temp || g[i] != temp || b[i] != temp)
+<a id='L1051' name='L1051'></a>1051                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L1052' name='L1052'></a>1052         <em class='brace'>}</em>
+<a id='L1053' name='L1053'></a>1053 
+<a id='L1054' name='L1054'></a>1054         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L1055' name='L1055'></a>1055     <em class='brace'>}</em>
+<a id='L1056' name='L1056'></a>1056 
+<a id='L1057' name='L1057'></a>1057     <em class='comment'>/** Converts the provided object to &lt;code&gt;String&lt;/code&gt; */</em>
+<a id='L1058' name='L1058'></a>1058     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/12044.html' title='Multiple referred from 2 places.'>convertObjectToString</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj) <em class='brace'>{</em>
+<a id='L1059' name='L1059'></a>1059         <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong>)
+<a id='L1060' name='L1060'></a>1060             <strong class='reserved'>return</strong> "";
+<a id='L1061' name='L1061'></a>1061 
+<a id='L1062' name='L1062'></a>1062         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> s = "";
+<a id='L1063' name='L1063'></a>1063         <strong class='reserved'>if</strong> (obj <strong class='reserved'>instanceof</strong> <strong class='reserved'>byte</strong>[]) <em class='brace'>{</em>
+<a id='L1064' name='L1064'></a>1064             <strong class='reserved'>byte</strong>[] bArray = (<strong class='reserved'>byte</strong>[])obj;
+<a id='L1065' name='L1065'></a>1065             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; bArray.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L1066' name='L1066'></a>1066                 s += bArray[i] + " ";
+<a id='L1067' name='L1067'></a>1067             <strong class='reserved'>return</strong> s;
+<a id='L1068' name='L1068'></a>1068         <em class='brace'>}</em>
+<a id='L1069' name='L1069'></a>1069 
+<a id='L1070' name='L1070'></a>1070         <strong class='reserved'>if</strong> (obj <strong class='reserved'>instanceof</strong> <strong class='reserved'>int</strong>[]) <em class='brace'>{</em>
+<a id='L1071' name='L1071'></a>1071             <strong class='reserved'>int</strong>[] iArray = (<strong class='reserved'>int</strong>[])obj;
+<a id='L1072' name='L1072'></a>1072             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; iArray.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L1073' name='L1073'></a>1073                 s += iArray[i] + " " ;
+<a id='L1074' name='L1074'></a>1074             <strong class='reserved'>return</strong> s;
+<a id='L1075' name='L1075'></a>1075         <em class='brace'>}</em>
+<a id='L1076' name='L1076'></a>1076 
+<a id='L1077' name='L1077'></a>1077         <strong class='reserved'>if</strong> (obj <strong class='reserved'>instanceof</strong> <strong class='reserved'>short</strong>[]) <em class='brace'>{</em>
+<a id='L1078' name='L1078'></a>1078             <strong class='reserved'>short</strong>[] sArray = (<strong class='reserved'>short</strong>[])obj;
+<a id='L1079' name='L1079'></a>1079             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; sArray.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L1080' name='L1080'></a>1080                 s += sArray[i] + " " ;
+<a id='L1081' name='L1081'></a>1081             <strong class='reserved'>return</strong> s;
+<a id='L1082' name='L1082'></a>1082         <em class='brace'>}</em>
+<a id='L1083' name='L1083'></a>1083 
+<a id='L1084' name='L1084'></a>1084         <strong class='reserved'>return</strong> obj.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L1085' name='L1085'></a>1085 
+<a id='L1086' name='L1086'></a>1086     <em class='brace'>}</em>
+<a id='L1087' name='L1087'></a>1087 
+<a id='L1088' name='L1088'></a>1088     <em class='comment'>/** Checks that the provided &lt;code&gt;ImageWriter&lt;/code&gt; can encode</em>
+<a id='L1089' name='L1089'></a>1089 <em class='comment'>     * the provided &lt;code&gt;ImageTypeSpecifier&lt;/code&gt; or not.  If not, an</em>
+<a id='L1090' name='L1090'></a>1090 <em class='comment'>     * &lt;code&gt;IIOException&lt;/code&gt; will be thrown.</em>
+<a id='L1091' name='L1091'></a>1091 <em class='comment'>     * @param writer The provided &lt;code&gt;ImageWriter&lt;/code&gt;.</em>
+<a id='L1092' name='L1092'></a>1092 <em class='comment'>     * @param type The image to be tested.</em>
+<a id='L1093' name='L1093'></a>1093 <em class='comment'>     * @throws IIOException If the writer cannot encoded the provided image.</em>
+<a id='L1094' name='L1094'></a>1094 <em class='comment'>     */</em>
+<a id='L1095' name='L1095'></a>1095     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/10884.html' title='Multiple referred from 7 places.'>canEncodeImage</a>(<a href='../S/4231.html#L64' title='Defined at 64 in src/javax/imageio/ImageWriter.java.'>ImageWriter</a> <a href='../S/1437.html#L100' title='Defined at 100 in src/java/io/Console.java.'>writer</a>,
+<a id='L1096' name='L1096'></a>1096                                             <a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>)
+<a id='L1097' name='L1097'></a>1097         <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L1098' name='L1098'></a>1098         <a href='../S/4219.html#L76' title='Defined at 76 in src/javax/imageio/spi/ImageWriterSpi.java.'>ImageWriterSpi</a> spi = <a href='../S/1437.html#L100' title='Defined at 100 in src/java/io/Console.java.'>writer</a>.<a href='../D/21251.html' title='Multiple defined in 2 places.'>getOriginatingProvider</a>();
+<a id='L1099' name='L1099'></a>1099 
+<a id='L1100' name='L1100'></a>1100         <strong class='reserved'>if</strong>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != <strong class='reserved'>null</strong> &amp;&amp; spi != <strong class='reserved'>null</strong> &amp;&amp; !spi.<a href='../D/12142.html' title='Multiple defined in 11 places.'>canEncodeImage</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>))  <em class='brace'>{</em>
+<a id='L1101' name='L1101'></a>1101             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("ImageUtil2")+" "+
+<a id='L1102' name='L1102'></a>1102                                    <a href='../S/1437.html#L100' title='Defined at 100 in src/java/io/Console.java.'>writer</a>.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L1103' name='L1103'></a>1103         <em class='brace'>}</em>
+<a id='L1104' name='L1104'></a>1104     <em class='brace'>}</em>
+<a id='L1105' name='L1105'></a>1105 
+<a id='L1106' name='L1106'></a>1106     <em class='comment'>/** Checks that the provided &lt;code&gt;ImageWriter&lt;/code&gt; can encode</em>
+<a id='L1107' name='L1107'></a>1107 <em class='comment'>     * the provided &lt;code&gt;ColorModel&lt;/code&gt; and &lt;code&gt;SampleModel&lt;/code&gt;.</em>
+<a id='L1108' name='L1108'></a>1108 <em class='comment'>     * If not, an &lt;code&gt;IIOException&lt;/code&gt; will be thrown.</em>
+<a id='L1109' name='L1109'></a>1109 <em class='comment'>     * @param writer The provided &lt;code&gt;ImageWriter&lt;/code&gt;.</em>
+<a id='L1110' name='L1110'></a>1110 <em class='comment'>     * @param colorModel The provided &lt;code&gt;ColorModel&lt;/code&gt;.</em>
+<a id='L1111' name='L1111'></a>1111 <em class='comment'>     * @param sampleModel The provided &lt;code&gt;SampleModel&lt;/code&gt;.</em>
+<a id='L1112' name='L1112'></a>1112 <em class='comment'>     * @throws IIOException If the writer cannot encoded the provided image.</em>
+<a id='L1113' name='L1113'></a>1113 <em class='comment'>     */</em>
+<a id='L1114' name='L1114'></a>1114     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/10884.html' title='Multiple referred from 7 places.'>canEncodeImage</a>(<a href='../S/4231.html#L64' title='Defined at 64 in src/javax/imageio/ImageWriter.java.'>ImageWriter</a> <a href='../S/1437.html#L100' title='Defined at 100 in src/java/io/Console.java.'>writer</a>,
+<a id='L1115' name='L1115'></a>1115                                             <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> colorModel,
+<a id='L1116' name='L1116'></a>1116                                             <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sampleModel)
+<a id='L1117' name='L1117'></a>1117         <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L1118' name='L1118'></a>1118         <a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <strong class='reserved'>null</strong>;
+<a id='L1119' name='L1119'></a>1119         <strong class='reserved'>if</strong> (colorModel != <strong class='reserved'>null</strong> &amp;&amp; sampleModel != <strong class='reserved'>null</strong>)
+<a id='L1120' name='L1120'></a>1120             <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <strong class='reserved'>new</strong> <a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a>(colorModel, sampleModel);
+<a id='L1121' name='L1121'></a>1121         <a href='../D/12142.html' title='Multiple defined in 11 places.'>canEncodeImage</a>(<a href='../S/1437.html#L100' title='Defined at 100 in src/java/io/Console.java.'>writer</a>, <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>);
+<a id='L1122' name='L1122'></a>1122     <em class='brace'>}</em>
+<a id='L1123' name='L1123'></a>1123 
+<a id='L1124' name='L1124'></a>1124     <em class='comment'>/**</em>
+<a id='L1125' name='L1125'></a>1125 <em class='comment'>     * Returns whether the image has contiguous data across rows.</em>
+<a id='L1126' name='L1126'></a>1126 <em class='comment'>     */</em>
+<a id='L1127' name='L1127'></a>1127     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> imageIsContiguous(<a href='../S/2255.html#L48' title='Defined at 48 in src/java/awt/image/RenderedImage.java.'>RenderedImage</a> image) <em class='brace'>{</em>
+<a id='L1128' name='L1128'></a>1128         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm;
+<a id='L1129' name='L1129'></a>1129         <strong class='reserved'>if</strong>(image <strong class='reserved'>instanceof</strong> <a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a>) <em class='brace'>{</em>
+<a id='L1130' name='L1130'></a>1130             <a href='../S/2280.html#L49' title='Defined at 49 in src/java/awt/image/WritableRaster.java.'>WritableRaster</a> ras = ((<a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a>)image).<a href='../D/21845.html' title='Multiple defined in 8 places.'>getRaster</a>();
+<a id='L1131' name='L1131'></a>1131             sm = ras.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
+<a id='L1132' name='L1132'></a>1132         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L1133' name='L1133'></a>1133             sm = image.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
+<a id='L1134' name='L1134'></a>1134         <em class='brace'>}</em>
+<a id='L1135' name='L1135'></a>1135 
+<a id='L1136' name='L1136'></a>1136         <strong class='reserved'>if</strong> (sm <strong class='reserved'>instanceof</strong> <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>) <em class='brace'>{</em>
+<a id='L1137' name='L1137'></a>1137             <em class='comment'>// Ensure image rows samples are stored contiguously</em>
+<a id='L1138' name='L1138'></a>1138             <em class='comment'>// in a single bank.</em>
+<a id='L1139' name='L1139'></a>1139             <a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a> csm = (<a href='../S/2254.html#L76' title='Defined at 76 in src/java/awt/image/ComponentSampleModel.java.'>ComponentSampleModel</a>)sm;
+<a id='L1140' name='L1140'></a>1140 
+<a id='L1141' name='L1141'></a>1141             <strong class='reserved'>if</strong> (csm.<a href='../S/2254.html#L549' title='Defined at 549 in src/java/awt/image/ComponentSampleModel.java.'>getPixelStride</a>() != csm.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>()) <em class='brace'>{</em>
+<a id='L1142' name='L1142'></a>1142                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L1143' name='L1143'></a>1143             <em class='brace'>}</em>
+<a id='L1144' name='L1144'></a>1144 
+<a id='L1145' name='L1145'></a>1145             <strong class='reserved'>int</strong>[] bandOffsets = csm.<a href='../S/2254.html#L535' title='Defined at 535 in src/java/awt/image/ComponentSampleModel.java.'>getBandOffsets</a>();
+<a id='L1146' name='L1146'></a>1146             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; bandOffsets.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L1147' name='L1147'></a>1147                 <strong class='reserved'>if</strong> (bandOffsets[i] != i) <em class='brace'>{</em>
+<a id='L1148' name='L1148'></a>1148                     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L1149' name='L1149'></a>1149                 <em class='brace'>}</em>
+<a id='L1150' name='L1150'></a>1150             <em class='brace'>}</em>
+<a id='L1151' name='L1151'></a>1151 
+<a id='L1152' name='L1152'></a>1152             <strong class='reserved'>int</strong>[] bankIndices = csm.<a href='../S/2254.html#L528' title='Defined at 528 in src/java/awt/image/ComponentSampleModel.java.'>getBankIndices</a>();
+<a id='L1153' name='L1153'></a>1153             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; bandOffsets.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L1154' name='L1154'></a>1154                 <strong class='reserved'>if</strong> (bankIndices[i] != 0) <em class='brace'>{</em>
+<a id='L1155' name='L1155'></a>1155                     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L1156' name='L1156'></a>1156                 <em class='brace'>}</em>
+<a id='L1157' name='L1157'></a>1157             <em class='brace'>}</em>
+<a id='L1158' name='L1158'></a>1158 
+<a id='L1159' name='L1159'></a>1159             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L1160' name='L1160'></a>1160         <em class='brace'>}</em>
+<a id='L1161' name='L1161'></a>1161 
+<a id='L1162' name='L1162'></a>1162         <em class='comment'>// Otherwise true if and only if it's a bilevel image with</em>
+<a id='L1163' name='L1163'></a>1163         <em class='comment'>// a MultiPixelPackedSampleModel, 1 bit per pixel, and 1 bit</em>
+<a id='L1164' name='L1164'></a>1164         <em class='comment'>// pixel stride.</em>
+<a id='L1165' name='L1165'></a>1165         <strong class='reserved'>return</strong> <a href='../S/6793.html#L59' title='Defined at 59 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>ImageUtil</a>.<a href='../S/6793.html#L848' title='Defined at 848 in src/com/sun/imageio/plugins/common/ImageUtil.java.'>isBinary</a>(sm);
+<a id='L1166' name='L1166'></a>1166     <em class='brace'>}</em>
+<a id='L1167' name='L1167'></a>1167 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L139'>[^]</a><a href='#L1127'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/security/auth/kerberos/ServicePermission.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8089.html'>security</a>/<a href='../files/8090.html'>auth</a>/<a href='../files/8092.html'>kerberos</a>/ServicePermission.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L156'>[^]</a><a href='#L581'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L156' title='Defined at 156.'>init</a></li>
+<li><a href='#L178' title='Defined at 178.'>implies</a></li>
+<li><a href='#L189' title='Defined at 189.'>impliesIgnoreMask</a></li>
+<li><a href='#L203' title='Defined at 203.'>equals</a></li>
+<li><a href='#L223' title='Defined at 223.'>hashCode</a></li>
+<li><a href='#L237' title='Defined at 237.'>getActions</a></li>
+<li><a href='#L262' title='Defined at 262.'>getActions</a></li>
+<li><a href='#L282' title='Defined at 282.'>newPermissionCollection</a></li>
+<li><a href='#L291' title='Defined at 291.'>getMask</a></li>
+<li><a href='#L301' title='Defined at 301.'>getMask</a></li>
+<li><a href='#L392' title='Defined at 392.'>writeObject</a></li>
+<li><a href='#L406' title='Defined at 406.'>readObject</a></li>
+<li><a href='#L472' title='Defined at 472.'>implies</a></li>
+<li><a href='#L515' title='Defined at 515.'>add</a></li>
+<li><a href='#L534' title='Defined at 534.'>elements</a></li>
+<li><a href='#L562' title='Defined at 562.'>writeObject</a></li>
+<li><a href='#L580' title='Defined at 580.'>SuppressWarnings</a></li>
+<li><a href='#L581' title='Defined at 581.'>readObject</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.security.auth.kerberos;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.*;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.security.Permission;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.security.PermissionCollection;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.io.ObjectStreamField;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.io.ObjectOutputStream;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.io.ObjectInputStream;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <em class='comment'>/**</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * This class is used to protect Kerberos services and the</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * credentials necessary to access those services. There is a one to</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * one mapping of a service principal and the credentials necessary</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * to access the service. Therefore granting access to a service</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * principal implicitly grants access to the credential necessary to</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * establish a security context with the service principal. This</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * applies regardless of whether the credentials are in a cache</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * or acquired via an exchange with the KDC. The credential can</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * be either a ticket granting ticket, a service ticket or a secret</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * key from a key table.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * &lt;p&gt;</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * A ServicePermission contains a service principal name and</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * a list of actions which specify the context the credential can be</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * used within.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;p&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * The service principal name is the canonical name of the</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * {@code KereberosPrincipal} supplying the service, that is</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * the KerberosPrincipal represents a Kerberos service</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * principal. This name is treated in a case sensitive manner.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * An asterisk may appear by itself, to signify any service principal.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * &lt;p&gt;</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * Granting this permission implies that the caller can use a cached</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * credential (TGT, service ticket or secret key) within the context</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * designated by the action. In the case of the TGT, granting this</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * permission also implies that the TGT can be obtained by an</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * Authentication Service exchange.</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;p&gt;</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * The possible actions are:</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> *</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> *    initiate -              allow the caller to use the credential to</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> *                            initiate a security context with a service</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> *                            principal.</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> *</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> *    accept -                allow the caller to use the credential to</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> *                            accept security context as a particular</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> *                            principal.</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * For example, to specify the permission to access to the TGT to</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> * initiate a security context the permission is constructed as follows:</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> *</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> *     ServicePermission("krbtgt/EXAMPLE.COM@EXAMPLE.COM", "initiate");</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * &lt;p&gt;</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * To obtain a service ticket to initiate a context with the "host"</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * service the permission is constructed as follows:</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "initiate");</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> * &lt;p&gt;</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> * For a Kerberized server the action is "accept". For example, the permission</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> * necessary to access and use the secret key of the  Kerberized "host"</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> * service (telnet and the likes)  would be constructed as follows:</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> *</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "accept");</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> *</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> * @since 1.4</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> */</em>
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100 <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/7157.html' title='Multiple referred from 9 places.'>ServicePermission</a> <strong class='reserved'>extends</strong> <a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>implements</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.io.<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> serialVersionUID = -1227585031618624935L;
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105     <em class='comment'>/**</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * Initiate a security context to the specified service</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     */</em>
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> INITIATE   = 0x1;
+<a id='L109' name='L109'></a> 109 
+<a id='L110' name='L110'></a> 110     <em class='comment'>/**</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * Accept a security context</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     */</em>
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> ACCEPT     = 0x2;
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115     <em class='comment'>/**</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * All actions</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     */</em>
+<a id='L118' name='L118'></a> 118     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../S/887.html#L55' title='Defined at 55 in src/java/util/stream/MatchOps.java.'>ALL</a>        = INITIATE|ACCEPT;
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120     <em class='comment'>/**</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * No actions.</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     */</em>
+<a id='L123' name='L123'></a> 123     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../D/5884.html' title='Multiple defined in 2 places.'>NONE</a>    = 0x0;
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <em class='comment'>// the actions mask</em>
+<a id='L126' name='L126'></a> 126     <strong class='reserved'>private</strong> <strong class='reserved'>transient</strong> <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128     <em class='comment'>/**</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * the actions string.</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     *</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * @serial</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     */</em>
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>; <em class='comment'>// Left null as long as possible, then</em>
+<a id='L135' name='L135'></a> 135                             <em class='comment'>// created and re-used in the getAction function.</em>
+<a id='L136' name='L136'></a> 136 
+<a id='L137' name='L137'></a> 137     <em class='comment'>/**</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * Create a new {@code ServicePermission}</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * with the specified {@code servicePrincipal}</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * and {@code action}.</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     *</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @param servicePrincipal the name of the service principal.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * An asterisk may appear by itself, to signify any service principal.</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * @param action the action string</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     */</em>
+<a id='L147' name='L147'></a> 147     <strong class='reserved'>public</strong> ServicePermission(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> servicePrincipal, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>super</strong>(servicePrincipal);
+<a id='L149' name='L149'></a> 149         <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>(servicePrincipal, <a href='../D/20394.html' title='Multiple defined in 14 places.'>getMask</a>(<a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>));
+<a id='L150' name='L150'></a> 150     <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151 
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <em class='comment'>/**</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * Initialize the ServicePermission object.</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     */</em>
+<a id='L156' name='L156'></a> 156     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/20537.html' title='Multiple referred from 888 places.'>init</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> servicePrincipal, <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) <em class='brace'>{</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>if</strong> (servicePrincipal == <strong class='reserved'>null</strong>)
+<a id='L159' name='L159'></a> 159                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("service principal can't be null");
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>if</strong> ((<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> &amp; <a href='../S/887.html#L55' title='Defined at 55 in src/java/util/stream/MatchOps.java.'>ALL</a>) != <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>)
+<a id='L162' name='L162'></a> 162             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("invalid actions mask");
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164         <strong class='reserved'>this</strong>.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L165' name='L165'></a> 165     <em class='brace'>}</em>
+<a id='L166' name='L166'></a> 166 
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168     <em class='comment'>/**</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * Checks if this Kerberos service permission object "implies" the</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * specified permission.</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * &lt;P&gt;</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * If none of the above are true, {@code implies} returns false.</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * @param p the permission to check against.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     *</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * @return true if the specified permission is implied by this object,</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * false if not.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     */</em>
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/20435.html' title='Multiple referred from 23 places.'>implies</a>(<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a> p) <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179         <strong class='reserved'>if</strong> (!(p <strong class='reserved'>instanceof</strong> <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>))
+<a id='L180' name='L180'></a> 180             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L181' name='L181'></a> 181 
+<a id='L182' name='L182'></a> 182         <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a> that = (<a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>) p;
+<a id='L183' name='L183'></a> 183 
+<a id='L184' name='L184'></a> 184         <strong class='reserved'>return</strong> ((<strong class='reserved'>this</strong>.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> &amp; that.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) == that.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) &amp;&amp;
+<a id='L185' name='L185'></a> 185             <a href='../D/24385.html' title='Multiple defined in 3 places.'>impliesIgnoreMask</a>(that);
+<a id='L186' name='L186'></a> 186     <em class='brace'>}</em>
+<a id='L187' name='L187'></a> 187 
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189     <strong class='reserved'>boolean</strong> <a href='../R/20439.html' title='Multiple referred from 6 places.'>impliesIgnoreMask</a>(<a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a> p) <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190         <strong class='reserved'>return</strong> ((<strong class='reserved'>this</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("*")) ||
+<a id='L191' name='L191'></a> 191                 <strong class='reserved'>this</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(p.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>()));
+<a id='L192' name='L192'></a> 192     <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194     <em class='comment'>/**</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * Checks two ServicePermission objects for equality.</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * &lt;P&gt;</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * @param obj the object to test for equality with this object.</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     *</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     * @return true if &lt;i&gt;obj&lt;/i&gt; is a ServicePermission, and has the</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     *  same service principal, and actions as this</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     * ServicePermission object.</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     */</em>
+<a id='L203' name='L203'></a> 203     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/13992.html' title='Multiple referred from 5400 places.'>equals</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj) <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204         <strong class='reserved'>if</strong> (obj == <strong class='reserved'>this</strong>)
+<a id='L205' name='L205'></a> 205             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207         <strong class='reserved'>if</strong> (! (obj <strong class='reserved'>instanceof</strong> <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>))
+<a id='L208' name='L208'></a> 208             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L209' name='L209'></a> 209 
+<a id='L210' name='L210'></a> 210         <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a> that = (<a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>) obj;
+<a id='L211' name='L211'></a> 211         <strong class='reserved'>return</strong> ((<strong class='reserved'>this</strong>.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> &amp; that.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) == that.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) &amp;&amp;
+<a id='L212' name='L212'></a> 212             <strong class='reserved'>this</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(that.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L213' name='L213'></a> 213 
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215     <em class='brace'>}</em>
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217     <em class='comment'>/**</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * Returns the hash code value for this object.</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     *</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * @return a hash code value for this object.</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     */</em>
+<a id='L222' name='L222'></a> 222 
+<a id='L223' name='L223'></a> 223     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/20298.html' title='Multiple referred from 715 places.'>hashCode</a>() <em class='brace'>{</em>
+<a id='L224' name='L224'></a> 224         <strong class='reserved'>return</strong> (<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/24220.html' title='Multiple defined in 552 places.'>hashCode</a>() ^ <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>);
+<a id='L225' name='L225'></a> 225     <em class='brace'>}</em>
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227 
+<a id='L228' name='L228'></a> 228     <em class='comment'>/**</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * Returns the "canonical string representation" of the actions in the</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * specified mask.</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * Always returns present actions in the following order:</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * initiate, accept.</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     *</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @param mask a specific integer action mask to translate into a string</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * @return the canonical string representation of the actions</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     */</em>
+<a id='L237' name='L237'></a> 237     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/14955.html' title='Multiple referred from 33 places.'>getActions</a>(<strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>)
+<a id='L238' name='L238'></a> 238     <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239         <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>();
+<a id='L240' name='L240'></a> 240         <strong class='reserved'>boolean</strong> comma = <strong class='reserved'>false</strong>;
+<a id='L241' name='L241'></a> 241 
+<a id='L242' name='L242'></a> 242         <strong class='reserved'>if</strong> ((<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> &amp; INITIATE) == INITIATE) <em class='brace'>{</em>
+<a id='L243' name='L243'></a> 243             <strong class='reserved'>if</strong> (comma) sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(',');
+<a id='L244' name='L244'></a> 244             <strong class='reserved'>else</strong> comma = <strong class='reserved'>true</strong>;
+<a id='L245' name='L245'></a> 245             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("initiate");
+<a id='L246' name='L246'></a> 246         <em class='brace'>}</em>
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248         <strong class='reserved'>if</strong> ((<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> &amp; ACCEPT) == ACCEPT) <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249             <strong class='reserved'>if</strong> (comma) sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(',');
+<a id='L250' name='L250'></a> 250             <strong class='reserved'>else</strong> comma = <strong class='reserved'>true</strong>;
+<a id='L251' name='L251'></a> 251             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("accept");
+<a id='L252' name='L252'></a> 252         <em class='brace'>}</em>
+<a id='L253' name='L253'></a> 253 
+<a id='L254' name='L254'></a> 254         <strong class='reserved'>return</strong> sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L255' name='L255'></a> 255     <em class='brace'>}</em>
+<a id='L256' name='L256'></a> 256 
+<a id='L257' name='L257'></a> 257     <em class='comment'>/**</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     * Returns the canonical string representation of the actions.</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     * Always returns present actions in the following order:</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * initiate, accept.</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     */</em>
+<a id='L262' name='L262'></a> 262     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/14955.html' title='Multiple referred from 33 places.'>getActions</a>() <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263         <strong class='reserved'>if</strong> (<a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a> == <strong class='reserved'>null</strong>)
+<a id='L264' name='L264'></a> 264             <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a> = <a href='../D/16788.html' title='Multiple defined in 25 places.'>getActions</a>(<strong class='reserved'>this</strong>.<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>);
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266         <strong class='reserved'>return</strong> <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>;
+<a id='L267' name='L267'></a> 267     <em class='brace'>}</em>
+<a id='L268' name='L268'></a> 268 
+<a id='L269' name='L269'></a> 269 
+<a id='L270' name='L270'></a> 270     <em class='comment'>/**</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     * Returns a PermissionCollection object for storing</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * ServicePermission objects.</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     * &lt;br&gt;</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     * ServicePermission objects must be stored in a manner that</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * allows them to be inserted into the collection in any order, but</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * that also enables the PermissionCollection implies method to</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * be implemented in an efficient (and consistent) manner.</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     *</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * @return a new PermissionCollection object suitable for storing</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * ServicePermissions.</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     */</em>
+<a id='L282' name='L282'></a> 282     <strong class='reserved'>public</strong> <a href='../S/1216.html#L94' title='Defined at 94 in src/java/security/PermissionCollection.java.'>PermissionCollection</a> <a href='../R/23594.html' title='Multiple referred from 3 places.'>newPermissionCollection</a>() <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2637.html#L453' title='Defined at 453 in src/javax/security/auth/kerberos/ServicePermission.java.'>KrbServicePermissionCollection</a>();
+<a id='L284' name='L284'></a> 284     <em class='brace'>}</em>
+<a id='L285' name='L285'></a> 285 
+<a id='L286' name='L286'></a> 286     <em class='comment'>/**</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * Return the current action mask.</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     *</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * @return the actions mask.</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     */</em>
+<a id='L291' name='L291'></a> 291     <strong class='reserved'>int</strong> <a href='../R/17558.html' title='Multiple referred from 32 places.'>getMask</a>() <em class='brace'>{</em>
+<a id='L292' name='L292'></a> 292         <strong class='reserved'>return</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L293' name='L293'></a> 293     <em class='brace'>}</em>
+<a id='L294' name='L294'></a> 294 
+<a id='L295' name='L295'></a> 295     <em class='comment'>/**</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     * Convert an action string to an integer actions mask.</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>     *</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     * @param action the action string</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     * @return the action mask</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     */</em>
+<a id='L301' name='L301'></a> 301     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/17558.html' title='Multiple referred from 32 places.'>getMask</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>) <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302 
+<a id='L303' name='L303'></a> 303         <strong class='reserved'>if</strong> (<a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L304' name='L304'></a> 304             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("action can't be null");
+<a id='L305' name='L305'></a> 305         <em class='brace'>}</em>
+<a id='L306' name='L306'></a> 306 
+<a id='L307' name='L307'></a> 307         <strong class='reserved'>if</strong> (<a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("")) <em class='brace'>{</em>
+<a id='L308' name='L308'></a> 308             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("action can't be empty");
+<a id='L309' name='L309'></a> 309         <em class='brace'>}</em>
+<a id='L310' name='L310'></a> 310 
+<a id='L311' name='L311'></a> 311         <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = <a href='../D/5884.html' title='Multiple defined in 2 places.'>NONE</a>;
+<a id='L312' name='L312'></a> 312 
+<a id='L313' name='L313'></a> 313         <strong class='reserved'>char</strong>[] <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a> = <a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>.<a href='../D/35368.html' title='Multiple defined in 3 places.'>toCharArray</a>();
+<a id='L314' name='L314'></a> 314 
+<a id='L315' name='L315'></a> 315         <strong class='reserved'>int</strong> i = <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1;
+<a id='L316' name='L316'></a> 316         <strong class='reserved'>if</strong> (i &lt; 0)
+<a id='L317' name='L317'></a> 317             <strong class='reserved'>return</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L318' name='L318'></a> 318 
+<a id='L319' name='L319'></a> 319         <strong class='reserved'>while</strong> (i != -1) <em class='brace'>{</em>
+<a id='L320' name='L320'></a> 320             <strong class='reserved'>char</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>;
+<a id='L321' name='L321'></a> 321 
+<a id='L322' name='L322'></a> 322             <em class='comment'>// skip whitespace</em>
+<a id='L323' name='L323'></a> 323             <strong class='reserved'>while</strong> ((i!=-1) &amp;&amp; ((<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i]) == ' ' ||
+<a id='L324' name='L324'></a> 324                                <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '\r' ||
+<a id='L325' name='L325'></a> 325                                <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '\n' ||
+<a id='L326' name='L326'></a> 326                                <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '\f' ||
+<a id='L327' name='L327'></a> 327                                <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '\t'))
+<a id='L328' name='L328'></a> 328                 i--;
+<a id='L329' name='L329'></a> 329 
+<a id='L330' name='L330'></a> 330             <em class='comment'>// check for the known strings</em>
+<a id='L331' name='L331'></a> 331             <strong class='reserved'>int</strong> matchlen;
+<a id='L332' name='L332'></a> 332 
+<a id='L333' name='L333'></a> 333             <strong class='reserved'>if</strong> (i &gt;= 7 &amp;&amp; (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-7] == 'i' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-7] == 'I') &amp;&amp;
+<a id='L334' name='L334'></a> 334                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-6] == 'n' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-6] == 'N') &amp;&amp;
+<a id='L335' name='L335'></a> 335                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-5] == 'i' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-5] == 'I') &amp;&amp;
+<a id='L336' name='L336'></a> 336                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-4] == 't' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-4] == 'T') &amp;&amp;
+<a id='L337' name='L337'></a> 337                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-3] == 'i' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-3] == 'I') &amp;&amp;
+<a id='L338' name='L338'></a> 338                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-2] == 'a' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-2] == 'A') &amp;&amp;
+<a id='L339' name='L339'></a> 339                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-1] == 't' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-1] == 'T') &amp;&amp;
+<a id='L340' name='L340'></a> 340                           (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i] == 'e' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i] == 'E'))
+<a id='L341' name='L341'></a> 341             <em class='brace'>{</em>
+<a id='L342' name='L342'></a> 342                 matchlen = 8;
+<a id='L343' name='L343'></a> 343                 <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> |= INITIATE;
+<a id='L344' name='L344'></a> 344 
+<a id='L345' name='L345'></a> 345             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (i &gt;= 5 &amp;&amp; (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-5] == 'a' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-5] == 'A') &amp;&amp;
+<a id='L346' name='L346'></a> 346                                  (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-4] == 'c' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-4] == 'C') &amp;&amp;
+<a id='L347' name='L347'></a> 347                                  (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-3] == 'c' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-3] == 'C') &amp;&amp;
+<a id='L348' name='L348'></a> 348                                  (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-2] == 'e' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-2] == 'E') &amp;&amp;
+<a id='L349' name='L349'></a> 349                                  (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-1] == 'p' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-1] == 'P') &amp;&amp;
+<a id='L350' name='L350'></a> 350                                  (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i] == 't' || <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i] == 'T'))
+<a id='L351' name='L351'></a> 351             <em class='brace'>{</em>
+<a id='L352' name='L352'></a> 352                 matchlen = 6;
+<a id='L353' name='L353'></a> 353                 <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> |= ACCEPT;
+<a id='L354' name='L354'></a> 354 
+<a id='L355' name='L355'></a> 355             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L356' name='L356'></a> 356                 <em class='comment'>// parse error</em>
+<a id='L357' name='L357'></a> 357                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(
+<a id='L358' name='L358'></a> 358                         "invalid permission: " + <a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>);
+<a id='L359' name='L359'></a> 359             <em class='brace'>}</em>
+<a id='L360' name='L360'></a> 360 
+<a id='L361' name='L361'></a> 361             <em class='comment'>// make sure we didn't just match the tail of a word</em>
+<a id='L362' name='L362'></a> 362             <em class='comment'>// like "ackbarfaccept".  Also, skip to the comma.</em>
+<a id='L363' name='L363'></a> 363             <strong class='reserved'>boolean</strong> seencomma = <strong class='reserved'>false</strong>;
+<a id='L364' name='L364'></a> 364             <strong class='reserved'>while</strong> (i &gt;= matchlen &amp;&amp; !seencomma) <em class='brace'>{</em>
+<a id='L365' name='L365'></a> 365                 <strong class='reserved'>switch</strong>(<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i-matchlen]) <em class='brace'>{</em>
+<a id='L366' name='L366'></a> 366                 <strong class='reserved'>case</strong> ',':
+<a id='L367' name='L367'></a> 367                     seencomma = <strong class='reserved'>true</strong>;
+<a id='L368' name='L368'></a> 368                     <strong class='reserved'>break</strong>;
+<a id='L369' name='L369'></a> 369                 <strong class='reserved'>case</strong> ' ': <strong class='reserved'>case</strong> '\r': <strong class='reserved'>case</strong> '\n':
+<a id='L370' name='L370'></a> 370                 <strong class='reserved'>case</strong> '\f': <strong class='reserved'>case</strong> '\t':
+<a id='L371' name='L371'></a> 371                     <strong class='reserved'>break</strong>;
+<a id='L372' name='L372'></a> 372                 <strong class='reserved'>default</strong>:
+<a id='L373' name='L373'></a> 373                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(
+<a id='L374' name='L374'></a> 374                             "invalid permission: " + <a href='../D/10591.html' title='Multiple defined in 3 places.'>action</a>);
+<a id='L375' name='L375'></a> 375                 <em class='brace'>}</em>
+<a id='L376' name='L376'></a> 376                 i--;
+<a id='L377' name='L377'></a> 377             <em class='brace'>}</em>
+<a id='L378' name='L378'></a> 378 
+<a id='L379' name='L379'></a> 379             <em class='comment'>// point i at the location of the comma minus one (or -1).</em>
+<a id='L380' name='L380'></a> 380             i -= matchlen;
+<a id='L381' name='L381'></a> 381         <em class='brace'>}</em>
+<a id='L382' name='L382'></a> 382 
+<a id='L383' name='L383'></a> 383         <strong class='reserved'>return</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>;
+<a id='L384' name='L384'></a> 384     <em class='brace'>}</em>
+<a id='L385' name='L385'></a> 385 
+<a id='L386' name='L386'></a> 386 
+<a id='L387' name='L387'></a> 387     <em class='comment'>/**</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'>     * WriteObject is called to save the state of the ServicePermission</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'>     * to a stream. The actions are serialized, and the superclass</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     * takes care of the name.</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     */</em>
+<a id='L392' name='L392'></a> 392     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/30680.html' title='Multiple referred from 184 places.'>writeObject</a>(<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.io.<a href='../S/1381.html#L162' title='Defined at 162 in src/java/io/ObjectOutputStream.java.'>ObjectOutputStream</a> s)
+<a id='L393' name='L393'></a> 393         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>
+<a id='L394' name='L394'></a> 394     <em class='brace'>{</em>
+<a id='L395' name='L395'></a> 395         <em class='comment'>// Write out the actions. The superclass takes care of the name</em>
+<a id='L396' name='L396'></a> 396         <em class='comment'>// call getActions to make sure actions field is initialized</em>
+<a id='L397' name='L397'></a> 397         <strong class='reserved'>if</strong> (<a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a> == <strong class='reserved'>null</strong>)
+<a id='L398' name='L398'></a> 398             <a href='../D/16788.html' title='Multiple defined in 25 places.'>getActions</a>();
+<a id='L399' name='L399'></a> 399         s.<a href='../D/14752.html' title='Multiple defined in 6 places.'>defaultWriteObject</a>();
+<a id='L400' name='L400'></a> 400     <em class='brace'>}</em>
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402     <em class='comment'>/**</em>
+<a id='L403' name='L403'></a> 403 <em class='comment'>     * readObject is called to restore the state of the</em>
+<a id='L404' name='L404'></a> 404 <em class='comment'>     * ServicePermission from a stream.</em>
+<a id='L405' name='L405'></a> 405 <em class='comment'>     */</em>
+<a id='L406' name='L406'></a> 406     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25518.html' title='Multiple referred from 189 places.'>readObject</a>(<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.io.<a href='../S/1378.html#L206' title='Defined at 206 in src/java/io/ObjectInputStream.java.'>ObjectInputStream</a> s)
+<a id='L407' name='L407'></a> 407          <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>, <a href='../S/1705.html#L53' title='Defined at 53 in src/java/lang/ClassNotFoundException.java.'>ClassNotFoundException</a>
+<a id='L408' name='L408'></a> 408     <em class='brace'>{</em>
+<a id='L409' name='L409'></a> 409         <em class='comment'>// Read in the action, then initialize the rest</em>
+<a id='L410' name='L410'></a> 410         s.<a href='../D/14746.html' title='Multiple defined in 2 places.'>defaultReadObject</a>();
+<a id='L411' name='L411'></a> 411         <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>(<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),<a href='../D/20394.html' title='Multiple defined in 14 places.'>getMask</a>(<a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>));
+<a id='L412' name='L412'></a> 412     <em class='brace'>}</em>
+<a id='L413' name='L413'></a> 413 
+<a id='L414' name='L414'></a> 414 
+<a id='L415' name='L415'></a> 415     <em class='comment'>/*</em>
+<a id='L416' name='L416'></a> 416 <em class='comment'>      public static void main(String args[]) throws Exception {</em>
+<a id='L417' name='L417'></a> 417 <em class='comment'>      ServicePermission this_ =</em>
+<a id='L418' name='L418'></a> 418 <em class='comment'>      new ServicePermission(args[0], "accept");</em>
+<a id='L419' name='L419'></a> 419 <em class='comment'>      ServicePermission that_ =</em>
+<a id='L420' name='L420'></a> 420 <em class='comment'>      new ServicePermission(args[1], "accept,initiate");</em>
+<a id='L421' name='L421'></a> 421 <em class='comment'>      System.out.println("-----\n");</em>
+<a id='L422' name='L422'></a> 422 <em class='comment'>      System.out.println("this.implies(that) = " + this_.implies(that_));</em>
+<a id='L423' name='L423'></a> 423 <em class='comment'>      System.out.println("-----\n");</em>
+<a id='L424' name='L424'></a> 424 <em class='comment'>      System.out.println("this = "+this_);</em>
+<a id='L425' name='L425'></a> 425 <em class='comment'>      System.out.println("-----\n");</em>
+<a id='L426' name='L426'></a> 426 <em class='comment'>      System.out.println("that = "+that_);</em>
+<a id='L427' name='L427'></a> 427 <em class='comment'>      System.out.println("-----\n");</em>
+<a id='L428' name='L428'></a> 428 <em class='comment'></em>
+<a id='L429' name='L429'></a> 429 <em class='comment'>      KrbServicePermissionCollection nps =</em>
+<a id='L430' name='L430'></a> 430 <em class='comment'>      new KrbServicePermissionCollection();</em>
+<a id='L431' name='L431'></a> 431 <em class='comment'>      nps.add(this_);</em>
+<a id='L432' name='L432'></a> 432 <em class='comment'>      nps.add(new ServicePermission("nfs/example.com@EXAMPLE.COM",</em>
+<a id='L433' name='L433'></a> 433 <em class='comment'>      "accept"));</em>
+<a id='L434' name='L434'></a> 434 <em class='comment'>      nps.add(new ServicePermission("host/example.com@EXAMPLE.COM",</em>
+<a id='L435' name='L435'></a> 435 <em class='comment'>      "initiate"));</em>
+<a id='L436' name='L436'></a> 436 <em class='comment'>      System.out.println("nps.implies(that) = " + nps.implies(that_));</em>
+<a id='L437' name='L437'></a> 437 <em class='comment'>      System.out.println("-----\n");</em>
+<a id='L438' name='L438'></a> 438 <em class='comment'></em>
+<a id='L439' name='L439'></a> 439 <em class='comment'>      Enumeration e = nps.elements();</em>
+<a id='L440' name='L440'></a> 440 <em class='comment'></em>
+<a id='L441' name='L441'></a> 441 <em class='comment'>      while (e.hasMoreElements()) {</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'>      ServicePermission x =</em>
+<a id='L443' name='L443'></a> 443 <em class='comment'>      (ServicePermission) e.nextElement();</em>
+<a id='L444' name='L444'></a> 444 <em class='comment'>      System.out.println("nps.e = " + x);</em>
+<a id='L445' name='L445'></a> 445 <em class='comment'>      }</em>
+<a id='L446' name='L446'></a> 446 <em class='comment'></em>
+<a id='L447' name='L447'></a> 447 <em class='comment'>      }</em>
+<a id='L448' name='L448'></a> 448 <em class='comment'>    */</em>
+<a id='L449' name='L449'></a> 449 
+<a id='L450' name='L450'></a> 450 <em class='brace'>}</em>
+<a id='L451' name='L451'></a> 451 
+<a id='L452' name='L452'></a> 452 
+<a id='L453' name='L453'></a> 453 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../S/2637.html#L283' title='Referred from 283 in src/javax/security/auth/kerberos/ServicePermission.java.'>KrbServicePermissionCollection</a> <strong class='reserved'>extends</strong> <a href='../S/1216.html#L94' title='Defined at 94 in src/java/security/PermissionCollection.java.'>PermissionCollection</a>
+<a id='L454' name='L454'></a> 454     <strong class='reserved'>implements</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.io.<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> <em class='brace'>{</em>
+<a id='L455' name='L455'></a> 455 
+<a id='L456' name='L456'></a> 456     <em class='comment'>// Not serialized; see serialization section at end of class</em>
+<a id='L457' name='L457'></a> 457     <strong class='reserved'>private</strong> <strong class='reserved'>transient</strong> <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt; perms;
+<a id='L458' name='L458'></a> 458 
+<a id='L459' name='L459'></a> 459     <strong class='reserved'>public</strong> KrbServicePermissionCollection() <em class='brace'>{</em>
+<a id='L460' name='L460'></a> 460         perms = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt;();
+<a id='L461' name='L461'></a> 461     <em class='brace'>}</em>
+<a id='L462' name='L462'></a> 462 
+<a id='L463' name='L463'></a> 463     <em class='comment'>/**</em>
+<a id='L464' name='L464'></a> 464 <em class='comment'>     * Check and see if this collection of permissions implies the permissions</em>
+<a id='L465' name='L465'></a> 465 <em class='comment'>     * expressed in "permission".</em>
+<a id='L466' name='L466'></a> 466 <em class='comment'>     *</em>
+<a id='L467' name='L467'></a> 467 <em class='comment'>     * @param permission the Permission object to compare</em>
+<a id='L468' name='L468'></a> 468 <em class='comment'>     *</em>
+<a id='L469' name='L469'></a> 469 <em class='comment'>     * @return true if "permission" is a proper subset of a permission in</em>
+<a id='L470' name='L470'></a> 470 <em class='comment'>     * the collection, false if not.</em>
+<a id='L471' name='L471'></a> 471 <em class='comment'>     */</em>
+<a id='L472' name='L472'></a> 472     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/20435.html' title='Multiple referred from 23 places.'>implies</a>(<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a> permission) <em class='brace'>{</em>
+<a id='L473' name='L473'></a> 473         <strong class='reserved'>if</strong> (! (permission <strong class='reserved'>instanceof</strong> <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>))
+<a id='L474' name='L474'></a> 474                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L475' name='L475'></a> 475 
+<a id='L476' name='L476'></a> 476         <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a> np = (<a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>) permission;
+<a id='L477' name='L477'></a> 477         <strong class='reserved'>int</strong> desired = np.<a href='../D/20394.html' title='Multiple defined in 14 places.'>getMask</a>();
+<a id='L478' name='L478'></a> 478         <strong class='reserved'>int</strong> effective = 0;
+<a id='L479' name='L479'></a> 479         <strong class='reserved'>int</strong> needed = desired;
+<a id='L480' name='L480'></a> 480 
+<a id='L481' name='L481'></a> 481         <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L482' name='L482'></a> 482             <strong class='reserved'>int</strong> len = perms.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L483' name='L483'></a> 483 
+<a id='L484' name='L484'></a> 484             <em class='comment'>// need to deal with the case where the needed permission has</em>
+<a id='L485' name='L485'></a> 485             <em class='comment'>// more than one action and the collection has individual permissions</em>
+<a id='L486' name='L486'></a> 486             <em class='comment'>// that sum up to the needed.</em>
+<a id='L487' name='L487'></a> 487 
+<a id='L488' name='L488'></a> 488             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; len; i++) <em class='brace'>{</em>
+<a id='L489' name='L489'></a> 489                 <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = (<a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>) perms.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(i);
+<a id='L490' name='L490'></a> 490 
+<a id='L491' name='L491'></a> 491                 <em class='comment'>//System.out.println("  trying "+x);</em>
+<a id='L492' name='L492'></a> 492                 <strong class='reserved'>if</strong> (((needed &amp; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.<a href='../D/20394.html' title='Multiple defined in 14 places.'>getMask</a>()) != 0) &amp;&amp; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.<a href='../D/24385.html' title='Multiple defined in 3 places.'>impliesIgnoreMask</a>(np)) <em class='brace'>{</em>
+<a id='L493' name='L493'></a> 493                     effective |=  <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.<a href='../D/20394.html' title='Multiple defined in 14 places.'>getMask</a>();
+<a id='L494' name='L494'></a> 494                     <strong class='reserved'>if</strong> ((effective &amp; desired) == desired)
+<a id='L495' name='L495'></a> 495                         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L496' name='L496'></a> 496                     needed = (desired ^ effective);
+<a id='L497' name='L497'></a> 497                 <em class='brace'>}</em>
+<a id='L498' name='L498'></a> 498             <em class='brace'>}</em>
+<a id='L499' name='L499'></a> 499         <em class='brace'>}</em>
+<a id='L500' name='L500'></a> 500         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L501' name='L501'></a> 501     <em class='brace'>}</em>
+<a id='L502' name='L502'></a> 502 
+<a id='L503' name='L503'></a> 503     <em class='comment'>/**</em>
+<a id='L504' name='L504'></a> 504 <em class='comment'>     * Adds a permission to the ServicePermissions. The key for</em>
+<a id='L505' name='L505'></a> 505 <em class='comment'>     * the hash is the name.</em>
+<a id='L506' name='L506'></a> 506 <em class='comment'>     *</em>
+<a id='L507' name='L507'></a> 507 <em class='comment'>     * @param permission the Permission object to add.</em>
+<a id='L508' name='L508'></a> 508 <em class='comment'>     *</em>
+<a id='L509' name='L509'></a> 509 <em class='comment'>     * @exception IllegalArgumentException - if the permission is not a</em>
+<a id='L510' name='L510'></a> 510 <em class='comment'>     *                                       ServicePermission</em>
+<a id='L511' name='L511'></a> 511 <em class='comment'>     *</em>
+<a id='L512' name='L512'></a> 512 <em class='comment'>     * @exception SecurityException - if this PermissionCollection object</em>
+<a id='L513' name='L513'></a> 513 <em class='comment'>     *                                has been marked readonly</em>
+<a id='L514' name='L514'></a> 514 <em class='comment'>     */</em>
+<a id='L515' name='L515'></a> 515     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/9592.html' title='Multiple referred from 2612 places.'>add</a>(<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a> permission) <em class='brace'>{</em>
+<a id='L516' name='L516'></a> 516         <strong class='reserved'>if</strong> (! (permission <strong class='reserved'>instanceof</strong> <a href='../S/2637.html#L100' title='Defined at 100 in src/javax/security/auth/kerberos/ServicePermission.java.'>ServicePermission</a>))
+<a id='L517' name='L517'></a> 517             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("invalid permission: "+
+<a id='L518' name='L518'></a> 518                                                permission);
+<a id='L519' name='L519'></a> 519         <strong class='reserved'>if</strong> (<a href='../D/26131.html' title='Multiple defined in 90 places.'>isReadOnly</a>())
+<a id='L520' name='L520'></a> 520             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a>("attempt to add a Permission to a readonly PermissionCollection");
+<a id='L521' name='L521'></a> 521 
+<a id='L522' name='L522'></a> 522         <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L523' name='L523'></a> 523             perms.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(0, permission);
+<a id='L524' name='L524'></a> 524         <em class='brace'>}</em>
+<a id='L525' name='L525'></a> 525     <em class='brace'>}</em>
+<a id='L526' name='L526'></a> 526 
+<a id='L527' name='L527'></a> 527     <em class='comment'>/**</em>
+<a id='L528' name='L528'></a> 528 <em class='comment'>     * Returns an enumeration of all the ServicePermission objects</em>
+<a id='L529' name='L529'></a> 529 <em class='comment'>     * in the container.</em>
+<a id='L530' name='L530'></a> 530 <em class='comment'>     *</em>
+<a id='L531' name='L531'></a> 531 <em class='comment'>     * @return an enumeration of all the ServicePermission objects.</em>
+<a id='L532' name='L532'></a> 532 <em class='comment'>     */</em>
+<a id='L533' name='L533'></a> 533 
+<a id='L534' name='L534'></a> 534     <strong class='reserved'>public</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt; <a href='../R/13650.html' title='Multiple referred from 679 places.'>elements</a>() <em class='brace'>{</em>
+<a id='L535' name='L535'></a> 535         <em class='comment'>// Convert Iterator into Enumeration</em>
+<a id='L536' name='L536'></a> 536         <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L537' name='L537'></a> 537             <strong class='reserved'>return</strong> <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.<a href='../S/1147.html#L5207' title='Defined at 5207 in src/java/util/Collections.java.'>enumeration</a>(perms);
+<a id='L538' name='L538'></a> 538         <em class='brace'>}</em>
+<a id='L539' name='L539'></a> 539     <em class='brace'>}</em>
+<a id='L540' name='L540'></a> 540 
+<a id='L541' name='L541'></a> 541     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> serialVersionUID = -4118834211490102011L;
+<a id='L542' name='L542'></a> 542 
+<a id='L543' name='L543'></a> 543     <em class='comment'>// Need to maintain serialization interoperability with earlier releases,</em>
+<a id='L544' name='L544'></a> 544     <em class='comment'>// which had the serializable field:</em>
+<a id='L545' name='L545'></a> 545     <em class='comment'>// private Vector permissions;</em>
+<a id='L546' name='L546'></a> 546 
+<a id='L547' name='L547'></a> 547     <em class='comment'>/**</em>
+<a id='L548' name='L548'></a> 548 <em class='comment'>     * @serialField permissions java.util.Vector</em>
+<a id='L549' name='L549'></a> 549 <em class='comment'>     *     A list of ServicePermission objects.</em>
+<a id='L550' name='L550'></a> 550 <em class='comment'>     */</em>
+<a id='L551' name='L551'></a> 551     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/6334.html' title='Multiple defined in 3 places.'>ObjectStreamField</a>[] serialPersistentFields = <em class='brace'>{</em>
+<a id='L552' name='L552'></a> 552         <strong class='reserved'>new</strong> <a href='../D/6334.html' title='Multiple defined in 3 places.'>ObjectStreamField</a>("permissions", <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>.<strong class='reserved'>class</strong>),
+<a id='L553' name='L553'></a> 553     <em class='brace'>}</em>;
+<a id='L554' name='L554'></a> 554 
+<a id='L555' name='L555'></a> 555     <em class='comment'>/**</em>
+<a id='L556' name='L556'></a> 556 <em class='comment'>     * @serialData "permissions" field (a Vector containing the ServicePermissions).</em>
+<a id='L557' name='L557'></a> 557 <em class='comment'>     */</em>
+<a id='L558' name='L558'></a> 558     <em class='comment'>/*</em>
+<a id='L559' name='L559'></a> 559 <em class='comment'>     * Writes the contents of the perms field out as a Vector for</em>
+<a id='L560' name='L560'></a> 560 <em class='comment'>     * serialization compatibility with earlier releases.</em>
+<a id='L561' name='L561'></a> 561 <em class='comment'>     */</em>
+<a id='L562' name='L562'></a> 562     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/30680.html' title='Multiple referred from 184 places.'>writeObject</a>(<a href='../S/1381.html#L162' title='Defined at 162 in src/java/io/ObjectOutputStream.java.'>ObjectOutputStream</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L563' name='L563'></a> 563         <em class='comment'>// Don't call out.defaultWriteObject()</em>
+<a id='L564' name='L564'></a> 564 
+<a id='L565' name='L565'></a> 565         <em class='comment'>// Write out Vector</em>
+<a id='L566' name='L566'></a> 566         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt; <a href='../D/29330.html' title='Multiple defined in 4 places.'>permissions</a> = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;&gt;(perms.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>());
+<a id='L567' name='L567'></a> 567 
+<a id='L568' name='L568'></a> 568         <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L569' name='L569'></a> 569             <a href='../D/29330.html' title='Multiple defined in 4 places.'>permissions</a>.<a href='../D/10646.html' title='Multiple defined in 78 places.'>addAll</a>(perms);
+<a id='L570' name='L570'></a> 570         <em class='brace'>}</em>
+<a id='L571' name='L571'></a> 571 
+<a id='L572' name='L572'></a> 572         <a href='../S/1381.html#L162' title='Defined at 162 in src/java/io/ObjectOutputStream.java.'>ObjectOutputStream</a>.<a href='../S/1381.html#L878' title='Defined at 878 in src/java/io/ObjectOutputStream.java.'>PutField</a> pfields = <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29995.html' title='Multiple defined in 2 places.'>putFields</a>();
+<a id='L573' name='L573'></a> 573         pfields.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>("permissions", <a href='../D/29330.html' title='Multiple defined in 4 places.'>permissions</a>);
+<a id='L574' name='L574'></a> 574         <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/37065.html' title='Multiple defined in 3 places.'>writeFields</a>();
+<a id='L575' name='L575'></a> 575     <em class='brace'>}</em>
+<a id='L576' name='L576'></a> 576 
+<a id='L577' name='L577'></a> 577     <em class='comment'>/*</em>
+<a id='L578' name='L578'></a> 578 <em class='comment'>     * Reads in a Vector of ServicePermissions and saves them in the perms field.</em>
+<a id='L579' name='L579'></a> 579 <em class='comment'>     */</em>
+<a id='L580' name='L580'></a> 580     @<a href='../R/7764.html' title='Multiple referred from 264 places.'>SuppressWarnings</a>("unchecked")
+<a id='L581' name='L581'></a> 581     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25518.html' title='Multiple referred from 189 places.'>readObject</a>(<a href='../S/1378.html#L206' title='Defined at 206 in src/java/io/ObjectInputStream.java.'>ObjectInputStream</a> <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a>)
+<a id='L582' name='L582'></a> 582         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>, <a href='../S/1705.html#L53' title='Defined at 53 in src/java/lang/ClassNotFoundException.java.'>ClassNotFoundException</a>
+<a id='L583' name='L583'></a> 583     <em class='brace'>{</em>
+<a id='L584' name='L584'></a> 584         <em class='comment'>// Don't call defaultReadObject()</em>
+<a id='L585' name='L585'></a> 585 
+<a id='L586' name='L586'></a> 586         <em class='comment'>// Read in serialized fields</em>
+<a id='L587' name='L587'></a> 587         <a href='../S/1378.html#L206' title='Defined at 206 in src/java/io/ObjectInputStream.java.'>ObjectInputStream</a>.<a href='../S/1378.html#L1079' title='Defined at 1079 in src/java/io/ObjectInputStream.java.'>GetField</a> gfields = <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a>.<a href='../D/30181.html' title='Multiple defined in 6 places.'>readFields</a>();
+<a id='L588' name='L588'></a> 588 
+<a id='L589' name='L589'></a> 589         <em class='comment'>// Get the one we want</em>
+<a id='L590' name='L590'></a> 590         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt; <a href='../D/29330.html' title='Multiple defined in 4 places.'>permissions</a> =
+<a id='L591' name='L591'></a> 591                 (<a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt;)gfields.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>("permissions", <strong class='reserved'>null</strong>);
+<a id='L592' name='L592'></a> 592         perms = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;<a href='../D/6689.html' title='Multiple defined in 2 places.'>Permission</a>&gt;(<a href='../D/29330.html' title='Multiple defined in 4 places.'>permissions</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>());
+<a id='L593' name='L593'></a> 593         perms.<a href='../D/10646.html' title='Multiple defined in 78 places.'>addAll</a>(<a href='../D/29330.html' title='Multiple defined in 4 places.'>permissions</a>);
+<a id='L594' name='L594'></a> 594     <em class='brace'>}</em>
+<a id='L595' name='L595'></a> 595 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L156'>[^]</a><a href='#L581'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

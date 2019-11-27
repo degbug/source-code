@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xalan/internal/xsltc/compiler/UnsupportedElement.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7870.html'>xalan</a>/<a href='../files/7871.html'>internal</a>/<a href='../files/7878.html'>xsltc</a>/<a href='../files/7881.html'>compiler</a>/UnsupportedElement.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L66'>[^]</a><a href='#L128'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L66' title='Defined at 66.'>setErrorMessage</a></li>
+<li><a href='#L73' title='Defined at 73.'>display</a></li>
+<li><a href='#L84' title='Defined at 84.'>processFallbacks</a></li>
+<li><a href='#L107' title='Defined at 107.'>parseContents</a></li>
+<li><a href='#L114' title='Defined at 114.'>typeCheck</a></li>
+<li><a href='#L128' title='Defined at 128.'>translate</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2001-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: UnsupportedElement.java,v 1.2.4.1 2005/09/05 09:26:51 pvedula Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>package</strong> com.sun.org.apache.xalan.internal.xsltc.compiler;
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> java.util.Vector;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.InstructionList;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.org.apache.bcel.internal.generic.PUSH;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <em class='comment'>/**</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * @author Morten Jorgensen</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> */</em>
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/8551.html' title='Multiple referred from 6 places.'>UnsupportedElement</a> <strong class='reserved'>extends</strong> <a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a> <em class='brace'>{</em>
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45     <strong class='reserved'>private</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a> _fallbacks = <strong class='reserved'>null</strong>;
+<a id='L46' name='L46'></a>  46     <strong class='reserved'>private</strong> <a href='../S/6100.html#L41' title='Defined at 41 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>ErrorMsg</a> _message = <strong class='reserved'>null</strong>;
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> _isExtension = <strong class='reserved'>false</strong>;
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49     <em class='comment'>/**</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'>     * Basic consutrcor - stores element uri/prefix/localname</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     */</em>
+<a id='L52' name='L52'></a>  52     <strong class='reserved'>public</strong> UnsupportedElement(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> local, <strong class='reserved'>boolean</strong> <a href='../D/25535.html' title='Multiple defined in 2 places.'>isExtension</a>) <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53         <strong class='reserved'>super</strong>(uri, <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, local);
+<a id='L54' name='L54'></a>  54         _isExtension = <a href='../D/25535.html' title='Multiple defined in 2 places.'>isExtension</a>;
+<a id='L55' name='L55'></a>  55     <em class='brace'>}</em>
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <em class='comment'>/**</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * There are different categories of unsupported elements (believe it</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     * or not): there are elements within the XSLT namespace (these would</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     * be elements that are not yet implemented), there are extensions of</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * other XSLT processors and there are unrecognised extension elements</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * of this XSLT processor. The error message passed to this method</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     * should describe the unsupported element itself and what category</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * the element belongs in.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     */</em>
+<a id='L66' name='L66'></a>  66     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27349.html' title='Multiple referred from 3 places.'>setErrorMessage</a>(<a href='../S/6100.html#L41' title='Defined at 41 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ErrorMsg.java.'>ErrorMsg</a> <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>) <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67         _message = <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>;
+<a id='L68' name='L68'></a>  68     <em class='brace'>}</em>
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70     <em class='comment'>/**</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * Displays the contents of this element</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     */</em>
+<a id='L73' name='L73'></a>  73     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13332.html' title='Multiple referred from 4 places.'>display</a>(<strong class='reserved'>int</strong> <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>) <em class='brace'>{</em>
+<a id='L74' name='L74'></a>  74         <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>(<a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>);
+<a id='L75' name='L75'></a>  75         <a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("Unsupported element = " + _qname.<a href='../D/20808.html' title='Multiple defined in 28 places.'>getNamespace</a>() +
+<a id='L76' name='L76'></a>  76                      ":" + _qname.<a href='../D/20208.html' title='Multiple defined in 4 places.'>getLocalPart</a>());
+<a id='L77' name='L77'></a>  77         <a href='../S/6076.html#L875' title='Defined at 875 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>displayContents</a>(<a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a> + IndentIncrement);
+<a id='L78' name='L78'></a>  78     <em class='brace'>}</em>
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80 
+<a id='L81' name='L81'></a>  81     <em class='comment'>/**</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * Scan and process all fallback children of the unsupported element.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     */</em>
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6242.html#L108' title='Referred from 108 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/UnsupportedElement.java.'>processFallbacks</a>(<a href='../D/6629.html' title='Multiple defined in 9 places.'>Parser</a> parser) <em class='brace'>{</em>
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a> <a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a> = <a href='../D/17972.html' title='Multiple defined in 129 places.'>getContents</a>();
+<a id='L87' name='L87'></a>  87         <strong class='reserved'>if</strong> (<a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = <a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L89' name='L89'></a>  89             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>; i++) <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90                 <a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a> child = (<a href='../S/6076.html#L64' title='Defined at 64 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/SyntaxTreeNode.java.'>SyntaxTreeNode</a>)<a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a>.<a href='../D/15289.html' title='Multiple defined in 23 places.'>elementAt</a>(i);
+<a id='L91' name='L91'></a>  91                 <strong class='reserved'>if</strong> (child <strong class='reserved'>instanceof</strong> <a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a>) <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92                     <a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a> fallback = (<a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a>)child;
+<a id='L93' name='L93'></a>  93                     fallback.<a href='../D/10597.html' title='Multiple defined in 17 places.'>activate</a>();
+<a id='L94' name='L94'></a>  94                     fallback.<a href='../D/29115.html' title='Multiple defined in 37 places.'>parseContents</a>(parser);
+<a id='L95' name='L95'></a>  95                     <strong class='reserved'>if</strong> (_fallbacks == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96                         _fallbacks = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>();
+<a id='L97' name='L97'></a>  97                     <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98                     _fallbacks.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(child);
+<a id='L99' name='L99'></a>  99                 <em class='brace'>}</em>
+<a id='L100' name='L100'></a> 100             <em class='brace'>}</em>
+<a id='L101' name='L101'></a> 101         <em class='brace'>}</em>
+<a id='L102' name='L102'></a> 102     <em class='brace'>}</em>
+<a id='L103' name='L103'></a> 103 
+<a id='L104' name='L104'></a> 104     <em class='comment'>/**</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * Find any fallback in the descendant nodes; then activate &amp; parse it</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     */</em>
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24531.html' title='Multiple referred from 12 places.'>parseContents</a>(<a href='../D/6629.html' title='Multiple defined in 9 places.'>Parser</a> parser) <em class='brace'>{</em>
+<a id='L108' name='L108'></a> 108         <a href='../S/6242.html#L84' title='Defined at 84 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/UnsupportedElement.java.'>processFallbacks</a>(parser);
+<a id='L109' name='L109'></a> 109     <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111     <em class='comment'>/**</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * Run type check on the fallback element (if any).</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     */</em>
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>public</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a> <a href='../R/29573.html' title='Multiple referred from 123 places.'>typeCheck</a>(<a href='../D/8572.html' title='Multiple defined in 2 places.'>SymbolTable</a> stable) <strong class='reserved'>throws</strong> <a href='../S/6136.html#L32' title='Defined at 32 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/TypeCheckError.java.'>TypeCheckError</a> <em class='brace'>{</em>
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>if</strong> (_fallbacks != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116             <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = _fallbacks.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L117' name='L117'></a> 117             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>; i++) <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118                 <a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a> fallback = (<a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a>)_fallbacks.<a href='../D/15289.html' title='Multiple defined in 23 places.'>elementAt</a>(i);
+<a id='L119' name='L119'></a> 119                 fallback.<a href='../D/35754.html' title='Multiple defined in 91 places.'>typeCheck</a>(stable);
+<a id='L120' name='L120'></a> 120             <em class='brace'>}</em>
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>return</strong> <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>;
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <em class='comment'>/**</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * Translate the fallback element (if any).</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     */</em>
+<a id='L128' name='L128'></a> 128     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/29432.html' title='Multiple referred from 503 places.'>translate</a>(<a href='../S/6130.html#L50' title='Defined at 50 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/ClassGenerator.java.'>ClassGenerator</a> classGen, <a href='../S/6132.html#L82' title='Defined at 82 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/util/MethodGenerator.java.'>MethodGenerator</a> methodGen) <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129         <strong class='reserved'>if</strong> (_fallbacks != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130             <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = _fallbacks.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L131' name='L131'></a> 131             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>; i++) <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132                 <a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a> fallback = (<a href='../S/6201.html#L36' title='Defined at 36 in src/com/sun/org/apache/xalan/internal/xsltc/compiler/Fallback.java.'>Fallback</a>)_fallbacks.<a href='../D/15289.html' title='Multiple defined in 23 places.'>elementAt</a>(i);
+<a id='L133' name='L133'></a> 133                 fallback.<a href='../D/35598.html' title='Multiple defined in 116 places.'>translate</a>(classGen, methodGen);
+<a id='L134' name='L134'></a> 134             <em class='brace'>}</em>
+<a id='L135' name='L135'></a> 135         <em class='brace'>}</em>
+<a id='L136' name='L136'></a> 136         <em class='comment'>// We only go into the else block in forward-compatibility mode, when</em>
+<a id='L137' name='L137'></a> 137         <em class='comment'>// the unsupported element has no fallback.</em>
+<a id='L138' name='L138'></a> 138         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139             <em class='comment'>// If the unsupported element does not have any fallback child, then</em>
+<a id='L140' name='L140'></a> 140             <em class='comment'>// at runtime, a runtime error should be raised when the unsupported</em>
+<a id='L141' name='L141'></a> 141             <em class='comment'>// element is instantiated. Otherwise, no error is thrown.</em>
+<a id='L142' name='L142'></a> 142             <a href='../S/4764.html#L78' title='Defined at 78 in src/com/sun/org/apache/bcel/internal/generic/ConstantPoolGen.java.'>ConstantPoolGen</a> cpg = classGen.<a href='../D/17923.html' title='Multiple defined in 12 places.'>getConstantPool</a>();
+<a id='L143' name='L143'></a> 143             <a href='../S/4621.html#L87' title='Defined at 87 in src/com/sun/org/apache/bcel/internal/generic/InstructionList.java.'>InstructionList</a> il = methodGen.<a href='../D/19776.html' title='Multiple defined in 7 places.'>getInstructionList</a>();
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> unsupportedElem = cpg.<a href='../D/10937.html' title='Multiple defined in 2 places.'>addMethodref</a>(BASIS_LIBRARY_CLASS, "unsupported_ElementF",
+<a id='L146' name='L146'></a> 146                                                          "(" + STRING_SIG + "Z)V");
+<a id='L147' name='L147'></a> 147             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4719.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/PUSH.java.'>PUSH</a>(cpg, <a href='../D/21788.html' title='Multiple defined in 20 places.'>getQName</a>().<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>()));
+<a id='L148' name='L148'></a> 148             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4719.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/PUSH.java.'>PUSH</a>(cpg, _isExtension));
+<a id='L149' name='L149'></a> 149             il.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<strong class='reserved'>new</strong> <a href='../S/4756.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKESTATIC.java.'>INVOKESTATIC</a>(unsupportedElem));
+<a id='L150' name='L150'></a> 150         <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L66'>[^]</a><a href='#L128'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

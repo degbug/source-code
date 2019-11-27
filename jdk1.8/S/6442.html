@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/jmx/snmp/ThreadContext.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7851.html'>snmp</a>/ThreadContext.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L124'>[^]</a><a href='#L320'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L124' title='Defined at 124.'>get</a></li>
+<li><a href='#L146' title='Defined at 146.'>contains</a></li>
+<li><a href='#L157' title='Defined at 157.'>contextContaining</a></li>
+<li><a href='#L211' title='Defined at 211.'>push</a></li>
+<li><a href='#L231' title='Defined at 231.'>getThreadContext</a></li>
+<li><a href='#L247' title='Defined at 247.'>restore</a></li>
+<li><a href='#L307' title='Defined at 307.'>setInitialContext</a></li>
+<li><a href='#L316' title='Defined at 316.'>getContext</a></li>
+<li><a href='#L320' title='Defined at 320.'>setContext</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>package</strong> com.sun.jmx.snmp;
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Stack;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.EmptyStackException;
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <em class='comment'>/**</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * &lt;p&gt;&lt;b&gt;Warning: The interface of this class is subject to change.</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * Use at your own risk.&lt;/b&gt;&lt;/p&gt;</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> *</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * &lt;p&gt;This class associates a context with each thread that</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * references it.  The context is a set of mappings between Strings</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * and Objects.  It is managed as a stack, typically with code like</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * this:&lt;/p&gt;</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * ThreadContext oldContext = ThreadContext.push(myKey, myObject);</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * // plus possibly further calls to ThreadContext.push...</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * try {</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> *      doSomeOperation();</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * } finally {</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *      ThreadContext.restore(oldContext);</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * }</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> *</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;p&gt;The &lt;code&gt;try&lt;/code&gt;...&lt;code&gt;finally&lt;/code&gt; block ensures that</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * the &lt;code&gt;restore&lt;/code&gt; is done even if</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * &lt;code&gt;doSomeOperation&lt;/code&gt; terminates abnormally (with an</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * exception).&lt;/p&gt;</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> *</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * &lt;p&gt;A thread can consult its own context using</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * &lt;code&gt;ThreadContext.get(myKey)&lt;/code&gt;.  The result is the</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * value that was most recently pushed with the given key.&lt;/p&gt;</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> *</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * &lt;p&gt;A thread cannot read or modify the context of another thread.&lt;/p&gt;</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * &lt;p&gt;&lt;b&gt;This API is a Sun Microsystems internal API  and is subject</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * to change without notice.&lt;/b&gt;&lt;/p&gt;</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> */</em>
+<a id='L65' name='L65'></a>  65 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/8125.html' title='Multiple referred from 29 places.'>ThreadContext</a> <strong class='reserved'>implements</strong> <a href='../S/1744.html#L53' title='Defined at 53 in src/java/lang/Cloneable.java.'>Cloneable</a> <em class='brace'>{</em>
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67     <em class='comment'>/* The context of a thread is stored as a linked list.  At the</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>       head of the list is the value returned by localContext.get().</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>       At the tail of the list is a sentinel ThreadContext value with</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>       "previous" and "key" both null.  There is a different sentinel</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>       object for each thread.</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'></em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>       Because a null key indicates the sentinel, we reject attempts to</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>       push context entries with a null key.</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'></em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>       The reason for using a sentinel rather than just terminating</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>       the list with a null reference is to protect against incorrect</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>       or even malicious code.  If you have a reference to the</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>       sentinel value, you can erase the context stack.  Only the</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>       caller of the first "push" that put something on the stack can</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>       get such a reference, so if that caller does not give this</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>       reference away, no one else can erase the stack.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'></em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>       If the restore method took a null reference to mean an empty</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>       stack, anyone could erase the stack, since anyone can make a</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>       null reference.</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'></em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>       When the stack is empty, we discard the sentinel object and</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>       have localContext.get() return null.  Then we recreate the</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>       sentinel object on the first subsequent push.</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'></em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>       ThreadContext objects are immutable.  As a consequence, you can</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>       give a ThreadContext object to setInitialContext that is no</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>       longer current.  But the interface says this can be rejected,</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>       in case we remove immutability later.  */</em>
+<a id='L96' name='L96'></a>  96 
+<a id='L97' name='L97'></a>  97     <em class='comment'>/* We have to comment out "final" here because of a bug in the JDK1.1</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>       compiler.  Uncomment it when we discard 1.1 compatibility.  */</em>
+<a id='L99' name='L99'></a>  99     <strong class='reserved'>private</strong> <em class='comment'>/*final*/</em> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../D/29600.html' title='Multiple defined in 22 places.'>previous</a>;
+<a id='L100' name='L100'></a> 100     <strong class='reserved'>private</strong> <em class='comment'>/*final*/</em> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>;
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>private</strong> <em class='comment'>/*final*/</em> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103     <strong class='reserved'>private</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>(ThreadContext <a href='../D/29600.html' title='Multiple defined in 22 places.'>previous</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104         <strong class='reserved'>this</strong>.<a href='../D/29600.html' title='Multiple defined in 22 places.'>previous</a> = <a href='../D/29600.html' title='Multiple defined in 22 places.'>previous</a>;
+<a id='L105' name='L105'></a> 105         <strong class='reserved'>this</strong>.<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>;
+<a id='L106' name='L106'></a> 106         <strong class='reserved'>this</strong>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L107' name='L107'></a> 107     <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108 
+<a id='L109' name='L109'></a> 109     <em class='comment'>/**</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * &lt;p&gt;Get the Object that was most recently pushed with the given key.&lt;/p&gt;</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     *</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * @param key the key of interest.</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * @return the last Object that was pushed (using</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * &lt;code&gt;push&lt;/code&gt;) with that key and not subsequently canceled</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * by a &lt;code&gt;restore&lt;/code&gt;; or null if there is no such object.</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * A null return value may also indicate that the last Object</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * pushed was the value &lt;code&gt;null&lt;/code&gt;.  Use the</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * &lt;code&gt;contains&lt;/code&gt; method to distinguish this case from the</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * case where there is no Object.</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * @exception IllegalArgumentException if &lt;code&gt;key&lt;/code&gt; is null.</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     */</em>
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/14874.html' title='Multiple referred from 4230 places.'>get</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>) <strong class='reserved'>throws</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125         <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> = <a href='../S/6442.html#L157' title='Defined at 157 in src/com/sun/jmx/snmp/ThreadContext.java.'>contextContaining</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L126' name='L126'></a> 126         <strong class='reserved'>if</strong> (<a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> == <strong class='reserved'>null</strong>)
+<a id='L127' name='L127'></a> 127             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L128' name='L128'></a> 128         <strong class='reserved'>else</strong>
+<a id='L129' name='L129'></a> 129             <strong class='reserved'>return</strong> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L130' name='L130'></a> 130     <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132     <em class='comment'>/**</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * &lt;p&gt;Check whether a value with the given key exists in the stack.</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * This means that the &lt;code&gt;push&lt;/code&gt; method was called with</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     * this key and it was not cancelled by a subsequent</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * &lt;code&gt;restore&lt;/code&gt;.  This method is useful when the</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * &lt;code&gt;get&lt;/code&gt; method returns null, to distinguish between</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * the case where the key exists in the stack but is associated</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * with a null value, and the case where the key does not exist in</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * the stack.&lt;/p&gt;</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     *</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @return true if the key exists in the stack.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     *</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * @exception IllegalArgumentException if &lt;code&gt;key&lt;/code&gt; is null.</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     */</em>
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/11949.html' title='Multiple referred from 682 places.'>contains</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>)
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>throws</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>return</strong> (<a href='../S/6442.html#L157' title='Defined at 157 in src/com/sun/jmx/snmp/ThreadContext.java.'>contextContaining</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>) != <strong class='reserved'>null</strong>);
+<a id='L149' name='L149'></a> 149     <em class='brace'>}</em>
+<a id='L150' name='L150'></a> 150 
+<a id='L151' name='L151'></a> 151     <em class='comment'>/**</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * &lt;p&gt;Find the ThreadContext in the stack that contains the given key,</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * or return null if there is none.&lt;/p&gt;</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     *</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * @exception IllegalArgumentException if &lt;code&gt;key&lt;/code&gt; is null.</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     */</em>
+<a id='L157' name='L157'></a> 157     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../R/11995.html' title='Multiple referred from 2 places.'>contextContaining</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>)
+<a id='L158' name='L158'></a> 158             <strong class='reserved'>throws</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159         <strong class='reserved'>if</strong> (<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> == <strong class='reserved'>null</strong>)
+<a id='L160' name='L160'></a> 160             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("null key");
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>for</strong> (<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> = <a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
+<a id='L162' name='L162'></a> 162              <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> != <strong class='reserved'>null</strong>;
+<a id='L163' name='L163'></a> 163              <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> = <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>.<a href='../D/29600.html' title='Multiple defined in 22 places.'>previous</a>) <em class='brace'>{</em>
+<a id='L164' name='L164'></a> 164             <strong class='reserved'>if</strong> (<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>.<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>))
+<a id='L165' name='L165'></a> 165                 <strong class='reserved'>return</strong> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>;
+<a id='L166' name='L166'></a> 166             <em class='comment'>/* Note that "context.key" may be null if "context" is the</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>               sentinel, so don't write "if (context.key.equals(key))"!  */</em>
+<a id='L168' name='L168'></a> 168         <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L170' name='L170'></a> 170     <em class='brace'>}</em>
+<a id='L171' name='L171'></a> 171 
+<a id='L172' name='L172'></a> 172 <em class='comment'>//  /**</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>//   * Change the value that was most recently associated with the given key</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>//   * in a &lt;code&gt;push&lt;/code&gt; operation not cancelled by a subsequent</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>//   * &lt;code&gt;restore&lt;/code&gt;.  If there is no such association, nothing happens</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>//   * and the return value is null.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>//   *</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>//   * @param key the key of interest.</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>//   * @param value the new value to associate with that key.</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>//   *</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>//   * @return the value that was previously associated with the key, or null</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>//   * if the key does not exist in the stack.</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>//   *</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>//   * @exception IllegalArgumentException if &lt;code&gt;key&lt;/code&gt; is null.</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>//   */</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>//  public static Object set(String key, Object value)</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>//          throws IllegalArgumentException {</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>//      ThreadContext context = contextContaining(key);</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>//      if (context == null)</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>//          return null;</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>//      Object old = context.value;</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>//      context.value = value;</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>//      return old;</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>//  }</em>
+<a id='L195' name='L195'></a> 195 
+<a id='L196' name='L196'></a> 196     <em class='comment'>/**</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * &lt;p&gt;Push an object on the context stack with the given key.</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     * This operation can subsequently be undone by calling</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     * &lt;code&gt;restore&lt;/code&gt; with the ThreadContext value returned</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     * here.&lt;/p&gt;</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     *</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * @param key the key that will be used to find the object while it is</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * on the stack.</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * @param value the value to be associated with that key.  It may be null.</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     *</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * @return a ThreadContext that can be given to &lt;code&gt;restore&lt;/code&gt; to</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     * restore the stack to its state before the &lt;code&gt;push&lt;/code&gt;.</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     *</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * @exception IllegalArgumentException if &lt;code&gt;key&lt;/code&gt; is null.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     */</em>
+<a id='L211' name='L211'></a> 211     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../R/25256.html' title='Multiple referred from 281 places.'>push</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>)
+<a id='L212' name='L212'></a> 212             <strong class='reserved'>throws</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213         <strong class='reserved'>if</strong> (<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> == <strong class='reserved'>null</strong>)
+<a id='L214' name='L214'></a> 214             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("null key");
+<a id='L215' name='L215'></a> 215 
+<a id='L216' name='L216'></a> 216         <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> oldContext = <a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
+<a id='L217' name='L217'></a> 217         <strong class='reserved'>if</strong> (oldContext == <strong class='reserved'>null</strong>)
+<a id='L218' name='L218'></a> 218             oldContext = <strong class='reserved'>new</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>(<strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);  <em class='comment'>// make sentinel</em>
+<a id='L219' name='L219'></a> 219         <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> newContext = <strong class='reserved'>new</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>(oldContext, <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L220' name='L220'></a> 220         <a href='../D/32261.html' title='Multiple defined in 4 places.'>setContext</a>(newContext);
+<a id='L221' name='L221'></a> 221         <strong class='reserved'>return</strong> oldContext;
+<a id='L222' name='L222'></a> 222     <em class='brace'>}</em>
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224     <em class='comment'>/**</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * &lt;p&gt;Return an object that can later be supplied to &lt;code&gt;restore&lt;/code&gt;</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * to restore the context stack to its current state.  The object can</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * also be given to &lt;code&gt;setInitialContext&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     *</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * @return a ThreadContext that represents the current context stack.</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     */</em>
+<a id='L231' name='L231'></a> 231     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> getThreadContext() <em class='brace'>{</em>
+<a id='L232' name='L232'></a> 232         <strong class='reserved'>return</strong> <a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
+<a id='L233' name='L233'></a> 233     <em class='brace'>}</em>
+<a id='L234' name='L234'></a> 234 
+<a id='L235' name='L235'></a> 235     <em class='comment'>/**</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     * &lt;p&gt;Restore the context stack to an earlier state.  This typically</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     * undoes the effect of one or more &lt;code&gt;push&lt;/code&gt; calls.&lt;/p&gt;</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     *</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     * @param oldContext the state to return.  This is usually the return</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * value of an earlier &lt;code&gt;push&lt;/code&gt; operation.</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     *</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>     * @exception NullPointerException if &lt;code&gt;oldContext&lt;/code&gt; is null.</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * @exception IllegalArgumentException if &lt;code&gt;oldContext&lt;/code&gt;</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * does not represent a context from this thread, or if that</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * context was undone by an earlier &lt;code&gt;restore&lt;/code&gt;.</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     */</em>
+<a id='L247' name='L247'></a> 247     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/26421.html' title='Multiple referred from 18 places.'>restore</a>(<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> oldContext)
+<a id='L248' name='L248'></a> 248             <strong class='reserved'>throws</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>, <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249         <em class='comment'>/* The following test is not strictly necessary in the code as it</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>           stands today, since the reference to "oldContext.key" would</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>           generate a NullPointerException anyway.  But if someone</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>           didn't notice that during subsequent changes, they could</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>           accidentally permit restore(null) with the semantics of</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>           trashing the context stack.  */</em>
+<a id='L255' name='L255'></a> 255         <strong class='reserved'>if</strong> (oldContext == <strong class='reserved'>null</strong>)
+<a id='L256' name='L256'></a> 256             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>();
+<a id='L257' name='L257'></a> 257 
+<a id='L258' name='L258'></a> 258         <em class='comment'>/* Check that the restored context is in the stack.  */</em>
+<a id='L259' name='L259'></a> 259         <strong class='reserved'>for</strong> (<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> = <a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
+<a id='L260' name='L260'></a> 260              <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> != oldContext;
+<a id='L261' name='L261'></a> 261              <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> = <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>.<a href='../D/29600.html' title='Multiple defined in 22 places.'>previous</a>) <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262             <strong class='reserved'>if</strong> (<a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Restored context is not " +
+<a id='L264' name='L264'></a> 264                                                    "contained in current " +
+<a id='L265' name='L265'></a> 265                                                    "context");
+<a id='L266' name='L266'></a> 266             <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267         <em class='brace'>}</em>
+<a id='L268' name='L268'></a> 268 
+<a id='L269' name='L269'></a> 269         <em class='comment'>/* Discard the sentinel if the stack is empty.  This means that it</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>           is an error to call "restore" a second time with the</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>           ThreadContext value that means an empty stack.  That's why we</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>           don't say that it is all right to restore the stack to the</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>           state it was already in.  */</em>
+<a id='L274' name='L274'></a> 274         <strong class='reserved'>if</strong> (oldContext.<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> == <strong class='reserved'>null</strong>)
+<a id='L275' name='L275'></a> 275             oldContext = <strong class='reserved'>null</strong>;
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277         <a href='../D/32261.html' title='Multiple defined in 4 places.'>setContext</a>(oldContext);
+<a id='L278' name='L278'></a> 278     <em class='brace'>}</em>
+<a id='L279' name='L279'></a> 279 
+<a id='L280' name='L280'></a> 280     <em class='comment'>/**</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * &lt;p&gt;Set the initial context of the calling thread to a context obtained</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * from another thread.  After this call, the calling thread will see</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * the same results from the &lt;code&gt;get&lt;/code&gt; method as the thread</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     * from which the &lt;code&gt;context&lt;/code&gt; argument was obtained, at the</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * time it was obtained.&lt;/p&gt;</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     *</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * &lt;p&gt;The &lt;code&gt;context&lt;/code&gt; argument must be the result of an earlier</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * &lt;code&gt;push&lt;/code&gt; or &lt;code&gt;getThreadContext&lt;/code&gt; call.  It is an</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * error (which may or may not be detected) if this context has been</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * undone by a &lt;code&gt;restore&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     *</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     * &lt;p&gt;The context stack of the calling thread must be empty before this</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * call, i.e., there must not have been a &lt;code&gt;push&lt;/code&gt; not undone</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     * by a subsequent &lt;code&gt;restore&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>     *</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     * @exception IllegalArgumentException if the context stack was</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>     * not empty before the call.  An implementation may also throw this</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     * exception if &lt;code&gt;context&lt;/code&gt; is no longer current in the</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     * thread from which it was obtained.</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     */</em>
+<a id='L301' name='L301'></a> 301     <em class='comment'>/* We rely on the fact that ThreadContext objects are immutable.</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>       This means that we don't have to check that the "context"</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>       argument is valid.  It necessarily represents the head of a</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>       valid chain of ThreadContext objects, even if the thread from</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>       which it was obtained has subsequently been set to a point</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>       later in that chain using "restore".  */</em>
+<a id='L307' name='L307'></a> 307     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> setInitialContext(<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>)
+<a id='L308' name='L308'></a> 308             <strong class='reserved'>throws</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309         <em class='comment'>/* The following test assumes that we discard sentinels when the</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>           stack is empty.  */</em>
+<a id='L311' name='L311'></a> 311         <strong class='reserved'>if</strong> (<a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>() != <strong class='reserved'>null</strong>)
+<a id='L312' name='L312'></a> 312             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("previous context not empty");
+<a id='L313' name='L313'></a> 313         <a href='../D/32261.html' title='Multiple defined in 4 places.'>setContext</a>(<a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>);
+<a id='L314' name='L314'></a> 314     <em class='brace'>}</em>
+<a id='L315' name='L315'></a> 315 
+<a id='L316' name='L316'></a> 316     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../R/15801.html' title='Multiple referred from 401 places.'>getContext</a>() <em class='brace'>{</em>
+<a id='L317' name='L317'></a> 317         <strong class='reserved'>return</strong> localContext.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L318' name='L318'></a> 318     <em class='brace'>}</em>
+<a id='L319' name='L319'></a> 319 
+<a id='L320' name='L320'></a> 320     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/27110.html' title='Multiple referred from 8 places.'>setContext</a>(<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>) <em class='brace'>{</em>
+<a id='L321' name='L321'></a> 321         localContext.<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>(<a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>);
+<a id='L322' name='L322'></a> 322     <em class='brace'>}</em>
+<a id='L323' name='L323'></a> 323 
+<a id='L324' name='L324'></a> 324     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/1738.html#L74' title='Defined at 74 in src/java/lang/ThreadLocal.java.'>ThreadLocal</a>&lt;<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>&gt; localContext =
+<a id='L325' name='L325'></a> 325             <strong class='reserved'>new</strong> <a href='../S/1738.html#L74' title='Defined at 74 in src/java/lang/ThreadLocal.java.'>ThreadLocal</a>&lt;<a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>&gt;();
+<a id='L326' name='L326'></a> 326 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L124'>[^]</a><a href='#L320'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

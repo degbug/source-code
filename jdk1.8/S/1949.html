@@ -1,0 +1,855 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/nio/file/Path.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8012.html'>nio</a>/<a href='../files/8017.html'>file</a>/Path.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L106'>[^]</a><a href='#L800'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L106' title='Defined at 106.'>getFileSystem</a></li>
+<li><a href='#L116' title='Defined at 116.'>isAbsolute</a></li>
+<li><a href='#L125' title='Defined at 125.'>getRoot</a></li>
+<li><a href='#L135' title='Defined at 135.'>getFileName</a></li>
+<li><a href='#L160' title='Defined at 160.'>getParent</a></li>
+<li><a href='#L168' title='Defined at 168.'>getNameCount</a></li>
+<li><a href='#L188' title='Defined at 188.'>getName</a></li>
+<li><a href='#L215' title='Defined at 215.'>subpath</a></li>
+<li><a href='#L240' title='Defined at 240.'>startsWith</a></li>
+<li><a href='#L258' title='Defined at 258.'>startsWith</a></li>
+<li><a href='#L285' title='Defined at 285.'>endsWith</a></li>
+<li><a href='#L306' title='Defined at 306.'>endsWith</a></li>
+<li><a href='#L333' title='Defined at 333.'>normalize</a></li>
+<li><a href='#L358' title='Defined at 358.'>resolve</a></li>
+<li><a href='#L378' title='Defined at 378.'>resolve</a></li>
+<li><a href='#L399' title='Defined at 399.'>resolveSibling</a></li>
+<li><a href='#L416' title='Defined at 416.'>resolveSibling</a></li>
+<li><a href='#L458' title='Defined at 458.'>relativize</a></li>
+<li><a href='#L511' title='Defined at 511.'>toUri</a></li>
+<li><a href='#L534' title='Defined at 534.'>toAbsolutePath</a></li>
+<li><a href='#L580' title='Defined at 580.'>toRealPath</a></li>
+<li><a href='#L598' title='Defined at 598.'>toFile</a></li>
+<li><a href='#L661' title='Defined at 661.'>register</a></li>
+<li><a href='#L709' title='Defined at 709.'>register</a></li>
+<li><a href='#L727' title='Defined at 727.'>iterator</a></li>
+<li><a href='#L751' title='Defined at 751.'>compareTo</a></li>
+<li><a href='#L775' title='Defined at 775.'>equals</a></li>
+<li><a href='#L786' title='Defined at 786.'>hashCode</a></li>
+<li><a href='#L800' title='Defined at 800.'>toString</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.nio.<a href='../D/16022.html' title='Multiple defined in 3 places.'>file</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.File;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.net.URI;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <em class='comment'>/**</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * An object that may be used to locate a file in a file system. It will</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * typically represent a system dependent file path.</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> *</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * &lt;p&gt; A {@code Path} represents a path that is hierarchical and composed of a</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * sequence of directory and file name elements separated by a special separator</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * or delimiter. A &lt;em&gt;root component&lt;/em&gt;, that identifies a file system</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * hierarchy, may also be present. The name element that is &lt;em&gt;farthest&lt;/em&gt;</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * from the root of the directory hierarchy is the name of a file or directory.</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * The other name elements are directory names. A {@code Path} can represent a</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * root, a root and a sequence of names, or simply one or more name elements.</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * A {@code Path} is considered to be an &lt;i&gt;empty path&lt;/i&gt; if it consists</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * solely of one name element that is empty. Accessing a file using an</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * &lt;i&gt;empty path&lt;/i&gt; is equivalent to accessing the default directory of the</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * file system. {@code Path} defines the {@link #getFileName() getFileName},</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * {@link #getParent getParent}, {@link #getRoot getRoot}, and {@link #subpath</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * subpath} methods to access the path components or a subsequence of its name</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * elements.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> *</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * &lt;p&gt; In addition to accessing the components of a path, a {@code Path} also</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * defines the {@link #resolve(Path) resolve} and {@link #resolveSibling(Path)</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * resolveSibling} methods to combine paths. The {@link #relativize relativize}</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * method that can be used to construct a relative path between two paths.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * Paths can be {@link #compareTo compared}, and tested against each other using</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * the {@link #startsWith startsWith} and {@link #endsWith endsWith} methods.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * &lt;p&gt; This interface extends {@link Watchable} interface so that a directory</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * located by a path can be {@link #register registered} with a {@link</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * WatchService} and entries in the directory watched. &lt;/p&gt;</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;p&gt; &lt;b&gt;WARNING:&lt;/b&gt; This interface is only intended to be implemented by</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * those developing custom file system implementations. Methods may be added to</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * this interface in future releases. &lt;/p&gt;</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> *</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> * &lt;h2&gt;Accessing Files&lt;/h2&gt;</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * &lt;p&gt; Paths may be used with the {@link Files} class to operate on files,</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * directories, and other types of files. For example, suppose we want a {@link</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * java.io.BufferedReader} to read text from a file "{@code access.log}". The</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * file is located in a directory "{@code logs}" relative to the current working</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * directory and is UTF-8 encoded.</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> *     Path path = FileSystems.getDefault().getPath("logs", "access.log");</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *     BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> *</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> * &lt;a name="interop"&gt;&lt;/a&gt;&lt;h2&gt;Interoperability&lt;/h2&gt;</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * &lt;p&gt; Paths associated with the default {@link</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> * java.nio.file.spi.FileSystemProvider provider} are generally interoperable</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * with the {@link java.io.File java.io.File} class. Paths created by other</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * providers are unlikely to be interoperable with the abstract path names</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * represented by {@code java.io.File}. The {@link java.io.File#toPath toPath}</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * method may be used to obtain a {@code Path} from the abstract path name</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * represented by a {@code java.io.File} object. The resulting {@code Path} can</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * be used to operate on the same file as the {@code java.io.File} object. In</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * addition, the {@link #toFile toFile} method is useful to construct a {@code</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> * File} from the {@code String} representation of a {@code Path}.</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> *</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> * &lt;h2&gt;Concurrency&lt;/h2&gt;</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> * &lt;p&gt; Implementations of this interface are immutable and safe for use by</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> * multiple concurrent threads.</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> *</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> * @since 1.7</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> * @see Paths</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> */</em>
+<a id='L97' name='L97'></a>  97 
+<a id='L98' name='L98'></a>  98 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/6071.html' title='Multiple referred from 195 places.'>Path</a>
+<a id='L99' name='L99'></a>  99     <strong class='reserved'>extends</strong> <a href='../S/1704.html#L96' title='Defined at 96 in src/java/lang/Comparable.java.'>Comparable</a>&lt;<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a>&gt;, <a href='../S/1577.html#L45' title='Defined at 45 in src/java/lang/Iterable.java.'>Iterable</a>&lt;<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a>&gt;, <a href='../S/1878.html#L45' title='Defined at 45 in src/java/nio/file/Watchable.java.'>Watchable</a>
+<a id='L100' name='L100'></a> 100 <em class='brace'>{</em>
+<a id='L101' name='L101'></a> 101     <em class='comment'>/**</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * Returns the file system that created this object.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     *</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * @return  the file system that created this object</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     */</em>
+<a id='L106' name='L106'></a> 106     <a href='../D/3214.html' title='Multiple defined in 2 places.'>FileSystem</a> <a href='../R/16585.html' title='Multiple referred from 9 places.'>getFileSystem</a>();
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108     <em class='comment'>/**</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * Tells whether or not this path is absolute.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     *</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * &lt;p&gt; An absolute path is complete in that it doesn't need to be combined</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * with other path information in order to locate a file.</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * @return  {@code true} if, and only if, this path is absolute</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     */</em>
+<a id='L116' name='L116'></a> 116     <strong class='reserved'>boolean</strong> <a href='../R/21122.html' title='Multiple referred from 26 places.'>isAbsolute</a>();
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118     <em class='comment'>/**</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * Returns the root component of this path as a {@code Path} object,</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * or {@code null} if this path does not have a root component.</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * @return  a path representing the root component of this path,</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     *          or {@code null}</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     */</em>
+<a id='L125' name='L125'></a> 125     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/18758.html' title='Multiple referred from 54 places.'>getRoot</a>();
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127     <em class='comment'>/**</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * Returns the name of the file or directory denoted by this path as a</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * {@code Path} object. The file name is the &lt;em&gt;farthest&lt;/em&gt; element from</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * the root in the directory hierarchy.</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * @return  a path representing the name of the file or directory, or</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     *          {@code null} if this path has zero elements</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     */</em>
+<a id='L135' name='L135'></a> 135     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/16578.html' title='Multiple referred from 15 places.'>getFileName</a>();
+<a id='L136' name='L136'></a> 136 
+<a id='L137' name='L137'></a> 137     <em class='comment'>/**</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * Returns the &lt;em&gt;parent path&lt;/em&gt;, or {@code null} if this path does not</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * have a parent.</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     *</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * &lt;p&gt; The parent of this path object consists of this path's root</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * component, if any, and each element in the path except for the</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * &lt;em&gt;farthest&lt;/em&gt; from the root in the directory hierarchy. This method</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * does not access the file system; the path or its parent may not exist.</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * Furthermore, this method does not eliminate special names such as "."</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * and ".." that may be used in some implementations. On UNIX for example,</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * the parent of "{@code /a/b/c}" is "{@code /a/b}", and the parent of</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * {@code "x/y/.}" is "{@code x/y}". This method may be used with the {@link</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * #normalize normalize} method, to eliminate redundant names, for cases where</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * &lt;em&gt;shell-like&lt;/em&gt; navigation is required.</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     *</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * &lt;p&gt; If this path has one or more elements, and no root component, then</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * this method is equivalent to evaluating the expression:</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * &lt;blockquote&gt;&lt;pre&gt;</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * subpath(0,&amp;nbsp;getNameCount()-1);</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * &lt;/pre&gt;&lt;/blockquote&gt;</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     *</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * @return  a path representing the path's parent</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     */</em>
+<a id='L160' name='L160'></a> 160     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/18269.html' title='Multiple referred from 606 places.'>getParent</a>();
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162     <em class='comment'>/**</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * Returns the number of name elements in the path.</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     *</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * @return  the number of elements in the path, or {@code 0} if this path</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     *          only represents a root component</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     */</em>
+<a id='L168' name='L168'></a> 168     <strong class='reserved'>int</strong> getNameCount();
+<a id='L169' name='L169'></a> 169 
+<a id='L170' name='L170'></a> 170     <em class='comment'>/**</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * Returns a name element of this path as a {@code Path} object.</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     *</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * &lt;p&gt; The {@code index} parameter is the index of the name element to return.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * The element that is &lt;em&gt;closest&lt;/em&gt; to the root in the directory hierarchy</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * has index {@code 0}. The element that is &lt;em&gt;farthest&lt;/em&gt; from the root</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * has index {@link #getNameCount count}{@code -1}.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     *</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * @param   index</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     *          the index of the element</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     *</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * @return  the name element</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     *</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     *          if {@code index} is negative, {@code index} is greater than or</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     *          equal to the number of elements, or this path has zero name</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     *          elements</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     */</em>
+<a id='L188' name='L188'></a> 188     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/17826.html' title='Multiple referred from 2652 places.'>getName</a>(<strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L189' name='L189'></a> 189 
+<a id='L190' name='L190'></a> 190     <em class='comment'>/**</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * Returns a relative {@code Path} that is a subsequence of the name</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     * elements of this path.</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>     *</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     * &lt;p&gt; The {@code beginIndex} and {@code endIndex} parameters specify the</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * subsequence of name elements. The name that is &lt;em&gt;closest&lt;/em&gt; to the root</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * in the directory hierarchy has index {@code 0}. The name that is</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * &lt;em&gt;farthest&lt;/em&gt; from the root has index {@link #getNameCount</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     * count}{@code -1}. The returned {@code Path} object has the name elements</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     * that begin at {@code beginIndex} and extend to the element at index {@code</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     * endIndex-1}.</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     *</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * @param   beginIndex</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     *          the index of the first element, inclusive</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * @param   endIndex</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     *          the index of the last element, exclusive</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     *</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     * @return  a new {@code Path} object that is a subsequence of the name</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     *          elements in this {@code Path}</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     *</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     *          if {@code beginIndex} is negative, or greater than or equal to</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     *          the number of elements. If {@code endIndex} is less than or</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     *          equal to {@code beginIndex}, or larger than the number of elements.</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     */</em>
+<a id='L215' name='L215'></a> 215     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> subpath(<strong class='reserved'>int</strong> beginIndex, <strong class='reserved'>int</strong> endIndex);
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217     <em class='comment'>/**</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * Tests if this path starts with the given path.</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     *</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * &lt;p&gt; This path &lt;em&gt;starts&lt;/em&gt; with the given path if this path's root</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * component &lt;em&gt;starts&lt;/em&gt; with the root component of the given path,</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * and this path starts with the same name elements as the given path.</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * If the given path has more name elements than this path then {@code false}</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * is returned.</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     *</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * &lt;p&gt; Whether or not the root component of this path starts with the root</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * component of the given path is file system specific. If this path does</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * not have a root component and the given path has a root component then</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * this path does not start with the given path.</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     *</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * &lt;p&gt; If the given path is associated with a different {@code FileSystem}</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * to this path then {@code false} is returned.</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     *</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @param   other</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     *          the given path</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     *</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     * @return  {@code true} if this path starts with the given path; otherwise</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     *          {@code false}</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     */</em>
+<a id='L240' name='L240'></a> 240     <strong class='reserved'>boolean</strong> <a href='../R/28868.html' title='Multiple referred from 490 places.'>startsWith</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> other);
+<a id='L241' name='L241'></a> 241 
+<a id='L242' name='L242'></a> 242     <em class='comment'>/**</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * Tests if this path starts with a {@code Path}, constructed by converting</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * the given path string, in exactly the manner specified by the {@link</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * #startsWith(Path) startsWith(Path)} method. On UNIX for example, the path</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * "{@code foo/bar}" starts with "{@code foo}" and "{@code foo/bar}". It</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * does not start with "{@code f}" or "{@code fo}".</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     *</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * @param   other</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     *          the given path string</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     *</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * @return  {@code true} if this path starts with the given path; otherwise</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     *          {@code false}</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     *</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     * @throws  InvalidPathException</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     *          If the path string cannot be converted to a Path.</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     */</em>
+<a id='L258' name='L258'></a> 258     <strong class='reserved'>boolean</strong> <a href='../R/28868.html' title='Multiple referred from 490 places.'>startsWith</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> other);
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260     <em class='comment'>/**</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     * Tests if this path ends with the given path.</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     *</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * &lt;p&gt; If the given path has &lt;em&gt;N&lt;/em&gt; elements, and no root component,</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * and this path has &lt;em&gt;N&lt;/em&gt; or more elements, then this path ends with</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * the given path if the last &lt;em&gt;N&lt;/em&gt; elements of each path, starting at</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * the element farthest from the root, are equal.</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     *</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     * &lt;p&gt; If the given path has a root component then this path ends with the</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * given path if the root component of this path &lt;em&gt;ends with&lt;/em&gt; the root</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     * component of the given path, and the corresponding elements of both paths</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     * are equal. Whether or not the root component of this path ends with the</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * root component of the given path is file system specific. If this path</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     * does not have a root component and the given path has a root component</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     * then this path does not end with the given path.</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     *</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * &lt;p&gt; If the given path is associated with a different {@code FileSystem}</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * to this path then {@code false} is returned.</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     *</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * @param   other</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     *          the given path</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     *</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * @return  {@code true} if this path ends with the given path; otherwise</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     *          {@code false}</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     */</em>
+<a id='L285' name='L285'></a> 285     <strong class='reserved'>boolean</strong> <a href='../R/13806.html' title='Multiple referred from 248 places.'>endsWith</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> other);
+<a id='L286' name='L286'></a> 286 
+<a id='L287' name='L287'></a> 287     <em class='comment'>/**</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * Tests if this path ends with a {@code Path}, constructed by converting</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * the given path string, in exactly the manner specified by the {@link</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * #endsWith(Path) endsWith(Path)} method. On UNIX for example, the path</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * "{@code foo/bar}" ends with "{@code foo/bar}" and "{@code bar}". It does</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     * not end with "{@code r}" or "{@code /bar}". Note that trailing separators</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * are not taken into account, and so invoking this method on the {@code</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     * Path}"{@code foo/bar}" with the {@code String} "{@code bar/}" returns</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>     * {@code true}.</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     *</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>     * @param   other</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     *          the given path string</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     *</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * @return  {@code true} if this path ends with the given path; otherwise</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     *          {@code false}</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     *</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     * @throws  InvalidPathException</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     *          If the path string cannot be converted to a Path.</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     */</em>
+<a id='L306' name='L306'></a> 306     <strong class='reserved'>boolean</strong> <a href='../R/13806.html' title='Multiple referred from 248 places.'>endsWith</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> other);
+<a id='L307' name='L307'></a> 307 
+<a id='L308' name='L308'></a> 308     <em class='comment'>/**</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>     * Returns a path that is this path with redundant name elements eliminated.</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>     *</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>     * &lt;p&gt; The precise definition of this method is implementation dependent but</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>     * in general it derives from this path, a path that does not contain</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>     * &lt;em&gt;redundant&lt;/em&gt; name elements. In many file systems, the "{@code .}"</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>     * and "{@code ..}" are special names used to indicate the current directory</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>     * and parent directory. In such file systems all occurrences of "{@code .}"</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>     * are considered redundant. If a "{@code ..}" is preceded by a</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>     * non-"{@code ..}" name then both names are considered redundant (the</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>     * process to identify such names is repeated until it is no longer</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     * applicable).</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>     *</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     * &lt;p&gt; This method does not access the file system; the path may not locate</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     * a file that exists. Eliminating "{@code ..}" and a preceding name from a</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     * path may result in the path that locates a different file than the original</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>     * path. This can arise when the preceding name is a symbolic link.</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     *</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     * @return  the resulting path or this path if it does not contain</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     *          redundant name elements; an empty path is returned if this path</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     *          does have a root component and all name elements are redundant</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     *</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     * @see #getParent</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * @see #toRealPath</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     */</em>
+<a id='L333' name='L333'></a> 333     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/23781.html' title='Multiple referred from 143 places.'>normalize</a>();
+<a id='L334' name='L334'></a> 334 
+<a id='L335' name='L335'></a> 335     <em class='comment'>// -- resolution and relativization --</em>
+<a id='L336' name='L336'></a> 336 
+<a id='L337' name='L337'></a> 337     <em class='comment'>/**</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * Resolve the given path against this path.</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     *</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     * &lt;p&gt; If the {@code other} parameter is an {@link #isAbsolute() absolute}</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     * path then this method trivially returns {@code other}. If {@code other}</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * is an &lt;i&gt;empty path&lt;/i&gt; then this method trivially returns this path.</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     * Otherwise this method considers this path to be a directory and resolves</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * the given path against this path. In the simplest case, the given path</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     * does not have a {@link #getRoot root} component, in which case this method</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     * &lt;em&gt;joins&lt;/em&gt; the given path to this path and returns a resulting path</em>
+<a id='L347' name='L347'></a> 347 <em class='comment'>     * that {@link #endsWith ends} with the given path. Where the given path has</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>     * a root component then resolution is highly implementation dependent and</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * therefore unspecified.</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     *</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>     * @param   other</em>
+<a id='L352' name='L352'></a> 352 <em class='comment'>     *          the path to resolve against this path</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>     *</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>     * @return  the resulting path</em>
+<a id='L355' name='L355'></a> 355 <em class='comment'>     *</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>     * @see #relativize</em>
+<a id='L357' name='L357'></a> 357 <em class='comment'>     */</em>
+<a id='L358' name='L358'></a> 358     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/26316.html' title='Multiple referred from 78 places.'>resolve</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> other);
+<a id='L359' name='L359'></a> 359 
+<a id='L360' name='L360'></a> 360     <em class='comment'>/**</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>     * Converts a given path string to a {@code Path} and resolves it against</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * this {@code Path} in exactly the manner specified by the {@link</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     * #resolve(Path) resolve} method. For example, suppose that the name</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>     * separator is "{@code /}" and a path represents "{@code foo/bar}", then</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     * invoking this method with the path string "{@code gus}" will result in</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * the {@code Path} "{@code foo/bar/gus}".</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     *</em>
+<a id='L368' name='L368'></a> 368 <em class='comment'>     * @param   other</em>
+<a id='L369' name='L369'></a> 369 <em class='comment'>     *          the path string to resolve against this path</em>
+<a id='L370' name='L370'></a> 370 <em class='comment'>     *</em>
+<a id='L371' name='L371'></a> 371 <em class='comment'>     * @return  the resulting path</em>
+<a id='L372' name='L372'></a> 372 <em class='comment'>     *</em>
+<a id='L373' name='L373'></a> 373 <em class='comment'>     * @throws  InvalidPathException</em>
+<a id='L374' name='L374'></a> 374 <em class='comment'>     *          if the path string cannot be converted to a Path.</em>
+<a id='L375' name='L375'></a> 375 <em class='comment'>     *</em>
+<a id='L376' name='L376'></a> 376 <em class='comment'>     * @see FileSystem#getPath</em>
+<a id='L377' name='L377'></a> 377 <em class='comment'>     */</em>
+<a id='L378' name='L378'></a> 378     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/26316.html' title='Multiple referred from 78 places.'>resolve</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> other);
+<a id='L379' name='L379'></a> 379 
+<a id='L380' name='L380'></a> 380     <em class='comment'>/**</em>
+<a id='L381' name='L381'></a> 381 <em class='comment'>     * Resolves the given path against this path's {@link #getParent parent}</em>
+<a id='L382' name='L382'></a> 382 <em class='comment'>     * path. This is useful where a file name needs to be &lt;i&gt;replaced&lt;/i&gt; with</em>
+<a id='L383' name='L383'></a> 383 <em class='comment'>     * another file name. For example, suppose that the name separator is</em>
+<a id='L384' name='L384'></a> 384 <em class='comment'>     * "{@code /}" and a path represents "{@code dir1/dir2/foo}", then invoking</em>
+<a id='L385' name='L385'></a> 385 <em class='comment'>     * this method with the {@code Path} "{@code bar}" will result in the {@code</em>
+<a id='L386' name='L386'></a> 386 <em class='comment'>     * Path} "{@code dir1/dir2/bar}". If this path does not have a parent path,</em>
+<a id='L387' name='L387'></a> 387 <em class='comment'>     * or {@code other} is {@link #isAbsolute() absolute}, then this method</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'>     * returns {@code other}. If {@code other} is an empty path then this method</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'>     * returns this path's parent, or where this path doesn't have a parent, the</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     * empty path.</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     *</em>
+<a id='L392' name='L392'></a> 392 <em class='comment'>     * @param   other</em>
+<a id='L393' name='L393'></a> 393 <em class='comment'>     *          the path to resolve against this path's parent</em>
+<a id='L394' name='L394'></a> 394 <em class='comment'>     *</em>
+<a id='L395' name='L395'></a> 395 <em class='comment'>     * @return  the resulting path</em>
+<a id='L396' name='L396'></a> 396 <em class='comment'>     *</em>
+<a id='L397' name='L397'></a> 397 <em class='comment'>     * @see #resolve(Path)</em>
+<a id='L398' name='L398'></a> 398 <em class='comment'>     */</em>
+<a id='L399' name='L399'></a> 399     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> resolveSibling(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> other);
+<a id='L400' name='L400'></a> 400 
+<a id='L401' name='L401'></a> 401     <em class='comment'>/**</em>
+<a id='L402' name='L402'></a> 402 <em class='comment'>     * Converts a given path string to a {@code Path} and resolves it against</em>
+<a id='L403' name='L403'></a> 403 <em class='comment'>     * this path's {@link #getParent parent} path in exactly the manner</em>
+<a id='L404' name='L404'></a> 404 <em class='comment'>     * specified by the {@link #resolveSibling(Path) resolveSibling} method.</em>
+<a id='L405' name='L405'></a> 405 <em class='comment'>     *</em>
+<a id='L406' name='L406'></a> 406 <em class='comment'>     * @param   other</em>
+<a id='L407' name='L407'></a> 407 <em class='comment'>     *          the path string to resolve against this path's parent</em>
+<a id='L408' name='L408'></a> 408 <em class='comment'>     *</em>
+<a id='L409' name='L409'></a> 409 <em class='comment'>     * @return  the resulting path</em>
+<a id='L410' name='L410'></a> 410 <em class='comment'>     *</em>
+<a id='L411' name='L411'></a> 411 <em class='comment'>     * @throws  InvalidPathException</em>
+<a id='L412' name='L412'></a> 412 <em class='comment'>     *          if the path string cannot be converted to a Path.</em>
+<a id='L413' name='L413'></a> 413 <em class='comment'>     *</em>
+<a id='L414' name='L414'></a> 414 <em class='comment'>     * @see FileSystem#getPath</em>
+<a id='L415' name='L415'></a> 415 <em class='comment'>     */</em>
+<a id='L416' name='L416'></a> 416     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> resolveSibling(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> other);
+<a id='L417' name='L417'></a> 417 
+<a id='L418' name='L418'></a> 418     <em class='comment'>/**</em>
+<a id='L419' name='L419'></a> 419 <em class='comment'>     * Constructs a relative path between this path and a given path.</em>
+<a id='L420' name='L420'></a> 420 <em class='comment'>     *</em>
+<a id='L421' name='L421'></a> 421 <em class='comment'>     * &lt;p&gt; Relativization is the inverse of {@link #resolve(Path) resolution}.</em>
+<a id='L422' name='L422'></a> 422 <em class='comment'>     * This method attempts to construct a {@link #isAbsolute relative} path</em>
+<a id='L423' name='L423'></a> 423 <em class='comment'>     * that when {@link #resolve(Path) resolved} against this path, yields a</em>
+<a id='L424' name='L424'></a> 424 <em class='comment'>     * path that locates the same file as the given path. For example, on UNIX,</em>
+<a id='L425' name='L425'></a> 425 <em class='comment'>     * if this path is {@code "/a/b"} and the given path is {@code "/a/b/c/d"}</em>
+<a id='L426' name='L426'></a> 426 <em class='comment'>     * then the resulting relative path would be {@code "c/d"}. Where this</em>
+<a id='L427' name='L427'></a> 427 <em class='comment'>     * path and the given path do not have a {@link #getRoot root} component,</em>
+<a id='L428' name='L428'></a> 428 <em class='comment'>     * then a relative path can be constructed. A relative path cannot be</em>
+<a id='L429' name='L429'></a> 429 <em class='comment'>     * constructed if only one of the paths have a root component. Where both</em>
+<a id='L430' name='L430'></a> 430 <em class='comment'>     * paths have a root component then it is implementation dependent if a</em>
+<a id='L431' name='L431'></a> 431 <em class='comment'>     * relative path can be constructed. If this path and the given path are</em>
+<a id='L432' name='L432'></a> 432 <em class='comment'>     * {@link #equals equal} then an &lt;i&gt;empty path&lt;/i&gt; is returned.</em>
+<a id='L433' name='L433'></a> 433 <em class='comment'>     *</em>
+<a id='L434' name='L434'></a> 434 <em class='comment'>     * &lt;p&gt; For any two {@link #normalize normalized} paths &lt;i&gt;p&lt;/i&gt; and</em>
+<a id='L435' name='L435'></a> 435 <em class='comment'>     * &lt;i&gt;q&lt;/i&gt;, where &lt;i&gt;q&lt;/i&gt; does not have a root component,</em>
+<a id='L436' name='L436'></a> 436 <em class='comment'>     * &lt;blockquote&gt;</em>
+<a id='L437' name='L437'></a> 437 <em class='comment'>     *   &lt;i&gt;p&lt;/i&gt;&lt;tt&gt;.relativize(&lt;/tt&gt;&lt;i&gt;p&lt;/i&gt;&lt;tt&gt;.resolve(&lt;/tt&gt;&lt;i&gt;q&lt;/i&gt;&lt;tt&gt;)).equals(&lt;/tt&gt;&lt;i&gt;q&lt;/i&gt;&lt;tt&gt;)&lt;/tt&gt;</em>
+<a id='L438' name='L438'></a> 438 <em class='comment'>     * &lt;/blockquote&gt;</em>
+<a id='L439' name='L439'></a> 439 <em class='comment'>     *</em>
+<a id='L440' name='L440'></a> 440 <em class='comment'>     * &lt;p&gt; When symbolic links are supported, then whether the resulting path,</em>
+<a id='L441' name='L441'></a> 441 <em class='comment'>     * when resolved against this path, yields a path that can be used to locate</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'>     * the {@link Files#isSameFile same} file as {@code other} is implementation</em>
+<a id='L443' name='L443'></a> 443 <em class='comment'>     * dependent. For example, if this path is  {@code "/a/b"} and the given</em>
+<a id='L444' name='L444'></a> 444 <em class='comment'>     * path is {@code "/a/x"} then the resulting relative path may be {@code</em>
+<a id='L445' name='L445'></a> 445 <em class='comment'>     * "../x"}. If {@code "b"} is a symbolic link then is implementation</em>
+<a id='L446' name='L446'></a> 446 <em class='comment'>     * dependent if {@code "a/b/../x"} would locate the same file as {@code "/a/x"}.</em>
+<a id='L447' name='L447'></a> 447 <em class='comment'>     *</em>
+<a id='L448' name='L448'></a> 448 <em class='comment'>     * @param   other</em>
+<a id='L449' name='L449'></a> 449 <em class='comment'>     *          the path to relativize against this path</em>
+<a id='L450' name='L450'></a> 450 <em class='comment'>     *</em>
+<a id='L451' name='L451'></a> 451 <em class='comment'>     * @return  the resulting relative path, or an empty path if both paths are</em>
+<a id='L452' name='L452'></a> 452 <em class='comment'>     *          equal</em>
+<a id='L453' name='L453'></a> 453 <em class='comment'>     *</em>
+<a id='L454' name='L454'></a> 454 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L455' name='L455'></a> 455 <em class='comment'>     *          if {@code other} is not a {@code Path} that can be relativized</em>
+<a id='L456' name='L456'></a> 456 <em class='comment'>     *          against this path</em>
+<a id='L457' name='L457'></a> 457 <em class='comment'>     */</em>
+<a id='L458' name='L458'></a> 458     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/25845.html' title='Multiple referred from 2 places.'>relativize</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> other);
+<a id='L459' name='L459'></a> 459 
+<a id='L460' name='L460'></a> 460     <em class='comment'>/**</em>
+<a id='L461' name='L461'></a> 461 <em class='comment'>     * Returns a URI to represent this path.</em>
+<a id='L462' name='L462'></a> 462 <em class='comment'>     *</em>
+<a id='L463' name='L463'></a> 463 <em class='comment'>     * &lt;p&gt; This method constructs an absolute {@link URI} with a {@link</em>
+<a id='L464' name='L464'></a> 464 <em class='comment'>     * URI#getScheme() scheme} equal to the URI scheme that identifies the</em>
+<a id='L465' name='L465'></a> 465 <em class='comment'>     * provider. The exact form of the scheme specific part is highly provider</em>
+<a id='L466' name='L466'></a> 466 <em class='comment'>     * dependent.</em>
+<a id='L467' name='L467'></a> 467 <em class='comment'>     *</em>
+<a id='L468' name='L468'></a> 468 <em class='comment'>     * &lt;p&gt; In the case of the default provider, the URI is hierarchical with</em>
+<a id='L469' name='L469'></a> 469 <em class='comment'>     * a {@link URI#getPath() path} component that is absolute. The query and</em>
+<a id='L470' name='L470'></a> 470 <em class='comment'>     * fragment components are undefined. Whether the authority component is</em>
+<a id='L471' name='L471'></a> 471 <em class='comment'>     * defined or not is implementation dependent. There is no guarantee that</em>
+<a id='L472' name='L472'></a> 472 <em class='comment'>     * the {@code URI} may be used to construct a {@link java.io.File java.io.File}.</em>
+<a id='L473' name='L473'></a> 473 <em class='comment'>     * In particular, if this path represents a Universal Naming Convention (UNC)</em>
+<a id='L474' name='L474'></a> 474 <em class='comment'>     * path, then the UNC server name may be encoded in the authority component</em>
+<a id='L475' name='L475'></a> 475 <em class='comment'>     * of the resulting URI. In the case of the default provider, and the file</em>
+<a id='L476' name='L476'></a> 476 <em class='comment'>     * exists, and it can be determined that the file is a directory, then the</em>
+<a id='L477' name='L477'></a> 477 <em class='comment'>     * resulting {@code URI} will end with a slash.</em>
+<a id='L478' name='L478'></a> 478 <em class='comment'>     *</em>
+<a id='L479' name='L479'></a> 479 <em class='comment'>     * &lt;p&gt; The default provider provides a similar &lt;em&gt;round-trip&lt;/em&gt; guarantee</em>
+<a id='L480' name='L480'></a> 480 <em class='comment'>     * to the {@link java.io.File} class. For a given {@code Path} &lt;i&gt;p&lt;/i&gt; it</em>
+<a id='L481' name='L481'></a> 481 <em class='comment'>     * is guaranteed that</em>
+<a id='L482' name='L482'></a> 482 <em class='comment'>     * &lt;blockquote&gt;&lt;tt&gt;</em>
+<a id='L483' name='L483'></a> 483 <em class='comment'>     * {@link Paths#get(URI) Paths.get}(&lt;/tt&gt;&lt;i&gt;p&lt;/i&gt;&lt;tt&gt;.toUri()).equals(&lt;/tt&gt;&lt;i&gt;p&lt;/i&gt;</em>
+<a id='L484' name='L484'></a> 484 <em class='comment'>     * &lt;tt&gt;.{@link #toAbsolutePath() toAbsolutePath}())&lt;/tt&gt;</em>
+<a id='L485' name='L485'></a> 485 <em class='comment'>     * &lt;/blockquote&gt;</em>
+<a id='L486' name='L486'></a> 486 <em class='comment'>     * so long as the original {@code Path}, the {@code URI}, and the new {@code</em>
+<a id='L487' name='L487'></a> 487 <em class='comment'>     * Path} are all created in (possibly different invocations of) the same</em>
+<a id='L488' name='L488'></a> 488 <em class='comment'>     * Java virtual machine. Whether other providers make any guarantees is</em>
+<a id='L489' name='L489'></a> 489 <em class='comment'>     * provider specific and therefore unspecified.</em>
+<a id='L490' name='L490'></a> 490 <em class='comment'>     *</em>
+<a id='L491' name='L491'></a> 491 <em class='comment'>     * &lt;p&gt; When a file system is constructed to access the contents of a file</em>
+<a id='L492' name='L492'></a> 492 <em class='comment'>     * as a file system then it is highly implementation specific if the returned</em>
+<a id='L493' name='L493'></a> 493 <em class='comment'>     * URI represents the given path in the file system or it represents a</em>
+<a id='L494' name='L494'></a> 494 <em class='comment'>     * &lt;em&gt;compound&lt;/em&gt; URI that encodes the URI of the enclosing file system.</em>
+<a id='L495' name='L495'></a> 495 <em class='comment'>     * A format for compound URIs is not defined in this release; such a scheme</em>
+<a id='L496' name='L496'></a> 496 <em class='comment'>     * may be added in a future release.</em>
+<a id='L497' name='L497'></a> 497 <em class='comment'>     *</em>
+<a id='L498' name='L498'></a> 498 <em class='comment'>     * @return  the URI representing this path</em>
+<a id='L499' name='L499'></a> 499 <em class='comment'>     *</em>
+<a id='L500' name='L500'></a> 500 <em class='comment'>     * @throws  java.io.IOError</em>
+<a id='L501' name='L501'></a> 501 <em class='comment'>     *          if an I/O error occurs obtaining the absolute path, or where a</em>
+<a id='L502' name='L502'></a> 502 <em class='comment'>     *          file system is constructed to access the contents of a file as</em>
+<a id='L503' name='L503'></a> 503 <em class='comment'>     *          a file system, and the URI of the enclosing file system cannot be</em>
+<a id='L504' name='L504'></a> 504 <em class='comment'>     *          obtained</em>
+<a id='L505' name='L505'></a> 505 <em class='comment'>     *</em>
+<a id='L506' name='L506'></a> 506 <em class='comment'>     * @throws  SecurityException</em>
+<a id='L507' name='L507'></a> 507 <em class='comment'>     *          In the case of the default provider, and a security manager</em>
+<a id='L508' name='L508'></a> 508 <em class='comment'>     *          is installed, the {@link #toAbsolutePath toAbsolutePath} method</em>
+<a id='L509' name='L509'></a> 509 <em class='comment'>     *          throws a security exception.</em>
+<a id='L510' name='L510'></a> 510 <em class='comment'>     */</em>
+<a id='L511' name='L511'></a> 511     <a href='../D/9247.html' title='Multiple defined in 4 places.'>URI</a> <a href='../R/29362.html' title='Multiple referred from 5 places.'>toUri</a>();
+<a id='L512' name='L512'></a> 512 
+<a id='L513' name='L513'></a> 513     <em class='comment'>/**</em>
+<a id='L514' name='L514'></a> 514 <em class='comment'>     * Returns a {@code Path} object representing the absolute path of this</em>
+<a id='L515' name='L515'></a> 515 <em class='comment'>     * path.</em>
+<a id='L516' name='L516'></a> 516 <em class='comment'>     *</em>
+<a id='L517' name='L517'></a> 517 <em class='comment'>     * &lt;p&gt; If this path is already {@link Path#isAbsolute absolute} then this</em>
+<a id='L518' name='L518'></a> 518 <em class='comment'>     * method simply returns this path. Otherwise, this method resolves the path</em>
+<a id='L519' name='L519'></a> 519 <em class='comment'>     * in an implementation dependent manner, typically by resolving the path</em>
+<a id='L520' name='L520'></a> 520 <em class='comment'>     * against a file system default directory. Depending on the implementation,</em>
+<a id='L521' name='L521'></a> 521 <em class='comment'>     * this method may throw an I/O error if the file system is not accessible.</em>
+<a id='L522' name='L522'></a> 522 <em class='comment'>     *</em>
+<a id='L523' name='L523'></a> 523 <em class='comment'>     * @return  a {@code Path} object representing the absolute path</em>
+<a id='L524' name='L524'></a> 524 <em class='comment'>     *</em>
+<a id='L525' name='L525'></a> 525 <em class='comment'>     * @throws  java.io.IOError</em>
+<a id='L526' name='L526'></a> 526 <em class='comment'>     *          if an I/O error occurs</em>
+<a id='L527' name='L527'></a> 527 <em class='comment'>     * @throws  SecurityException</em>
+<a id='L528' name='L528'></a> 528 <em class='comment'>     *          In the case of the default provider, a security manager</em>
+<a id='L529' name='L529'></a> 529 <em class='comment'>     *          is installed, and this path is not absolute, then the security</em>
+<a id='L530' name='L530'></a> 530 <em class='comment'>     *          manager's {@link SecurityManager#checkPropertyAccess(String)</em>
+<a id='L531' name='L531'></a> 531 <em class='comment'>     *          checkPropertyAccess} method is invoked to check access to the</em>
+<a id='L532' name='L532'></a> 532 <em class='comment'>     *          system property {@code user.dir}</em>
+<a id='L533' name='L533'></a> 533 <em class='comment'>     */</em>
+<a id='L534' name='L534'></a> 534     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/29212.html' title='Multiple referred from 2 places.'>toAbsolutePath</a>();
+<a id='L535' name='L535'></a> 535 
+<a id='L536' name='L536'></a> 536     <em class='comment'>/**</em>
+<a id='L537' name='L537'></a> 537 <em class='comment'>     * Returns the &lt;em&gt;real&lt;/em&gt; path of an existing file.</em>
+<a id='L538' name='L538'></a> 538 <em class='comment'>     *</em>
+<a id='L539' name='L539'></a> 539 <em class='comment'>     * &lt;p&gt; The precise definition of this method is implementation dependent but</em>
+<a id='L540' name='L540'></a> 540 <em class='comment'>     * in general it derives from this path, an {@link #isAbsolute absolute}</em>
+<a id='L541' name='L541'></a> 541 <em class='comment'>     * path that locates the {@link Files#isSameFile same} file as this path, but</em>
+<a id='L542' name='L542'></a> 542 <em class='comment'>     * with name elements that represent the actual name of the directories</em>
+<a id='L543' name='L543'></a> 543 <em class='comment'>     * and the file. For example, where filename comparisons on a file system</em>
+<a id='L544' name='L544'></a> 544 <em class='comment'>     * are case insensitive then the name elements represent the names in their</em>
+<a id='L545' name='L545'></a> 545 <em class='comment'>     * actual case. Additionally, the resulting path has redundant name</em>
+<a id='L546' name='L546'></a> 546 <em class='comment'>     * elements removed.</em>
+<a id='L547' name='L547'></a> 547 <em class='comment'>     *</em>
+<a id='L548' name='L548'></a> 548 <em class='comment'>     * &lt;p&gt; If this path is relative then its absolute path is first obtained,</em>
+<a id='L549' name='L549'></a> 549 <em class='comment'>     * as if by invoking the {@link #toAbsolutePath toAbsolutePath} method.</em>
+<a id='L550' name='L550'></a> 550 <em class='comment'>     *</em>
+<a id='L551' name='L551'></a> 551 <em class='comment'>     * &lt;p&gt; The {@code options} array may be used to indicate how symbolic links</em>
+<a id='L552' name='L552'></a> 552 <em class='comment'>     * are handled. By default, symbolic links are resolved to their final</em>
+<a id='L553' name='L553'></a> 553 <em class='comment'>     * target. If the option {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} is</em>
+<a id='L554' name='L554'></a> 554 <em class='comment'>     * present then this method does not resolve symbolic links.</em>
+<a id='L555' name='L555'></a> 555 <em class='comment'>     *</em>
+<a id='L556' name='L556'></a> 556 <em class='comment'>     * Some implementations allow special names such as "{@code ..}" to refer to</em>
+<a id='L557' name='L557'></a> 557 <em class='comment'>     * the parent directory. When deriving the &lt;em&gt;real path&lt;/em&gt;, and a</em>
+<a id='L558' name='L558'></a> 558 <em class='comment'>     * "{@code ..}" (or equivalent) is preceded by a non-"{@code ..}" name then</em>
+<a id='L559' name='L559'></a> 559 <em class='comment'>     * an implementation will typically cause both names to be removed. When</em>
+<a id='L560' name='L560'></a> 560 <em class='comment'>     * not resolving symbolic links and the preceding name is a symbolic link</em>
+<a id='L561' name='L561'></a> 561 <em class='comment'>     * then the names are only removed if it guaranteed that the resulting path</em>
+<a id='L562' name='L562'></a> 562 <em class='comment'>     * will locate the same file as this path.</em>
+<a id='L563' name='L563'></a> 563 <em class='comment'>     *</em>
+<a id='L564' name='L564'></a> 564 <em class='comment'>     * @param   options</em>
+<a id='L565' name='L565'></a> 565 <em class='comment'>     *          options indicating how symbolic links are handled</em>
+<a id='L566' name='L566'></a> 566 <em class='comment'>     *</em>
+<a id='L567' name='L567'></a> 567 <em class='comment'>     * @return  an absolute path represent the &lt;em&gt;real&lt;/em&gt; path of the file</em>
+<a id='L568' name='L568'></a> 568 <em class='comment'>     *          located by this object</em>
+<a id='L569' name='L569'></a> 569 <em class='comment'>     *</em>
+<a id='L570' name='L570'></a> 570 <em class='comment'>     * @throws  IOException</em>
+<a id='L571' name='L571'></a> 571 <em class='comment'>     *          if the file does not exist or an I/O error occurs</em>
+<a id='L572' name='L572'></a> 572 <em class='comment'>     * @throws  SecurityException</em>
+<a id='L573' name='L573'></a> 573 <em class='comment'>     *          In the case of the default provider, and a security manager</em>
+<a id='L574' name='L574'></a> 574 <em class='comment'>     *          is installed, its {@link SecurityManager#checkRead(String) checkRead}</em>
+<a id='L575' name='L575'></a> 575 <em class='comment'>     *          method is invoked to check read access to the file, and where</em>
+<a id='L576' name='L576'></a> 576 <em class='comment'>     *          this path is not absolute, its {@link SecurityManager#checkPropertyAccess(String)</em>
+<a id='L577' name='L577'></a> 577 <em class='comment'>     *          checkPropertyAccess} method is invoked to check access to the</em>
+<a id='L578' name='L578'></a> 578 <em class='comment'>     *          system property {@code user.dir}</em>
+<a id='L579' name='L579'></a> 579 <em class='comment'>     */</em>
+<a id='L580' name='L580'></a> 580     <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> toRealPath(<a href='../S/1874.html#L34' title='Defined at 34 in src/java/nio/file/LinkOption.java.'>LinkOption</a>... <a href='../S/7709.html#L57' title='Defined at 57 in src/com/sun/javadoc/RootDoc.java.'>options</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L581' name='L581'></a> 581 
+<a id='L582' name='L582'></a> 582     <em class='comment'>/**</em>
+<a id='L583' name='L583'></a> 583 <em class='comment'>     * Returns a {@link File} object representing this path. Where this {@code</em>
+<a id='L584' name='L584'></a> 584 <em class='comment'>     * Path} is associated with the default provider, then this method is</em>
+<a id='L585' name='L585'></a> 585 <em class='comment'>     * equivalent to returning a {@code File} object constructed with the</em>
+<a id='L586' name='L586'></a> 586 <em class='comment'>     * {@code String} representation of this path.</em>
+<a id='L587' name='L587'></a> 587 <em class='comment'>     *</em>
+<a id='L588' name='L588'></a> 588 <em class='comment'>     * &lt;p&gt; If this path was created by invoking the {@code File} {@link</em>
+<a id='L589' name='L589'></a> 589 <em class='comment'>     * File#toPath toPath} method then there is no guarantee that the {@code</em>
+<a id='L590' name='L590'></a> 590 <em class='comment'>     * File} object returned by this method is {@link #equals equal} to the</em>
+<a id='L591' name='L591'></a> 591 <em class='comment'>     * original {@code File}.</em>
+<a id='L592' name='L592'></a> 592 <em class='comment'>     *</em>
+<a id='L593' name='L593'></a> 593 <em class='comment'>     * @return  a {@code File} object representing this path</em>
+<a id='L594' name='L594'></a> 594 <em class='comment'>     *</em>
+<a id='L595' name='L595'></a> 595 <em class='comment'>     * @throws  UnsupportedOperationException</em>
+<a id='L596' name='L596'></a> 596 <em class='comment'>     *          if this {@code Path} is not associated with the default provider</em>
+<a id='L597' name='L597'></a> 597 <em class='comment'>     */</em>
+<a id='L598' name='L598'></a> 598     <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a> <a href='../R/29256.html' title='Multiple referred from 7 places.'>toFile</a>();
+<a id='L599' name='L599'></a> 599 
+<a id='L600' name='L600'></a> 600     <em class='comment'>// -- watchable --</em>
+<a id='L601' name='L601'></a> 601 
+<a id='L602' name='L602'></a> 602     <em class='comment'>/**</em>
+<a id='L603' name='L603'></a> 603 <em class='comment'>     * Registers the file located by this path with a watch service.</em>
+<a id='L604' name='L604'></a> 604 <em class='comment'>     *</em>
+<a id='L605' name='L605'></a> 605 <em class='comment'>     * &lt;p&gt; In this release, this path locates a directory that exists. The</em>
+<a id='L606' name='L606'></a> 606 <em class='comment'>     * directory is registered with the watch service so that entries in the</em>
+<a id='L607' name='L607'></a> 607 <em class='comment'>     * directory can be watched. The {@code events} parameter is the events to</em>
+<a id='L608' name='L608'></a> 608 <em class='comment'>     * register and may contain the following events:</em>
+<a id='L609' name='L609'></a> 609 <em class='comment'>     * &lt;ul&gt;</em>
+<a id='L610' name='L610'></a> 610 <em class='comment'>     *   &lt;li&gt;{@link StandardWatchEventKinds#ENTRY_CREATE ENTRY_CREATE} -</em>
+<a id='L611' name='L611'></a> 611 <em class='comment'>     *       entry created or moved into the directory&lt;/li&gt;</em>
+<a id='L612' name='L612'></a> 612 <em class='comment'>     *   &lt;li&gt;{@link StandardWatchEventKinds#ENTRY_DELETE ENTRY_DELETE} -</em>
+<a id='L613' name='L613'></a> 613 <em class='comment'>     *        entry deleted or moved out of the directory&lt;/li&gt;</em>
+<a id='L614' name='L614'></a> 614 <em class='comment'>     *   &lt;li&gt;{@link StandardWatchEventKinds#ENTRY_MODIFY ENTRY_MODIFY} -</em>
+<a id='L615' name='L615'></a> 615 <em class='comment'>     *        entry in directory was modified&lt;/li&gt;</em>
+<a id='L616' name='L616'></a> 616 <em class='comment'>     * &lt;/ul&gt;</em>
+<a id='L617' name='L617'></a> 617 <em class='comment'>     *</em>
+<a id='L618' name='L618'></a> 618 <em class='comment'>     * &lt;p&gt; The {@link WatchEvent#context context} for these events is the</em>
+<a id='L619' name='L619'></a> 619 <em class='comment'>     * relative path between the directory located by this path, and the path</em>
+<a id='L620' name='L620'></a> 620 <em class='comment'>     * that locates the directory entry that is created, deleted, or modified.</em>
+<a id='L621' name='L621'></a> 621 <em class='comment'>     *</em>
+<a id='L622' name='L622'></a> 622 <em class='comment'>     * &lt;p&gt; The set of events may include additional implementation specific</em>
+<a id='L623' name='L623'></a> 623 <em class='comment'>     * event that are not defined by the enum {@link StandardWatchEventKinds}</em>
+<a id='L624' name='L624'></a> 624 <em class='comment'>     *</em>
+<a id='L625' name='L625'></a> 625 <em class='comment'>     * &lt;p&gt; The {@code modifiers} parameter specifies &lt;em&gt;modifiers&lt;/em&gt; that</em>
+<a id='L626' name='L626'></a> 626 <em class='comment'>     * qualify how the directory is registered. This release does not define any</em>
+<a id='L627' name='L627'></a> 627 <em class='comment'>     * &lt;em&gt;standard&lt;/em&gt; modifiers. It may contain implementation specific</em>
+<a id='L628' name='L628'></a> 628 <em class='comment'>     * modifiers.</em>
+<a id='L629' name='L629'></a> 629 <em class='comment'>     *</em>
+<a id='L630' name='L630'></a> 630 <em class='comment'>     * &lt;p&gt; Where a file is registered with a watch service by means of a symbolic</em>
+<a id='L631' name='L631'></a> 631 <em class='comment'>     * link then it is implementation specific if the watch continues to depend</em>
+<a id='L632' name='L632'></a> 632 <em class='comment'>     * on the existence of the symbolic link after it is registered.</em>
+<a id='L633' name='L633'></a> 633 <em class='comment'>     *</em>
+<a id='L634' name='L634'></a> 634 <em class='comment'>     * @param   watcher</em>
+<a id='L635' name='L635'></a> 635 <em class='comment'>     *          the watch service to which this object is to be registered</em>
+<a id='L636' name='L636'></a> 636 <em class='comment'>     * @param   events</em>
+<a id='L637' name='L637'></a> 637 <em class='comment'>     *          the events for which this object should be registered</em>
+<a id='L638' name='L638'></a> 638 <em class='comment'>     * @param   modifiers</em>
+<a id='L639' name='L639'></a> 639 <em class='comment'>     *          the modifiers, if any, that modify how the object is registered</em>
+<a id='L640' name='L640'></a> 640 <em class='comment'>     *</em>
+<a id='L641' name='L641'></a> 641 <em class='comment'>     * @return  a key representing the registration of this object with the</em>
+<a id='L642' name='L642'></a> 642 <em class='comment'>     *          given watch service</em>
+<a id='L643' name='L643'></a> 643 <em class='comment'>     *</em>
+<a id='L644' name='L644'></a> 644 <em class='comment'>     * @throws  UnsupportedOperationException</em>
+<a id='L645' name='L645'></a> 645 <em class='comment'>     *          if unsupported events or modifiers are specified</em>
+<a id='L646' name='L646'></a> 646 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L647' name='L647'></a> 647 <em class='comment'>     *          if an invalid combination of events or modifiers is specified</em>
+<a id='L648' name='L648'></a> 648 <em class='comment'>     * @throws  ClosedWatchServiceException</em>
+<a id='L649' name='L649'></a> 649 <em class='comment'>     *          if the watch service is closed</em>
+<a id='L650' name='L650'></a> 650 <em class='comment'>     * @throws  NotDirectoryException</em>
+<a id='L651' name='L651'></a> 651 <em class='comment'>     *          if the file is registered to watch the entries in a directory</em>
+<a id='L652' name='L652'></a> 652 <em class='comment'>     *          and the file is not a directory  &lt;i&gt;(optional specific exception)&lt;/i&gt;</em>
+<a id='L653' name='L653'></a> 653 <em class='comment'>     * @throws  IOException</em>
+<a id='L654' name='L654'></a> 654 <em class='comment'>     *          if an I/O error occurs</em>
+<a id='L655' name='L655'></a> 655 <em class='comment'>     * @throws  SecurityException</em>
+<a id='L656' name='L656'></a> 656 <em class='comment'>     *          In the case of the default provider, and a security manager is</em>
+<a id='L657' name='L657'></a> 657 <em class='comment'>     *          installed, the {@link SecurityManager#checkRead(String) checkRead}</em>
+<a id='L658' name='L658'></a> 658 <em class='comment'>     *          method is invoked to check read access to the file.</em>
+<a id='L659' name='L659'></a> 659 <em class='comment'>     */</em>
+<a id='L660' name='L660'></a> 660     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L661' name='L661'></a> 661     <a href='../S/1934.html#L84' title='Defined at 84 in src/java/nio/file/WatchKey.java.'>WatchKey</a> <a href='../R/25749.html' title='Multiple referred from 136 places.'>register</a>(<a href='../S/1912.html#L106' title='Defined at 106 in src/java/nio/file/WatchService.java.'>WatchService</a> watcher,
+<a id='L662' name='L662'></a> 662                       <a href='../S/1916.html#L47' title='Defined at 47 in src/java/nio/file/WatchEvent.java.'>WatchEvent</a>.<a href='../D/4856.html' title='Multiple defined in 7 places.'>Kind</a>&lt;?&gt;[] events,
+<a id='L663' name='L663'></a> 663                       <a href='../S/1916.html#L47' title='Defined at 47 in src/java/nio/file/WatchEvent.java.'>WatchEvent</a>.<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>... <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>)
+<a id='L664' name='L664'></a> 664         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L665' name='L665'></a> 665 
+<a id='L666' name='L666'></a> 666     <em class='comment'>/**</em>
+<a id='L667' name='L667'></a> 667 <em class='comment'>     * Registers the file located by this path with a watch service.</em>
+<a id='L668' name='L668'></a> 668 <em class='comment'>     *</em>
+<a id='L669' name='L669'></a> 669 <em class='comment'>     * &lt;p&gt; An invocation of this method behaves in exactly the same way as the</em>
+<a id='L670' name='L670'></a> 670 <em class='comment'>     * invocation</em>
+<a id='L671' name='L671'></a> 671 <em class='comment'>     * &lt;pre&gt;</em>
+<a id='L672' name='L672'></a> 672 <em class='comment'>     *     watchable.{@link #register(WatchService,WatchEvent.Kind[],WatchEvent.Modifier[]) register}(watcher, events, new WatchEvent.Modifier[0]);</em>
+<a id='L673' name='L673'></a> 673 <em class='comment'>     * &lt;/pre&gt;</em>
+<a id='L674' name='L674'></a> 674 <em class='comment'>     *</em>
+<a id='L675' name='L675'></a> 675 <em class='comment'>     * &lt;p&gt; &lt;b&gt;Usage Example:&lt;/b&gt;</em>
+<a id='L676' name='L676'></a> 676 <em class='comment'>     * Suppose we wish to register a directory for entry create, delete, and modify</em>
+<a id='L677' name='L677'></a> 677 <em class='comment'>     * events:</em>
+<a id='L678' name='L678'></a> 678 <em class='comment'>     * &lt;pre&gt;</em>
+<a id='L679' name='L679'></a> 679 <em class='comment'>     *     Path dir = ...</em>
+<a id='L680' name='L680'></a> 680 <em class='comment'>     *     WatchService watcher = ...</em>
+<a id='L681' name='L681'></a> 681 <em class='comment'>     *</em>
+<a id='L682' name='L682'></a> 682 <em class='comment'>     *     WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);</em>
+<a id='L683' name='L683'></a> 683 <em class='comment'>     * &lt;/pre&gt;</em>
+<a id='L684' name='L684'></a> 684 <em class='comment'>     * @param   watcher</em>
+<a id='L685' name='L685'></a> 685 <em class='comment'>     *          The watch service to which this object is to be registered</em>
+<a id='L686' name='L686'></a> 686 <em class='comment'>     * @param   events</em>
+<a id='L687' name='L687'></a> 687 <em class='comment'>     *          The events for which this object should be registered</em>
+<a id='L688' name='L688'></a> 688 <em class='comment'>     *</em>
+<a id='L689' name='L689'></a> 689 <em class='comment'>     * @return  A key representing the registration of this object with the</em>
+<a id='L690' name='L690'></a> 690 <em class='comment'>     *          given watch service</em>
+<a id='L691' name='L691'></a> 691 <em class='comment'>     *</em>
+<a id='L692' name='L692'></a> 692 <em class='comment'>     * @throws  UnsupportedOperationException</em>
+<a id='L693' name='L693'></a> 693 <em class='comment'>     *          If unsupported events are specified</em>
+<a id='L694' name='L694'></a> 694 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L695' name='L695'></a> 695 <em class='comment'>     *          If an invalid combination of events is specified</em>
+<a id='L696' name='L696'></a> 696 <em class='comment'>     * @throws  ClosedWatchServiceException</em>
+<a id='L697' name='L697'></a> 697 <em class='comment'>     *          If the watch service is closed</em>
+<a id='L698' name='L698'></a> 698 <em class='comment'>     * @throws  NotDirectoryException</em>
+<a id='L699' name='L699'></a> 699 <em class='comment'>     *          If the file is registered to watch the entries in a directory</em>
+<a id='L700' name='L700'></a> 700 <em class='comment'>     *          and the file is not a directory  &lt;i&gt;(optional specific exception)&lt;/i&gt;</em>
+<a id='L701' name='L701'></a> 701 <em class='comment'>     * @throws  IOException</em>
+<a id='L702' name='L702'></a> 702 <em class='comment'>     *          If an I/O error occurs</em>
+<a id='L703' name='L703'></a> 703 <em class='comment'>     * @throws  SecurityException</em>
+<a id='L704' name='L704'></a> 704 <em class='comment'>     *          In the case of the default provider, and a security manager is</em>
+<a id='L705' name='L705'></a> 705 <em class='comment'>     *          installed, the {@link SecurityManager#checkRead(String) checkRead}</em>
+<a id='L706' name='L706'></a> 706 <em class='comment'>     *          method is invoked to check read access to the file.</em>
+<a id='L707' name='L707'></a> 707 <em class='comment'>     */</em>
+<a id='L708' name='L708'></a> 708     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L709' name='L709'></a> 709     <a href='../S/1934.html#L84' title='Defined at 84 in src/java/nio/file/WatchKey.java.'>WatchKey</a> <a href='../R/25749.html' title='Multiple referred from 136 places.'>register</a>(<a href='../S/1912.html#L106' title='Defined at 106 in src/java/nio/file/WatchService.java.'>WatchService</a> watcher,
+<a id='L710' name='L710'></a> 710                       <a href='../S/1916.html#L47' title='Defined at 47 in src/java/nio/file/WatchEvent.java.'>WatchEvent</a>.<a href='../D/4856.html' title='Multiple defined in 7 places.'>Kind</a>&lt;?&gt;... events)
+<a id='L711' name='L711'></a> 711         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L712' name='L712'></a> 712 
+<a id='L713' name='L713'></a> 713     <em class='comment'>// -- Iterable --</em>
+<a id='L714' name='L714'></a> 714 
+<a id='L715' name='L715'></a> 715     <em class='comment'>/**</em>
+<a id='L716' name='L716'></a> 716 <em class='comment'>     * Returns an iterator over the name elements of this path.</em>
+<a id='L717' name='L717'></a> 717 <em class='comment'>     *</em>
+<a id='L718' name='L718'></a> 718 <em class='comment'>     * &lt;p&gt; The first element returned by the iterator represents the name</em>
+<a id='L719' name='L719'></a> 719 <em class='comment'>     * element that is closest to the root in the directory hierarchy, the</em>
+<a id='L720' name='L720'></a> 720 <em class='comment'>     * second element is the next closest, and so on. The last element returned</em>
+<a id='L721' name='L721'></a> 721 <em class='comment'>     * is the name of the file or directory denoted by this path. The {@link</em>
+<a id='L722' name='L722'></a> 722 <em class='comment'>     * #getRoot root} component, if present, is not returned by the iterator.</em>
+<a id='L723' name='L723'></a> 723 <em class='comment'>     *</em>
+<a id='L724' name='L724'></a> 724 <em class='comment'>     * @return  an iterator over the name elements of this path.</em>
+<a id='L725' name='L725'></a> 725 <em class='comment'>     */</em>
+<a id='L726' name='L726'></a> 726     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L727' name='L727'></a> 727     <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a>&lt;<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a>&gt; <a href='../R/22304.html' title='Multiple referred from 905 places.'>iterator</a>();
+<a id='L728' name='L728'></a> 728 
+<a id='L729' name='L729'></a> 729     <em class='comment'>// -- compareTo/equals/hashCode --</em>
+<a id='L730' name='L730'></a> 730 
+<a id='L731' name='L731'></a> 731     <em class='comment'>/**</em>
+<a id='L732' name='L732'></a> 732 <em class='comment'>     * Compares two abstract paths lexicographically. The ordering defined by</em>
+<a id='L733' name='L733'></a> 733 <em class='comment'>     * this method is provider specific, and in the case of the default</em>
+<a id='L734' name='L734'></a> 734 <em class='comment'>     * provider, platform specific. This method does not access the file system</em>
+<a id='L735' name='L735'></a> 735 <em class='comment'>     * and neither file is required to exist.</em>
+<a id='L736' name='L736'></a> 736 <em class='comment'>     *</em>
+<a id='L737' name='L737'></a> 737 <em class='comment'>     * &lt;p&gt; This method may not be used to compare paths that are associated</em>
+<a id='L738' name='L738'></a> 738 <em class='comment'>     * with different file system providers.</em>
+<a id='L739' name='L739'></a> 739 <em class='comment'>     *</em>
+<a id='L740' name='L740'></a> 740 <em class='comment'>     * @param   other  the path compared to this path.</em>
+<a id='L741' name='L741'></a> 741 <em class='comment'>     *</em>
+<a id='L742' name='L742'></a> 742 <em class='comment'>     * @return  zero if the argument is {@link #equals equal} to this path, a</em>
+<a id='L743' name='L743'></a> 743 <em class='comment'>     *          value less than zero if this path is lexicographically less than</em>
+<a id='L744' name='L744'></a> 744 <em class='comment'>     *          the argument, or a value greater than zero if this path is</em>
+<a id='L745' name='L745'></a> 745 <em class='comment'>     *          lexicographically greater than the argument</em>
+<a id='L746' name='L746'></a> 746 <em class='comment'>     *</em>
+<a id='L747' name='L747'></a> 747 <em class='comment'>     * @throws  ClassCastException</em>
+<a id='L748' name='L748'></a> 748 <em class='comment'>     *          if the paths are associated with different providers</em>
+<a id='L749' name='L749'></a> 749 <em class='comment'>     */</em>
+<a id='L750' name='L750'></a> 750     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L751' name='L751'></a> 751     <strong class='reserved'>int</strong> <a href='../R/11724.html' title='Multiple referred from 291 places.'>compareTo</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> other);
+<a id='L752' name='L752'></a> 752 
+<a id='L753' name='L753'></a> 753     <em class='comment'>/**</em>
+<a id='L754' name='L754'></a> 754 <em class='comment'>     * Tests this path for equality with the given object.</em>
+<a id='L755' name='L755'></a> 755 <em class='comment'>     *</em>
+<a id='L756' name='L756'></a> 756 <em class='comment'>     * &lt;p&gt; If the given object is not a Path, or is a Path associated with a</em>
+<a id='L757' name='L757'></a> 757 <em class='comment'>     * different {@code FileSystem}, then this method returns {@code false}.</em>
+<a id='L758' name='L758'></a> 758 <em class='comment'>     *</em>
+<a id='L759' name='L759'></a> 759 <em class='comment'>     * &lt;p&gt; Whether or not two path are equal depends on the file system</em>
+<a id='L760' name='L760'></a> 760 <em class='comment'>     * implementation. In some cases the paths are compared without regard</em>
+<a id='L761' name='L761'></a> 761 <em class='comment'>     * to case, and others are case sensitive. This method does not access the</em>
+<a id='L762' name='L762'></a> 762 <em class='comment'>     * file system and the file is not required to exist. Where required, the</em>
+<a id='L763' name='L763'></a> 763 <em class='comment'>     * {@link Files#isSameFile isSameFile} method may be used to check if two</em>
+<a id='L764' name='L764'></a> 764 <em class='comment'>     * paths locate the same file.</em>
+<a id='L765' name='L765'></a> 765 <em class='comment'>     *</em>
+<a id='L766' name='L766'></a> 766 <em class='comment'>     * &lt;p&gt; This method satisfies the general contract of the {@link</em>
+<a id='L767' name='L767'></a> 767 <em class='comment'>     * java.lang.Object#equals(Object) Object.equals} method. &lt;/p&gt;</em>
+<a id='L768' name='L768'></a> 768 <em class='comment'>     *</em>
+<a id='L769' name='L769'></a> 769 <em class='comment'>     * @param   other</em>
+<a id='L770' name='L770'></a> 770 <em class='comment'>     *          the object to which this object is to be compared</em>
+<a id='L771' name='L771'></a> 771 <em class='comment'>     *</em>
+<a id='L772' name='L772'></a> 772 <em class='comment'>     * @return  {@code true} if, and only if, the given object is a {@code Path}</em>
+<a id='L773' name='L773'></a> 773 <em class='comment'>     *          that is identical to this {@code Path}</em>
+<a id='L774' name='L774'></a> 774 <em class='comment'>     */</em>
+<a id='L775' name='L775'></a> 775     <strong class='reserved'>boolean</strong> <a href='../R/13992.html' title='Multiple referred from 5400 places.'>equals</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> other);
+<a id='L776' name='L776'></a> 776 
+<a id='L777' name='L777'></a> 777     <em class='comment'>/**</em>
+<a id='L778' name='L778'></a> 778 <em class='comment'>     * Computes a hash code for this path.</em>
+<a id='L779' name='L779'></a> 779 <em class='comment'>     *</em>
+<a id='L780' name='L780'></a> 780 <em class='comment'>     * &lt;p&gt; The hash code is based upon the components of the path, and</em>
+<a id='L781' name='L781'></a> 781 <em class='comment'>     * satisfies the general contract of the {@link Object#hashCode</em>
+<a id='L782' name='L782'></a> 782 <em class='comment'>     * Object.hashCode} method.</em>
+<a id='L783' name='L783'></a> 783 <em class='comment'>     *</em>
+<a id='L784' name='L784'></a> 784 <em class='comment'>     * @return  the hash-code value for this path</em>
+<a id='L785' name='L785'></a> 785 <em class='comment'>     */</em>
+<a id='L786' name='L786'></a> 786     <strong class='reserved'>int</strong> <a href='../R/20298.html' title='Multiple referred from 715 places.'>hashCode</a>();
+<a id='L787' name='L787'></a> 787 
+<a id='L788' name='L788'></a> 788     <em class='comment'>/**</em>
+<a id='L789' name='L789'></a> 789 <em class='comment'>     * Returns the string representation of this path.</em>
+<a id='L790' name='L790'></a> 790 <em class='comment'>     *</em>
+<a id='L791' name='L791'></a> 791 <em class='comment'>     * &lt;p&gt; If this path was created by converting a path string using the</em>
+<a id='L792' name='L792'></a> 792 <em class='comment'>     * {@link FileSystem#getPath getPath} method then the path string returned</em>
+<a id='L793' name='L793'></a> 793 <em class='comment'>     * by this method may differ from the original String used to create the path.</em>
+<a id='L794' name='L794'></a> 794 <em class='comment'>     *</em>
+<a id='L795' name='L795'></a> 795 <em class='comment'>     * &lt;p&gt; The returned path string uses the default name {@link</em>
+<a id='L796' name='L796'></a> 796 <em class='comment'>     * FileSystem#getSeparator separator} to separate names in the path.</em>
+<a id='L797' name='L797'></a> 797 <em class='comment'>     *</em>
+<a id='L798' name='L798'></a> 798 <em class='comment'>     * @return  the string representation of this path</em>
+<a id='L799' name='L799'></a> 799 <em class='comment'>     */</em>
+<a id='L800' name='L800'></a> 800     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>();
+<a id='L801' name='L801'></a> 801 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L106'>[^]</a><a href='#L800'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

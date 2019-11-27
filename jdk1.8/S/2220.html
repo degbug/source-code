@@ -1,0 +1,669 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/awt/print/PrinterJob.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/7986.html'>awt</a>/<a href='../files/7999.html'>print</a>/PrinterJob.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L72'>[^]</a><a href='#L617'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L72' title='Defined at 72.'>getPrinterJob</a></li>
+<li><a href='#L106' title='Defined at 106.'>lookupPrintServices</a></li>
+<li><a href='#L147' title='Defined at 147.'>lookupStreamPrintServices</a></li>
+<li><a href='#L173' title='Defined at 173.'>getPrintService</a></li>
+<li><a href='#L193' title='Defined at 193.'>setPrintService</a></li>
+<li><a href='#L208' title='Defined at 208.'>setPrintable</a></li>
+<li><a href='#L221' title='Defined at 221.'>setPrintable</a></li>
+<li><a href='#L235' title='Defined at 235.'>setPageable</a></li>
+<li><a href='#L257' title='Defined at 257.'>printDialog</a></li>
+<li><a href='#L305' title='Defined at 305.'>printDialog</a></li>
+<li><a href='#L336' title='Defined at 336.'>pageDialog</a></li>
+<li><a href='#L368' title='Defined at 368.'>pageDialog</a></li>
+<li><a href='#L384' title='Defined at 384.'>defaultPage</a></li>
+<li><a href='#L392' title='Defined at 392.'>defaultPage</a></li>
+<li><a href='#L413' title='Defined at 413.'>getPageFormat</a></li>
+<li><a href='#L509' title='Defined at 509.'>validatePage</a></li>
+<li><a href='#L519' title='Defined at 519.'>print</a></li>
+<li><a href='#L559' title='Defined at 559.'>print</a></li>
+<li><a href='#L569' title='Defined at 569.'>setCopies</a></li>
+<li><a href='#L576' title='Defined at 576.'>getCopies</a></li>
+<li><a href='#L582' title='Defined at 582.'>getUserName</a></li>
+<li><a href='#L590' title='Defined at 590.'>setJobName</a></li>
+<li><a href='#L597' title='Defined at 597.'>getJobName</a></li>
+<li><a href='#L607' title='Defined at 607.'>cancel</a></li>
+<li><a href='#L617' title='Defined at 617.'>isCancelled</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.awt.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.AWTError;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.HeadlessException;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.Enumeration;
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> javax.print.DocFlavor;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> javax.print.PrintService;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> javax.print.PrintServiceLookup;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> javax.print.StreamPrintServiceFactory;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> javax.print.attribute.PrintRequestAttributeSet;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> javax.print.attribute.standard.Media;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> javax.print.attribute.standard.MediaPrintableArea;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> javax.print.attribute.standard.MediaSize;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> javax.print.attribute.standard.MediaSizeName;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> javax.print.attribute.standard.OrientationRequested;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> sun.security.action.GetPropertyAction;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45 <em class='comment'>/**</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * The &lt;code&gt;PrinterJob&lt;/code&gt; class is the principal class that controls</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * printing. An application calls methods in this class to set up a job,</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * optionally to invoke a print dialog with the user, and then to print</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * the pages of the job.</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> */</em>
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/6250.html' title='Multiple referred from 6 places.'>PrinterJob</a> <em class='brace'>{</em>
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53  <em class='comment'>/* Public Class Methods */</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     <em class='comment'>/**</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     * Creates and returns a &lt;code&gt;PrinterJob&lt;/code&gt; which is initially</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     * associated with the default printer.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * If no printers are available on the system, a PrinterJob will still</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     * be returned from this method, but &lt;code&gt;getPrintService()&lt;/code&gt;</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     * will return &lt;code&gt;null&lt;/code&gt;, and calling</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * {@link #print() print} with this &lt;code&gt;PrinterJob&lt;/code&gt; might</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * generate an exception.  Applications that need to determine if</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     * there are suitable printers before creating a &lt;code&gt;PrinterJob&lt;/code&gt;</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * should ensure that the array returned from</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * {@link #lookupPrintServices() lookupPrintServices} is not empty.</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * @return a new &lt;code&gt;PrinterJob&lt;/code&gt;.</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     *</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * @throws  SecurityException if a security manager exists and its</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     *          {@link java.lang.SecurityManager#checkPrintJobAccess}</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     *          method disallows this thread from creating a print job request</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     */</em>
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/2220.html#L51' title='Defined at 51 in src/java/awt/print/PrinterJob.java.'>PrinterJob</a> <a href='../R/18480.html' title='Multiple referred from 2 places.'>getPrinterJob</a>() <em class='brace'>{</em>
+<a id='L73' name='L73'></a>  73         <a href='../D/7682.html' title='Multiple defined in 2 places.'>SecurityManager</a> security = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>();
+<a id='L74' name='L74'></a>  74         <strong class='reserved'>if</strong> (security != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L75' name='L75'></a>  75             security.<a href='../S/1785.html#L1377' title='Defined at 1377 in src/java/lang/SecurityManager.java.'>checkPrintJobAccess</a>();
+<a id='L76' name='L76'></a>  76         <em class='brace'>}</em>
+<a id='L77' name='L77'></a>  77         <strong class='reserved'>return</strong> (<a href='../S/2220.html#L51' title='Defined at 51 in src/java/awt/print/PrinterJob.java.'>PrinterJob</a>) <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
+<a id='L78' name='L78'></a>  78             <strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>() <em class='brace'>{</em>
+<a id='L79' name='L79'></a>  79             <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> nm = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../D/21720.html' title='Multiple defined in 77 places.'>getProperty</a>("java.awt.printerjob", <strong class='reserved'>null</strong>);
+<a id='L81' name='L81'></a>  81                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82                     <strong class='reserved'>return</strong> (<a href='../S/2220.html#L51' title='Defined at 51 in src/java/awt/print/PrinterJob.java.'>PrinterJob</a>)<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>.<a href='../D/16518.html' title='Multiple defined in 6 places.'>forName</a>(nm).<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>();
+<a id='L83' name='L83'></a>  83                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1705.html#L53' title='Defined at 53 in src/java/lang/ClassNotFoundException.java.'>ClassNotFoundException</a> e) <em class='brace'>{</em>
+<a id='L84' name='L84'></a>  84                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/2093.html#L33' title='Defined at 33 in src/java/awt/AWTError.java.'>AWTError</a>("PrinterJob not found: " + nm);
+<a id='L85' name='L85'></a>  85                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1743.html#L46' title='Defined at 46 in src/java/lang/InstantiationException.java.'>InstantiationException</a> e) <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86                  <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/2093.html#L33' title='Defined at 33 in src/java/awt/AWTError.java.'>AWTError</a>("Could not instantiate PrinterJob: " + nm);
+<a id='L87' name='L87'></a>  87                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a> e) <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/2093.html#L33' title='Defined at 33 in src/java/awt/AWTError.java.'>AWTError</a>("Could not access PrinterJob: " + nm);
+<a id='L89' name='L89'></a>  89                 <em class='brace'>}</em>
+<a id='L90' name='L90'></a>  90             <em class='brace'>}</em>
+<a id='L91' name='L91'></a>  91         <em class='brace'>}</em>);
+<a id='L92' name='L92'></a>  92     <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <em class='comment'>/**</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * A convenience method which looks up 2D print services.</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * Services returned from this method may be installed on</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * &lt;code&gt;PrinterJob&lt;/code&gt;s which support print services.</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * Calling this method is equivalent to calling</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * {@link javax.print.PrintServiceLookup#lookupPrintServices(</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * DocFlavor, AttributeSet)</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * PrintServiceLookup.lookupPrintServices()}</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * and specifying a Pageable DocFlavor.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * @return a possibly empty array of 2D print services.</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * @since     1.4</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     */</em>
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/3757.html#L61' title='Defined at 61 in src/javax/print/PrintService.java.'>PrintService</a>[] <a href='../S/2220.html#L108' title='Referred from 108 in src/java/awt/print/PrinterJob.java.'>lookupPrintServices</a>() <em class='brace'>{</em>
+<a id='L107' name='L107'></a> 107         <strong class='reserved'>return</strong> <a href='../S/3766.html#L69' title='Defined at 69 in src/javax/print/PrintServiceLookup.java.'>PrintServiceLookup</a>.
+<a id='L108' name='L108'></a> 108             <a href='../D/27151.html' title='Multiple defined in 2 places.'>lookupPrintServices</a>(<a href='../S/3764.html#L446' title='Defined at 446 in src/javax/print/DocFlavor.java.'>DocFlavor</a>.<a href='../S/3764.html#L1386' title='Defined at 1386 in src/javax/print/DocFlavor.java.'>SERVICE_FORMATTED</a>.PAGEABLE, <strong class='reserved'>null</strong>);
+<a id='L109' name='L109'></a> 109     <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112     <em class='comment'>/**</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * A convenience method which locates factories for stream print</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * services which can image 2D graphics.</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * Sample usage :</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * &lt;pre&gt;{@code</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * FileOutputStream outstream;</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * StreamPrintService psPrinter;</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * String psMimeType = "application/postscript";</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * PrinterJob pj = PrinterJob.getPrinterJob();</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * StreamPrintServiceFactory[] factories =</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     *     PrinterJob.lookupStreamPrintServices(psMimeType);</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * if (factories.length &gt; 0) {</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     *     try {</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     *         outstream = new File("out.ps");</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     *         psPrinter =  factories[0].getPrintService(outstream);</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     *         // psPrinter can now be set as the service on a PrinterJob</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     *         pj.setPrintService(psPrinter)</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     *     } catch (Exception e) {</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *         e.printStackTrace();</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     *     }</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * }</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * }&lt;/pre&gt;</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     * Services returned from this method may be installed on</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * &lt;code&gt;PrinterJob&lt;/code&gt; instances which support print services.</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * Calling this method is equivalent to calling</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * {@link javax.print.StreamPrintServiceFactory#lookupStreamPrintServiceFactories(DocFlavor, String)</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * StreamPrintServiceFactory.lookupStreamPrintServiceFactories()</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * } and specifying a Pageable DocFlavor.</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     *</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @param mimeType the required output format, or null to mean any format.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * @return a possibly empty array of 2D stream print service factories.</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * @since     1.4</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     */</em>
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/3762.html#L59' title='Defined at 59 in src/javax/print/StreamPrintServiceFactory.java.'>StreamPrintServiceFactory</a>[]
+<a id='L147' name='L147'></a> 147         lookupStreamPrintServices(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> mimeType) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>return</strong> <a href='../S/3762.html#L59' title='Defined at 59 in src/javax/print/StreamPrintServiceFactory.java.'>StreamPrintServiceFactory</a>.<a href='../S/3762.html#L108' title='Defined at 108 in src/javax/print/StreamPrintServiceFactory.java.'>lookupStreamPrintServiceFactories</a>(
+<a id='L149' name='L149'></a> 149                                        <a href='../S/3764.html#L446' title='Defined at 446 in src/javax/print/DocFlavor.java.'>DocFlavor</a>.<a href='../S/3764.html#L1386' title='Defined at 1386 in src/javax/print/DocFlavor.java.'>SERVICE_FORMATTED</a>.PAGEABLE,
+<a id='L150' name='L150'></a> 150                                        mimeType);
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154  <em class='comment'>/* Public Methods */</em>
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156     <em class='comment'>/**</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * A &lt;code&gt;PrinterJob&lt;/code&gt; object should be created using the</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * static {@link #getPrinterJob() getPrinterJob} method.</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     */</em>
+<a id='L160' name='L160'></a> 160     <strong class='reserved'>public</strong> PrinterJob() <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161     <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163     <em class='comment'>/**</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * Returns the service (printer) for this printer job.</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * Implementations of this class which do not support print services</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * may return null.  null will also be returned if no printers are</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * available.</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     * @return the service for this printer job.</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * @see #setPrintService(PrintService)</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * @see #getPrinterJob()</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * @since     1.4</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     */</em>
+<a id='L173' name='L173'></a> 173     <strong class='reserved'>public</strong> <a href='../S/3757.html#L61' title='Defined at 61 in src/javax/print/PrintService.java.'>PrintService</a> <a href='../R/18475.html' title='Multiple referred from 3 places.'>getPrintService</a>() <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L175' name='L175'></a> 175     <em class='brace'>}</em>
+<a id='L176' name='L176'></a> 176 
+<a id='L177' name='L177'></a> 177     <em class='comment'>/**</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * Associate this PrinterJob with a new PrintService.</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * This method is overridden by subclasses which support</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * specifying a Print Service.</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     *</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * Throws &lt;code&gt;PrinterException&lt;/code&gt; if the specified service</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * cannot support the &lt;code&gt;Pageable&lt;/code&gt; and</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * &lt;code&gt;Printable&lt;/code&gt; interfaces necessary to support 2D printing.</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * @param service a print service that supports 2D printing</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * @exception PrinterException if the specified service does not support</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * 2D printing, or this PrinterJob class does not support</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     * setting a 2D print service, or the specified service is</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * otherwise not a valid print service.</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     * @see #getPrintService</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * @since     1.4</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     */</em>
+<a id='L193' name='L193'></a> 193     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27964.html' title='Multiple referred from 2 places.'>setPrintService</a>(<a href='../S/3757.html#L61' title='Defined at 61 in src/javax/print/PrintService.java.'>PrintService</a> service)
+<a id='L194' name='L194'></a> 194         <strong class='reserved'>throws</strong> <a href='../S/2214.html#L34' title='Defined at 34 in src/java/awt/print/PrinterException.java.'>PrinterException</a> <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/2214.html#L34' title='Defined at 34 in src/java/awt/print/PrinterException.java.'>PrinterException</a>(
+<a id='L196' name='L196'></a> 196                          "Setting a service is not supported on this class");
+<a id='L197' name='L197'></a> 197     <em class='brace'>}</em>
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199     <em class='comment'>/**</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     * Calls &lt;code&gt;painter&lt;/code&gt; to render the pages.  The pages in the</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     * document to be printed by this</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * &lt;code&gt;PrinterJob&lt;/code&gt; are rendered by the {@link Printable}</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * object, &lt;code&gt;painter&lt;/code&gt;.  The {@link PageFormat} for each page</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * is the default page format.</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     * @param painter the &lt;code&gt;Printable&lt;/code&gt; that renders each page of</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * the document.</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     */</em>
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/27965.html' title='Multiple referred from 2 places.'>setPrintable</a>(<a href='../S/2215.html#L102' title='Defined at 102 in src/java/awt/print/Printable.java.'>Printable</a> painter);
+<a id='L209' name='L209'></a> 209 
+<a id='L210' name='L210'></a> 210     <em class='comment'>/**</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * Calls &lt;code&gt;painter&lt;/code&gt; to render the pages in the specified</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * &lt;code&gt;format&lt;/code&gt;.  The pages in the document to be printed by</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * this &lt;code&gt;PrinterJob&lt;/code&gt; are rendered by the</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * &lt;code&gt;Printable&lt;/code&gt; object, &lt;code&gt;painter&lt;/code&gt;. The</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * &lt;code&gt;PageFormat&lt;/code&gt; of each page is &lt;code&gt;format&lt;/code&gt;.</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * @param painter the &lt;code&gt;Printable&lt;/code&gt; called to render</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     *          each page of the document</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * @param format the size and orientation of each page to</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     *                   be printed</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     */</em>
+<a id='L221' name='L221'></a> 221     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/27965.html' title='Multiple referred from 2 places.'>setPrintable</a>(<a href='../S/2215.html#L102' title='Defined at 102 in src/java/awt/print/Printable.java.'>Printable</a> painter, <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../D/16531.html' title='Multiple defined in 87 places.'>format</a>);
+<a id='L222' name='L222'></a> 222 
+<a id='L223' name='L223'></a> 223     <em class='comment'>/**</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * Queries &lt;code&gt;document&lt;/code&gt; for the number of pages and</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * the &lt;code&gt;PageFormat&lt;/code&gt; and &lt;code&gt;Printable&lt;/code&gt; for each</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * page held in the &lt;code&gt;Pageable&lt;/code&gt; instance,</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * &lt;code&gt;document&lt;/code&gt;.</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * @param document the pages to be printed. It can not be</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * @exception NullPointerException the &lt;code&gt;Pageable&lt;/code&gt; passed in</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * was &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * @see PageFormat</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * @see Printable</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     */</em>
+<a id='L235' name='L235'></a> 235     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> setPageable(<a href='../S/2222.html#L38' title='Defined at 38 in src/java/awt/print/Pageable.java.'>Pageable</a> <a href='../D/15104.html' title='Multiple defined in 4 places.'>document</a>)
+<a id='L236' name='L236'></a> 236         <strong class='reserved'>throws</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>;
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238     <em class='comment'>/**</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     * Presents a dialog to the user for changing the properties of</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * the print job.</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     * This method will display a native dialog if a native print</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>     * service is selected, and user choice of printers will be restricted</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * to these native print services.</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * To present the cross platform print dialog for all services,</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * including native ones instead use</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * &lt;code&gt;printDialog(PrintRequestAttributeSet)&lt;/code&gt;.</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * PrinterJob implementations which can use PrintService's will update</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * the PrintService for this PrinterJob to reflect the new service</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * selected by the user.</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the user does not cancel the dialog;</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; otherwise.</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     * @exception HeadlessException if GraphicsEnvironment.isHeadless()</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * returns true.</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     * @see java.awt.GraphicsEnvironment#isHeadless</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     */</em>
+<a id='L257' name='L257'></a> 257     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/25004.html' title='Multiple referred from 3 places.'>printDialog</a>() <strong class='reserved'>throws</strong> <a href='../S/2385.html#L36' title='Defined at 36 in src/java/awt/HeadlessException.java.'>HeadlessException</a>;
+<a id='L258' name='L258'></a> 258 
+<a id='L259' name='L259'></a> 259     <em class='comment'>/**</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * A convenience method which displays a cross-platform print dialog</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     * for all services which are capable of printing 2D graphics using the</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * &lt;code&gt;Pageable&lt;/code&gt; interface. The selected printer when the</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * dialog is initially displayed will reflect the print service currently</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * attached to this print job.</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * If the user changes the print service, the PrinterJob will be</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * updated to reflect this, unless the user cancels the dialog.</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * As well as allowing the user to select the destination printer,</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     * the user can also select values of various print request attributes.</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     * The attributes parameter on input will reflect the applications</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     * required initial selections in the user dialog. Attributes not</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * specified display using the default for the service. On return it</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     * will reflect the user's choices. Selections may be updated by</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     * the implementation to be consistent with the supported values</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * for the currently selected print service.</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * As the user scrolls to a new print service selection, the values</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * copied are based on the settings for the previous service, together</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * with any user changes. The values are not based on the original</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * settings supplied by the client.</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * With the exception of selected printer, the PrinterJob state is</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * not updated to reflect the user's changes.</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     * For the selections to affect a printer job, the attributes must</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * be specified in the call to the</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     * &lt;code&gt;print(PrintRequestAttributeSet)&lt;/code&gt; method. If using</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * the Pageable interface, clients which intend to use media selected</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * by the user must create a PageFormat derived from the user's</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * selections.</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * If the user cancels the dialog, the attributes will not reflect</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * any changes made by the user.</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     * @param attributes on input is application supplied attributes,</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * on output the contents are updated to reflect user choices.</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     * This parameter may not be null.</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the user does not cancel the dialog;</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; otherwise.</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>     * @exception HeadlessException if GraphicsEnvironment.isHeadless()</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     * returns true.</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     * @exception NullPointerException if &lt;code&gt;attributes&lt;/code&gt; parameter</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * is null.</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     * @see java.awt.GraphicsEnvironment#isHeadless</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     * @since     1.4</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     *</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     */</em>
+<a id='L305' name='L305'></a> 305     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/25004.html' title='Multiple referred from 3 places.'>printDialog</a>(<a href='../S/3756.html#L47' title='Defined at 47 in src/javax/print/attribute/PrintRequestAttributeSet.java.'>PrintRequestAttributeSet</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>)
+<a id='L306' name='L306'></a> 306         <strong class='reserved'>throws</strong> <a href='../S/2385.html#L36' title='Defined at 36 in src/java/awt/HeadlessException.java.'>HeadlessException</a> <em class='brace'>{</em>
+<a id='L307' name='L307'></a> 307 
+<a id='L308' name='L308'></a> 308         <strong class='reserved'>if</strong> (<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("attributes");
+<a id='L310' name='L310'></a> 310         <em class='brace'>}</em>
+<a id='L311' name='L311'></a> 311         <strong class='reserved'>return</strong> <a href='../D/29651.html' title='Multiple defined in 3 places.'>printDialog</a>();
+<a id='L312' name='L312'></a> 312     <em class='brace'>}</em>
+<a id='L313' name='L313'></a> 313 
+<a id='L314' name='L314'></a> 314     <em class='comment'>/**</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>     * Displays a dialog that allows modification of a</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>     * &lt;code&gt;PageFormat&lt;/code&gt; instance.</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>     * The &lt;code&gt;page&lt;/code&gt; argument is used to initialize controls</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>     * in the page setup dialog.</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     * If the user cancels the dialog then this method returns the</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>     * original &lt;code&gt;page&lt;/code&gt; object unmodified.</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     * If the user okays the dialog then this method returns a new</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     * &lt;code&gt;PageFormat&lt;/code&gt; object with the indicated changes.</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     * In either case, the original &lt;code&gt;page&lt;/code&gt; object is</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>     * not modified.</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     * @param page the default &lt;code&gt;PageFormat&lt;/code&gt; presented to the</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     *                  user for modification</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * @return    the original &lt;code&gt;page&lt;/code&gt; object if the dialog</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     *            is cancelled; a new &lt;code&gt;PageFormat&lt;/code&gt; object</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     *            containing the format indicated by the user if the</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     *            dialog is acknowledged.</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * @exception HeadlessException if GraphicsEnvironment.isHeadless()</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     * returns true.</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     * @see java.awt.GraphicsEnvironment#isHeadless</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     * @since     1.2</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>     */</em>
+<a id='L336' name='L336'></a> 336     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2220.html#L374' title='Referred from 374 in src/java/awt/print/PrinterJob.java.'>pageDialog</a>(<a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2912.html#L4450' title='Defined at 4450 in src/javax/swing/plaf/basic/BasicTreeUI.java.'>page</a>)
+<a id='L337' name='L337'></a> 337         <strong class='reserved'>throws</strong> <a href='../S/2385.html#L36' title='Defined at 36 in src/java/awt/HeadlessException.java.'>HeadlessException</a>;
+<a id='L338' name='L338'></a> 338 
+<a id='L339' name='L339'></a> 339     <em class='comment'>/**</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     * A convenience method which displays a cross-platform page setup dialog.</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     * The choices available will reflect the print service currently</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * set on this PrinterJob.</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * The attributes parameter on input will reflect the client's</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     * required initial selections in the user dialog. Attributes which are</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     * not specified display using the default for the service. On return it</em>
+<a id='L347' name='L347'></a> 347 <em class='comment'>     * will reflect the user's choices. Selections may be updated by</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>     * the implementation to be consistent with the supported values</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * for the currently selected print service.</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>     * The return value will be a PageFormat equivalent to the</em>
+<a id='L352' name='L352'></a> 352 <em class='comment'>     * selections in the PrintRequestAttributeSet.</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>     * If the user cancels the dialog, the attributes will not reflect</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>     * any changes made by the user, and the return value will be null.</em>
+<a id='L355' name='L355'></a> 355 <em class='comment'>     * @param attributes on input is application supplied attributes,</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>     * on output the contents are updated to reflect user choices.</em>
+<a id='L357' name='L357'></a> 357 <em class='comment'>     * This parameter may not be null.</em>
+<a id='L358' name='L358'></a> 358 <em class='comment'>     * @return a page format if the user does not cancel the dialog;</em>
+<a id='L359' name='L359'></a> 359 <em class='comment'>     * &lt;code&gt;null&lt;/code&gt; otherwise.</em>
+<a id='L360' name='L360'></a> 360 <em class='comment'>     * @exception HeadlessException if GraphicsEnvironment.isHeadless()</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>     * returns true.</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * @exception NullPointerException if &lt;code&gt;attributes&lt;/code&gt; parameter</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     * is null.</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>     * @see java.awt.GraphicsEnvironment#isHeadless</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     * @since     1.4</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     *</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     */</em>
+<a id='L368' name='L368'></a> 368     <strong class='reserved'>public</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2220.html#L374' title='Referred from 374 in src/java/awt/print/PrinterJob.java.'>pageDialog</a>(<a href='../S/3756.html#L47' title='Defined at 47 in src/javax/print/attribute/PrintRequestAttributeSet.java.'>PrintRequestAttributeSet</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>)
+<a id='L369' name='L369'></a> 369         <strong class='reserved'>throws</strong> <a href='../S/2385.html#L36' title='Defined at 36 in src/java/awt/HeadlessException.java.'>HeadlessException</a> <em class='brace'>{</em>
+<a id='L370' name='L370'></a> 370 
+<a id='L371' name='L371'></a> 371         <strong class='reserved'>if</strong> (<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L372' name='L372'></a> 372             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("attributes");
+<a id='L373' name='L373'></a> 373         <em class='brace'>}</em>
+<a id='L374' name='L374'></a> 374         <strong class='reserved'>return</strong> <a href='../D/28655.html' title='Multiple defined in 2 places.'>pageDialog</a>(<a href='../D/14742.html' title='Multiple defined in 2 places.'>defaultPage</a>());
+<a id='L375' name='L375'></a> 375     <em class='brace'>}</em>
+<a id='L376' name='L376'></a> 376 
+<a id='L377' name='L377'></a> 377     <em class='comment'>/**</em>
+<a id='L378' name='L378'></a> 378 <em class='comment'>     * Clones the &lt;code&gt;PageFormat&lt;/code&gt; argument and alters the</em>
+<a id='L379' name='L379'></a> 379 <em class='comment'>     * clone to describe a default page size and orientation.</em>
+<a id='L380' name='L380'></a> 380 <em class='comment'>     * @param page the &lt;code&gt;PageFormat&lt;/code&gt; to be cloned and altered</em>
+<a id='L381' name='L381'></a> 381 <em class='comment'>     * @return clone of &lt;code&gt;page&lt;/code&gt;, altered to describe a default</em>
+<a id='L382' name='L382'></a> 382 <em class='comment'>     *                      &lt;code&gt;PageFormat&lt;/code&gt;.</em>
+<a id='L383' name='L383'></a> 383 <em class='comment'>     */</em>
+<a id='L384' name='L384'></a> 384     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../R/13155.html' title='Multiple referred from 3 places.'>defaultPage</a>(<a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2912.html#L4450' title='Defined at 4450 in src/javax/swing/plaf/basic/BasicTreeUI.java.'>page</a>);
+<a id='L385' name='L385'></a> 385 
+<a id='L386' name='L386'></a> 386     <em class='comment'>/**</em>
+<a id='L387' name='L387'></a> 387 <em class='comment'>     * Creates a new &lt;code&gt;PageFormat&lt;/code&gt; instance and</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'>     * sets it to a default size and orientation.</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'>     * @return a &lt;code&gt;PageFormat&lt;/code&gt; set to a default size and</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     *          orientation.</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     */</em>
+<a id='L392' name='L392'></a> 392     <strong class='reserved'>public</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../R/13155.html' title='Multiple referred from 3 places.'>defaultPage</a>() <em class='brace'>{</em>
+<a id='L393' name='L393'></a> 393         <strong class='reserved'>return</strong> <a href='../D/14742.html' title='Multiple defined in 2 places.'>defaultPage</a>(<strong class='reserved'>new</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a>());
+<a id='L394' name='L394'></a> 394     <em class='brace'>}</em>
+<a id='L395' name='L395'></a> 395 
+<a id='L396' name='L396'></a> 396     <em class='comment'>/**</em>
+<a id='L397' name='L397'></a> 397 <em class='comment'>     * Calculates a &lt;code&gt;PageFormat&lt;/code&gt; with values consistent with those</em>
+<a id='L398' name='L398'></a> 398 <em class='comment'>     * supported by the current &lt;code&gt;PrintService&lt;/code&gt; for this job</em>
+<a id='L399' name='L399'></a> 399 <em class='comment'>     * (ie the value returned by &lt;code&gt;getPrintService()&lt;/code&gt;) and media,</em>
+<a id='L400' name='L400'></a> 400 <em class='comment'>     * printable area and orientation contained in &lt;code&gt;attributes&lt;/code&gt;.</em>
+<a id='L401' name='L401'></a> 401 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L402' name='L402'></a> 402 <em class='comment'>     * Calling this method does not update the job.</em>
+<a id='L403' name='L403'></a> 403 <em class='comment'>     * It is useful for clients that have a set of attributes obtained from</em>
+<a id='L404' name='L404'></a> 404 <em class='comment'>     * &lt;code&gt;printDialog(PrintRequestAttributeSet attributes)&lt;/code&gt;</em>
+<a id='L405' name='L405'></a> 405 <em class='comment'>     * and need a PageFormat to print a Pageable object.</em>
+<a id='L406' name='L406'></a> 406 <em class='comment'>     * @param attributes a set of printing attributes, for example obtained</em>
+<a id='L407' name='L407'></a> 407 <em class='comment'>     * from calling printDialog. If &lt;code&gt;attributes&lt;/code&gt; is null a default</em>
+<a id='L408' name='L408'></a> 408 <em class='comment'>     * PageFormat is returned.</em>
+<a id='L409' name='L409'></a> 409 <em class='comment'>     * @return a &lt;code&gt;PageFormat&lt;/code&gt; whose settings conform with</em>
+<a id='L410' name='L410'></a> 410 <em class='comment'>     * those of the current service and the specified attributes.</em>
+<a id='L411' name='L411'></a> 411 <em class='comment'>     * @since 1.6</em>
+<a id='L412' name='L412'></a> 412 <em class='comment'>     */</em>
+<a id='L413' name='L413'></a> 413     <strong class='reserved'>public</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2219.html#L82' title='Referred from 82 in src/java/awt/print/Book.java.'>getPageFormat</a>(<a href='../S/3756.html#L47' title='Defined at 47 in src/javax/print/attribute/PrintRequestAttributeSet.java.'>PrintRequestAttributeSet</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414 
+<a id='L415' name='L415'></a> 415         <a href='../S/3757.html#L61' title='Defined at 61 in src/javax/print/PrintService.java.'>PrintService</a> service = <a href='../D/21668.html' title='Multiple defined in 4 places.'>getPrintService</a>();
+<a id='L416' name='L416'></a> 416         <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> pf = <a href='../D/14742.html' title='Multiple defined in 2 places.'>defaultPage</a>();
+<a id='L417' name='L417'></a> 417 
+<a id='L418' name='L418'></a> 418         <strong class='reserved'>if</strong> (service == <strong class='reserved'>null</strong> || <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L419' name='L419'></a> 419             <strong class='reserved'>return</strong> pf;
+<a id='L420' name='L420'></a> 420         <em class='brace'>}</em>
+<a id='L421' name='L421'></a> 421 
+<a id='L422' name='L422'></a> 422         <a href='../S/3692.html#L59' title='Defined at 59 in src/javax/print/attribute/standard/Media.java.'>Media</a> media = (<a href='../S/3692.html#L59' title='Defined at 59 in src/javax/print/attribute/standard/Media.java.'>Media</a>)<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/3692.html#L59' title='Defined at 59 in src/javax/print/attribute/standard/Media.java.'>Media</a>.<strong class='reserved'>class</strong>);
+<a id='L423' name='L423'></a> 423         <a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a> mpa =
+<a id='L424' name='L424'></a> 424             (<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>)<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>.<strong class='reserved'>class</strong>);
+<a id='L425' name='L425'></a> 425         <a href='../S/3696.html#L65' title='Defined at 65 in src/javax/print/attribute/standard/OrientationRequested.java.'>OrientationRequested</a> orientReq =
+<a id='L426' name='L426'></a> 426            (<a href='../S/3696.html#L65' title='Defined at 65 in src/javax/print/attribute/standard/OrientationRequested.java.'>OrientationRequested</a>)<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/3696.html#L65' title='Defined at 65 in src/javax/print/attribute/standard/OrientationRequested.java.'>OrientationRequested</a>.<strong class='reserved'>class</strong>);
+<a id='L427' name='L427'></a> 427 
+<a id='L428' name='L428'></a> 428         <strong class='reserved'>if</strong> (media == <strong class='reserved'>null</strong> &amp;&amp; mpa == <strong class='reserved'>null</strong> &amp;&amp; orientReq == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L429' name='L429'></a> 429            <strong class='reserved'>return</strong> pf;
+<a id='L430' name='L430'></a> 430         <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431         <a href='../S/2218.html#L43' title='Defined at 43 in src/java/awt/print/Paper.java.'>Paper</a> paper = pf.<a href='../S/2216.html#L280' title='Defined at 280 in src/java/awt/print/PageFormat.java.'>getPaper</a>();
+<a id='L432' name='L432'></a> 432 
+<a id='L433' name='L433'></a> 433         <em class='comment'>/* If there's a media but no media printable area, we can try</em>
+<a id='L434' name='L434'></a> 434 <em class='comment'>         * to retrieve the default value for mpa and use that.</em>
+<a id='L435' name='L435'></a> 435 <em class='comment'>         */</em>
+<a id='L436' name='L436'></a> 436         <strong class='reserved'>if</strong> (mpa == <strong class='reserved'>null</strong> &amp;&amp; media != <strong class='reserved'>null</strong> &amp;&amp;
+<a id='L437' name='L437'></a> 437             service.<a href='../S/3757.html#L234' title='Defined at 234 in src/javax/print/PrintService.java.'>isAttributeCategorySupported</a>(<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>.<strong class='reserved'>class</strong>)) <em class='brace'>{</em>
+<a id='L438' name='L438'></a> 438             <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> mpaVals =
+<a id='L439' name='L439'></a> 439                 service.<a href='../S/3757.html#L354' title='Defined at 354 in src/javax/print/PrintService.java.'>getSupportedAttributeValues</a>(<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>.<strong class='reserved'>class</strong>,
+<a id='L440' name='L440'></a> 440                                                     <strong class='reserved'>null</strong>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>);
+<a id='L441' name='L441'></a> 441             <strong class='reserved'>if</strong> (mpaVals <strong class='reserved'>instanceof</strong> <a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>[] &amp;&amp;
+<a id='L442' name='L442'></a> 442                 ((<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>[])mpaVals).<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0) <em class='brace'>{</em>
+<a id='L443' name='L443'></a> 443                 mpa = ((<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>[])mpaVals)[0];
+<a id='L444' name='L444'></a> 444             <em class='brace'>}</em>
+<a id='L445' name='L445'></a> 445         <em class='brace'>}</em>
+<a id='L446' name='L446'></a> 446 
+<a id='L447' name='L447'></a> 447         <strong class='reserved'>if</strong> (media != <strong class='reserved'>null</strong> &amp;&amp;
+<a id='L448' name='L448'></a> 448             service.<a href='../S/3757.html#L399' title='Defined at 399 in src/javax/print/PrintService.java.'>isAttributeValueSupported</a>(media, <strong class='reserved'>null</strong>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>)) <em class='brace'>{</em>
+<a id='L449' name='L449'></a> 449             <strong class='reserved'>if</strong> (media <strong class='reserved'>instanceof</strong> <a href='../S/3713.html#L47' title='Defined at 47 in src/javax/print/attribute/standard/MediaSizeName.java.'>MediaSizeName</a>) <em class='brace'>{</em>
+<a id='L450' name='L450'></a> 450                 <a href='../S/3713.html#L47' title='Defined at 47 in src/javax/print/attribute/standard/MediaSizeName.java.'>MediaSizeName</a> msn = (<a href='../S/3713.html#L47' title='Defined at 47 in src/javax/print/attribute/standard/MediaSizeName.java.'>MediaSizeName</a>)media;
+<a id='L451' name='L451'></a> 451                 <a href='../S/3721.html#L53' title='Defined at 53 in src/javax/print/attribute/standard/MediaSize.java.'>MediaSize</a> msz = <a href='../S/3721.html#L53' title='Defined at 53 in src/javax/print/attribute/standard/MediaSize.java.'>MediaSize</a>.<a href='../S/3721.html#L176' title='Defined at 176 in src/javax/print/attribute/standard/MediaSize.java.'>getMediaSizeForName</a>(msn);
+<a id='L452' name='L452'></a> 452                 <strong class='reserved'>if</strong> (msz != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L453' name='L453'></a> 453                     <strong class='reserved'>double</strong> inch = 72.0;
+<a id='L454' name='L454'></a> 454                     <strong class='reserved'>double</strong> paperWid = msz.<a href='../D/23738.html' title='Multiple defined in 24 places.'>getX</a>(<a href='../S/3721.html#L53' title='Defined at 53 in src/javax/print/attribute/standard/MediaSize.java.'>MediaSize</a>.INCH) * inch;
+<a id='L455' name='L455'></a> 455                     <strong class='reserved'>double</strong> paperHgt = msz.<a href='../D/23797.html' title='Multiple defined in 24 places.'>getY</a>(<a href='../S/3721.html#L53' title='Defined at 53 in src/javax/print/attribute/standard/MediaSize.java.'>MediaSize</a>.INCH) * inch;
+<a id='L456' name='L456'></a> 456                     paper.<a href='../D/33924.html' title='Multiple defined in 54 places.'>setSize</a>(paperWid, paperHgt);
+<a id='L457' name='L457'></a> 457                     <strong class='reserved'>if</strong> (mpa == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L458' name='L458'></a> 458                         paper.<a href='../S/2218.html#L169' title='Defined at 169 in src/java/awt/print/Paper.java.'>setImageableArea</a>(inch, inch,
+<a id='L459' name='L459'></a> 459                                                paperWid-2*inch,
+<a id='L460' name='L460'></a> 460                                                paperHgt-2*inch);
+<a id='L461' name='L461'></a> 461                     <em class='brace'>}</em>
+<a id='L462' name='L462'></a> 462                 <em class='brace'>}</em>
+<a id='L463' name='L463'></a> 463             <em class='brace'>}</em>
+<a id='L464' name='L464'></a> 464         <em class='brace'>}</em>
+<a id='L465' name='L465'></a> 465 
+<a id='L466' name='L466'></a> 466         <strong class='reserved'>if</strong> (mpa != <strong class='reserved'>null</strong> &amp;&amp;
+<a id='L467' name='L467'></a> 467             service.<a href='../S/3757.html#L399' title='Defined at 399 in src/javax/print/PrintService.java.'>isAttributeValueSupported</a>(mpa, <strong class='reserved'>null</strong>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>)) <em class='brace'>{</em>
+<a id='L468' name='L468'></a> 468             <strong class='reserved'>float</strong> [] printableArea =
+<a id='L469' name='L469'></a> 469                 mpa.<a href='../S/3712.html#L164' title='Defined at 164 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>getPrintableArea</a>(<a href='../S/3712.html#L81' title='Defined at 81 in src/javax/print/attribute/standard/MediaPrintableArea.java.'>MediaPrintableArea</a>.INCH);
+<a id='L470' name='L470'></a> 470             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i &lt; printableArea.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L471' name='L471'></a> 471                 printableArea[i] = printableArea[i]*72.0f;
+<a id='L472' name='L472'></a> 472             <em class='brace'>}</em>
+<a id='L473' name='L473'></a> 473             paper.<a href='../S/2218.html#L169' title='Defined at 169 in src/java/awt/print/Paper.java.'>setImageableArea</a>(printableArea[0], printableArea[1],
+<a id='L474' name='L474'></a> 474                                    printableArea[2], printableArea[3]);
+<a id='L475' name='L475'></a> 475         <em class='brace'>}</em>
+<a id='L476' name='L476'></a> 476 
+<a id='L477' name='L477'></a> 477         <strong class='reserved'>if</strong> (orientReq != <strong class='reserved'>null</strong> &amp;&amp;
+<a id='L478' name='L478'></a> 478             service.<a href='../S/3757.html#L399' title='Defined at 399 in src/javax/print/PrintService.java.'>isAttributeValueSupported</a>(orientReq, <strong class='reserved'>null</strong>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>)) <em class='brace'>{</em>
+<a id='L479' name='L479'></a> 479             <strong class='reserved'>int</strong> orient;
+<a id='L480' name='L480'></a> 480             <strong class='reserved'>if</strong> (orientReq.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3696.html#L65' title='Defined at 65 in src/javax/print/attribute/standard/OrientationRequested.java.'>OrientationRequested</a>.REVERSE_LANDSCAPE)) <em class='brace'>{</em>
+<a id='L481' name='L481'></a> 481                 orient = <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a>.REVERSE_LANDSCAPE;
+<a id='L482' name='L482'></a> 482             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (orientReq.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3696.html#L65' title='Defined at 65 in src/javax/print/attribute/standard/OrientationRequested.java.'>OrientationRequested</a>.LANDSCAPE)) <em class='brace'>{</em>
+<a id='L483' name='L483'></a> 483                 orient = <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a>.LANDSCAPE;
+<a id='L484' name='L484'></a> 484             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L485' name='L485'></a> 485                 orient = <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a>.PORTRAIT;
+<a id='L486' name='L486'></a> 486             <em class='brace'>}</em>
+<a id='L487' name='L487'></a> 487             pf.<a href='../D/33435.html' title='Multiple defined in 11 places.'>setOrientation</a>(orient);
+<a id='L488' name='L488'></a> 488         <em class='brace'>}</em>
+<a id='L489' name='L489'></a> 489 
+<a id='L490' name='L490'></a> 490         pf.<a href='../S/2216.html#L293' title='Defined at 293 in src/java/awt/print/PageFormat.java.'>setPaper</a>(paper);
+<a id='L491' name='L491'></a> 491         pf = <a href='../S/2220.html#L509' title='Defined at 509 in src/java/awt/print/PrinterJob.java.'>validatePage</a>(pf);
+<a id='L492' name='L492'></a> 492         <strong class='reserved'>return</strong> pf;
+<a id='L493' name='L493'></a> 493     <em class='brace'>}</em>
+<a id='L494' name='L494'></a> 494 
+<a id='L495' name='L495'></a> 495     <em class='comment'>/**</em>
+<a id='L496' name='L496'></a> 496 <em class='comment'>     * Returns the clone of &lt;code&gt;page&lt;/code&gt; with its settings</em>
+<a id='L497' name='L497'></a> 497 <em class='comment'>     * adjusted to be compatible with the current printer of this</em>
+<a id='L498' name='L498'></a> 498 <em class='comment'>     * &lt;code&gt;PrinterJob&lt;/code&gt;.  For example, the returned</em>
+<a id='L499' name='L499'></a> 499 <em class='comment'>     * &lt;code&gt;PageFormat&lt;/code&gt; could have its imageable area</em>
+<a id='L500' name='L500'></a> 500 <em class='comment'>     * adjusted to fit within the physical area of the paper that</em>
+<a id='L501' name='L501'></a> 501 <em class='comment'>     * is used by the current printer.</em>
+<a id='L502' name='L502'></a> 502 <em class='comment'>     * @param page the &lt;code&gt;PageFormat&lt;/code&gt; that is cloned and</em>
+<a id='L503' name='L503'></a> 503 <em class='comment'>     *          whose settings are changed to be compatible with</em>
+<a id='L504' name='L504'></a> 504 <em class='comment'>     *          the current printer</em>
+<a id='L505' name='L505'></a> 505 <em class='comment'>     * @return a &lt;code&gt;PageFormat&lt;/code&gt; that is cloned from</em>
+<a id='L506' name='L506'></a> 506 <em class='comment'>     *          &lt;code&gt;page&lt;/code&gt; and whose settings are changed</em>
+<a id='L507' name='L507'></a> 507 <em class='comment'>     *          to conform with this &lt;code&gt;PrinterJob&lt;/code&gt;.</em>
+<a id='L508' name='L508'></a> 508 <em class='comment'>     */</em>
+<a id='L509' name='L509'></a> 509     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2220.html#L491' title='Referred from 491 in src/java/awt/print/PrinterJob.java.'>validatePage</a>(<a href='../S/2216.html#L38' title='Defined at 38 in src/java/awt/print/PageFormat.java.'>PageFormat</a> <a href='../S/2912.html#L4450' title='Defined at 4450 in src/javax/swing/plaf/basic/BasicTreeUI.java.'>page</a>);
+<a id='L510' name='L510'></a> 510 
+<a id='L511' name='L511'></a> 511     <em class='comment'>/**</em>
+<a id='L512' name='L512'></a> 512 <em class='comment'>     * Prints a set of pages.</em>
+<a id='L513' name='L513'></a> 513 <em class='comment'>     * @exception PrinterException an error in the print system</em>
+<a id='L514' name='L514'></a> 514 <em class='comment'>     *            caused the job to be aborted.</em>
+<a id='L515' name='L515'></a> 515 <em class='comment'>     * @see Book</em>
+<a id='L516' name='L516'></a> 516 <em class='comment'>     * @see Pageable</em>
+<a id='L517' name='L517'></a> 517 <em class='comment'>     * @see Printable</em>
+<a id='L518' name='L518'></a> 518 <em class='comment'>     */</em>
+<a id='L519' name='L519'></a> 519     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/24978.html' title='Multiple referred from 1157 places.'>print</a>() <strong class='reserved'>throws</strong> <a href='../S/2214.html#L34' title='Defined at 34 in src/java/awt/print/PrinterException.java.'>PrinterException</a>;
+<a id='L520' name='L520'></a> 520 
+<a id='L521' name='L521'></a> 521    <em class='comment'>/**</em>
+<a id='L522' name='L522'></a> 522 <em class='comment'>     * Prints a set of pages using the settings in the attribute</em>
+<a id='L523' name='L523'></a> 523 <em class='comment'>     * set. The default implementation ignores the attribute set.</em>
+<a id='L524' name='L524'></a> 524 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L525' name='L525'></a> 525 <em class='comment'>     * Note that some attributes may be set directly on the PrinterJob</em>
+<a id='L526' name='L526'></a> 526 <em class='comment'>     * by equivalent method calls, (for example), copies:</em>
+<a id='L527' name='L527'></a> 527 <em class='comment'>     * &lt;code&gt;setcopies(int)&lt;/code&gt;, job name: &lt;code&gt;setJobName(String)&lt;/code&gt;</em>
+<a id='L528' name='L528'></a> 528 <em class='comment'>     * and specifying media size and orientation though the</em>
+<a id='L529' name='L529'></a> 529 <em class='comment'>     * &lt;code&gt;PageFormat&lt;/code&gt; object.</em>
+<a id='L530' name='L530'></a> 530 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L531' name='L531'></a> 531 <em class='comment'>     * If a supported attribute-value is specified in this attribute set,</em>
+<a id='L532' name='L532'></a> 532 <em class='comment'>     * it will take precedence over the API settings for this print()</em>
+<a id='L533' name='L533'></a> 533 <em class='comment'>     * operation only.</em>
+<a id='L534' name='L534'></a> 534 <em class='comment'>     * The following behaviour is specified for PageFormat:</em>
+<a id='L535' name='L535'></a> 535 <em class='comment'>     * If a client uses the Printable interface, then the</em>
+<a id='L536' name='L536'></a> 536 <em class='comment'>     * &lt;code&gt;attributes&lt;/code&gt; parameter to this method is examined</em>
+<a id='L537' name='L537'></a> 537 <em class='comment'>     * for attributes which specify media (by size), orientation, and</em>
+<a id='L538' name='L538'></a> 538 <em class='comment'>     * imageable area, and those are used to construct a new PageFormat</em>
+<a id='L539' name='L539'></a> 539 <em class='comment'>     * which is passed to the Printable object's print() method.</em>
+<a id='L540' name='L540'></a> 540 <em class='comment'>     * See {@link Printable} for an explanation of the required</em>
+<a id='L541' name='L541'></a> 541 <em class='comment'>     * behaviour of a Printable to ensure optimal printing via PrinterJob.</em>
+<a id='L542' name='L542'></a> 542 <em class='comment'>     * For clients of the Pageable interface, the PageFormat will always</em>
+<a id='L543' name='L543'></a> 543 <em class='comment'>     * be as supplied by that interface, on a per page basis.</em>
+<a id='L544' name='L544'></a> 544 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L545' name='L545'></a> 545 <em class='comment'>     * These behaviours allow an application to directly pass the</em>
+<a id='L546' name='L546'></a> 546 <em class='comment'>     * user settings returned from</em>
+<a id='L547' name='L547'></a> 547 <em class='comment'>     * &lt;code&gt;printDialog(PrintRequestAttributeSet attributes&lt;/code&gt; to</em>
+<a id='L548' name='L548'></a> 548 <em class='comment'>     * this print() method.</em>
+<a id='L549' name='L549'></a> 549 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L550' name='L550'></a> 550 <em class='comment'>     *</em>
+<a id='L551' name='L551'></a> 551 <em class='comment'>     * @param attributes a set of attributes for the job</em>
+<a id='L552' name='L552'></a> 552 <em class='comment'>     * @exception PrinterException an error in the print system</em>
+<a id='L553' name='L553'></a> 553 <em class='comment'>     *            caused the job to be aborted.</em>
+<a id='L554' name='L554'></a> 554 <em class='comment'>     * @see Book</em>
+<a id='L555' name='L555'></a> 555 <em class='comment'>     * @see Pageable</em>
+<a id='L556' name='L556'></a> 556 <em class='comment'>     * @see Printable</em>
+<a id='L557' name='L557'></a> 557 <em class='comment'>     * @since 1.4</em>
+<a id='L558' name='L558'></a> 558 <em class='comment'>     */</em>
+<a id='L559' name='L559'></a> 559     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24978.html' title='Multiple referred from 1157 places.'>print</a>(<a href='../S/3756.html#L47' title='Defined at 47 in src/javax/print/attribute/PrintRequestAttributeSet.java.'>PrintRequestAttributeSet</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>)
+<a id='L560' name='L560'></a> 560         <strong class='reserved'>throws</strong> <a href='../S/2214.html#L34' title='Defined at 34 in src/java/awt/print/PrinterException.java.'>PrinterException</a> <em class='brace'>{</em>
+<a id='L561' name='L561'></a> 561         <a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>();
+<a id='L562' name='L562'></a> 562     <em class='brace'>}</em>
+<a id='L563' name='L563'></a> 563 
+<a id='L564' name='L564'></a> 564     <em class='comment'>/**</em>
+<a id='L565' name='L565'></a> 565 <em class='comment'>     * Sets the number of copies to be printed.</em>
+<a id='L566' name='L566'></a> 566 <em class='comment'>     * @param copies the number of copies to be printed</em>
+<a id='L567' name='L567'></a> 567 <em class='comment'>     * @see #getCopies</em>
+<a id='L568' name='L568'></a> 568 <em class='comment'>     */</em>
+<a id='L569' name='L569'></a> 569     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/27117.html' title='Multiple referred from 2 places.'>setCopies</a>(<strong class='reserved'>int</strong> copies);
+<a id='L570' name='L570'></a> 570 
+<a id='L571' name='L571'></a> 571     <em class='comment'>/**</em>
+<a id='L572' name='L572'></a> 572 <em class='comment'>     * Gets the number of copies to be printed.</em>
+<a id='L573' name='L573'></a> 573 <em class='comment'>     * @return the number of copies to be printed.</em>
+<a id='L574' name='L574'></a> 574 <em class='comment'>     * @see #setCopies</em>
+<a id='L575' name='L575'></a> 575 <em class='comment'>     */</em>
+<a id='L576' name='L576'></a> 576     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../S/2438.html#L1056' title='Referred from 1056 in src/java/awt/JobAttributes.java.'>getCopies</a>();
+<a id='L577' name='L577'></a> 577 
+<a id='L578' name='L578'></a> 578     <em class='comment'>/**</em>
+<a id='L579' name='L579'></a> 579 <em class='comment'>     * Gets the name of the printing user.</em>
+<a id='L580' name='L580'></a> 580 <em class='comment'>     * @return the name of the printing user</em>
+<a id='L581' name='L581'></a> 581 <em class='comment'>     */</em>
+<a id='L582' name='L582'></a> 582     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/19724.html' title='Multiple referred from 3 places.'>getUserName</a>();
+<a id='L583' name='L583'></a> 583 
+<a id='L584' name='L584'></a> 584     <em class='comment'>/**</em>
+<a id='L585' name='L585'></a> 585 <em class='comment'>     * Sets the name of the document to be printed.</em>
+<a id='L586' name='L586'></a> 586 <em class='comment'>     * The document name can not be &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L587' name='L587'></a> 587 <em class='comment'>     * @param jobName the name of the document to be printed</em>
+<a id='L588' name='L588'></a> 588 <em class='comment'>     * @see #getJobName</em>
+<a id='L589' name='L589'></a> 589 <em class='comment'>     */</em>
+<a id='L590' name='L590'></a> 590     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> setJobName(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> jobName);
+<a id='L591' name='L591'></a> 591 
+<a id='L592' name='L592'></a> 592     <em class='comment'>/**</em>
+<a id='L593' name='L593'></a> 593 <em class='comment'>     * Gets the name of the document to be printed.</em>
+<a id='L594' name='L594'></a> 594 <em class='comment'>     * @return the name of the document to be printed.</em>
+<a id='L595' name='L595'></a> 595 <em class='comment'>     * @see #setJobName</em>
+<a id='L596' name='L596'></a> 596 <em class='comment'>     */</em>
+<a id='L597' name='L597'></a> 597     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> getJobName();
+<a id='L598' name='L598'></a> 598 
+<a id='L599' name='L599'></a> 599     <em class='comment'>/**</em>
+<a id='L600' name='L600'></a> 600 <em class='comment'>     * Cancels a print job that is in progress.  If</em>
+<a id='L601' name='L601'></a> 601 <em class='comment'>     * {@link #print() print} has been called but has not</em>
+<a id='L602' name='L602'></a> 602 <em class='comment'>     * returned then this method signals</em>
+<a id='L603' name='L603'></a> 603 <em class='comment'>     * that the job should be cancelled at the next</em>
+<a id='L604' name='L604'></a> 604 <em class='comment'>     * chance. If there is no print job in progress then</em>
+<a id='L605' name='L605'></a> 605 <em class='comment'>     * this call does nothing.</em>
+<a id='L606' name='L606'></a> 606 <em class='comment'>     */</em>
+<a id='L607' name='L607'></a> 607     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/10918.html' title='Multiple referred from 41 places.'>cancel</a>();
+<a id='L608' name='L608'></a> 608 
+<a id='L609' name='L609'></a> 609     <em class='comment'>/**</em>
+<a id='L610' name='L610'></a> 610 <em class='comment'>     * Returns &lt;code&gt;true&lt;/code&gt; if a print job is</em>
+<a id='L611' name='L611'></a> 611 <em class='comment'>     * in progress, but is going to be cancelled</em>
+<a id='L612' name='L612'></a> 612 <em class='comment'>     * at the next opportunity; otherwise returns</em>
+<a id='L613' name='L613'></a> 613 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt;.</em>
+<a id='L614' name='L614'></a> 614 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the job in progress</em>
+<a id='L615' name='L615'></a> 615 <em class='comment'>     * is going to be cancelled; &lt;code&gt;false&lt;/code&gt; otherwise.</em>
+<a id='L616' name='L616'></a> 616 <em class='comment'>     */</em>
+<a id='L617' name='L617'></a> 617     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/21232.html' title='Multiple referred from 12 places.'>isCancelled</a>();
+<a id='L618' name='L618'></a> 618 
+<a id='L619' name='L619'></a> 619 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L72'>[^]</a><a href='#L617'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

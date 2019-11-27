@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/text/CharacterIteratorFieldDelegate.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8031.html'>text</a>/CharacterIteratorFieldDelegate.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L56'>[^]</a><a href='#L106'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L56' title='Defined at 56.'>formatted</a></li>
+<li><a href='#L95' title='Defined at 95.'>formatted</a></li>
+<li><a href='#L106' title='Defined at 106.'>getIterator</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>;
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.util.ArrayList;
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <em class='comment'>/**</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> * CharacterIteratorFieldDelegate combines the notifications from a Format</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * into a resulting &lt;code&gt;AttributedCharacterIterator&lt;/code&gt;. The resulting</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * &lt;code&gt;AttributedCharacterIterator&lt;/code&gt; can be retrieved by way of</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * the &lt;code&gt;getIterator&lt;/code&gt; method.</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> *</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> */</em>
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>class</strong> <a href='../R/1292.html' title='Multiple referred from 4 places.'>CharacterIteratorFieldDelegate</a> <strong class='reserved'>implements</strong> <a href='../S/2459.html#L133' title='Defined at 133 in src/java/text/Format.java.'>Format</a>.<a href='../S/2459.html#L376' title='Defined at 376 in src/java/text/Format.java.'>FieldDelegate</a> <em class='brace'>{</em>
+<a id='L37' name='L37'></a>  37     <em class='comment'>/**</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'>     * Array of AttributeStrings. Whenever &lt;code&gt;formatted&lt;/code&gt; is invoked</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'>     * for a region &gt; size, a new instance of AttributedString is added to</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'>     * attributedStrings. Subsequent invocations of &lt;code&gt;formatted&lt;/code&gt;</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'>     * for existing regions result in invoking addAttribute on the existing</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'>     * AttributedStrings.</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'>     */</em>
+<a id='L44' name='L44'></a>  44     <strong class='reserved'>private</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;<a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a>&gt; attributedStrings;
+<a id='L45' name='L45'></a>  45     <em class='comment'>/**</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'>     * Running count of the number of characters that have</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'>     * been encountered.</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'>     */</em>
+<a id='L49' name='L49'></a>  49     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>;
+<a id='L50' name='L50'></a>  50 
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52     CharacterIteratorFieldDelegate() <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53         attributedStrings = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;&gt;();
+<a id='L54' name='L54'></a>  54     <em class='brace'>}</em>
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/14772.html' title='Multiple referred from 17 places.'>formatted</a>(<a href='../S/2459.html#L133' title='Defined at 133 in src/java/text/Format.java.'>Format</a>.<a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a> <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <strong class='reserved'>int</strong> <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <strong class='reserved'>int</strong> <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>,
+<a id='L57' name='L57'></a>  57                           <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>) <em class='brace'>{</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>if</strong> (<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a> != <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>) <em class='brace'>{</em>
+<a id='L59' name='L59'></a>  59             <strong class='reserved'>if</strong> (<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a> &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>) <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60                 <em class='comment'>// Adjust attributes of existing runs</em>
+<a id='L61' name='L61'></a>  61                 <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>;
+<a id='L62' name='L62'></a>  62                 <strong class='reserved'>int</strong> asIndex = attributedStrings.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() - 1;
+<a id='L63' name='L63'></a>  63 
+<a id='L64' name='L64'></a>  64                 <strong class='reserved'>while</strong> (<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a> &lt; <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>) <em class='brace'>{</em>
+<a id='L65' name='L65'></a>  65                     <a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a> as = attributedStrings.
+<a id='L66' name='L66'></a>  66                                            <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(asIndex--);
+<a id='L67' name='L67'></a>  67                     <strong class='reserved'>int</strong> <a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a> = <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> - as.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>();
+<a id='L68' name='L68'></a>  68                     <strong class='reserved'>int</strong> aStart = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(0, <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a> - <a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a>);
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70                     as.<a href='../D/10660.html' title='Multiple defined in 56 places.'>addAttribute</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, aStart, <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(
+<a id='L71' name='L71'></a>  71                                     <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a> - <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, as.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - aStart) +
+<a id='L72' name='L72'></a>  72                                     aStart);
+<a id='L73' name='L73'></a>  73                     <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a>;
+<a id='L74' name='L74'></a>  74                 <em class='brace'>}</em>
+<a id='L75' name='L75'></a>  75             <em class='brace'>}</em>
+<a id='L76' name='L76'></a>  76             <strong class='reserved'>if</strong> (<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> &lt; <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>) <em class='brace'>{</em>
+<a id='L77' name='L77'></a>  77                 <em class='comment'>// Pad attributes</em>
+<a id='L78' name='L78'></a>  78                 attributedStrings.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a>(
+<a id='L79' name='L79'></a>  79                                           <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>, <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>)));
+<a id='L80' name='L80'></a>  80                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>;
+<a id='L81' name='L81'></a>  81             <em class='brace'>}</em>
+<a id='L82' name='L82'></a>  82             <strong class='reserved'>if</strong> (<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> &lt; <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>) <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83                 <em class='comment'>// Add new string</em>
+<a id='L84' name='L84'></a>  84                 <strong class='reserved'>int</strong> aStart = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>);
+<a id='L85' name='L85'></a>  85                 <a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a> = <strong class='reserved'>new</strong> <a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a>(
+<a id='L86' name='L86'></a>  86                                    <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(aStart, <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>));
+<a id='L87' name='L87'></a>  87 
+<a id='L88' name='L88'></a>  88                 <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/10660.html' title='Multiple defined in 56 places.'>addAttribute</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L89' name='L89'></a>  89                 attributedStrings.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>);
+<a id='L90' name='L90'></a>  90                 <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>;
+<a id='L91' name='L91'></a>  91             <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92         <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93     <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/14772.html' title='Multiple referred from 17 places.'>formatted</a>(<strong class='reserved'>int</strong> fieldID, <a href='../S/2459.html#L133' title='Defined at 133 in src/java/text/Format.java.'>Format</a>.<a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a> <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>,
+<a id='L96' name='L96'></a>  96                           <strong class='reserved'>int</strong> <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <strong class='reserved'>int</strong> <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>, <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>) <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97         <a href='../D/16557.html' title='Multiple defined in 6 places.'>formatted</a>(<a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <a href='../D/15431.html' title='Multiple defined in 52 places.'>end</a>, <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>);
+<a id='L98' name='L98'></a>  98     <em class='brace'>}</em>
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100     <em class='comment'>/**</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * Returns an &lt;code&gt;AttributedCharacterIterator&lt;/code&gt; that can be used</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * to iterate over the resulting formatted String.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     *</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * @pararm string Result of formatting.</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     */</em>
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>public</strong> <a href='../S/2454.html#L79' title='Defined at 79 in src/java/text/AttributedCharacterIterator.java.'>AttributedCharacterIterator</a> <a href='../R/17187.html' title='Multiple referred from 39 places.'>getIterator</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>) <em class='brace'>{</em>
+<a id='L107' name='L107'></a> 107         <em class='comment'>// Add the last AttributedCharacterIterator if necessary</em>
+<a id='L108' name='L108'></a> 108         <em class='comment'>// assert(size &lt;= string.length());</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>if</strong> (<a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>) <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110             attributedStrings.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a>(
+<a id='L111' name='L111'></a> 111                                   <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>)));
+<a id='L112' name='L112'></a> 112             <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>();
+<a id='L113' name='L113'></a> 113         <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>int</strong> iCount = attributedStrings.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L115' name='L115'></a> 115         <a href='../S/2454.html#L79' title='Defined at 79 in src/java/text/AttributedCharacterIterator.java.'>AttributedCharacterIterator</a> iterators[] = <strong class='reserved'>new</strong>
+<a id='L116' name='L116'></a> 116                                     <a href='../S/2454.html#L79' title='Defined at 79 in src/java/text/AttributedCharacterIterator.java.'>AttributedCharacterIterator</a>[iCount];
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> counter = 0; counter &lt; iCount; counter++) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119             iterators[counter] = attributedStrings.
+<a id='L120' name='L120'></a> 120                                   <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(counter).<a href='../D/19862.html' title='Multiple defined in 18 places.'>getIterator</a>();
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2484.html#L50' title='Defined at 50 in src/java/text/AttributedString.java.'>AttributedString</a>(iterators).<a href='../D/19862.html' title='Multiple defined in 18 places.'>getIterator</a>();
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L56'>[^]</a><a href='#L106'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

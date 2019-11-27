@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/awt/MultipleGradientPaint.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/7986.html'>awt</a>/MultipleGradientPaint.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L251'>[^]</a><a href='#L308'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L251' title='Defined at 251.'>getFractions</a></li>
+<li><a href='#L262' title='Defined at 262.'>getColors</a></li>
+<li><a href='#L271' title='Defined at 271.'>getCycleMethod</a></li>
+<li><a href='#L282' title='Defined at 282.'>getColorSpace</a></li>
+<li><a href='#L295' title='Defined at 295.'>getTransform</a></li>
+<li><a href='#L308' title='Defined at 308.'>getTransparency</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.awt;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.geom.AffineTransform;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.image.ColorModel;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.lang.ref.SoftReference;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Arrays;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <em class='comment'>/**</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * This is the superclass for Paints which use a multiple color</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * gradient to fill in their raster.  It provides storage for variables and</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * enumerated values common to</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * {@code LinearGradientPaint} and {@code RadialGradientPaint}.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> *</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * @author Nicholas Talian, Vincent Hardy, Jim Graham, Jerry Evans</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * @since 1.6</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> */</em>
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/5336.html' title='Multiple referred from 9 places.'>MultipleGradientPaint</a> <strong class='reserved'>implements</strong> <a href='../S/2358.html#L52' title='Defined at 52 in src/java/awt/Paint.java.'>Paint</a> <em class='brace'>{</em>
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44     <em class='comment'>/** The method to use when painting outside the gradient bounds.</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'>     * @since 1.6</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'>     */</em>
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>enum</strong> <a href='../R/1830.html' title='Multiple referred from 28 places.'>CycleMethod</a> <em class='brace'>{</em>
+<a id='L48' name='L48'></a>  48         <em class='comment'>/**</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'>         * Use the terminal colors to fill the remaining area.</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'>         */</em>
+<a id='L51' name='L51'></a>  51         NO_CYCLE,
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53         <em class='comment'>/**</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>         * Cycle the gradient colors start-to-end, end-to-start</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>         * to fill the remaining area.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>         */</em>
+<a id='L57' name='L57'></a>  57         REFLECT,
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59         <em class='comment'>/**</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>         * Cycle the gradient colors start-to-end, start-to-end</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>         * to fill the remaining area.</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>         */</em>
+<a id='L63' name='L63'></a>  63         REPEAT
+<a id='L64' name='L64'></a>  64     <em class='brace'>}</em>
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66     <em class='comment'>/** The color space in which to perform the gradient interpolation.</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * @since 1.6</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     */</em>
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>enum</strong> <a href='../R/1506.html' title='Multiple referred from 19 places.'>ColorSpaceType</a> <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70         <em class='comment'>/**</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>         * Indicates that the color interpolation should occur in sRGB space.</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>         */</em>
+<a id='L73' name='L73'></a>  73         SRGB,
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75         <em class='comment'>/**</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>         * Indicates that the color interpolation should occur in linearized</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>         * RGB space.</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>         */</em>
+<a id='L79' name='L79'></a>  79         LINEAR_RGB
+<a id='L80' name='L80'></a>  80     <em class='brace'>}</em>
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <em class='comment'>/** The transparency of this paint object. */</em>
+<a id='L83' name='L83'></a>  83     <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> transparency;
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85     <em class='comment'>/** Gradient keyframe values in the range 0 to 1. */</em>
+<a id='L86' name='L86'></a>  86     <strong class='reserved'>final</strong> <strong class='reserved'>float</strong>[] fractions;
+<a id='L87' name='L87'></a>  87 
+<a id='L88' name='L88'></a>  88     <em class='comment'>/** Gradient colors. */</em>
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>final</strong> <a href='../S/2447.html#L60' title='Defined at 60 in src/java/awt/Color.java.'>Color</a>[] colors;
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <em class='comment'>/** Transform to apply to gradient. */</em>
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>final</strong> <a href='../S/2328.html#L114' title='Defined at 114 in src/java/awt/geom/AffineTransform.java.'>AffineTransform</a> gradientTransform;
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <em class='comment'>/** The method to use when painting outside the gradient bounds. */</em>
+<a id='L95' name='L95'></a>  95     <strong class='reserved'>final</strong> <a href='../S/2387.html#L47' title='Defined at 47 in src/java/awt/MultipleGradientPaint.java.'>CycleMethod</a> cycleMethod;
+<a id='L96' name='L96'></a>  96 
+<a id='L97' name='L97'></a>  97     <em class='comment'>/** The color space in which to perform the gradient interpolation. */</em>
+<a id='L98' name='L98'></a>  98     <strong class='reserved'>final</strong> <a href='../S/2387.html#L69' title='Defined at 69 in src/java/awt/MultipleGradientPaint.java.'>ColorSpaceType</a> colorSpace;
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100     <em class='comment'>/**</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * The following fields are used only by MultipleGradientPaintContext</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * to cache certain values that remain constant and do not need to be</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * recalculated for each context created from this paint instance.</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     */</em>
+<a id='L105' name='L105'></a> 105     <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> model;
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>float</strong>[] normalizedIntervals;
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>boolean</strong> isSimpleLookup;
+<a id='L108' name='L108'></a> 108     <a href='../S/1564.html#L64' title='Defined at 64 in src/java/lang/ref/SoftReference.java.'>SoftReference</a>&lt;<strong class='reserved'>int</strong>[][]&gt; gradients;
+<a id='L109' name='L109'></a> 109     <a href='../S/1564.html#L64' title='Defined at 64 in src/java/lang/ref/SoftReference.java.'>SoftReference</a>&lt;<strong class='reserved'>int</strong>[]&gt; gradient;
+<a id='L110' name='L110'></a> 110     <strong class='reserved'>int</strong> fastGradientArraySize;
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112     <em class='comment'>/**</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * Package-private constructor.</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     *</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * @param fractions numbers ranging from 0.0 to 1.0 specifying the</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     *                  distribution of colors along the gradient</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * @param colors array of colors corresponding to each fractional value</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * @param cycleMethod either {@code NO_CYCLE}, {@code REFLECT},</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     *                    or {@code REPEAT}</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * @param colorSpace which color space to use for interpolation,</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *                   either {@code SRGB} or {@code LINEAR_RGB}</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * @param gradientTransform transform to apply to the gradient</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     *</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * @throws NullPointerException</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * if {@code fractions} array is null,</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * or {@code colors} array is null,</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * or {@code gradientTransform} is null,</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * or {@code cycleMethod} is null,</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * or {@code colorSpace} is null</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @throws IllegalArgumentException</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * if {@code fractions.length != colors.length},</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * or {@code colors} is less than 2 in size,</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * or a {@code fractions} value is less than 0.0 or greater than 1.0,</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * or the {@code fractions} are not provided in strictly increasing order</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     */</em>
+<a id='L136' name='L136'></a> 136     MultipleGradientPaint(<strong class='reserved'>float</strong>[] fractions,
+<a id='L137' name='L137'></a> 137                           <a href='../S/2447.html#L60' title='Defined at 60 in src/java/awt/Color.java.'>Color</a>[] colors,
+<a id='L138' name='L138'></a> 138                           <a href='../S/2387.html#L47' title='Defined at 47 in src/java/awt/MultipleGradientPaint.java.'>CycleMethod</a> cycleMethod,
+<a id='L139' name='L139'></a> 139                           <a href='../S/2387.html#L69' title='Defined at 69 in src/java/awt/MultipleGradientPaint.java.'>ColorSpaceType</a> colorSpace,
+<a id='L140' name='L140'></a> 140                           <a href='../S/2328.html#L114' title='Defined at 114 in src/java/awt/geom/AffineTransform.java.'>AffineTransform</a> gradientTransform)
+<a id='L141' name='L141'></a> 141     <em class='brace'>{</em>
+<a id='L142' name='L142'></a> 142         <strong class='reserved'>if</strong> (fractions == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("Fractions array cannot be null");
+<a id='L144' name='L144'></a> 144         <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>if</strong> (colors == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("Colors array cannot be null");
+<a id='L148' name='L148'></a> 148         <em class='brace'>}</em>
+<a id='L149' name='L149'></a> 149 
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>if</strong> (cycleMethod == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("Cycle method cannot be null");
+<a id='L152' name='L152'></a> 152         <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>if</strong> (colorSpace == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L155' name='L155'></a> 155             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("Color space cannot be null");
+<a id='L156' name='L156'></a> 156         <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>if</strong> (gradientTransform == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>("Gradient transform cannot be "+
+<a id='L160' name='L160'></a> 160                                            "null");
+<a id='L161' name='L161'></a> 161         <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163         <strong class='reserved'>if</strong> (fractions.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != colors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <em class='brace'>{</em>
+<a id='L164' name='L164'></a> 164             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Colors and fractions must " +
+<a id='L165' name='L165'></a> 165                                                "have equal size");
+<a id='L166' name='L166'></a> 166         <em class='brace'>}</em>
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168         <strong class='reserved'>if</strong> (colors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &lt; 2) <em class='brace'>{</em>
+<a id='L169' name='L169'></a> 169             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("User must specify at least " +
+<a id='L170' name='L170'></a> 170                                                "2 colors");
+<a id='L171' name='L171'></a> 171         <em class='brace'>}</em>
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173         <em class='comment'>// check that values are in the proper range and progress</em>
+<a id='L174' name='L174'></a> 174         <em class='comment'>// in increasing order from 0 to 1</em>
+<a id='L175' name='L175'></a> 175         <strong class='reserved'>float</strong> previousFraction = -1.0f;
+<a id='L176' name='L176'></a> 176         <strong class='reserved'>for</strong> (<strong class='reserved'>float</strong> currentFraction : fractions) <em class='brace'>{</em>
+<a id='L177' name='L177'></a> 177             <strong class='reserved'>if</strong> (currentFraction &lt; 0f || currentFraction &gt; 1f) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Fraction values must " +
+<a id='L179' name='L179'></a> 179                                                    "be in the range 0 to 1: " +
+<a id='L180' name='L180'></a> 180                                                    currentFraction);
+<a id='L181' name='L181'></a> 181             <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>if</strong> (currentFraction &lt;= previousFraction) <em class='brace'>{</em>
+<a id='L184' name='L184'></a> 184                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Keyframe fractions " +
+<a id='L185' name='L185'></a> 185                                                    "must be increasing: " +
+<a id='L186' name='L186'></a> 186                                                    currentFraction);
+<a id='L187' name='L187'></a> 187             <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189             previousFraction = currentFraction;
+<a id='L190' name='L190'></a> 190         <em class='brace'>}</em>
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192         <em class='comment'>// We have to deal with the cases where the first gradient stop is not</em>
+<a id='L193' name='L193'></a> 193         <em class='comment'>// equal to 0 and/or the last gradient stop is not equal to 1.</em>
+<a id='L194' name='L194'></a> 194         <em class='comment'>// In both cases, create a new point and replicate the previous</em>
+<a id='L195' name='L195'></a> 195         <em class='comment'>// extreme point's color.</em>
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>boolean</strong> fixFirst = <strong class='reserved'>false</strong>;
+<a id='L197' name='L197'></a> 197         <strong class='reserved'>boolean</strong> fixLast = <strong class='reserved'>false</strong>;
+<a id='L198' name='L198'></a> 198         <strong class='reserved'>int</strong> len = fractions.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L199' name='L199'></a> 199         <strong class='reserved'>int</strong> off = 0;
+<a id='L200' name='L200'></a> 200 
+<a id='L201' name='L201'></a> 201         <strong class='reserved'>if</strong> (fractions[0] != 0f) <em class='brace'>{</em>
+<a id='L202' name='L202'></a> 202             <em class='comment'>// first stop is not equal to zero, fix this condition</em>
+<a id='L203' name='L203'></a> 203             fixFirst = <strong class='reserved'>true</strong>;
+<a id='L204' name='L204'></a> 204             len++;
+<a id='L205' name='L205'></a> 205             off++;
+<a id='L206' name='L206'></a> 206         <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207         <strong class='reserved'>if</strong> (fractions[fractions.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>-1] != 1f) <em class='brace'>{</em>
+<a id='L208' name='L208'></a> 208             <em class='comment'>// last stop is not equal to one, fix this condition</em>
+<a id='L209' name='L209'></a> 209             fixLast = <strong class='reserved'>true</strong>;
+<a id='L210' name='L210'></a> 210             len++;
+<a id='L211' name='L211'></a> 211         <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213         <strong class='reserved'>this</strong>.fractions = <strong class='reserved'>new</strong> <strong class='reserved'>float</strong>[len];
+<a id='L214' name='L214'></a> 214         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(fractions, 0, <strong class='reserved'>this</strong>.fractions, off, fractions.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L215' name='L215'></a> 215         <strong class='reserved'>this</strong>.colors = <strong class='reserved'>new</strong> <a href='../S/2447.html#L60' title='Defined at 60 in src/java/awt/Color.java.'>Color</a>[len];
+<a id='L216' name='L216'></a> 216         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(colors, 0, <strong class='reserved'>this</strong>.colors, off, colors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>if</strong> (fixFirst) <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219             <strong class='reserved'>this</strong>.fractions[0] = 0f;
+<a id='L220' name='L220'></a> 220             <strong class='reserved'>this</strong>.colors[0] = colors[0];
+<a id='L221' name='L221'></a> 221         <em class='brace'>}</em>
+<a id='L222' name='L222'></a> 222         <strong class='reserved'>if</strong> (fixLast) <em class='brace'>{</em>
+<a id='L223' name='L223'></a> 223             <strong class='reserved'>this</strong>.fractions[len-1] = 1f;
+<a id='L224' name='L224'></a> 224             <strong class='reserved'>this</strong>.colors[len-1] = colors[colors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1];
+<a id='L225' name='L225'></a> 225         <em class='brace'>}</em>
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227         <em class='comment'>// copy some flags</em>
+<a id='L228' name='L228'></a> 228         <strong class='reserved'>this</strong>.colorSpace = colorSpace;
+<a id='L229' name='L229'></a> 229         <strong class='reserved'>this</strong>.cycleMethod = cycleMethod;
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231         <em class='comment'>// copy the gradient transform</em>
+<a id='L232' name='L232'></a> 232         <strong class='reserved'>this</strong>.gradientTransform = <strong class='reserved'>new</strong> <a href='../S/2328.html#L114' title='Defined at 114 in src/java/awt/geom/AffineTransform.java.'>AffineTransform</a>(gradientTransform);
+<a id='L233' name='L233'></a> 233 
+<a id='L234' name='L234'></a> 234         <em class='comment'>// determine transparency</em>
+<a id='L235' name='L235'></a> 235         <strong class='reserved'>boolean</strong> opaque = <strong class='reserved'>true</strong>;
+<a id='L236' name='L236'></a> 236         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; colors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)<em class='brace'>{</em>
+<a id='L237' name='L237'></a> 237             opaque = opaque &amp;&amp; (colors[i].<a href='../D/16906.html' title='Multiple defined in 9 places.'>getAlpha</a>() == 0xff);
+<a id='L238' name='L238'></a> 238         <em class='brace'>}</em>
+<a id='L239' name='L239'></a> 239         <strong class='reserved'>this</strong>.transparency = opaque ? OPAQUE : TRANSLUCENT;
+<a id='L240' name='L240'></a> 240     <em class='brace'>}</em>
+<a id='L241' name='L241'></a> 241 
+<a id='L242' name='L242'></a> 242     <em class='comment'>/**</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * Returns a copy of the array of floats used by this gradient</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * to calculate color distribution.</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * The returned array always has 0 as its first value and 1 as its</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * last value, with increasing values in between.</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     *</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * @return a copy of the array of floats used by this gradient to</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * calculate color distribution</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     */</em>
+<a id='L251' name='L251'></a> 251     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>float</strong>[] getFractions() <em class='brace'>{</em>
+<a id='L252' name='L252'></a> 252         <strong class='reserved'>return</strong> <a href='../S/1150.html#L71' title='Defined at 71 in src/java/util/Arrays.java.'>Arrays</a>.<a href='../D/13512.html' title='Multiple defined in 12 places.'>copyOf</a>(fractions, fractions.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L253' name='L253'></a> 253     <em class='brace'>}</em>
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255     <em class='comment'>/**</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * Returns a copy of the array of colors used by this gradient.</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     * The first color maps to the first value in the fractions array,</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     * and the last color maps to the last value in the fractions array.</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     *</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * @return a copy of the array of colors used by this gradient</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     */</em>
+<a id='L262' name='L262'></a> 262     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../S/2447.html#L60' title='Defined at 60 in src/java/awt/Color.java.'>Color</a>[] <a href='../S/2932.html#L679' title='Referred from 679 in src/javax/swing/plaf/synth/SynthParser.java.'>getColors</a>() <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263         <strong class='reserved'>return</strong> <a href='../S/1150.html#L71' title='Defined at 71 in src/java/util/Arrays.java.'>Arrays</a>.<a href='../D/13512.html' title='Multiple defined in 12 places.'>copyOf</a>(colors, colors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L264' name='L264'></a> 264     <em class='brace'>}</em>
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266     <em class='comment'>/**</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * Returns the enumerated type which specifies cycling behavior.</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     *</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * @return the enumerated type which specifies cycling behavior</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     */</em>
+<a id='L271' name='L271'></a> 271     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../S/2387.html#L47' title='Defined at 47 in src/java/awt/MultipleGradientPaint.java.'>CycleMethod</a> getCycleMethod() <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272         <strong class='reserved'>return</strong> cycleMethod;
+<a id='L273' name='L273'></a> 273     <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274 
+<a id='L275' name='L275'></a> 275     <em class='comment'>/**</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * Returns the enumerated type which specifies color space for</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * interpolation.</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     *</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * @return the enumerated type which specifies color space for</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * interpolation</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     */</em>
+<a id='L282' name='L282'></a> 282     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../S/2387.html#L69' title='Defined at 69 in src/java/awt/MultipleGradientPaint.java.'>ColorSpaceType</a> <a href='../R/15663.html' title='Multiple referred from 27 places.'>getColorSpace</a>() <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283         <strong class='reserved'>return</strong> colorSpace;
+<a id='L284' name='L284'></a> 284     <em class='brace'>}</em>
+<a id='L285' name='L285'></a> 285 
+<a id='L286' name='L286'></a> 286     <em class='comment'>/**</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * Returns a copy of the transform applied to the gradient.</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     *</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * Note that if no transform is applied to the gradient</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * when it is created, the identity transform is used.</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     *</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * @return a copy of the transform applied to the gradient</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     */</em>
+<a id='L295' name='L295'></a> 295     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <a href='../S/2328.html#L114' title='Defined at 114 in src/java/awt/geom/AffineTransform.java.'>AffineTransform</a> <a href='../R/19570.html' title='Multiple referred from 11 places.'>getTransform</a>() <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2328.html#L114' title='Defined at 114 in src/java/awt/geom/AffineTransform.java.'>AffineTransform</a>(gradientTransform);
+<a id='L297' name='L297'></a> 297     <em class='brace'>}</em>
+<a id='L298' name='L298'></a> 298 
+<a id='L299' name='L299'></a> 299     <em class='comment'>/**</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * Returns the transparency mode for this {@code Paint} object.</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     *</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     * @return {@code OPAQUE} if all colors used by this</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     *         {@code Paint} object are opaque,</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     *         {@code TRANSLUCENT} if at least one of the</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     *         colors used by this {@code Paint} object is not opaque.</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * @see java.awt.Transparency</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     */</em>
+<a id='L308' name='L308'></a> 308     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../R/19586.html' title='Multiple referred from 12 places.'>getTransparency</a>() <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309         <strong class='reserved'>return</strong> transparency;
+<a id='L310' name='L310'></a> 310     <em class='brace'>}</em>
+<a id='L311' name='L311'></a> 311 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L251'>[^]</a><a href='#L308'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

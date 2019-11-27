@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/nio/file/attribute/PosixFilePermissions.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8012.html'>nio</a>/<a href='../files/8017.html'>file</a>/<a href='../files/8018.html'>attribute</a>/PosixFilePermissions.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L42'>[^]</a><a href='#L159'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L42' title='Defined at 42.'>writeBits</a></li>
+<li><a href='#L73' title='Defined at 73.'>toString</a></li>
+<li><a href='#L84' title='Defined at 84.'>isSet</a></li>
+<li><a href='#L91' title='Defined at 91.'>isR</a></li>
+<li><a href='#L92' title='Defined at 92.'>isW</a></li>
+<li><a href='#L93' title='Defined at 93.'>isX</a></li>
+<li><a href='#L126' title='Defined at 126.'>fromString</a></li>
+<li><a href='#L159' title='Defined at 159.'>asFileAttribute</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.nio.<a href='../D/16022.html' title='Multiple defined in 3 places.'>file</a>.<a href='../D/11628.html' title='Multiple defined in 2 places.'>attribute</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> static java.nio.file.attribute.PosixFilePermission.*;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.*;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <em class='comment'>/**</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * This class consists exclusively of static methods that operate on sets of</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * {@link PosixFilePermission} objects.</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> *</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * @since 1.7</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> */</em>
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/6173.html' title='Multiple referred from 3 places.'>PosixFilePermissions</a> <em class='brace'>{</em>
+<a id='L39' name='L39'></a>  39     <strong class='reserved'>private</strong> PosixFilePermissions() <em class='brace'>{</em> <em class='brace'>}</em>
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41     <em class='comment'>// Write string representation of permission bits to {@code sb}.</em>
+<a id='L42' name='L42'></a>  42     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/30566.html' title='Multiple referred from 9 places.'>writeBits</a>(<a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb, <strong class='reserved'>boolean</strong> r, <strong class='reserved'>boolean</strong> w, <strong class='reserved'>boolean</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) <em class='brace'>{</em>
+<a id='L43' name='L43'></a>  43         <strong class='reserved'>if</strong> (r) <em class='brace'>{</em>
+<a id='L44' name='L44'></a>  44             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('r');
+<a id='L45' name='L45'></a>  45         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L46' name='L46'></a>  46             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('-');
+<a id='L47' name='L47'></a>  47         <em class='brace'>}</em>
+<a id='L48' name='L48'></a>  48         <strong class='reserved'>if</strong> (w) <em class='brace'>{</em>
+<a id='L49' name='L49'></a>  49             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('w');
+<a id='L50' name='L50'></a>  50         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L51' name='L51'></a>  51             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('-');
+<a id='L52' name='L52'></a>  52         <em class='brace'>}</em>
+<a id='L53' name='L53'></a>  53         <strong class='reserved'>if</strong> (<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) <em class='brace'>{</em>
+<a id='L54' name='L54'></a>  54             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('x');
+<a id='L55' name='L55'></a>  55         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L56' name='L56'></a>  56             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>('-');
+<a id='L57' name='L57'></a>  57         <em class='brace'>}</em>
+<a id='L58' name='L58'></a>  58     <em class='brace'>}</em>
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <em class='comment'>/**</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * Returns the {@code String} representation of a set of permissions. It</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * is guaranteed that the returned {@code String} can be parsed by the</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     * {@link #fromString} method.</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     *</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * &lt;p&gt; If the set contains {@code null} or elements that are not of type</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * {@code PosixFilePermission} then these elements are ignored.</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     *</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * @param   perms</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     *          the set of permissions</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     *</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * @return  the string representation of the permission set</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     */</em>
+<a id='L73' name='L73'></a>  73     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>(<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt; perms) <em class='brace'>{</em>
+<a id='L74' name='L74'></a>  74         <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> sb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>(9);
+<a id='L75' name='L75'></a>  75         <a href='../D/36996.html' title='Multiple defined in 4 places.'>writeBits</a>(sb, perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(OWNER_READ), perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(OWNER_WRITE),
+<a id='L76' name='L76'></a>  76           perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(OWNER_EXECUTE));
+<a id='L77' name='L77'></a>  77         <a href='../D/36996.html' title='Multiple defined in 4 places.'>writeBits</a>(sb, perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(GROUP_READ), perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(GROUP_WRITE),
+<a id='L78' name='L78'></a>  78           perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(GROUP_EXECUTE));
+<a id='L79' name='L79'></a>  79         <a href='../D/36996.html' title='Multiple defined in 4 places.'>writeBits</a>(sb, perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(OTHERS_READ), perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(OTHERS_WRITE),
+<a id='L80' name='L80'></a>  80           perms.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(OTHERS_EXECUTE));
+<a id='L81' name='L81'></a>  81         <strong class='reserved'>return</strong> sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L82' name='L82'></a>  82     <em class='brace'>}</em>
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/22010.html' title='Multiple referred from 131 places.'>isSet</a>(<strong class='reserved'>char</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, <strong class='reserved'>char</strong> <a href='../D/34263.html' title='Multiple defined in 100 places.'>setValue</a>) <em class='brace'>{</em>
+<a id='L85' name='L85'></a>  85         <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../D/34263.html' title='Multiple defined in 100 places.'>setValue</a>)
+<a id='L86' name='L86'></a>  86             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L87' name='L87'></a>  87         <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == '-')
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L89' name='L89'></a>  89         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Invalid mode");
+<a id='L90' name='L90'></a>  90     <em class='brace'>}</em>
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21923.html' title='Multiple referred from 3 places.'>isR</a>(<strong class='reserved'>char</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em> <strong class='reserved'>return</strong> <a href='../D/26230.html' title='Multiple defined in 16 places.'>isSet</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, 'r'); <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/22227.html' title='Multiple referred from 3 places.'>isW</a>(<strong class='reserved'>char</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em> <strong class='reserved'>return</strong> <a href='../D/26230.html' title='Multiple defined in 16 places.'>isSet</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, 'w'); <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/22253.html' title='Multiple referred from 3 places.'>isX</a>(<strong class='reserved'>char</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em> <strong class='reserved'>return</strong> <a href='../D/26230.html' title='Multiple defined in 16 places.'>isSet</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, 'x'); <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95     <em class='comment'>/**</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * Returns the set of permissions corresponding to a given {@code String}</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * representation.</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     *</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * &lt;p&gt; The {@code perms} parameter is a {@code String} representing the</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * permissions. It has 9 characters that are interpreted as three sets of</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * three. The first set refers to the owner's permissions; the next to the</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * group permissions and the last to others. Within each set, the first</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * character is {@code 'r'} to indicate permission to read, the second</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * character is {@code 'w'} to indicate permission to write, and the third</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * character is {@code 'x'} for execute permission. Where a permission is</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * not set then the corresponding character is set to {@code '-'}.</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     *</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * &lt;p&gt; &lt;b&gt;Usage Example:&lt;/b&gt;</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * Suppose we require the set of permissions that indicate the owner has read,</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * write, and execute permissions, the group has read and execute permissions</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * and others have none.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * &lt;pre&gt;</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *   Set&amp;lt;PosixFilePermission&amp;gt; perms = PosixFilePermissions.fromString("rwxr-x---");</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * &lt;/pre&gt;</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     *</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * @param   perms</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     *          string representing a set of permissions</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     *</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * @return  the resulting set of permissions</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     *</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * @throws  IllegalArgumentException</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     *          if the string cannot be converted to a set of permissions</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     *</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * @see #toString(Set)</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     */</em>
+<a id='L126' name='L126'></a> 126     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt; fromString(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> perms) <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>if</strong> (perms.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() != 9)
+<a id='L128' name='L128'></a> 128             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Invalid mode");
+<a id='L129' name='L129'></a> 129         <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt; <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/1149.html#L80' title='Defined at 80 in src/java/util/EnumSet.java.'>EnumSet</a>.<a href='../S/1149.html#L109' title='Defined at 109 in src/java/util/EnumSet.java.'>noneOf</a>(<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>.<strong class='reserved'>class</strong>);
+<a id='L130' name='L130'></a> 130         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L91' title='Defined at 91 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isR</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(0))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(OWNER_READ);
+<a id='L131' name='L131'></a> 131         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L92' title='Defined at 92 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isW</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(1))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(OWNER_WRITE);
+<a id='L132' name='L132'></a> 132         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L93' title='Defined at 93 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isX</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(2))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(OWNER_EXECUTE);
+<a id='L133' name='L133'></a> 133         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L91' title='Defined at 91 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isR</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(3))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(GROUP_READ);
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L92' title='Defined at 92 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isW</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(4))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(GROUP_WRITE);
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L93' title='Defined at 93 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isX</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(5))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(GROUP_EXECUTE);
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L91' title='Defined at 91 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isR</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(6))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(OTHERS_READ);
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L92' title='Defined at 92 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isW</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(7))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(OTHERS_WRITE);
+<a id='L138' name='L138'></a> 138         <strong class='reserved'>if</strong> (<a href='../S/1890.html#L93' title='Defined at 93 in src/java/nio/file/attribute/PosixFilePermissions.java.'>isX</a>(perms.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(8))) <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(OTHERS_EXECUTE);
+<a id='L139' name='L139'></a> 139         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L140' name='L140'></a> 140     <em class='brace'>}</em>
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142     <em class='comment'>/**</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * Creates a {@link FileAttribute}, encapsulating a copy of the given file</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * permissions, suitable for passing to the {@link java.nio.file.Files#createFile</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * createFile} or {@link java.nio.file.Files#createDirectory createDirectory}</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * methods.</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     *</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * @param   perms</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     *          the set of permissions</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     *</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * @return  an attribute encapsulating the given file permissions with</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     *          {@link FileAttribute#name name} {@code "posix:permissions"}</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     *</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * @throws  ClassCastException</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     *          if the set contains elements that are not of type {@code</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     *          PosixFilePermission}</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     */</em>
+<a id='L158' name='L158'></a> 158     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt;&gt;
+<a id='L159' name='L159'></a> 159         <a href='../R/10340.html' title='Multiple referred from 2 places.'>asFileAttribute</a>(<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt; perms)
+<a id='L160' name='L160'></a> 160     <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161         <em class='comment'>// copy set and check for nulls (CCE will be thrown if an element is not</em>
+<a id='L162' name='L162'></a> 162         <em class='comment'>// a PosixFilePermission)</em>
+<a id='L163' name='L163'></a> 163         perms = <strong class='reserved'>new</strong> <a href='../S/1136.html#L89' title='Defined at 89 in src/java/util/HashSet.java.'>HashSet</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt;(perms);
+<a id='L164' name='L164'></a> 164         <strong class='reserved'>for</strong> (<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a> p: perms) <em class='brace'>{</em>
+<a id='L165' name='L165'></a> 165             <strong class='reserved'>if</strong> (p == <strong class='reserved'>null</strong>)
+<a id='L166' name='L166'></a> 166                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>();
+<a id='L167' name='L167'></a> 167         <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168         <strong class='reserved'>final</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt; <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = perms;
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt;&gt;() <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170             @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L171' name='L171'></a> 171             <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>() <em class='brace'>{</em>
+<a id='L172' name='L172'></a> 172                 <strong class='reserved'>return</strong> "posix:permissions";
+<a id='L173' name='L173'></a> 173             <em class='brace'>}</em>
+<a id='L174' name='L174'></a> 174             @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L175' name='L175'></a> 175             <strong class='reserved'>public</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt; <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>() <em class='brace'>{</em>
+<a id='L176' name='L176'></a> 176                 <strong class='reserved'>return</strong> <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.<a href='../S/1147.html#L1117' title='Defined at 1117 in src/java/util/Collections.java.'>unmodifiableSet</a>(<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L177' name='L177'></a> 177             <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178         <em class='brace'>}</em>;
+<a id='L179' name='L179'></a> 179     <em class='brace'>}</em>
+<a id='L180' name='L180'></a> 180 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L42'>[^]</a><a href='#L159'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

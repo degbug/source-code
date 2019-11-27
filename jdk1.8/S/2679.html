@@ -1,0 +1,258 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/security/sasl/SaslClient.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8089.html'>security</a>/<a href='../files/8097.html'>sasl</a>/SaslClient.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L106'>[^]</a><a href='#L224'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L106' title='Defined at 106.'>getMechanismName</a></li>
+<li><a href='#L115' title='Defined at 115.'>hasInitialResponse</a></li>
+<li><a href='#L134' title='Defined at 134.'>evaluateChallenge</a></li>
+<li><a href='#L146' title='Defined at 146.'>isComplete</a></li>
+<li><a href='#L172' title='Defined at 172.'>unwrap</a></li>
+<li><a href='#L199' title='Defined at 199.'>wrap</a></li>
+<li><a href='#L215' title='Defined at 215.'>getNegotiatedProperty</a></li>
+<li><a href='#L224' title='Defined at 224.'>dispose</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.security.sasl;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <em class='comment'>/**</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * Performs SASL authentication as a client.</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *&lt;p&gt;</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * A protocol library such as one for LDAP gets an instance of this</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * class in order to perform authentication defined by a specific SASL</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * mechanism. Invoking methods on the {@code SaslClient} instance</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * process challenges and create responses according to the SASL</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * mechanism implemented by the {@code SaslClient}.</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * As the authentication proceeds, the instance</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * encapsulates the state of a SASL client's authentication exchange.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> *&lt;p&gt;</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * Here's an example of how an LDAP library might use a {@code SaslClient}.</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * It first gets an instance of a {@code SaslClient}:</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> *&lt;blockquote&gt;&lt;pre&gt;{@code</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * SaslClient sc = Sasl.createSaslClient(mechanisms,</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> *     authorizationId, protocol, serverName, props, callbackHandler);</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *}&lt;/pre&gt;&lt;/blockquote&gt;</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * It can then proceed to use the client for authentication.</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * For example, an LDAP library might use the client as follows:</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *&lt;blockquote&gt;&lt;pre&gt;{@code</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * // Get initial response and send to server</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * byte[] response = (sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) :</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> *     null);</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * LdapResult res = ldap.sendBindRequest(dn, sc.getName(), response);</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * while (!sc.isComplete() &amp;&amp;</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> *     (res.status == SASL_BIND_IN_PROGRESS || res.status == SUCCESS)) {</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> *     response = sc.evaluateChallenge(res.getBytes());</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> *     if (res.status == SUCCESS) {</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> *         // we're done; don't expect to send another BIND</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *         if (response != null) {</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *             throw new SaslException(</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> *                 "Protocol error: attempting to send response after completion");</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *         }</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *         break;</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *     }</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> *     res = ldap.sendBindRequest(dn, sc.getName(), response);</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * }</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * if (sc.isComplete() &amp;&amp; res.status == SUCCESS) {</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> *    String qop = (String) sc.getNegotiatedProperty(Sasl.QOP);</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> *    if (qop != null</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> *        &amp;&amp; (qop.equalsIgnoreCase("auth-int")</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> *            || qop.equalsIgnoreCase("auth-conf"))) {</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> *</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> *      // Use SaslClient.wrap() and SaslClient.unwrap() for future</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> *      // communication with server</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> *      ldap.in = new SecureInputStream(sc, ldap.in);</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> *      ldap.out = new SecureOutputStream(sc, ldap.out);</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *    }</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * }</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> *}&lt;/pre&gt;&lt;/blockquote&gt;</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> *</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * If the mechanism has an initial response, the library invokes</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> * {@code evaluateChallenge()} with an empty</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * challenge and to get initial response.</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * Protocols such as IMAP4, which do not include an initial response with</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * their first authentication command to the server, initiates the</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * authentication without first calling {@code hasInitialResponse()}</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * or {@code evaluateChallenge()}.</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * When the server responds to the command, it sends an initial challenge.</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * For a SASL mechanism in which the client sends data first, the server should</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> * have issued a challenge with no data. This will then result in a call</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> * (on the client) to {@code evaluateChallenge()} with an empty challenge.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> *</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> * @since 1.5</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> *</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> * @see Sasl</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> * @see SaslClientFactory</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> *</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> * @author Rosanna Lee</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> * @author Rob Weltman</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> */</em>
+<a id='L99' name='L99'></a>  99 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>interface</strong> <a href='../R/6908.html' title='Multiple referred from 3 places.'>SaslClient</a> <em class='brace'>{</em>
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101     <em class='comment'>/**</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * Returns the IANA-registered mechanism name of this SASL client.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * (e.g. "CRAM-MD5", "GSSAPI").</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * @return A non-null string representing the IANA-registered mechanism name.</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     */</em>
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> getMechanismName();
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108     <em class='comment'>/**</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * Determines whether this mechanism has an optional initial response.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * If true, caller should call {@code evaluateChallenge()} with an</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * empty array to get the initial response.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     *</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * @return true if this mechanism has an initial response.</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     */</em>
+<a id='L115' name='L115'></a> 115     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> hasInitialResponse();
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117     <em class='comment'>/**</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * Evaluates the challenge data and generates a response.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * If a challenge is received from the server during the authentication</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * process, this method is called to prepare an appropriate next</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * response to submit to the server.</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     *</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     * @param challenge The non-null challenge sent from the server.</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * The challenge array may have zero length.</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     *</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * @return The possibly null response to send to the server.</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * It is null if the challenge accompanied a "SUCCESS" status and the challenge</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * only contains data for the client to update its state and no response</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * needs to be sent to the server. The response is a zero-length byte</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * array if the client is to send a response with no data.</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * @exception SaslException If an error occurred while processing</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * the challenge or generating a response.</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     */</em>
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>byte</strong>[] evaluateChallenge(<strong class='reserved'>byte</strong>[] challenge)
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>throws</strong> <a href='../S/2685.html#L39' title='Defined at 39 in src/javax/security/sasl/SaslException.java.'>SaslException</a>;
+<a id='L136' name='L136'></a> 136 
+<a id='L137' name='L137'></a> 137     <em class='comment'>/**</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>      * Determines whether the authentication exchange has completed.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>      * This method may be called at any time, but typically, it</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>      * will not be called until the caller has received indication</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>      * from the server</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>      * (in a protocol-specific manner) that the exchange has completed.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>      *</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>      * @return true if the authentication exchange has completed; false otherwise.</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>      */</em>
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/21274.html' title='Multiple referred from 2 places.'>isComplete</a>();
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148     <em class='comment'>/**</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * Unwraps a byte array received from the server.</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * This method can be called only after the authentication exchange has</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * completed (i.e., when {@code isComplete()} returns true) and only if</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * the authentication exchange has negotiated integrity and/or privacy</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * as the quality of protection; otherwise, an</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * {@code IllegalStateException} is thrown.</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     *&lt;p&gt;</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * {@code incoming} is the contents of the SASL buffer as defined in RFC 2222</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * without the leading four octet field that represents the length.</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * {@code offset} and {@code len} specify the portion of {@code incoming}</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * to use.</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     *</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * @param incoming A non-null byte array containing the encoded bytes</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     *                from the server.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * @param offset The starting position at {@code incoming} of the bytes to use.</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * @param len The number of bytes from {@code incoming} to use.</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * @return A non-null byte array containing the decoded bytes.</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * @exception SaslException if {@code incoming} cannot be successfully</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * unwrapped.</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     * @exception IllegalStateException if the authentication exchange has</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * not completed, or  if the negotiated quality of protection</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * has neither integrity nor privacy.</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     */</em>
+<a id='L172' name='L172'></a> 172     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>byte</strong>[] <a href='../R/29794.html' title='Multiple referred from 19 places.'>unwrap</a>(<strong class='reserved'>byte</strong>[] incoming, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> len)
+<a id='L173' name='L173'></a> 173         <strong class='reserved'>throws</strong> <a href='../S/2685.html#L39' title='Defined at 39 in src/javax/security/sasl/SaslException.java.'>SaslException</a>;
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175     <em class='comment'>/**</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * Wraps a byte array to be sent to the server.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     * This method can be called only after the authentication exchange has</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * completed (i.e., when {@code isComplete()} returns true) and only if</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * the authentication exchange has negotiated integrity and/or privacy</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * as the quality of protection; otherwise, an</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * {@code IllegalStateException} is thrown.</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     *&lt;p&gt;</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * The result of this method will make up the contents of the SASL buffer</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * as defined in RFC 2222 without the leading four octet field that</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * represents the length.</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * {@code offset} and {@code len} specify the portion of {@code outgoing}</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * to use.</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     *</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * @param outgoing A non-null byte array containing the bytes to encode.</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     * @param offset The starting position at {@code outgoing} of the bytes to use.</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * @param len The number of bytes from {@code outgoing} to use.</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     * @return A non-null byte array containing the encoded bytes.</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>     * @exception SaslException if {@code outgoing} cannot be successfully</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     * wrapped.</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * @exception IllegalStateException if the authentication exchange has</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * not completed, or if the negotiated quality of protection</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * has neither integrity nor privacy.</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     */</em>
+<a id='L199' name='L199'></a> 199     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>byte</strong>[] <a href='../R/30535.html' title='Multiple referred from 76 places.'>wrap</a>(<strong class='reserved'>byte</strong>[] outgoing, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>int</strong> len)
+<a id='L200' name='L200'></a> 200         <strong class='reserved'>throws</strong> <a href='../S/2685.html#L39' title='Defined at 39 in src/javax/security/sasl/SaslException.java.'>SaslException</a>;
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202     <em class='comment'>/**</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * Retrieves the negotiated property.</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * This method can be called only after the authentication exchange has</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     * completed (i.e., when {@code isComplete()} returns true); otherwise, an</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * {@code IllegalStateException} is thrown.</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     *</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     * @param propName The non-null property name.</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * @return The value of the negotiated property. If null, the property was</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * not negotiated or is not applicable to this mechanism.</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * @exception IllegalStateException if this authentication exchange</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * has not completed</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     */</em>
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> getNegotiatedProperty(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> propName);
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217      <em class='comment'>/**</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>      * Disposes of any system resources or security-sensitive information</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>      * the SaslClient might be using. Invoking this method invalidates</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>      * the SaslClient instance. This method is idempotent.</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>      * @throws SaslException If a problem was encountered while disposing</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>      * the resources.</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>      */</em>
+<a id='L224' name='L224'></a> 224     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/13337.html' title='Multiple referred from 363 places.'>dispose</a>() <strong class='reserved'>throws</strong> <a href='../S/2685.html#L39' title='Defined at 39 in src/javax/security/sasl/SaslException.java.'>SaslException</a>;
+<a id='L225' name='L225'></a> 225 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L106'>[^]</a><a href='#L224'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

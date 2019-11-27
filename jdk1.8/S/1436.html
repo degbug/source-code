@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/io/PipedWriter.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8002.html'>io</a>/PipedWriter.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L91'>[^]</a><a href='#L178'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L91' title='Defined at 91.'>connect</a></li>
+<li><a href='#L120' title='Defined at 120.'>write</a></li>
+<li><a href='#L144' title='Defined at 144.'>write</a></li>
+<li><a href='#L160' title='Defined at 160.'>flush</a></li>
+<li><a href='#L178' title='Defined at 178.'>close</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.io;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <em class='comment'>/**</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> * Piped character-output streams.</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> *</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * @author      Mark Reinhold</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * @since       JDK1.1</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> */</em>
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/6111.html' title='Multiple referred from 3 places.'>PipedWriter</a> <strong class='reserved'>extends</strong> <a href='../S/1393.html#L50' title='Defined at 50 in src/java/io/Writer.java.'>Writer</a> <em class='brace'>{</em>
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38     <em class='comment'>/* REMIND: identification of the read and write sides needs to be</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'>       more sophisticated.  Either using thread groups (but what about</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'>       pipes within a thread?) or using finalization (but it may be a</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'>       long time until the next GC). */</em>
+<a id='L42' name='L42'></a>  42     <strong class='reserved'>private</strong> <a href='../S/1419.html#L36' title='Defined at 36 in src/java/io/PipedReader.java.'>PipedReader</a> <a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>;
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44     <em class='comment'>/* This flag records the open status of this particular writer. It</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'>     * is independent of the status flags defined in PipedReader. It is</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'>     * used to do a sanity check on connect.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'>     */</em>
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> closed = <strong class='reserved'>false</strong>;
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     <em class='comment'>/**</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     * Creates a piped writer connected to the specified piped</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>     * reader. Data characters written to this stream will then be</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'>     * available as input from &lt;code&gt;snk&lt;/code&gt;.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>     *</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     * @param      snk   The piped reader to connect to.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     * @exception  IOException  if an I/O error occurs.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     */</em>
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>public</strong> PipedWriter(<a href='../S/1419.html#L36' title='Defined at 36 in src/java/io/PipedReader.java.'>PipedReader</a> snk)  <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L59' name='L59'></a>  59         <a href='../D/13242.html' title='Multiple defined in 53 places.'>connect</a>(snk);
+<a id='L60' name='L60'></a>  60     <em class='brace'>}</em>
+<a id='L61' name='L61'></a>  61 
+<a id='L62' name='L62'></a>  62     <em class='comment'>/**</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     * Creates a piped writer that is not yet connected to a</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * piped reader. It must be connected to a piped reader,</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * either by the receiver or the sender, before being used.</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     *</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * @see     java.io.PipedReader#connect(java.io.PipedWriter)</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * @see     java.io.PipedWriter#connect(java.io.PipedReader)</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     */</em>
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>public</strong> PipedWriter() <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71     <em class='brace'>}</em>
+<a id='L72' name='L72'></a>  72 
+<a id='L73' name='L73'></a>  73     <em class='comment'>/**</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     * Connects this piped writer to a receiver. If this object</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * is already connected to some other piped reader, an</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     * &lt;code&gt;IOException&lt;/code&gt; is thrown.</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * If &lt;code&gt;snk&lt;/code&gt; is an unconnected piped reader and</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * &lt;code&gt;src&lt;/code&gt; is an unconnected piped writer, they may</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * be connected by either the call:</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * &lt;blockquote&gt;&lt;pre&gt;</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * src.connect(snk)&lt;/pre&gt;&lt;/blockquote&gt;</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * or the call:</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     * &lt;blockquote&gt;&lt;pre&gt;</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * snk.connect(src)&lt;/pre&gt;&lt;/blockquote&gt;</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * The two calls have the same effect.</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     *</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     * @param      snk   the piped reader to connect to.</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * @exception  IOException  if an I/O error occurs.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     */</em>
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/11887.html' title='Multiple referred from 67 places.'>connect</a>(<a href='../S/1419.html#L36' title='Defined at 36 in src/java/io/PipedReader.java.'>PipedReader</a> snk) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92         <strong class='reserved'>if</strong> (snk == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L93' name='L93'></a>  93             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>();
+<a id='L94' name='L94'></a>  94         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a> != <strong class='reserved'>null</strong> || snk.connected) <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>("Already connected");
+<a id='L96' name='L96'></a>  96         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (snk.closedByReader || closed) <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>("Pipe closed");
+<a id='L98' name='L98'></a>  98         <em class='brace'>}</em>
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100         <a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a> = snk;
+<a id='L101' name='L101'></a> 101         snk.<a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a> = -1;
+<a id='L102' name='L102'></a> 102         snk.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a> = 0;
+<a id='L103' name='L103'></a> 103         snk.connected = <strong class='reserved'>true</strong>;
+<a id='L104' name='L104'></a> 104     <em class='brace'>}</em>
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106     <em class='comment'>/**</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * Writes the specified &lt;code&gt;char&lt;/code&gt; to the piped output stream.</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * If a thread was reading data characters from the connected piped input</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * stream, but the thread is no longer alive, then an</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * &lt;code&gt;IOException&lt;/code&gt; is thrown.</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * Implements the &lt;code&gt;write&lt;/code&gt; method of &lt;code&gt;Writer&lt;/code&gt;.</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * @param      c   the &lt;code&gt;char&lt;/code&gt; to be written.</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * @exception  IOException  if the pipe is</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     *          &lt;a href=PipedOutputStream.html#BROKEN&gt; &lt;code&gt;broken&lt;/code&gt;&lt;/a&gt;,</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     *          {@link #connect(java.io.PipedReader) unconnected}, closed</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     *          or an I/O error occurs.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     */</em>
+<a id='L120' name='L120'></a> 120     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<strong class='reserved'>int</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>)  <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L121' name='L121'></a> 121         <strong class='reserved'>if</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>("Pipe not connected");
+<a id='L123' name='L123'></a> 123         <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124         <a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>.<a href='../D/30371.html' title='Multiple defined in 9 places.'>receive</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
+<a id='L125' name='L125'></a> 125     <em class='brace'>}</em>
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127     <em class='comment'>/**</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * Writes &lt;code&gt;len&lt;/code&gt; characters from the specified character array</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * starting at offset &lt;code&gt;off&lt;/code&gt; to this piped output stream.</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * This method blocks until all the characters are written to the output</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * stream.</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * If a thread was reading data characters from the connected piped input</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * stream, but the thread is no longer alive, then an</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * &lt;code&gt;IOException&lt;/code&gt; is thrown.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     *</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * @param      cbuf  the data.</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * @param      off   the start offset in the data.</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * @param      len   the number of characters to write.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * @exception  IOException  if the pipe is</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     *          &lt;a href=PipedOutputStream.html#BROKEN&gt; &lt;code&gt;broken&lt;/code&gt;&lt;/a&gt;,</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     *          {@link #connect(java.io.PipedReader) unconnected}, closed</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     *          or an I/O error occurs.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     */</em>
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<strong class='reserved'>char</strong> cbuf[], <strong class='reserved'>int</strong> off, <strong class='reserved'>int</strong> len) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L145' name='L145'></a> 145         <strong class='reserved'>if</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>("Pipe not connected");
+<a id='L147' name='L147'></a> 147         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> ((off | len | (off + len) | (cbuf.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - (off + len))) &lt; 0) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>();
+<a id='L149' name='L149'></a> 149         <em class='brace'>}</em>
+<a id='L150' name='L150'></a> 150         <a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>.<a href='../D/30371.html' title='Multiple defined in 9 places.'>receive</a>(cbuf, off, len);
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <em class='comment'>/**</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * Flushes this output stream and forces any buffered output characters</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * to be written out.</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * This will notify any readers that characters are waiting in the pipe.</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     *</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * @exception  IOException  if the pipe is closed, or an I/O error occurs.</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     */</em>
+<a id='L160' name='L160'></a> 160     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/14697.html' title='Multiple referred from 199 places.'>flush</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>if</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L162' name='L162'></a> 162             <strong class='reserved'>if</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>.closedByReader || closed) <em class='brace'>{</em>
+<a id='L163' name='L163'></a> 163                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>("Pipe closed");
+<a id='L164' name='L164'></a> 164             <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165             <strong class='reserved'>synchronized</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>) <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166                 <a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>.<a href='../S/1724.html#L295' title='Defined at 295 in src/java/lang/Object.java.'>notifyAll</a>();
+<a id='L167' name='L167'></a> 167             <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168         <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169     <em class='brace'>}</em>
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171     <em class='comment'>/**</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * Closes this piped output stream and releases any system resources</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * associated with this stream. This stream may no longer be used for</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * writing characters.</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     *</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * @exception  IOException  if an I/O error occurs.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     */</em>
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>()  <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179         closed = <strong class='reserved'>true</strong>;
+<a id='L180' name='L180'></a> 180         <strong class='reserved'>if</strong> (<a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L181' name='L181'></a> 181             <a href='../S/2041.html#L139' title='Defined at 139 in src/java/nio/channels/Pipe.java.'>sink</a>.<a href='../D/30382.html' title='Multiple defined in 2 places.'>receivedLast</a>();
+<a id='L182' name='L182'></a> 182         <em class='brace'>}</em>
+<a id='L183' name='L183'></a> 183     <em class='brace'>}</em>
+<a id='L184' name='L184'></a> 184 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L91'>[^]</a><a href='#L178'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/protocol/SharedCDRClientRequestDispatcherImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7767.html'>protocol</a>/SharedCDRClientRequestDispatcherImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L135'>[^]</a><a href='#L231'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L135' title='Defined at 135.'>marshalingComplete</a></li>
+<li><a href='#L231' title='Defined at 231.'>dprint</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <em class='comment'>/*</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> * Licensed Materials - Property of IBM</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> * RMI-IIOP v1.0</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * Copyright IBM Corp. 1998 1999  All Rights Reserved</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> */</em>
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.protocol;
+<a id='L34' name='L34'></a>  34 
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.rmi.RemoteException;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.nio.ByteBuffer;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.security.AccessController;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.security.PrivilegedAction;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> javax.rmi.CORBA.Util;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> javax.rmi.CORBA.Tie;
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> org.omg.CORBA.COMM_FAILURE;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> org.omg.CORBA.INTERNAL;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> org.omg.CORBA.SystemException;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> org.omg.CORBA.CompletionStatus;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> org.omg.CORBA.WrongTransaction;
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> org.omg.CORBA.Request;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> org.omg.CORBA.NamedValue;
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> org.omg.CORBA.NVList;
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> org.omg.CORBA.Context;
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> org.omg.CORBA.ContextList;
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> org.omg.CORBA.ExceptionList;
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> org.omg.CORBA.TypeCode;
+<a id='L56' name='L56'></a>  56 <strong class='reserved'>import</strong> org.omg.CORBA.DATA_CONVERSION;
+<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> org.omg.CORBA.UNKNOWN;
+<a id='L58' name='L58'></a>  58 <strong class='reserved'>import</strong> org.omg.CORBA.portable.RemarshalException;
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>import</strong> org.omg.CORBA_2_3.portable.InputStream;
+<a id='L60' name='L60'></a>  60 <strong class='reserved'>import</strong> org.omg.CORBA_2_3.portable.OutputStream;
+<a id='L61' name='L61'></a>  61 <strong class='reserved'>import</strong> org.omg.CORBA.portable.Delegate;
+<a id='L62' name='L62'></a>  62 <strong class='reserved'>import</strong> org.omg.CORBA.portable.ServantObject;
+<a id='L63' name='L63'></a>  63 <strong class='reserved'>import</strong> org.omg.CORBA.portable.ApplicationException;
+<a id='L64' name='L64'></a>  64 <strong class='reserved'>import</strong> org.omg.CORBA.portable.UnknownException;
+<a id='L65' name='L65'></a>  65 <strong class='reserved'>import</strong> org.omg.IOP.TAG_CODE_SETS;
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67 <strong class='reserved'>import</strong> com.sun.org.omg.SendingContext.CodeBase;
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69 <strong class='reserved'>import</strong> com.sun.corba.se.pept.broker.Broker;
+<a id='L70' name='L70'></a>  70 <strong class='reserved'>import</strong> com.sun.corba.se.pept.encoding.InputObject;
+<a id='L71' name='L71'></a>  71 <strong class='reserved'>import</strong> com.sun.corba.se.pept.encoding.OutputObject;
+<a id='L72' name='L72'></a>  72 <strong class='reserved'>import</strong> com.sun.corba.se.pept.protocol.ClientRequestDispatcher;
+<a id='L73' name='L73'></a>  73 <strong class='reserved'>import</strong> com.sun.corba.se.pept.protocol.MessageMediator;
+<a id='L74' name='L74'></a>  74 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.Connection;
+<a id='L75' name='L75'></a>  75 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.ConnectionCache;
+<a id='L76' name='L76'></a>  76 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.ContactInfo;
+<a id='L77' name='L77'></a>  77 
+<a id='L78' name='L78'></a>  78 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IOR;
+<a id='L79' name='L79'></a>  79 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.GIOPVersion;
+<a id='L80' name='L80'></a>  80 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPProfileTemplate;
+<a id='L81' name='L81'></a>  81 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.CodeSetsComponent;
+<a id='L82' name='L82'></a>  82 <strong class='reserved'>import</strong> com.sun.corba.se.spi.oa.OAInvocationInfo;
+<a id='L83' name='L83'></a>  83 <strong class='reserved'>import</strong> com.sun.corba.se.spi.oa.ObjectAdapterFactory;
+<a id='L84' name='L84'></a>  84 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L85' name='L85'></a>  85 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORBVersion;
+<a id='L86' name='L86'></a>  86 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORBVersionFactory;
+<a id='L87' name='L87'></a>  87 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.CorbaMessageMediator;
+<a id='L88' name='L88'></a>  88 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.RequestDispatcherRegistry;
+<a id='L89' name='L89'></a>  89 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaContactInfo ;
+<a id='L90' name='L90'></a>  90 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaContactInfoList ;
+<a id='L91' name='L91'></a>  91 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaContactInfoListIterator ;
+<a id='L92' name='L92'></a>  92 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaConnection;
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94 <strong class='reserved'>import</strong> com.sun.corba.se.spi.servicecontext.ServiceContext;
+<a id='L95' name='L95'></a>  95 <strong class='reserved'>import</strong> com.sun.corba.se.spi.servicecontext.ServiceContexts;
+<a id='L96' name='L96'></a>  96 <strong class='reserved'>import</strong> com.sun.corba.se.spi.servicecontext.UEInfoServiceContext;
+<a id='L97' name='L97'></a>  97 <strong class='reserved'>import</strong> com.sun.corba.se.spi.servicecontext.CodeSetServiceContext;
+<a id='L98' name='L98'></a>  98 <strong class='reserved'>import</strong> com.sun.corba.se.spi.servicecontext.MaxStreamFormatVersionServiceContext;
+<a id='L99' name='L99'></a>  99 <strong class='reserved'>import</strong> com.sun.corba.se.spi.servicecontext.SendingContextServiceContext;
+<a id='L100' name='L100'></a> 100 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.ByteBufferWithInfo;
+<a id='L101' name='L101'></a> 101 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CDRInputObject;
+<a id='L102' name='L102'></a> 102 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CDROutputObject;
+<a id='L103' name='L103'></a> 103 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CDROutputStream;
+<a id='L104' name='L104'></a> 104 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CodeSetComponentInfo;
+<a id='L105' name='L105'></a> 105 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CodeSetConversion;
+<a id='L106' name='L106'></a> 106 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.MarshalOutputStream;
+<a id='L107' name='L107'></a> 107 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.MarshalInputStream;
+<a id='L108' name='L108'></a> 108 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L109' name='L109'></a> 109 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBConstants;
+<a id='L110' name='L110'></a> 110 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.ReplyMessage;
+<a id='L111' name='L111'></a> 111 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.KeyAddr;
+<a id='L112' name='L112'></a> 112 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.ProfileAddr;
+<a id='L113' name='L113'></a> 113 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.ReferenceAddr;
+<a id='L114' name='L114'></a> 114 <strong class='reserved'>import</strong> com.sun.corba.se.impl.transport.CorbaContactInfoListIteratorImpl;
+<a id='L115' name='L115'></a> 115 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
+<a id='L116' name='L116'></a> 116 <strong class='reserved'>import</strong> com.sun.corba.se.impl.util.JDKBridge;
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118 <em class='comment'>/**</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'> * ClientDelegate is the RMI client-side subcontract or representation</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'> * It implements RMI delegate as well as our internal ClientRequestDispatcher</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'> * interface.</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'> */</em>
+<a id='L123' name='L123'></a> 123 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/7186.html' title='Multiple referred from 2 places.'>SharedCDRClientRequestDispatcherImpl</a>
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>extends</strong>
+<a id='L125' name='L125'></a> 125         <a href='../S/7080.html#L125' title='Defined at 125 in src/com/sun/corba/se/impl/protocol/CorbaClientRequestDispatcherImpl.java.'>CorbaClientRequestDispatcherImpl</a>
+<a id='L126' name='L126'></a> 126 <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127     <em class='comment'>// REVISIT:</em>
+<a id='L128' name='L128'></a> 128     <em class='comment'>// Rather than have separate CDR subcontract,</em>
+<a id='L129' name='L129'></a> 129     <em class='comment'>// use same CorbaClientRequestDispatcherImpl but have</em>
+<a id='L130' name='L130'></a> 130     <em class='comment'>// different MessageMediator finishSendingRequest and waitForResponse</em>
+<a id='L131' name='L131'></a> 131     <em class='comment'>// handle what is done below.</em>
+<a id='L132' name='L132'></a> 132     <em class='comment'>// Benefit: then in ContactInfo no need to do a direct new</em>
+<a id='L133' name='L133'></a> 133     <em class='comment'>// of subcontract - does not complicate subcontract registry.</em>
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135     <strong class='reserved'>public</strong> <a href='../S/7293.html#L54' title='Defined at 54 in src/com/sun/corba/se/pept/encoding/InputObject.java.'>InputObject</a> <a href='../S/7126.html#L148' title='Referred from 148 in src/com/sun/corba/se/impl/protocol/CorbaClientDelegateImpl.java.'>marshalingComplete</a>(<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> self,
+<a id='L136' name='L136'></a> 136                                           <a href='../S/7292.html#L56' title='Defined at 56 in src/com/sun/corba/se/pept/encoding/OutputObject.java.'>OutputObject</a> <a href='../S/6958.html#L531' title='Defined at 531 in src/com/sun/corba/se/impl/io/IIOPOutputStream.java.'>outputObject</a>)
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>throws</strong>
+<a id='L138' name='L138'></a> 138             <a href='../S/312.html#L32' title='Defined at 32 in src/org/omg/CORBA/portable/ApplicationException.java.'>ApplicationException</a>,
+<a id='L139' name='L139'></a> 139             org.omg.CORBA.portable.<a href='../S/308.html#L39' title='Defined at 39 in src/org/omg/CORBA/portable/RemarshalException.java.'>RemarshalException</a>
+<a id='L140' name='L140'></a> 140     <em class='brace'>{</em>
+<a id='L141' name='L141'></a> 141       <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <strong class='reserved'>null</strong>;
+<a id='L142' name='L142'></a> 142       <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> messageMediator = <strong class='reserved'>null</strong>;
+<a id='L143' name='L143'></a> 143       <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144         messageMediator = (<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a>)
+<a id='L145' name='L145'></a> 145             <a href='../S/6958.html#L531' title='Defined at 531 in src/com/sun/corba/se/impl/io/IIOPOutputStream.java.'>outputObject</a>.<a href='../D/20574.html' title='Multiple defined in 8 places.'>getMessageMediator</a>();
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = (<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>) messageMediator.<a href='../D/17354.html' title='Multiple defined in 8 places.'>getBroker</a>();
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.subcontractDebugFlag) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".marshalingComplete-&gt;: " + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L151' name='L151'></a> 151         <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153         <a href='../S/6999.html#L64' title='Defined at 64 in src/com/sun/corba/se/impl/encoding/CDROutputObject.java.'>CDROutputObject</a> cdrOutputObject = (<a href='../S/6999.html#L64' title='Defined at 64 in src/com/sun/corba/se/impl/encoding/CDROutputObject.java.'>CDROutputObject</a>) <a href='../S/6958.html#L531' title='Defined at 531 in src/com/sun/corba/se/impl/io/IIOPOutputStream.java.'>outputObject</a>;
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155         <em class='comment'>//</em>
+<a id='L156' name='L156'></a> 156         <em class='comment'>// Create server-side input object.</em>
+<a id='L157' name='L157'></a> 157         <em class='comment'>//</em>
+<a id='L158' name='L158'></a> 158 
+<a id='L159' name='L159'></a> 159         <a href='../S/7006.html#L47' title='Defined at 47 in src/com/sun/corba/se/impl/encoding/ByteBufferWithInfo.java.'>ByteBufferWithInfo</a> bbwi = cdrOutputObject.<a href='../D/17403.html' title='Multiple defined in 5 places.'>getByteBufferWithInfo</a>();
+<a id='L160' name='L160'></a> 160         cdrOutputObject.<a href='../D/20572.html' title='Multiple defined in 2 places.'>getMessageHeader</a>().<a href='../D/33924.html' title='Multiple defined in 54 places.'>setSize</a>(bbwi.byteBuffer, bbwi.<a href='../D/22527.html' title='Multiple defined in 76 places.'>getSize</a>());
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>final</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> inOrb = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L162' name='L162'></a> 162         <strong class='reserved'>final</strong> <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a> inBuffer = bbwi.byteBuffer;
+<a id='L163' name='L163'></a> 163         <strong class='reserved'>final</strong> <a href='../D/5529.html' title='Multiple defined in 2 places.'>Message</a> inMsg = cdrOutputObject.<a href='../D/20572.html' title='Multiple defined in 2 places.'>getMessageHeader</a>();
+<a id='L164' name='L164'></a> 164         <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a> cdrInputObject = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>
+<a id='L165' name='L165'></a> 165                 .<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>&gt;() <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166                     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L167' name='L167'></a> 167                     <strong class='reserved'>public</strong> <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168                         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>(inOrb, <strong class='reserved'>null</strong>, inBuffer,
+<a id='L169' name='L169'></a> 169                                 inMsg);
+<a id='L170' name='L170'></a> 170                     <em class='brace'>}</em>
+<a id='L171' name='L171'></a> 171                 <em class='brace'>}</em>);
+<a id='L172' name='L172'></a> 172         messageMediator.<a href='../D/32959.html' title='Multiple defined in 3 places.'>setInputObject</a>(cdrInputObject);
+<a id='L173' name='L173'></a> 173         cdrInputObject.<a href='../D/33237.html' title='Multiple defined in 6 places.'>setMessageMediator</a>(messageMediator);
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175         <em class='comment'>//</em>
+<a id='L176' name='L176'></a> 176         <em class='comment'>// Dispatch</em>
+<a id='L177' name='L177'></a> 177         <em class='comment'>//</em>
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179         <em class='comment'>// REVISIT: Impl cast.</em>
+<a id='L180' name='L180'></a> 180         ((<a href='../S/7132.html#L133' title='Defined at 133 in src/com/sun/corba/se/impl/protocol/CorbaMessageMediatorImpl.java.'>CorbaMessageMediatorImpl</a>)messageMediator).<a href='../S/7132.html#L1663' title='Defined at 1663 in src/com/sun/corba/se/impl/protocol/CorbaMessageMediatorImpl.java.'>handleRequestRequest</a>(
+<a id='L181' name='L181'></a> 181             messageMediator);
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183         <em class='comment'>// InputStream must be closed on the InputObject so that its</em>
+<a id='L184' name='L184'></a> 184         <em class='comment'>// ByteBuffer can be released to the ByteBufferPool. We must do</em>
+<a id='L185' name='L185'></a> 185         <em class='comment'>// this before we re-assign the cdrInputObject reference below.</em>
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>try</strong> <em class='brace'>{</em> cdrInputObject.<a href='../D/12922.html' title='Multiple defined in 218 places.'>close</a>(); <em class='brace'>}</em>
+<a id='L187' name='L187'></a> 187         <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188             <em class='comment'>// No need to do anything since we're done with the input stream</em>
+<a id='L189' name='L189'></a> 189             <em class='comment'>// and cdrInputObject will be re-assigned a new client-side input</em>
+<a id='L190' name='L190'></a> 190             <em class='comment'>// object, (i.e. won't result in a corba error).</em>
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L193' name='L193'></a> 193                <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".marshalingComplete: ignoring IOException - " + <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L194' name='L194'></a> 194             <em class='brace'>}</em>
+<a id='L195' name='L195'></a> 195         <em class='brace'>}</em>
+<a id='L196' name='L196'></a> 196 
+<a id='L197' name='L197'></a> 197         <em class='comment'>//</em>
+<a id='L198' name='L198'></a> 198         <em class='comment'>// Create client-side input object</em>
+<a id='L199' name='L199'></a> 199         <em class='comment'>//</em>
+<a id='L200' name='L200'></a> 200 
+<a id='L201' name='L201'></a> 201         cdrOutputObject = (<a href='../S/6999.html#L64' title='Defined at 64 in src/com/sun/corba/se/impl/encoding/CDROutputObject.java.'>CDROutputObject</a>) messageMediator.<a href='../D/21276.html' title='Multiple defined in 2 places.'>getOutputObject</a>();
+<a id='L202' name='L202'></a> 202         bbwi = cdrOutputObject.<a href='../D/17403.html' title='Multiple defined in 5 places.'>getByteBufferWithInfo</a>();
+<a id='L203' name='L203'></a> 203         cdrOutputObject.<a href='../D/20572.html' title='Multiple defined in 2 places.'>getMessageHeader</a>().<a href='../D/33924.html' title='Multiple defined in 54 places.'>setSize</a>(bbwi.byteBuffer, bbwi.<a href='../D/22527.html' title='Multiple defined in 76 places.'>getSize</a>());
+<a id='L204' name='L204'></a> 204         <strong class='reserved'>final</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> inOrb2 = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L205' name='L205'></a> 205         <strong class='reserved'>final</strong> <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a> inBuffer2 = bbwi.byteBuffer;
+<a id='L206' name='L206'></a> 206         <strong class='reserved'>final</strong> <a href='../D/5529.html' title='Multiple defined in 2 places.'>Message</a> inMsg2 = cdrOutputObject.<a href='../D/20572.html' title='Multiple defined in 2 places.'>getMessageHeader</a>();
+<a id='L207' name='L207'></a> 207         cdrInputObject = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>
+<a id='L208' name='L208'></a> 208                 .<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>&gt;() <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209                     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
+<a id='L210' name='L210'></a> 210                     <strong class='reserved'>public</strong> <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L211' name='L211'></a> 211                         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>(inOrb2, <strong class='reserved'>null</strong>, inBuffer2,
+<a id='L212' name='L212'></a> 212                                 inMsg2);
+<a id='L213' name='L213'></a> 213                     <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214                 <em class='brace'>}</em>);
+<a id='L215' name='L215'></a> 215         messageMediator.<a href='../D/32959.html' title='Multiple defined in 3 places.'>setInputObject</a>(cdrInputObject);
+<a id='L216' name='L216'></a> 216         cdrInputObject.<a href='../D/33237.html' title='Multiple defined in 6 places.'>setMessageMediator</a>(messageMediator);
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218         cdrInputObject.<a href='../S/7004.html#L127' title='Defined at 127 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>unmarshalHeader</a>();
+<a id='L219' name='L219'></a> 219 
+<a id='L220' name='L220'></a> 220         <a href='../S/7293.html#L54' title='Defined at 54 in src/com/sun/corba/se/pept/encoding/InputObject.java.'>InputObject</a> <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> = cdrInputObject;
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222         <strong class='reserved'>return</strong> <a href='../D/29851.html' title='Multiple defined in 3 places.'>processResponse</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, messageMediator, <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a>);
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224       <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.subcontractDebugFlag) <em class='brace'>{</em>
+<a id='L226' name='L226'></a> 226             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".marshalingComplete&lt;-: " + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L227' name='L227'></a> 227         <em class='brace'>}</em>
+<a id='L228' name='L228'></a> 228       <em class='brace'>}</em>
+<a id='L229' name='L229'></a> 229     <em class='brace'>}</em>
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13496.html' title='Multiple referred from 536 places.'>dprint</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>)
+<a id='L232' name='L232'></a> 232     <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233         <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>("SharedCDRClientRequestDispatcherImpl", <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L234' name='L234'></a> 234     <em class='brace'>}</em>
+<a id='L235' name='L235'></a> 235 <em class='brace'>}</em>
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237 <em class='comment'>// End of file.</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L135'>[^]</a><a href='#L231'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/sql/rowset/FilteredRowSet.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8103.html'>sql</a>/<a href='../files/8104.html'>rowset</a>/FilteredRowSet.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L151'>[^]</a><a href='#L159'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L151' title='Defined at 151.'>setFilter</a></li>
+<li><a href='#L159' title='Defined at 159.'>getFilter</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.sql.rowset;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.sql.*;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> javax.sql.*;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> javax.naming.*;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.io.*;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.math.*;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <em class='comment'>/**</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * The standard interface that all standard implementations of</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * &lt;code&gt;FilteredRowSet&lt;/code&gt; must implement. The &lt;code&gt;FilteredRowSetImpl&lt;/code&gt; class</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * provides the reference implementation which may be extended if required.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * Alternatively, a vendor is free to implement its own version</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * by implementing this interface.</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;h3&gt;1.0 Background&lt;/h3&gt;</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> *</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * There are occasions when a &lt;code&gt;RowSet&lt;/code&gt; object has a need to provide a degree</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * of filtering to its contents. One possible solution is to provide</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * a query language for all standard &lt;code&gt;RowSet&lt;/code&gt; implementations; however,</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * this is an impractical approach for lightweight components such as disconnected</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * &lt;code&gt;RowSet&lt;/code&gt;</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * objects. The &lt;code&gt;FilteredRowSet&lt;/code&gt; interface seeks to address this need</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * without supplying a heavyweight query language along with the processing that</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * such a query language would require.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;p&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * A JDBC &lt;code&gt;FilteredRowSet&lt;/code&gt; standard implementation implements the</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * &lt;code&gt;RowSet&lt;/code&gt; interfaces and extends the</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * &lt;code&gt;CachedRowSet&lt;/code&gt;&amp;trade; class. The</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * &lt;code&gt;CachedRowSet&lt;/code&gt; class provides a set of protected cursor manipulation</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * methods, which a &lt;code&gt;FilteredRowSet&lt;/code&gt; implementation can override</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * to supply filtering support.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * &lt;h3&gt;2.0 Predicate Sharing&lt;/h3&gt;</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * If a &lt;code&gt;FilteredRowSet&lt;/code&gt; implementation is shared using the</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * inherited &lt;code&gt;createShared&lt;/code&gt; method in parent interfaces, the</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;code&gt;Predicate&lt;/code&gt; should be shared without modification by all</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * &lt;code&gt;FilteredRowSet&lt;/code&gt; instance clones.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> *</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * &lt;h3&gt;3.0 Usage&lt;/h3&gt;</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> * &lt;p&gt;</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * By implementing a &lt;code&gt;Predicate&lt;/code&gt; (see example in &lt;a href="Predicate.html"&gt;Predicate&lt;/a&gt;</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * class JavaDoc), a &lt;code&gt;FilteredRowSet&lt;/code&gt; could then be used as described</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * below.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> *</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * {@code</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> *     FilteredRowSet frs = new FilteredRowSetImpl();</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *     frs.populate(rs);</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> *</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> *     Range name = new Range("Alpha", "Bravo", "columnName");</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> *     frs.setFilter(name);</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> *</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> *     frs.next() // only names from "Alpha" to "Bravo" will be returned</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * }</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * In the example above, we initialize a &lt;code&gt;Range&lt;/code&gt; object which</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * implements the &lt;code&gt;Predicate&lt;/code&gt; interface. This object expresses</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * the following constraints: All rows outputted or modified from this</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> * &lt;code&gt;FilteredRowSet&lt;/code&gt; object must fall between the values 'Alpha' and</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * 'Bravo' both values inclusive, in the column 'columnName'. If a filter is</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> * applied to a &lt;code&gt;FilteredRowSet&lt;/code&gt; object that contains no data that</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> * falls within the range of the filter, no rows are returned.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> * &lt;p&gt;</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> * This framework allows multiple classes implementing predicates to be</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> * used in combination to achieved the required filtering result with</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> * out the need for query language processing.</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> *</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> * &lt;h3&gt;4.0 Updating a &lt;code&gt;FilteredRowSet&lt;/code&gt; Object&lt;/h3&gt;</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> * The predicate set on a &lt;code&gt;FilteredRowSet&lt;/code&gt; object</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> * applies a criterion on all rows in a</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> * &lt;code&gt;RowSet&lt;/code&gt; object to manage a subset of rows in a &lt;code&gt;RowSet&lt;/code&gt;</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'> * object. This criterion governs the subset of rows that are visible and also</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'> * defines which rows can be modified, deleted or inserted.</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'> * &lt;p&gt;</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'> * Therefore, the predicate set on a &lt;code&gt;FilteredRowSet&lt;/code&gt; object must be</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'> * considered as bi-directional and the set criterion as the gating mechanism</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'> * for all views and updates to the &lt;code&gt;FilteredRowSet&lt;/code&gt; object. Any attempt</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'> * to update the &lt;code&gt;FilteredRowSet&lt;/code&gt; that violates the criterion will</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'> * result in a &lt;code&gt;SQLException&lt;/code&gt; object being thrown.</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'> * &lt;p&gt;</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'> * The &lt;code&gt;FilteredRowSet&lt;/code&gt; range criterion can be modified by applying</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'> * a new &lt;code&gt;Predicate&lt;/code&gt; object to the &lt;code&gt;FilteredRowSet&lt;/code&gt;</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'> * instance at any time. This is  possible if no additional references to the</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'> * &lt;code&gt;FilteredRowSet&lt;/code&gt; object are detected. A new filter has has an</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'> * immediate effect on criterion enforcement within the</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'> * &lt;code&gt;FilteredRowSet&lt;/code&gt; object, and all subsequent views and updates will be</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'> * subject to similar enforcement.</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'> *</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'> * &lt;h3&gt;5.0 Behavior of Rows Outside the Filter&lt;/h3&gt;</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'> * Rows that fall outside of the filter set on a &lt;code&gt;FilteredRowSet&lt;/code&gt;</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'> * object cannot be modified until the filter is removed or a</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'> * new filter is applied.</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'> * &lt;p&gt;</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'> * Furthermore, only rows that fall within the bounds of a filter will be</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'> * synchronized with the data source.</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'> *</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'> * @author Jonathan Bruce</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'> */</em>
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../S/4467.html#L61' title='Referred from 61 in src/javax/sql/rowset/RowSetFactory.java.'>FilteredRowSet</a> <strong class='reserved'>extends</strong> <a href='../S/4466.html#L413' title='Defined at 413 in src/javax/sql/rowset/WebRowSet.java.'>WebRowSet</a> <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129    <em class='comment'>/**</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>    * Applies the given &lt;code&gt;Predicate&lt;/code&gt; object to this</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>    * &lt;code&gt;FilteredRowSet&lt;/code&gt;</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>    * object. The filter applies controls both to inbound and outbound views,</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>    * constraining which rows are visible and which</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>    * rows can be manipulated.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>    * &lt;p&gt;</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>    * A new &lt;code&gt;Predicate&lt;/code&gt; object may be set at any time. This has the</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>    * effect of changing constraints on the &lt;code&gt;RowSet&lt;/code&gt; object's data.</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>    * In addition, modifying the filter at runtime presents issues whereby</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>    * multiple components may be operating on one &lt;code&gt;FilteredRowSet&lt;/code&gt; object.</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>    * Application developers must take responsibility for managing multiple handles</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>    * to &lt;code&gt;FilteredRowSet&lt;/code&gt; objects when their underling &lt;code&gt;Predicate&lt;/code&gt;</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>    * objects change.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>    *</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>    * @param p a &lt;code&gt;Predicate&lt;/code&gt; object defining the filter for this</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>    * &lt;code&gt;FilteredRowSet&lt;/code&gt; object. Setting a &lt;b&gt;null&lt;/b&gt; value</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>    * will clear the predicate, allowing all rows to become visible.</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>    *</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>    * @throws SQLException if an error occurs when setting the</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>    *     &lt;code&gt;Predicate&lt;/code&gt; object</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>    */</em>
+<a id='L151' name='L151'></a> 151     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27407.html' title='Multiple referred from 15 places.'>setFilter</a>(<a href='../D/6788.html' title='Multiple defined in 4 places.'>Predicate</a> p) <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153    <em class='comment'>/**</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>    * Retrieves the active filter for this &lt;code&gt;FilteredRowSet&lt;/code&gt; object.</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>    *</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>    * @return p the &lt;code&gt;Predicate&lt;/code&gt; for this &lt;code&gt;FilteredRowSet&lt;/code&gt;</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>    * object; &lt;code&gt;null&lt;/code&gt; if no filter has been set.</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>    */</em>
+<a id='L159' name='L159'></a> 159     <strong class='reserved'>public</strong> <a href='../D/6788.html' title='Multiple defined in 4 places.'>Predicate</a> <a href='../R/16590.html' title='Multiple referred from 6 places.'>getFilter</a>() ;
+<a id='L160' name='L160'></a> 160 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L151'>[^]</a><a href='#L159'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

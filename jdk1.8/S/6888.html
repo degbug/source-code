@@ -1,0 +1,371 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7770.html'>transport</a>/CorbaResponseWaitingRoomImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L91'>[^]</a><a href='#L331'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L91' title='Defined at 91.'>registerWaiter</a></li>
+<li><a href='#L107' title='Defined at 107.'>unregisterWaiter</a></li>
+<li><a href='#L120' title='Defined at 120.'>waitForResponse</a></li>
+<li><a href='#L198' title='Defined at 198.'>responseReceived</a></li>
+<li><a href='#L253' title='Defined at 253.'>numberRegistered</a></li>
+<li><a href='#L263' title='Defined at 263.'>signalExceptionToAllWaiters</a></li>
+<li><a href='#L309' title='Defined at 309.'>getMessageMediator</a></li>
+<li><a href='#L326' title='Defined at 326.'>dprint</a></li>
+<li><a href='#L331' title='Defined at 331.'>opAndId</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.transport;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Collections;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.HashMap;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Map;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.omg.CORBA.CompletionStatus;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.omg.CORBA.SystemException;
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.corba.se.pept.encoding.InputObject;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.corba.se.pept.encoding.OutputObject;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.corba.se.pept.protocol.MessageMediator;
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.CorbaMessageMediator;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaConnection;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaResponseWaitingRoom;
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.BufferManagerReadStream;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CDRInputObject;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException;
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.LocateReplyOrReplyMessage;
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> com.sun.corba.se.impl.protocol.giopmsgheaders.ReplyMessage;
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53 <em class='comment'>/**</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * @author Harold Carr</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> */</em>
+<a id='L56' name='L56'></a>  56 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/1776.html' title='Multiple referred from 2 places.'>CorbaResponseWaitingRoomImpl</a>
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>implements</strong>
+<a id='L58' name='L58'></a>  58         <a href='../S/7311.html#L35' title='Defined at 35 in src/com/sun/corba/se/spi/transport/CorbaResponseWaitingRoom.java.'>CorbaResponseWaitingRoom</a>
+<a id='L59' name='L59'></a>  59 <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60     <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/5862.html' title='Multiple referred from 7 places.'>OutCallDesc</a>
+<a id='L61' name='L61'></a>  61     <em class='brace'>{</em>
+<a id='L62' name='L62'></a>  62         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a> = <strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>();
+<a id='L63' name='L63'></a>  63         <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a> thread;
+<a id='L64' name='L64'></a>  64         <a href='../S/7296.html#L42' title='Defined at 42 in src/com/sun/corba/se/pept/protocol/MessageMediator.java.'>MessageMediator</a> messageMediator;
+<a id='L65' name='L65'></a>  65         <a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a> <a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L66' name='L66'></a>  66         <a href='../S/7293.html#L54' title='Defined at 54 in src/com/sun/corba/se/pept/encoding/InputObject.java.'>InputObject</a> <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a>;
+<a id='L67' name='L67'></a>  67     <em class='brace'>}</em>
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>private</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>private</strong> <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> wrapper ;
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>private</strong> <a href='../S/7324.html#L53' title='Defined at 53 in src/com/sun/corba/se/spi/transport/CorbaConnection.java.'>CorbaConnection</a> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>;
+<a id='L73' name='L73'></a>  73     <em class='comment'>// Maps requestId to an OutCallDesc.</em>
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>final</strong> <strong class='reserved'>private</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>, <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a>&gt; out_calls;
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <strong class='reserved'>public</strong> CorbaResponseWaitingRoomImpl(<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../S/7324.html#L53' title='Defined at 53 in src/com/sun/corba/se/spi/transport/CorbaConnection.java.'>CorbaConnection</a> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>)
+<a id='L77' name='L77'></a>  77     <em class='brace'>{</em>
+<a id='L78' name='L78'></a>  78         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L79' name='L79'></a>  79         wrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L80' name='L80'></a>  80             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_TRANSPORT ) ;
+<a id='L81' name='L81'></a>  81         <strong class='reserved'>this</strong>.<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a> = <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>;
+<a id='L82' name='L82'></a>  82         out_calls =
+<a id='L83' name='L83'></a>  83             <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.<a href='../S/1147.html#L2547' title='Defined at 2547 in src/java/util/Collections.java.'>synchronizedMap</a>(<strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>&lt;<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>, <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a>&gt;());
+<a id='L84' name='L84'></a>  84     <em class='brace'>}</em>
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86     <em class='comment'>////////////////////////////////////////////////////</em>
+<a id='L87' name='L87'></a>  87     <em class='comment'>//</em>
+<a id='L88' name='L88'></a>  88     <em class='comment'>// pept.transport.ResponseWaitingRoom</em>
+<a id='L89' name='L89'></a>  89     <em class='comment'>//</em>
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25825.html' title='Multiple referred from 3 places.'>registerWaiter</a>(<a href='../S/7296.html#L42' title='Defined at 42 in src/com/sun/corba/se/pept/protocol/MessageMediator.java.'>MessageMediator</a> mediator)
+<a id='L92' name='L92'></a>  92     <em class='brace'>{</em>
+<a id='L93' name='L93'></a>  93         <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> messageMediator = (<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a>) mediator;
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".registerWaiter: " + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L97' name='L97'></a>  97         <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> requestId = messageMediator.<a href='../D/22005.html' title='Multiple defined in 2 places.'>getRequestIdInteger</a>();
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101         <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> = <strong class='reserved'>new</strong> <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a>();
+<a id='L102' name='L102'></a> 102         <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.thread = <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>();
+<a id='L103' name='L103'></a> 103         <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.messageMediator = messageMediator;
+<a id='L104' name='L104'></a> 104         out_calls.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(requestId, <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>);
+<a id='L105' name='L105'></a> 105     <em class='brace'>}</em>
+<a id='L106' name='L106'></a> 106 
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/29764.html' title='Multiple referred from 6 places.'>unregisterWaiter</a>(<a href='../S/7296.html#L42' title='Defined at 42 in src/com/sun/corba/se/pept/protocol/MessageMediator.java.'>MessageMediator</a> mediator)
+<a id='L108' name='L108'></a> 108     <em class='brace'>{</em>
+<a id='L109' name='L109'></a> 109         <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> messageMediator = (<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a>) mediator;
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L112' name='L112'></a> 112             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".unregisterWaiter: " + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L113' name='L113'></a> 113         <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> requestId = messageMediator.<a href='../D/22005.html' title='Multiple defined in 2 places.'>getRequestIdInteger</a>();
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117         out_calls.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(requestId);
+<a id='L118' name='L118'></a> 118     <em class='brace'>}</em>
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120     <strong class='reserved'>public</strong> <a href='../S/7293.html#L54' title='Defined at 54 in src/com/sun/corba/se/pept/encoding/InputObject.java.'>InputObject</a> <a href='../R/30414.html' title='Multiple referred from 4 places.'>waitForResponse</a>(<a href='../S/7296.html#L42' title='Defined at 42 in src/com/sun/corba/se/pept/protocol/MessageMediator.java.'>MessageMediator</a> mediator)
+<a id='L121' name='L121'></a> 121     <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122       <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> messageMediator = (<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a>) mediator;
+<a id='L123' name='L123'></a> 123 
+<a id='L124' name='L124'></a> 124       <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126         <a href='../S/7293.html#L54' title='Defined at 54 in src/com/sun/corba/se/pept/encoding/InputObject.java.'>InputObject</a> returnStream = <strong class='reserved'>null</strong>;
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".waitForResponse-&gt;: " + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L130' name='L130'></a> 130         <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> requestId = messageMediator.<a href='../D/22005.html' title='Multiple defined in 2 places.'>getRequestIdInteger</a>();
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>if</strong> (messageMediator.<a href='../D/25994.html' title='Multiple defined in 2 places.'>isOneWay</a>()) <em class='brace'>{</em>
+<a id='L135' name='L135'></a> 135             <em class='comment'>// The waiter is removed in releaseReply in the same</em>
+<a id='L136' name='L136'></a> 136             <em class='comment'>// way as a normal request.</em>
+<a id='L137' name='L137'></a> 137 
+<a id='L138' name='L138'></a> 138             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".waitForResponse: one way - not waiting: "
+<a id='L140' name='L140'></a> 140                        + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L141' name='L141'></a> 141             <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142 
+<a id='L143' name='L143'></a> 143             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L144' name='L144'></a> 144         <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146         <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> = out_calls.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(requestId);
+<a id='L147' name='L147'></a> 147         <strong class='reserved'>if</strong> (<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148             <strong class='reserved'>throw</strong> wrapper.<a href='../D/28352.html' title='Multiple defined in 4 places.'>nullOutCall</a>(<a href='../S/238.html#L53' title='Defined at 53 in src/org/omg/CORBA/CompletionStatus.java.'>CompletionStatus</a>.COMPLETED_MAYBE);
+<a id='L149' name='L149'></a> 149         <em class='brace'>}</em>
+<a id='L150' name='L150'></a> 150 
+<a id='L151' name='L151'></a> 151         <strong class='reserved'>synchronized</strong>(<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>) <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153             <strong class='reserved'>while</strong> (<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> == <strong class='reserved'>null</strong> &amp;&amp; <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L154' name='L154'></a> 154                 <em class='comment'>// Wait for the reply from the server.</em>
+<a id='L155' name='L155'></a> 155                 <em class='comment'>// The ReaderThread reads in the reply IIOP message</em>
+<a id='L156' name='L156'></a> 156                 <em class='comment'>// and signals us.</em>
+<a id='L157' name='L157'></a> 157                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158                     <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159                         <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".waitForResponse: waiting: "
+<a id='L160' name='L160'></a> 160                                + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L161' name='L161'></a> 161                     <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162                     <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>.<a href='../D/36778.html' title='Multiple defined in 3 places.'>wait</a>();
+<a id='L163' name='L163'></a> 163                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a> ie) <em class='brace'>{</em><em class='brace'>}</em>;
+<a id='L164' name='L164'></a> 164             <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165 
+<a id='L166' name='L166'></a> 166             <strong class='reserved'>if</strong> (<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167                 <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168                     <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".waitForResponse: exception: "
+<a id='L169' name='L169'></a> 169                            + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L170' name='L170'></a> 170                 <em class='brace'>}</em>
+<a id='L171' name='L171'></a> 171                 <strong class='reserved'>throw</strong> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a>;
+<a id='L172' name='L172'></a> 172             <em class='brace'>}</em>
+<a id='L173' name='L173'></a> 173 
+<a id='L174' name='L174'></a> 174             returnStream = <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a>;
+<a id='L175' name='L175'></a> 175         <em class='brace'>}</em>
+<a id='L176' name='L176'></a> 176 
+<a id='L177' name='L177'></a> 177         <em class='comment'>// REVISIT -- exceptions from unmarshaling code will</em>
+<a id='L178' name='L178'></a> 178         <em class='comment'>// go up through this client thread!</em>
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180         <strong class='reserved'>if</strong> (returnStream != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L181' name='L181'></a> 181             <em class='comment'>// On fragmented streams the header MUST be unmarshaled here</em>
+<a id='L182' name='L182'></a> 182             <em class='comment'>// (in the client thread) in case it blocks.</em>
+<a id='L183' name='L183'></a> 183             <em class='comment'>// If the header was already unmarshaled, this won't</em>
+<a id='L184' name='L184'></a> 184             <em class='comment'>// do anything</em>
+<a id='L185' name='L185'></a> 185             <em class='comment'>// REVISIT: cast - need interface method.</em>
+<a id='L186' name='L186'></a> 186             ((<a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>)returnStream).<a href='../S/7004.html#L127' title='Defined at 127 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>unmarshalHeader</a>();
+<a id='L187' name='L187'></a> 187         <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>return</strong> returnStream;
+<a id='L190' name='L190'></a> 190 
+<a id='L191' name='L191'></a> 191       <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L192' name='L192'></a> 192         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L193' name='L193'></a> 193             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".waitForResponse&lt;-: " + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator));
+<a id='L194' name='L194'></a> 194         <em class='brace'>}</em>
+<a id='L195' name='L195'></a> 195       <em class='brace'>}</em>
+<a id='L196' name='L196'></a> 196     <em class='brace'>}</em>
+<a id='L197' name='L197'></a> 197 
+<a id='L198' name='L198'></a> 198     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7132.html#L823' title='Referred from 823 in src/com/sun/corba/se/impl/protocol/CorbaMessageMediatorImpl.java.'>responseReceived</a>(<a href='../S/7293.html#L54' title='Defined at 54 in src/com/sun/corba/se/pept/encoding/InputObject.java.'>InputObject</a> <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>)
+<a id='L199' name='L199'></a> 199     <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200         <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a> <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> = (<a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>) <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>;
+<a id='L201' name='L201'></a> 201         <a href='../S/7109.html#L31' title='Defined at 31 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/LocateReplyOrReplyMessage.java.'>LocateReplyOrReplyMessage</a> <a href='../S/776.html#L991' title='Defined at 991 in src/java/net/HttpCookie.java.'>header</a> = (<a href='../S/7109.html#L31' title='Defined at 31 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/LocateReplyOrReplyMessage.java.'>LocateReplyOrReplyMessage</a>)
+<a id='L202' name='L202'></a> 202             <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a>.<a href='../D/20572.html' title='Multiple defined in 2 places.'>getMessageHeader</a>();
+<a id='L203' name='L203'></a> 203         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> requestId = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/776.html#L991' title='Defined at 991 in src/java/net/HttpCookie.java.'>header</a>.<a href='../D/22004.html' title='Multiple defined in 31 places.'>getRequestId</a>());
+<a id='L204' name='L204'></a> 204         <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> = out_calls.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(requestId);
+<a id='L205' name='L205'></a> 205 
+<a id='L206' name='L206'></a> 206         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L207' name='L207'></a> 207             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".responseReceived: id/"
+<a id='L208' name='L208'></a> 208                    + requestId  + ": "
+<a id='L209' name='L209'></a> 209                    + <a href='../S/776.html#L991' title='Defined at 991 in src/java/net/HttpCookie.java.'>header</a>);
+<a id='L210' name='L210'></a> 210         <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211 
+<a id='L212' name='L212'></a> 212         <em class='comment'>// This is an interesting case.  It could mean that someone sent us a</em>
+<a id='L213' name='L213'></a> 213         <em class='comment'>// reply message, but we don't know what request it was for.  That</em>
+<a id='L214' name='L214'></a> 214         <em class='comment'>// would probably call for an error.  However, there's another case</em>
+<a id='L215' name='L215'></a> 215         <em class='comment'>// that's normal and we should think about --</em>
+<a id='L216' name='L216'></a> 216         <em class='comment'>//</em>
+<a id='L217' name='L217'></a> 217         <em class='comment'>// If the unmarshaling thread does all of its work inbetween the time</em>
+<a id='L218' name='L218'></a> 218         <em class='comment'>// the ReaderThread gives it the last fragment and gets to the</em>
+<a id='L219' name='L219'></a> 219         <em class='comment'>// out_calls.get line, then it will also be null, so just return;</em>
+<a id='L220' name='L220'></a> 220         <strong class='reserved'>if</strong> (<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L221' name='L221'></a> 221             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L222' name='L222'></a> 222                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".responseReceived: id/"
+<a id='L223' name='L223'></a> 223                        + requestId
+<a id='L224' name='L224'></a> 224                        + ": no waiter: "
+<a id='L225' name='L225'></a> 225                        + <a href='../S/776.html#L991' title='Defined at 991 in src/java/net/HttpCookie.java.'>header</a>);
+<a id='L226' name='L226'></a> 226             <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227             <strong class='reserved'>return</strong>;
+<a id='L228' name='L228'></a> 228         <em class='brace'>}</em>
+<a id='L229' name='L229'></a> 229 
+<a id='L230' name='L230'></a> 230         <em class='comment'>// Set the reply InputObject and signal the client thread</em>
+<a id='L231' name='L231'></a> 231         <em class='comment'>// that the reply has been received.</em>
+<a id='L232' name='L232'></a> 232         <em class='comment'>// The thread signalled will remove outcall descriptor if appropriate.</em>
+<a id='L233' name='L233'></a> 233         <em class='comment'>// Otherwise, it'll be removed when last fragment for it has been put on</em>
+<a id='L234' name='L234'></a> 234         <em class='comment'>// BufferManagerRead's queue.</em>
+<a id='L235' name='L235'></a> 235         <strong class='reserved'>synchronized</strong> (<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>) <em class='brace'>{</em>
+<a id='L236' name='L236'></a> 236             <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> messageMediator = (<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a>)
+<a id='L237' name='L237'></a> 237                 <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.messageMediator;
+<a id='L238' name='L238'></a> 238 
+<a id='L239' name='L239'></a> 239             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L240' name='L240'></a> 240                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".responseReceived: "
+<a id='L241' name='L241'></a> 241                        + <a href='../D/28501.html' title='Multiple defined in 4 places.'>opAndId</a>(messageMediator)
+<a id='L242' name='L242'></a> 242                        + ": notifying waiters");
+<a id='L243' name='L243'></a> 243             <em class='brace'>}</em>
+<a id='L244' name='L244'></a> 244 
+<a id='L245' name='L245'></a> 245             messageMediator.<a href='../D/33701.html' title='Multiple defined in 2 places.'>setReplyHeader</a>(<a href='../S/776.html#L991' title='Defined at 991 in src/java/net/HttpCookie.java.'>header</a>);
+<a id='L246' name='L246'></a> 246             messageMediator.<a href='../D/32959.html' title='Multiple defined in 3 places.'>setInputObject</a>(<a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>);
+<a id='L247' name='L247'></a> 247             <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a>.<a href='../D/33237.html' title='Multiple defined in 6 places.'>setMessageMediator</a>(messageMediator);
+<a id='L248' name='L248'></a> 248             <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> = <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>;
+<a id='L249' name='L249'></a> 249             <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>.<a href='../D/28321.html' title='Multiple defined in 5 places.'>notify</a>();
+<a id='L250' name='L250'></a> 250         <em class='brace'>}</em>
+<a id='L251' name='L251'></a> 251     <em class='brace'>}</em>
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../S/6894.html#L877' title='Referred from 877 in src/com/sun/corba/se/impl/transport/SocketOrChannelConnectionImpl.java.'>numberRegistered</a>()
+<a id='L254' name='L254'></a> 254     <em class='brace'>{</em>
+<a id='L255' name='L255'></a> 255         <strong class='reserved'>return</strong> out_calls.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
+<a id='L256' name='L256'></a> 256     <em class='brace'>}</em>
+<a id='L257' name='L257'></a> 257 
+<a id='L258' name='L258'></a> 258     <em class='comment'>//////////////////////////////////////////////////</em>
+<a id='L259' name='L259'></a> 259     <em class='comment'>//</em>
+<a id='L260' name='L260'></a> 260     <em class='comment'>// CorbaResponseWaitingRoom</em>
+<a id='L261' name='L261'></a> 261     <em class='comment'>//</em>
+<a id='L262' name='L262'></a> 262 
+<a id='L263' name='L263'></a> 263     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/6894.html#L1523' title='Referred from 1523 in src/com/sun/corba/se/impl/transport/SocketOrChannelConnectionImpl.java.'>signalExceptionToAllWaiters</a>(<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a> systemException)
+<a id='L264' name='L264'></a> 264     <em class='brace'>{</em>
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L267' name='L267'></a> 267             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".signalExceptionToAllWaiters: " + systemException);
+<a id='L268' name='L268'></a> 268         <em class='brace'>}</em>
+<a id='L269' name='L269'></a> 269 
+<a id='L270' name='L270'></a> 270         <strong class='reserved'>synchronized</strong> (out_calls) <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271             <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".signalExceptionToAllWaiters: out_calls size :" +
+<a id='L273' name='L273'></a> 273                        out_calls.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>());
+<a id='L274' name='L274'></a> 274             <em class='brace'>}</em>
+<a id='L275' name='L275'></a> 275 
+<a id='L276' name='L276'></a> 276             <strong class='reserved'>for</strong> (<a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> : out_calls.<a href='../D/36382.html' title='Multiple defined in 31 places.'>values</a>()) <em class='brace'>{</em>
+<a id='L277' name='L277'></a> 277                 <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag) <em class='brace'>{</em>
+<a id='L278' name='L278'></a> 278                     <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(".signalExceptionToAllWaiters: signaling " +
+<a id='L279' name='L279'></a> 279                             <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>);
+<a id='L280' name='L280'></a> 280                 <em class='brace'>}</em>
+<a id='L281' name='L281'></a> 281                 <strong class='reserved'>synchronized</strong>(<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>) <em class='brace'>{</em>
+<a id='L282' name='L282'></a> 282                     <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283                         <em class='comment'>// anything waiting for BufferManagerRead's fragment queue</em>
+<a id='L284' name='L284'></a> 284                         <em class='comment'>// needs to be cancelled</em>
+<a id='L285' name='L285'></a> 285                         <a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> corbaMsgMediator =
+<a id='L286' name='L286'></a> 286                                      (<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a>)<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.messageMediator;
+<a id='L287' name='L287'></a> 287                         <a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a> <a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> =
+<a id='L288' name='L288'></a> 288                                    (<a href='../S/7004.html#L58' title='Defined at 58 in src/com/sun/corba/se/impl/encoding/CDRInputObject.java.'>CDRInputObject</a>)corbaMsgMediator.<a href='../D/19742.html' title='Multiple defined in 2 places.'>getInputObject</a>();
+<a id='L289' name='L289'></a> 289                         <em class='comment'>// IMPORTANT: If inputObject is null, then no need to tell</em>
+<a id='L290' name='L290'></a> 290                         <em class='comment'>//            BufferManagerRead to cancel request processing.</em>
+<a id='L291' name='L291'></a> 291                         <strong class='reserved'>if</strong> (<a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L292' name='L292'></a> 292                             <a href='../S/6996.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/encoding/BufferManagerReadStream.java.'>BufferManagerReadStream</a> bufferManager =
+<a id='L293' name='L293'></a> 293                                 (<a href='../S/6996.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/encoding/BufferManagerReadStream.java.'>BufferManagerReadStream</a>)<a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a>.<a href='../D/17361.html' title='Multiple defined in 8 places.'>getBufferManager</a>();
+<a id='L294' name='L294'></a> 294                             <strong class='reserved'>int</strong> requestId = corbaMsgMediator.<a href='../D/22004.html' title='Multiple defined in 31 places.'>getRequestId</a>();
+<a id='L295' name='L295'></a> 295                             bufferManager.<a href='../D/12208.html' title='Multiple defined in 3 places.'>cancelProcessing</a>(requestId);
+<a id='L296' name='L296'></a> 296                         <em class='brace'>}</em>
+<a id='L297' name='L297'></a> 297                     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L298' name='L298'></a> 298                     <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L299' name='L299'></a> 299                         <em class='comment'>// attempt to wake up waiting threads in all cases</em>
+<a id='L300' name='L300'></a> 300                         <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../S/6954.html#L991' title='Defined at 991 in src/com/sun/corba/se/impl/io/IIOPInputStream.java.'>inputObject</a> = <strong class='reserved'>null</strong>;
+<a id='L301' name='L301'></a> 301                         <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15769.html' title='Multiple defined in 5 places.'>exception</a> = systemException;
+<a id='L302' name='L302'></a> 302                         <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.<a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>.<a href='../S/1724.html#L295' title='Defined at 295 in src/java/lang/Object.java.'>notifyAll</a>();
+<a id='L303' name='L303'></a> 303                     <em class='brace'>}</em>
+<a id='L304' name='L304'></a> 304                 <em class='brace'>}</em>
+<a id='L305' name='L305'></a> 305             <em class='brace'>}</em>
+<a id='L306' name='L306'></a> 306         <em class='brace'>}</em>
+<a id='L307' name='L307'></a> 307     <em class='brace'>}</em>
+<a id='L308' name='L308'></a> 308 
+<a id='L309' name='L309'></a> 309     <strong class='reserved'>public</strong> <a href='../S/7296.html#L42' title='Defined at 42 in src/com/sun/corba/se/pept/protocol/MessageMediator.java.'>MessageMediator</a> <a href='../R/17673.html' title='Multiple referred from 11 places.'>getMessageMediator</a>(<strong class='reserved'>int</strong> requestId)
+<a id='L310' name='L310'></a> 310     <em class='brace'>{</em>
+<a id='L311' name='L311'></a> 311         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(requestId);
+<a id='L312' name='L312'></a> 312         <a href='../S/6888.html#L60' title='Defined at 60 in src/com/sun/corba/se/impl/transport/CorbaResponseWaitingRoomImpl.java.'>OutCallDesc</a> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> = out_calls.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>);
+<a id='L313' name='L313'></a> 313         <strong class='reserved'>if</strong> (<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314             <em class='comment'>// This can happen when getting early reply fragments for a</em>
+<a id='L315' name='L315'></a> 315             <em class='comment'>// request which has completed (e.g., client marshaling error).</em>
+<a id='L316' name='L316'></a> 316             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L317' name='L317'></a> 317         <em class='brace'>}</em>
+<a id='L318' name='L318'></a> 318         <strong class='reserved'>return</strong> <a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>.messageMediator;
+<a id='L319' name='L319'></a> 319     <em class='brace'>}</em>
+<a id='L320' name='L320'></a> 320 
+<a id='L321' name='L321'></a> 321     <em class='comment'>////////////////////////////////////////////////////</em>
+<a id='L322' name='L322'></a> 322     <em class='comment'>//</em>
+<a id='L323' name='L323'></a> 323     <em class='comment'>// Implementation.</em>
+<a id='L324' name='L324'></a> 324     <em class='comment'>//</em>
+<a id='L325' name='L325'></a> 325 
+<a id='L326' name='L326'></a> 326     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13496.html' title='Multiple referred from 536 places.'>dprint</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>)
+<a id='L327' name='L327'></a> 327     <em class='brace'>{</em>
+<a id='L328' name='L328'></a> 328         <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>("CorbaResponseWaitingRoomImpl", <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L329' name='L329'></a> 329     <em class='brace'>}</em>
+<a id='L330' name='L330'></a> 330 
+<a id='L331' name='L331'></a> 331     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/23962.html' title='Multiple referred from 74 places.'>opAndId</a>(<a href='../S/7520.html#L63' title='Defined at 63 in src/com/sun/corba/se/spi/protocol/CorbaMessageMediator.java.'>CorbaMessageMediator</a> mediator)
+<a id='L332' name='L332'></a> 332     <em class='brace'>{</em>
+<a id='L333' name='L333'></a> 333         <strong class='reserved'>return</strong> <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../S/6919.html#L779' title='Defined at 779 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>operationNameAndRequestId</a>(mediator);
+<a id='L334' name='L334'></a> 334     <em class='brace'>}</em>
+<a id='L335' name='L335'></a> 335 <em class='brace'>}</em>
+<a id='L336' name='L336'></a> 336 
+<a id='L337' name='L337'></a> 337 <em class='comment'>// End of file.</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L91'>[^]</a><a href='#L331'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8038.html'>util</a>/<a href='../files/8039.html'>concurrent</a>/<a href='../files/8040.html'>atomic</a>/AtomicLongFieldUpdater.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L84'>[^]</a><a href='#L598'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L84' title='Defined at 84.'>newUpdater</a></li>
+<li><a href='#L113' title='Defined at 113.'>compareAndSet</a></li>
+<li><a href='#L133' title='Defined at 133.'>weakCompareAndSet</a></li>
+<li><a href='#L143' title='Defined at 143.'>set</a></li>
+<li><a href='#L153' title='Defined at 153.'>lazySet</a></li>
+<li><a href='#L162' title='Defined at 162.'>get</a></li>
+<li><a href='#L172' title='Defined at 172.'>getAndSet</a></li>
+<li><a href='#L187' title='Defined at 187.'>getAndIncrement</a></li>
+<li><a href='#L203' title='Defined at 203.'>getAndDecrement</a></li>
+<li><a href='#L220' title='Defined at 220.'>getAndAdd</a></li>
+<li><a href='#L236' title='Defined at 236.'>incrementAndGet</a></li>
+<li><a href='#L252' title='Defined at 252.'>decrementAndGet</a></li>
+<li><a href='#L269' title='Defined at 269.'>addAndGet</a></li>
+<li><a href='#L289' title='Defined at 289.'>getAndUpdate</a></li>
+<li><a href='#L309' title='Defined at 309.'>updateAndGet</a></li>
+<li><a href='#L333' title='Defined at 333.'>getAndAccumulate</a></li>
+<li><a href='#L358' title='Defined at 358.'>accumulateAndGet</a></li>
+<li><a href='#L413' title='Defined at 413.'>fullCheck</a></li>
+<li><a href='#L420' title='Defined at 420.'>compareAndSet</a></li>
+<li><a href='#L425' title='Defined at 425.'>weakCompareAndSet</a></li>
+<li><a href='#L430' title='Defined at 430.'>set</a></li>
+<li><a href='#L435' title='Defined at 435.'>lazySet</a></li>
+<li><a href='#L440' title='Defined at 440.'>get</a></li>
+<li><a href='#L445' title='Defined at 445.'>getAndSet</a></li>
+<li><a href='#L450' title='Defined at 450.'>getAndIncrement</a></li>
+<li><a href='#L454' title='Defined at 454.'>getAndDecrement</a></li>
+<li><a href='#L458' title='Defined at 458.'>getAndAdd</a></li>
+<li><a href='#L463' title='Defined at 463.'>incrementAndGet</a></li>
+<li><a href='#L467' title='Defined at 467.'>decrementAndGet</a></li>
+<li><a href='#L471' title='Defined at 471.'>addAndGet</a></li>
+<li><a href='#L475' title='Defined at 475.'>ensureProtectedAccess</a></li>
+<li><a href='#L537' title='Defined at 537.'>fullCheck</a></li>
+<li><a href='#L544' title='Defined at 544.'>compareAndSet</a></li>
+<li><a href='#L555' title='Defined at 555.'>weakCompareAndSet</a></li>
+<li><a href='#L559' title='Defined at 559.'>set</a></li>
+<li><a href='#L566' title='Defined at 566.'>lazySet</a></li>
+<li><a href='#L570' title='Defined at 570.'>get</a></li>
+<li><a href='#L577' title='Defined at 577.'>ensureProtectedAccess</a></li>
+<li><a href='#L598' title='Defined at 598.'>isAncestor</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> *</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> */</em>
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <em class='comment'>/*</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'> *</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> *</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> *</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> *</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * Written by Doug Lea with assistance from members of JCP JSR-166</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * Expert Group and released to the public domain, as explained at</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * http://creativecommons.org/publicdomain/zero/1.0/</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> */</em>
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.concurrent.atomic;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.function.LongUnaryOperator;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.function.LongBinaryOperator;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> sun.misc.Unsafe;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.lang.reflect.Field;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> java.lang.reflect.Modifier;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> java.security.AccessController;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> java.security.PrivilegedExceptionAction;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> java.security.PrivilegedActionException;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> sun.reflect.CallerSensitive;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> sun.reflect.Reflection;
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48 <em class='comment'>/**</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * A reflection-based utility that enables atomic updates to</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * designated {@code volatile long} fields of designated classes.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * This class is designed for use in atomic data structures in which</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * several fields of the same node are independently subject to atomic</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * updates.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> *</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * &lt;p&gt;Note that the guarantees of the {@code compareAndSet}</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * method in this class are weaker than in other atomic classes.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * Because this class cannot ensure that all uses of the field</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * are appropriate for purposes of atomic access, it can</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * guarantee atomicity only with respect to other invocations of</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * {@code compareAndSet} and {@code set} on the same updater.</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * @since 1.5</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * @author Doug Lea</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * @param &lt;T&gt; The type of the object holding the updatable field</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> */</em>
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/501.html' title='Multiple referred from 3 places.'>AtomicLongFieldUpdater</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67     <em class='comment'>/**</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * Creates and returns an updater for objects with the given field.</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     * The Class argument is needed to check that reflective types and</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * generic types match.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     *</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * @param tclass the class of the objects holding the field</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * @param fieldName the name of the field to be updated</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     * @param &lt;U&gt; the type of instances of tclass</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * @return the updater</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     * @throws IllegalArgumentException if the field is not a</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * volatile long type</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * @throws RuntimeException with a nested reflection-based</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * exception if the class does not hold field or is the wrong type,</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * or the field is inaccessible to the caller according to Java language</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * access control</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     */</em>
+<a id='L83' name='L83'></a>  83     @CallerSensitive
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> &lt;U&gt; <a href='../S/1078.html#L66' title='Defined at 66 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>AtomicLongFieldUpdater</a>&lt;U&gt; <a href='../R/23636.html' title='Multiple referred from 3 places.'>newUpdater</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;U&gt; tclass,
+<a id='L85' name='L85'></a>  85                                                            <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>) <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; caller = Reflection.getCallerClass();
+<a id='L87' name='L87'></a>  87         <strong class='reserved'>if</strong> (<a href='../S/1088.html#L54' title='Defined at 54 in src/java/util/concurrent/atomic/AtomicLong.java.'>AtomicLong</a>.VM_SUPPORTS_LONG_CAS)
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1078.html#L368' title='Defined at 368 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>CASUpdater</a>&lt;U&gt;(tclass, <a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>, caller);
+<a id='L89' name='L89'></a>  89         <strong class='reserved'>else</strong>
+<a id='L90' name='L90'></a>  90             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1078.html#L492' title='Defined at 492 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>LockedUpdater</a>&lt;U&gt;(tclass, <a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>, caller);
+<a id='L91' name='L91'></a>  91     <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93     <em class='comment'>/**</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * Protected do-nothing constructor for use by subclasses.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     */</em>
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>protected</strong> AtomicLongFieldUpdater() <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97     <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99     <em class='comment'>/**</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * Atomically sets the field of the given object managed by this updater</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * to the given updated value if the current value {@code ==} the</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * expected value. This method is guaranteed to be atomic with respect to</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * other calls to {@code compareAndSet} and {@code set}, but not</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * necessarily with respect to other changes in the field.</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     *</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * @param obj An object whose field to conditionally set</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * @param expect the expected value</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * @param update the new value</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * @return {@code true} if successful</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * @throws ClassCastException if {@code obj} is not an instance</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * of the class possessing the field established in the constructor</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     */</em>
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> <a href='../R/11694.html' title='Multiple referred from 69 places.'>compareAndSet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> expect, <strong class='reserved'>long</strong> <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>);
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115     <em class='comment'>/**</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * Atomically sets the field of the given object managed by this updater</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * to the given updated value if the current value {@code ==} the</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * expected value. This method is guaranteed to be atomic with respect to</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * other calls to {@code compareAndSet} and {@code set}, but not</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * necessarily with respect to other changes in the field.</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * &lt;p&gt;&lt;a href="package-summary.html#weakCompareAndSet"&gt;May fail</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     * spuriously and does not provide ordering guarantees&lt;/a&gt;, so is</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * only rarely an appropriate alternative to {@code compareAndSet}.</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     *</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * @param obj An object whose field to conditionally set</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * @param expect the expected value</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * @param update the new value</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * @return {@code true} if successful</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @throws ClassCastException if {@code obj} is not an instance</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * of the class possessing the field established in the constructor</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     */</em>
+<a id='L133' name='L133'></a> 133     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>boolean</strong> weakCompareAndSet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> expect, <strong class='reserved'>long</strong> <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>);
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135     <em class='comment'>/**</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * Sets the field of the given object managed by this updater to the</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * given updated value. This operation is guaranteed to act as a volatile</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * store with respect to subsequent invocations of {@code compareAndSet}.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     *</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * @param obj An object whose field to set</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * @param newValue the new value</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     */</em>
+<a id='L143' name='L143'></a> 143     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/26855.html' title='Multiple referred from 752 places.'>set</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue);
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145     <em class='comment'>/**</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * Eventually sets the field of the given object managed by this</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * updater to the given updated value.</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     *</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * @param obj An object whose field to set</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * @param newValue the new value</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * @since 1.6</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     */</em>
+<a id='L153' name='L153'></a> 153     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../S/1608.html#L276' title='Referred from 276 in src/java/lang/invoke/MutableCallSite.java.'>lazySet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue);
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155     <em class='comment'>/**</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * Gets the current value held in the field of the given object managed</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * by this updater.</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     *</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * @param obj An object whose field to get</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * @return the current value</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     */</em>
+<a id='L162' name='L162'></a> 162     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>long</strong> <a href='../R/14874.html' title='Multiple referred from 4230 places.'>get</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj);
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164     <em class='comment'>/**</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * Atomically sets the field of the given object managed by this updater</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * to the given value and returns the old value.</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     *</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * @param newValue the new value</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * @return the previous value</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     */</em>
+<a id='L172' name='L172'></a> 172     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15062.html' title='Multiple referred from 5 places.'>getAndSet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue) <em class='brace'>{</em>
+<a id='L173' name='L173'></a> 173         <strong class='reserved'>long</strong> prev;
+<a id='L174' name='L174'></a> 174         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L175' name='L175'></a> 175             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L176' name='L176'></a> 176         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, newValue));
+<a id='L177' name='L177'></a> 177         <strong class='reserved'>return</strong> prev;
+<a id='L178' name='L178'></a> 178     <em class='brace'>}</em>
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180     <em class='comment'>/**</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * Atomically increments by one the current value of the field of the</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * given object managed by this updater.</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     *</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * @return the previous value</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     */</em>
+<a id='L187' name='L187'></a> 187     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15061.html' title='Multiple referred from 18 places.'>getAndIncrement</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L191' name='L191'></a> 191             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = prev + 1;
+<a id='L192' name='L192'></a> 192         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L193' name='L193'></a> 193         <strong class='reserved'>return</strong> prev;
+<a id='L194' name='L194'></a> 194     <em class='brace'>}</em>
+<a id='L195' name='L195'></a> 195 
+<a id='L196' name='L196'></a> 196     <em class='comment'>/**</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * Atomically decrements by one the current value of the field of the</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     * given object managed by this updater.</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     *</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     * @return the previous value</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     */</em>
+<a id='L203' name='L203'></a> 203     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15059.html' title='Multiple referred from 4 places.'>getAndDecrement</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L205' name='L205'></a> 205         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L207' name='L207'></a> 207             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = prev - 1;
+<a id='L208' name='L208'></a> 208         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L209' name='L209'></a> 209         <strong class='reserved'>return</strong> prev;
+<a id='L210' name='L210'></a> 210     <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211 
+<a id='L212' name='L212'></a> 212     <em class='comment'>/**</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * Atomically adds the given value to the current value of the field of</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * the given object managed by this updater.</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     *</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * @param delta the value to add</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * @return the previous value</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     */</em>
+<a id='L220' name='L220'></a> 220     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15056.html' title='Multiple referred from 26 places.'>getAndAdd</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> delta) <em class='brace'>{</em>
+<a id='L221' name='L221'></a> 221         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L222' name='L222'></a> 222         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L223' name='L223'></a> 223             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L224' name='L224'></a> 224             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = prev + delta;
+<a id='L225' name='L225'></a> 225         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L226' name='L226'></a> 226         <strong class='reserved'>return</strong> prev;
+<a id='L227' name='L227'></a> 227     <em class='brace'>}</em>
+<a id='L228' name='L228'></a> 228 
+<a id='L229' name='L229'></a> 229     <em class='comment'>/**</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * Atomically increments by one the current value of the field of the</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * given object managed by this updater.</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     *</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @return the updated value</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     */</em>
+<a id='L236' name='L236'></a> 236     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/20492.html' title='Multiple referred from 4 places.'>incrementAndGet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L237' name='L237'></a> 237         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L238' name='L238'></a> 238         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L240' name='L240'></a> 240             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = prev + 1;
+<a id='L241' name='L241'></a> 241         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L242' name='L242'></a> 242         <strong class='reserved'>return</strong> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L243' name='L243'></a> 243     <em class='brace'>}</em>
+<a id='L244' name='L244'></a> 244 
+<a id='L245' name='L245'></a> 245     <em class='comment'>/**</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * Atomically decrements by one the current value of the field of the</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * given object managed by this updater.</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     *</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * @return the updated value</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     */</em>
+<a id='L252' name='L252'></a> 252     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> decrementAndGet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L254' name='L254'></a> 254         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L255' name='L255'></a> 255             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L256' name='L256'></a> 256             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = prev - 1;
+<a id='L257' name='L257'></a> 257         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L258' name='L258'></a> 258         <strong class='reserved'>return</strong> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261     <em class='comment'>/**</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * Atomically adds the given value to the current value of the field of</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * the given object managed by this updater.</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     *</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * @param delta the value to add</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * @return the updated value</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     */</em>
+<a id='L269' name='L269'></a> 269     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/9610.html' title='Multiple referred from 2 places.'>addAndGet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> delta) <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L271' name='L271'></a> 271         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L273' name='L273'></a> 273             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = prev + delta;
+<a id='L274' name='L274'></a> 274         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L275' name='L275'></a> 275         <strong class='reserved'>return</strong> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L276' name='L276'></a> 276     <em class='brace'>}</em>
+<a id='L277' name='L277'></a> 277 
+<a id='L278' name='L278'></a> 278     <em class='comment'>/**</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * Atomically updates the field of the given object managed by this updater</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * with the results of applying the given function, returning the previous</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * value. The function should be side-effect-free, since it may be</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * re-applied when attempted updates fail due to contention among threads.</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     *</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * @param updateFunction a side-effect-free function</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     * @return the previous value</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * @since 1.8</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     */</em>
+<a id='L289' name='L289'></a> 289     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> getAndUpdate(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <a href='../S/976.html#L41' title='Defined at 41 in src/java/util/function/LongUnaryOperator.java.'>LongUnaryOperator</a> updateFunction) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L291' name='L291'></a> 291         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L292' name='L292'></a> 292             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L293' name='L293'></a> 293             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = updateFunction.<a href='../D/11444.html' title='Multiple defined in 6 places.'>applyAsLong</a>(prev);
+<a id='L294' name='L294'></a> 294         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L295' name='L295'></a> 295         <strong class='reserved'>return</strong> prev;
+<a id='L296' name='L296'></a> 296     <em class='brace'>}</em>
+<a id='L297' name='L297'></a> 297 
+<a id='L298' name='L298'></a> 298     <em class='comment'>/**</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     * Atomically updates the field of the given object managed by this updater</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * with the results of applying the given function, returning the updated</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     * value. The function should be side-effect-free, since it may be</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     * re-applied when attempted updates fail due to contention among threads.</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     *</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     * @param updateFunction a side-effect-free function</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * @return the updated value</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     * @since 1.8</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'>     */</em>
+<a id='L309' name='L309'></a> 309     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> updateAndGet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <a href='../S/976.html#L41' title='Defined at 41 in src/java/util/function/LongUnaryOperator.java.'>LongUnaryOperator</a> updateFunction) <em class='brace'>{</em>
+<a id='L310' name='L310'></a> 310         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L311' name='L311'></a> 311         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L312' name='L312'></a> 312             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L313' name='L313'></a> 313             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = updateFunction.<a href='../D/11444.html' title='Multiple defined in 6 places.'>applyAsLong</a>(prev);
+<a id='L314' name='L314'></a> 314         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L315' name='L315'></a> 315         <strong class='reserved'>return</strong> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L316' name='L316'></a> 316     <em class='brace'>}</em>
+<a id='L317' name='L317'></a> 317 
+<a id='L318' name='L318'></a> 318     <em class='comment'>/**</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     * Atomically updates the field of the given object managed by this</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>     * updater with the results of applying the given function to the</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     * current and given values, returning the previous value. The</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     * function should be side-effect-free, since it may be re-applied</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     * when attempted updates fail due to contention among threads.  The</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>     * function is applied with the current value as its first argument,</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     * and the given update as the second argument.</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     *</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     * @param x the update value</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     * @param accumulatorFunction a side-effect-free function of two arguments</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     * @return the previous value</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * @since 1.8</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     */</em>
+<a id='L333' name='L333'></a> 333     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> getAndAccumulate(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>,
+<a id='L334' name='L334'></a> 334                                        <a href='../S/959.html#L40' title='Defined at 40 in src/java/util/function/LongBinaryOperator.java.'>LongBinaryOperator</a> accumulatorFunction) <em class='brace'>{</em>
+<a id='L335' name='L335'></a> 335         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L336' name='L336'></a> 336         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L337' name='L337'></a> 337             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L338' name='L338'></a> 338             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = accumulatorFunction.<a href='../D/11444.html' title='Multiple defined in 6 places.'>applyAsLong</a>(prev, <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>);
+<a id='L339' name='L339'></a> 339         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L340' name='L340'></a> 340         <strong class='reserved'>return</strong> prev;
+<a id='L341' name='L341'></a> 341     <em class='brace'>}</em>
+<a id='L342' name='L342'></a> 342 
+<a id='L343' name='L343'></a> 343     <em class='comment'>/**</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * Atomically updates the field of the given object managed by this</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     * updater with the results of applying the given function to the</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     * current and given values, returning the updated value. The</em>
+<a id='L347' name='L347'></a> 347 <em class='comment'>     * function should be side-effect-free, since it may be re-applied</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>     * when attempted updates fail due to contention among threads.  The</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * function is applied with the current value as its first argument,</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     * and the given update as the second argument.</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>     *</em>
+<a id='L352' name='L352'></a> 352 <em class='comment'>     * @param obj An object whose field to get and set</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>     * @param x the update value</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>     * @param accumulatorFunction a side-effect-free function of two arguments</em>
+<a id='L355' name='L355'></a> 355 <em class='comment'>     * @return the updated value</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>     * @since 1.8</em>
+<a id='L357' name='L357'></a> 357 <em class='comment'>     */</em>
+<a id='L358' name='L358'></a> 358     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> accumulateAndGet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>,
+<a id='L359' name='L359'></a> 359                                        <a href='../S/959.html#L40' title='Defined at 40 in src/java/util/function/LongBinaryOperator.java.'>LongBinaryOperator</a> accumulatorFunction) <em class='brace'>{</em>
+<a id='L360' name='L360'></a> 360         <strong class='reserved'>long</strong> prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L361' name='L361'></a> 361         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L362' name='L362'></a> 362             prev = <a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(obj);
+<a id='L363' name='L363'></a> 363             <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = accumulatorFunction.<a href='../D/11444.html' title='Multiple defined in 6 places.'>applyAsLong</a>(prev, <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>);
+<a id='L364' name='L364'></a> 364         <em class='brace'>}</em> <strong class='reserved'>while</strong> (!<a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, prev, <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>));
+<a id='L365' name='L365'></a> 365         <strong class='reserved'>return</strong> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L366' name='L366'></a> 366     <em class='brace'>}</em>
+<a id='L367' name='L367'></a> 367 
+<a id='L368' name='L368'></a> 368     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../S/1078.html#L88' title='Referred from 88 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>CASUpdater</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <strong class='reserved'>extends</strong> <a href='../S/1078.html#L66' title='Defined at 66 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>AtomicLongFieldUpdater</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <em class='brace'>{</em>
+<a id='L369' name='L369'></a> 369         <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> Unsafe <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a> = Unsafe.getUnsafe();
+<a id='L370' name='L370'></a> 370         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L371' name='L371'></a> 371         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; tclass;
+<a id='L372' name='L372'></a> 372         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; cclass;
+<a id='L373' name='L373'></a> 373 
+<a id='L374' name='L374'></a> 374         CASUpdater(<strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; tclass, <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>,
+<a id='L375' name='L375'></a> 375                    <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; caller) <em class='brace'>{</em>
+<a id='L376' name='L376'></a> 376             <strong class='reserved'>final</strong> <a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a> field;
+<a id='L377' name='L377'></a> 377             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>;
+<a id='L378' name='L378'></a> 378             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L379' name='L379'></a> 379                 field = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
+<a id='L380' name='L380'></a> 380                     <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a>&gt;() <em class='brace'>{</em>
+<a id='L381' name='L381'></a> 381                         <strong class='reserved'>public</strong> <a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <strong class='reserved'>throws</strong> <a href='../S/1573.html#L34' title='Defined at 34 in src/java/lang/NoSuchFieldException.java.'>NoSuchFieldException</a> <em class='brace'>{</em>
+<a id='L382' name='L382'></a> 382                             <strong class='reserved'>return</strong> tclass.<a href='../S/1722.html#L2065' title='Defined at 2065 in src/java/lang/Class.java.'>getDeclaredField</a>(<a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>);
+<a id='L383' name='L383'></a> 383                         <em class='brace'>}</em>
+<a id='L384' name='L384'></a> 384                     <em class='brace'>}</em>);
+<a id='L385' name='L385'></a> 385                 <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a> = field.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>();
+<a id='L386' name='L386'></a> 386                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
+<a id='L387' name='L387'></a> 387                     caller, tclass, <strong class='reserved'>null</strong>, <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>);
+<a id='L388' name='L388'></a> 388                 <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> cl = tclass.<a href='../D/17691.html' title='Multiple defined in 20 places.'>getClassLoader</a>();
+<a id='L389' name='L389'></a> 389                 <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> ccl = caller.<a href='../D/17691.html' title='Multiple defined in 20 places.'>getClassLoader</a>();
+<a id='L390' name='L390'></a> 390                 <strong class='reserved'>if</strong> ((ccl != <strong class='reserved'>null</strong>) &amp;&amp; (ccl != cl) &amp;&amp;
+<a id='L391' name='L391'></a> 391                     ((cl == <strong class='reserved'>null</strong>) || !<a href='../D/25187.html' title='Multiple defined in 5 places.'>isAncestor</a>(cl, ccl))) <em class='brace'>{</em>
+<a id='L392' name='L392'></a> 392                   sun.reflect.misc.ReflectUtil.<a href='../D/12578.html' title='Multiple defined in 3 places.'>checkPackageAccess</a>(tclass);
+<a id='L393' name='L393'></a> 393                 <em class='brace'>}</em>
+<a id='L394' name='L394'></a> 394             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a> pae) <em class='brace'>{</em>
+<a id='L395' name='L395'></a> 395                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(pae.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>());
+<a id='L396' name='L396'></a> 396             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L397' name='L397'></a> 397                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L398' name='L398'></a> 398             <em class='brace'>}</em>
+<a id='L399' name='L399'></a> 399 
+<a id='L400' name='L400'></a> 400             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; fieldt = field.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>();
+<a id='L401' name='L401'></a> 401             <strong class='reserved'>if</strong> (fieldt != <strong class='reserved'>long</strong>.<strong class='reserved'>class</strong>)
+<a id='L402' name='L402'></a> 402                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Must be long type");
+<a id='L403' name='L403'></a> 403 
+<a id='L404' name='L404'></a> 404             <strong class='reserved'>if</strong> (!<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26494.html' title='Multiple defined in 5 places.'>isVolatile</a>(<a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>))
+<a id='L405' name='L405'></a> 405                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Must be volatile type");
+<a id='L406' name='L406'></a> 406 
+<a id='L407' name='L407'></a> 407             <strong class='reserved'>this</strong>.cclass = (<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26106.html' title='Multiple defined in 5 places.'>isProtected</a>(<a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>) &amp;&amp;
+<a id='L408' name='L408'></a> 408                            caller != tclass) ? caller : <strong class='reserved'>null</strong>;
+<a id='L409' name='L409'></a> 409             <strong class='reserved'>this</strong>.tclass = tclass;
+<a id='L410' name='L410'></a> 410             <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.<a href='../D/28395.html' title='Multiple defined in 5 places.'>objectFieldOffset</a>(field);
+<a id='L411' name='L411'></a> 411         <em class='brace'>}</em>
+<a id='L412' name='L412'></a> 412 
+<a id='L413' name='L413'></a> 413         <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/14821.html' title='Multiple referred from 17 places.'>fullCheck</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414             <strong class='reserved'>if</strong> (!tclass.<a href='../S/1722.html#L483' title='Defined at 483 in src/java/lang/Class.java.'>isInstance</a>(obj))
+<a id='L415' name='L415'></a> 415                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1727.html#L41' title='Defined at 41 in src/java/lang/ClassCastException.java.'>ClassCastException</a>();
+<a id='L416' name='L416'></a> 416             <strong class='reserved'>if</strong> (cclass != <strong class='reserved'>null</strong>)
+<a id='L417' name='L417'></a> 417                 <a href='../D/15628.html' title='Multiple defined in 4 places.'>ensureProtectedAccess</a>(obj);
+<a id='L418' name='L418'></a> 418         <em class='brace'>}</em>
+<a id='L419' name='L419'></a> 419 
+<a id='L420' name='L420'></a> 420         <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/11694.html' title='Multiple referred from 69 places.'>compareAndSet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> expect, <strong class='reserved'>long</strong> <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>) <em class='brace'>{</em>
+<a id='L421' name='L421'></a> 421             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L422' name='L422'></a> 422             <strong class='reserved'>return</strong> <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.compareAndSwapLong(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, expect, <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>);
+<a id='L423' name='L423'></a> 423         <em class='brace'>}</em>
+<a id='L424' name='L424'></a> 424 
+<a id='L425' name='L425'></a> 425         <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> weakCompareAndSet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> expect, <strong class='reserved'>long</strong> <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>) <em class='brace'>{</em>
+<a id='L426' name='L426'></a> 426             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L427' name='L427'></a> 427             <strong class='reserved'>return</strong> <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.compareAndSwapLong(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, expect, <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>);
+<a id='L428' name='L428'></a> 428         <em class='brace'>}</em>
+<a id='L429' name='L429'></a> 429 
+<a id='L430' name='L430'></a> 430         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26855.html' title='Multiple referred from 752 places.'>set</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue) <em class='brace'>{</em>
+<a id='L431' name='L431'></a> 431             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L432' name='L432'></a> 432             <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.putLongVolatile(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, newValue);
+<a id='L433' name='L433'></a> 433         <em class='brace'>}</em>
+<a id='L434' name='L434'></a> 434 
+<a id='L435' name='L435'></a> 435         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/1608.html#L276' title='Referred from 276 in src/java/lang/invoke/MutableCallSite.java.'>lazySet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue) <em class='brace'>{</em>
+<a id='L436' name='L436'></a> 436             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L437' name='L437'></a> 437             <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.putOrderedLong(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, newValue);
+<a id='L438' name='L438'></a> 438         <em class='brace'>}</em>
+<a id='L439' name='L439'></a> 439 
+<a id='L440' name='L440'></a> 440         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/14874.html' title='Multiple referred from 4230 places.'>get</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L441' name='L441'></a> 441             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L442' name='L442'></a> 442             <strong class='reserved'>return</strong> <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.getLongVolatile(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L443' name='L443'></a> 443         <em class='brace'>}</em>
+<a id='L444' name='L444'></a> 444 
+<a id='L445' name='L445'></a> 445         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15062.html' title='Multiple referred from 5 places.'>getAndSet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue) <em class='brace'>{</em>
+<a id='L446' name='L446'></a> 446             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L447' name='L447'></a> 447             <strong class='reserved'>return</strong> <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.getAndSetLong(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, newValue);
+<a id='L448' name='L448'></a> 448         <em class='brace'>}</em>
+<a id='L449' name='L449'></a> 449 
+<a id='L450' name='L450'></a> 450         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15061.html' title='Multiple referred from 18 places.'>getAndIncrement</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L451' name='L451'></a> 451             <strong class='reserved'>return</strong> <a href='../D/16937.html' title='Multiple defined in 8 places.'>getAndAdd</a>(obj, 1);
+<a id='L452' name='L452'></a> 452         <em class='brace'>}</em>
+<a id='L453' name='L453'></a> 453 
+<a id='L454' name='L454'></a> 454         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15059.html' title='Multiple referred from 4 places.'>getAndDecrement</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L455' name='L455'></a> 455             <strong class='reserved'>return</strong> <a href='../D/16937.html' title='Multiple defined in 8 places.'>getAndAdd</a>(obj, -1);
+<a id='L456' name='L456'></a> 456         <em class='brace'>}</em>
+<a id='L457' name='L457'></a> 457 
+<a id='L458' name='L458'></a> 458         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/15056.html' title='Multiple referred from 26 places.'>getAndAdd</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> delta) <em class='brace'>{</em>
+<a id='L459' name='L459'></a> 459             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L460' name='L460'></a> 460             <strong class='reserved'>return</strong> <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.getAndAddLong(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, delta);
+<a id='L461' name='L461'></a> 461         <em class='brace'>}</em>
+<a id='L462' name='L462'></a> 462 
+<a id='L463' name='L463'></a> 463         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/20492.html' title='Multiple referred from 4 places.'>incrementAndGet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L464' name='L464'></a> 464             <strong class='reserved'>return</strong> <a href='../D/16937.html' title='Multiple defined in 8 places.'>getAndAdd</a>(obj, 1) + 1;
+<a id='L465' name='L465'></a> 465         <em class='brace'>}</em>
+<a id='L466' name='L466'></a> 466 
+<a id='L467' name='L467'></a> 467         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> decrementAndGet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L468' name='L468'></a> 468              <strong class='reserved'>return</strong> <a href='../D/16937.html' title='Multiple defined in 8 places.'>getAndAdd</a>(obj, -1) - 1;
+<a id='L469' name='L469'></a> 469         <em class='brace'>}</em>
+<a id='L470' name='L470'></a> 470 
+<a id='L471' name='L471'></a> 471         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/9610.html' title='Multiple referred from 2 places.'>addAndGet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> delta) <em class='brace'>{</em>
+<a id='L472' name='L472'></a> 472             <strong class='reserved'>return</strong> <a href='../D/16937.html' title='Multiple defined in 8 places.'>getAndAdd</a>(obj, delta) + delta;
+<a id='L473' name='L473'></a> 473         <em class='brace'>}</em>
+<a id='L474' name='L474'></a> 474 
+<a id='L475' name='L475'></a> 475         <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/13938.html' title='Multiple referred from 5 places.'>ensureProtectedAccess</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L476' name='L476'></a> 476             <strong class='reserved'>if</strong> (cclass.<a href='../S/1722.html#L483' title='Defined at 483 in src/java/lang/Class.java.'>isInstance</a>(obj)) <em class='brace'>{</em>
+<a id='L477' name='L477'></a> 477                 <strong class='reserved'>return</strong>;
+<a id='L478' name='L478'></a> 478             <em class='brace'>}</em>
+<a id='L479' name='L479'></a> 479             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(
+<a id='L480' name='L480'></a> 480                 <strong class='reserved'>new</strong> <a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a>("Class " +
+<a id='L481' name='L481'></a> 481                     cclass.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() +
+<a id='L482' name='L482'></a> 482                     " can not access a protected member of class " +
+<a id='L483' name='L483'></a> 483                     tclass.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() +
+<a id='L484' name='L484'></a> 484                     " using an instance of " +
+<a id='L485' name='L485'></a> 485                     obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>()
+<a id='L486' name='L486'></a> 486                 )
+<a id='L487' name='L487'></a> 487             );
+<a id='L488' name='L488'></a> 488         <em class='brace'>}</em>
+<a id='L489' name='L489'></a> 489     <em class='brace'>}</em>
+<a id='L490' name='L490'></a> 490 
+<a id='L491' name='L491'></a> 491 
+<a id='L492' name='L492'></a> 492     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../S/1078.html#L90' title='Referred from 90 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>LockedUpdater</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <strong class='reserved'>extends</strong> <a href='../S/1078.html#L66' title='Defined at 66 in src/java/util/concurrent/atomic/AtomicLongFieldUpdater.java.'>AtomicLongFieldUpdater</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <em class='brace'>{</em>
+<a id='L493' name='L493'></a> 493         <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> Unsafe <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a> = Unsafe.getUnsafe();
+<a id='L494' name='L494'></a> 494         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L495' name='L495'></a> 495         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; tclass;
+<a id='L496' name='L496'></a> 496         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; cclass;
+<a id='L497' name='L497'></a> 497 
+<a id='L498' name='L498'></a> 498         LockedUpdater(<strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; tclass, <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>,
+<a id='L499' name='L499'></a> 499                       <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; caller) <em class='brace'>{</em>
+<a id='L500' name='L500'></a> 500             <a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a> field = <strong class='reserved'>null</strong>;
+<a id='L501' name='L501'></a> 501             <strong class='reserved'>int</strong> <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a> = 0;
+<a id='L502' name='L502'></a> 502             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L503' name='L503'></a> 503                 field = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
+<a id='L504' name='L504'></a> 504                     <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a>&gt;() <em class='brace'>{</em>
+<a id='L505' name='L505'></a> 505                         <strong class='reserved'>public</strong> <a href='../D/3142.html' title='Multiple defined in 10 places.'>Field</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <strong class='reserved'>throws</strong> <a href='../S/1573.html#L34' title='Defined at 34 in src/java/lang/NoSuchFieldException.java.'>NoSuchFieldException</a> <em class='brace'>{</em>
+<a id='L506' name='L506'></a> 506                             <strong class='reserved'>return</strong> tclass.<a href='../S/1722.html#L2065' title='Defined at 2065 in src/java/lang/Class.java.'>getDeclaredField</a>(<a href='../S/7700.html#L51' title='Defined at 51 in src/com/sun/javadoc/SerialFieldTag.java.'>fieldName</a>);
+<a id='L507' name='L507'></a> 507                         <em class='brace'>}</em>
+<a id='L508' name='L508'></a> 508                     <em class='brace'>}</em>);
+<a id='L509' name='L509'></a> 509                 <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a> = field.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>();
+<a id='L510' name='L510'></a> 510                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
+<a id='L511' name='L511'></a> 511                     caller, tclass, <strong class='reserved'>null</strong>, <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>);
+<a id='L512' name='L512'></a> 512                 <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> cl = tclass.<a href='../D/17691.html' title='Multiple defined in 20 places.'>getClassLoader</a>();
+<a id='L513' name='L513'></a> 513                 <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> ccl = caller.<a href='../D/17691.html' title='Multiple defined in 20 places.'>getClassLoader</a>();
+<a id='L514' name='L514'></a> 514                 <strong class='reserved'>if</strong> ((ccl != <strong class='reserved'>null</strong>) &amp;&amp; (ccl != cl) &amp;&amp;
+<a id='L515' name='L515'></a> 515                     ((cl == <strong class='reserved'>null</strong>) || !<a href='../D/25187.html' title='Multiple defined in 5 places.'>isAncestor</a>(cl, ccl))) <em class='brace'>{</em>
+<a id='L516' name='L516'></a> 516                   sun.reflect.misc.ReflectUtil.<a href='../D/12578.html' title='Multiple defined in 3 places.'>checkPackageAccess</a>(tclass);
+<a id='L517' name='L517'></a> 517                 <em class='brace'>}</em>
+<a id='L518' name='L518'></a> 518             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a> pae) <em class='brace'>{</em>
+<a id='L519' name='L519'></a> 519                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(pae.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>());
+<a id='L520' name='L520'></a> 520             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L521' name='L521'></a> 521                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L522' name='L522'></a> 522             <em class='brace'>}</em>
+<a id='L523' name='L523'></a> 523 
+<a id='L524' name='L524'></a> 524             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; fieldt = field.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>();
+<a id='L525' name='L525'></a> 525             <strong class='reserved'>if</strong> (fieldt != <strong class='reserved'>long</strong>.<strong class='reserved'>class</strong>)
+<a id='L526' name='L526'></a> 526                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Must be long type");
+<a id='L527' name='L527'></a> 527 
+<a id='L528' name='L528'></a> 528             <strong class='reserved'>if</strong> (!<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26494.html' title='Multiple defined in 5 places.'>isVolatile</a>(<a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>))
+<a id='L529' name='L529'></a> 529                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Must be volatile type");
+<a id='L530' name='L530'></a> 530 
+<a id='L531' name='L531'></a> 531             <strong class='reserved'>this</strong>.cclass = (<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26106.html' title='Multiple defined in 5 places.'>isProtected</a>(<a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>) &amp;&amp;
+<a id='L532' name='L532'></a> 532                            caller != tclass) ? caller : <strong class='reserved'>null</strong>;
+<a id='L533' name='L533'></a> 533             <strong class='reserved'>this</strong>.tclass = tclass;
+<a id='L534' name='L534'></a> 534             <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.<a href='../D/28395.html' title='Multiple defined in 5 places.'>objectFieldOffset</a>(field);
+<a id='L535' name='L535'></a> 535         <em class='brace'>}</em>
+<a id='L536' name='L536'></a> 536 
+<a id='L537' name='L537'></a> 537         <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/14821.html' title='Multiple referred from 17 places.'>fullCheck</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L538' name='L538'></a> 538             <strong class='reserved'>if</strong> (!tclass.<a href='../S/1722.html#L483' title='Defined at 483 in src/java/lang/Class.java.'>isInstance</a>(obj))
+<a id='L539' name='L539'></a> 539                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1727.html#L41' title='Defined at 41 in src/java/lang/ClassCastException.java.'>ClassCastException</a>();
+<a id='L540' name='L540'></a> 540             <strong class='reserved'>if</strong> (cclass != <strong class='reserved'>null</strong>)
+<a id='L541' name='L541'></a> 541                 <a href='../D/15628.html' title='Multiple defined in 4 places.'>ensureProtectedAccess</a>(obj);
+<a id='L542' name='L542'></a> 542         <em class='brace'>}</em>
+<a id='L543' name='L543'></a> 543 
+<a id='L544' name='L544'></a> 544         <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/11694.html' title='Multiple referred from 69 places.'>compareAndSet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> expect, <strong class='reserved'>long</strong> <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>) <em class='brace'>{</em>
+<a id='L545' name='L545'></a> 545             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L546' name='L546'></a> 546             <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L547' name='L547'></a> 547                 <strong class='reserved'>long</strong> v = <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.<a href='../D/20280.html' title='Multiple defined in 48 places.'>getLong</a>(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L548' name='L548'></a> 548                 <strong class='reserved'>if</strong> (v != expect)
+<a id='L549' name='L549'></a> 549                     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L550' name='L550'></a> 550                 <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.<a href='../D/30020.html' title='Multiple defined in 17 places.'>putLong</a>(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>);
+<a id='L551' name='L551'></a> 551                 <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L552' name='L552'></a> 552             <em class='brace'>}</em>
+<a id='L553' name='L553'></a> 553         <em class='brace'>}</em>
+<a id='L554' name='L554'></a> 554 
+<a id='L555' name='L555'></a> 555         <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> weakCompareAndSet(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> expect, <strong class='reserved'>long</strong> <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>) <em class='brace'>{</em>
+<a id='L556' name='L556'></a> 556             <strong class='reserved'>return</strong> <a href='../D/13035.html' title='Multiple defined in 16 places.'>compareAndSet</a>(obj, expect, <a href='../D/36027.html' title='Multiple defined in 124 places.'>update</a>);
+<a id='L557' name='L557'></a> 557         <em class='brace'>}</em>
+<a id='L558' name='L558'></a> 558 
+<a id='L559' name='L559'></a> 559         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26855.html' title='Multiple referred from 752 places.'>set</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue) <em class='brace'>{</em>
+<a id='L560' name='L560'></a> 560             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L561' name='L561'></a> 561             <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L562' name='L562'></a> 562                 <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.<a href='../D/30020.html' title='Multiple defined in 17 places.'>putLong</a>(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, newValue);
+<a id='L563' name='L563'></a> 563             <em class='brace'>}</em>
+<a id='L564' name='L564'></a> 564         <em class='brace'>}</em>
+<a id='L565' name='L565'></a> 565 
+<a id='L566' name='L566'></a> 566         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/1608.html#L276' title='Referred from 276 in src/java/lang/invoke/MutableCallSite.java.'>lazySet</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj, <strong class='reserved'>long</strong> newValue) <em class='brace'>{</em>
+<a id='L567' name='L567'></a> 567             <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>(obj, newValue);
+<a id='L568' name='L568'></a> 568         <em class='brace'>}</em>
+<a id='L569' name='L569'></a> 569 
+<a id='L570' name='L570'></a> 570         <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/14874.html' title='Multiple referred from 4230 places.'>get</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L571' name='L571'></a> 571             <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong> || obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() != tclass || cclass != <strong class='reserved'>null</strong>) <a href='../D/16611.html' title='Multiple defined in 3 places.'>fullCheck</a>(obj);
+<a id='L572' name='L572'></a> 572             <strong class='reserved'>synchronized</strong> (<strong class='reserved'>this</strong>) <em class='brace'>{</em>
+<a id='L573' name='L573'></a> 573                 <strong class='reserved'>return</strong> <a href='../S/1996.html#L558' title='Defined at 558 in src/java/nio/Bits.java.'>unsafe</a>.<a href='../D/20280.html' title='Multiple defined in 48 places.'>getLong</a>(obj, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L574' name='L574'></a> 574             <em class='brace'>}</em>
+<a id='L575' name='L575'></a> 575         <em class='brace'>}</em>
+<a id='L576' name='L576'></a> 576 
+<a id='L577' name='L577'></a> 577         <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/13938.html' title='Multiple referred from 5 places.'>ensureProtectedAccess</a>(<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> obj) <em class='brace'>{</em>
+<a id='L578' name='L578'></a> 578             <strong class='reserved'>if</strong> (cclass.<a href='../S/1722.html#L483' title='Defined at 483 in src/java/lang/Class.java.'>isInstance</a>(obj)) <em class='brace'>{</em>
+<a id='L579' name='L579'></a> 579                 <strong class='reserved'>return</strong>;
+<a id='L580' name='L580'></a> 580             <em class='brace'>}</em>
+<a id='L581' name='L581'></a> 581             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(
+<a id='L582' name='L582'></a> 582                 <strong class='reserved'>new</strong> <a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a>("Class " +
+<a id='L583' name='L583'></a> 583                     cclass.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() +
+<a id='L584' name='L584'></a> 584                     " can not access a protected member of class " +
+<a id='L585' name='L585'></a> 585                     tclass.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() +
+<a id='L586' name='L586'></a> 586                     " using an instance of " +
+<a id='L587' name='L587'></a> 587                     obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>()
+<a id='L588' name='L588'></a> 588                 )
+<a id='L589' name='L589'></a> 589             );
+<a id='L590' name='L590'></a> 590         <em class='brace'>}</em>
+<a id='L591' name='L591'></a> 591     <em class='brace'>}</em>
+<a id='L592' name='L592'></a> 592 
+<a id='L593' name='L593'></a> 593     <em class='comment'>/**</em>
+<a id='L594' name='L594'></a> 594 <em class='comment'>     * Returns true if the second classloader can be found in the first</em>
+<a id='L595' name='L595'></a> 595 <em class='comment'>     * classloader's delegation chain.</em>
+<a id='L596' name='L596'></a> 596 <em class='comment'>     * Equivalent to the inaccessible: first.isAncestor(second).</em>
+<a id='L597' name='L597'></a> 597 <em class='comment'>     */</em>
+<a id='L598' name='L598'></a> 598     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21161.html' title='Multiple referred from 7 places.'>isAncestor</a>(<a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a>, <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> second) <em class='brace'>{</em>
+<a id='L599' name='L599'></a> 599         <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> acl = <a href='../D/16393.html' title='Multiple defined in 45 places.'>first</a>;
+<a id='L600' name='L600'></a> 600         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L601' name='L601'></a> 601             acl = acl.<a href='../D/21392.html' title='Multiple defined in 42 places.'>getParent</a>();
+<a id='L602' name='L602'></a> 602             <strong class='reserved'>if</strong> (second == acl) <em class='brace'>{</em>
+<a id='L603' name='L603'></a> 603                 <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L604' name='L604'></a> 604             <em class='brace'>}</em>
+<a id='L605' name='L605'></a> 605         <em class='brace'>}</em> <strong class='reserved'>while</strong> (acl != <strong class='reserved'>null</strong>);
+<a id='L606' name='L606'></a> 606         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L607' name='L607'></a> 607     <em class='brace'>}</em>
+<a id='L608' name='L608'></a> 608 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L84'>[^]</a><a href='#L598'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

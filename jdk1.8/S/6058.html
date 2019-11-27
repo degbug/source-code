@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xalan/internal/xsltc/dom/DOMWSFilter.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7870.html'>xalan</a>/<a href='../files/7871.html'>internal</a>/<a href='../files/7878.html'>xsltc</a>/<a href='../files/7883.html'>dom</a>/DOMWSFilter.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L81'>[^]</a>[v][top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L81' title='Defined at 81.'>getShouldStripSpace</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2002-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: DOMWSFilter.java,v 1.2.4.1 2005/09/06 06:14:31 pvedula Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>package</strong> com.sun.org.apache.xalan.internal.xsltc.dom;
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.DOM;
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.StripFilter;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> com.sun.org.apache.xml.internal.dtm.DTM;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <em class='comment'>/**</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * A wrapper class that adapts the</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * {@link com.sun.org.apache.xml.internal.dtm.DTMWSFilter DTMWSFilter} interface to the XSLTC</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * DOM {@link com.sun.org.apache.xalan.internal.xsltc.StripFilter StripFilter} interface.</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> */</em>
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/1923.html' title='Multiple referred from 9 places.'>DOMWSFilter</a> <strong class='reserved'>implements</strong> <a href='../S/5926.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/DTMWSFilter.java.'>DTMWSFilter</a> <em class='brace'>{</em>
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40     <strong class='reserved'>private</strong> <a href='../S/5995.html#L62' title='Defined at 62 in src/com/sun/org/apache/xalan/internal/xsltc/runtime/AbstractTranslet.java.'>AbstractTranslet</a> m_translet;
+<a id='L41' name='L41'></a>  41     <strong class='reserved'>private</strong> <a href='../S/5999.html#L31' title='Defined at 31 in src/com/sun/org/apache/xalan/internal/xsltc/StripFilter.java.'>StripFilter</a> m_filter;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43     <em class='comment'>// The Hashtable for DTM to mapping array</em>
+<a id='L44' name='L44'></a>  44     <strong class='reserved'>private</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> m_mappings;
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46     <em class='comment'>// Cache the DTM and mapping that are used last time</em>
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>private</strong> <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a> m_currentDTM;
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>private</strong> <strong class='reserved'>short</strong>[] m_currentMapping;
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     <em class='comment'>/**</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     * Construct an adapter connecting the &lt;code&gt;DTMWSFilter&lt;/code&gt; interface</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>     * to the &lt;code&gt;StripFilter&lt;/code&gt; interface.</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'>     *</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>     * @param translet A translet that also implements the StripFilter</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     * interface.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     *</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     * @see com.sun.org.apache.xml.internal.dtm.DTMWSFilter</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * @see com.sun.org.apache.xalan.internal.xsltc.StripFilter</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     */</em>
+<a id='L60' name='L60'></a>  60     <strong class='reserved'>public</strong> DOMWSFilter(<a href='../S/5995.html#L62' title='Defined at 62 in src/com/sun/org/apache/xalan/internal/xsltc/runtime/AbstractTranslet.java.'>AbstractTranslet</a> translet) <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61         m_translet = translet;
+<a id='L62' name='L62'></a>  62         m_mappings = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L63' name='L63'></a>  63 
+<a id='L64' name='L64'></a>  64         <strong class='reserved'>if</strong> (translet <strong class='reserved'>instanceof</strong> <a href='../S/5999.html#L31' title='Defined at 31 in src/com/sun/org/apache/xalan/internal/xsltc/StripFilter.java.'>StripFilter</a>) <em class='brace'>{</em>
+<a id='L65' name='L65'></a>  65             m_filter = (<a href='../S/5999.html#L31' title='Defined at 31 in src/com/sun/org/apache/xalan/internal/xsltc/StripFilter.java.'>StripFilter</a>) translet;
+<a id='L66' name='L66'></a>  66         <em class='brace'>}</em>
+<a id='L67' name='L67'></a>  67     <em class='brace'>}</em>
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <em class='comment'>/**</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * Test whether whitespace-only text nodes are visible in the logical</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * view of &lt;code&gt;DTM&lt;/code&gt;. Normally, this function</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * will be called by the implementation of &lt;code&gt;DTM&lt;/code&gt;;</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * it is not normally called directly from</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     * user code.</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     *</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     * @param node int handle of the node.</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * @param dtm the DTM that owns this node</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * @return one of &lt;code&gt;NOTSTRIP&lt;/code&gt;, &lt;code&gt;STRIP&lt;/code&gt; or</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * &lt;code&gt;INHERIT&lt;/code&gt;.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     */</em>
+<a id='L81' name='L81'></a>  81     <strong class='reserved'>public</strong> <strong class='reserved'>short</strong> <a href='../R/19028.html' title='Multiple referred from 3 places.'>getShouldStripSpace</a>(<strong class='reserved'>int</strong> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>, <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a> dtm) <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82         <strong class='reserved'>if</strong> (m_filter != <strong class='reserved'>null</strong> &amp;&amp; dtm <strong class='reserved'>instanceof</strong> <a href='../S/6026.html#L38' title='Defined at 38 in src/com/sun/org/apache/xalan/internal/xsltc/DOM.java.'>DOM</a>) <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83             <a href='../S/6026.html#L38' title='Defined at 38 in src/com/sun/org/apache/xalan/internal/xsltc/DOM.java.'>DOM</a> dom = (<a href='../S/6026.html#L38' title='Defined at 38 in src/com/sun/org/apache/xalan/internal/xsltc/DOM.java.'>DOM</a>)dtm;
+<a id='L84' name='L84'></a>  84             <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = 0;
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86             <strong class='reserved'>if</strong> (dtm <strong class='reserved'>instanceof</strong> <a href='../S/5969.html#L37' title='Defined at 37 in src/com/sun/org/apache/xalan/internal/xsltc/DOMEnhancedForDTM.java.'>DOMEnhancedForDTM</a>) <em class='brace'>{</em>
+<a id='L87' name='L87'></a>  87                 <a href='../S/5969.html#L37' title='Defined at 37 in src/com/sun/org/apache/xalan/internal/xsltc/DOMEnhancedForDTM.java.'>DOMEnhancedForDTM</a> mappableDOM = (<a href='../S/5969.html#L37' title='Defined at 37 in src/com/sun/org/apache/xalan/internal/xsltc/DOMEnhancedForDTM.java.'>DOMEnhancedForDTM</a>)dtm;
+<a id='L88' name='L88'></a>  88 
+<a id='L89' name='L89'></a>  89                 <strong class='reserved'>short</strong>[] <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a>;
+<a id='L90' name='L90'></a>  90                 <strong class='reserved'>if</strong> (dtm == m_currentDTM) <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91                     <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a> = m_currentMapping;
+<a id='L92' name='L92'></a>  92                 <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93                 <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94                     <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a> = (<strong class='reserved'>short</strong>[])m_mappings.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(dtm);
+<a id='L95' name='L95'></a>  95                     <strong class='reserved'>if</strong> (<a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96                         <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a> = mappableDOM.<a href='../D/20374.html' title='Multiple defined in 8 places.'>getMapping</a>(
+<a id='L97' name='L97'></a>  97                                      m_translet.<a href='../D/20804.html' title='Multiple defined in 3 places.'>getNamesArray</a>(),
+<a id='L98' name='L98'></a>  98                                      m_translet.<a href='../D/23464.html' title='Multiple defined in 3 places.'>getUrisArray</a>(),
+<a id='L99' name='L99'></a>  99                                      m_translet.<a href='../D/23353.html' title='Multiple defined in 3 places.'>getTypesArray</a>());
+<a id='L100' name='L100'></a> 100                         m_mappings.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(dtm, <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a>);
+<a id='L101' name='L101'></a> 101                         m_currentDTM = dtm;
+<a id='L102' name='L102'></a> 102                         m_currentMapping = <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a>;
+<a id='L103' name='L103'></a> 103                     <em class='brace'>}</em>
+<a id='L104' name='L104'></a> 104                 <em class='brace'>}</em>
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106                 <strong class='reserved'>int</strong> expType = mappableDOM.<a href='../D/18929.html' title='Multiple defined in 16 places.'>getExpandedTypeID</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108                 <em class='comment'>// %OPT% The mapping array does not have information about all the</em>
+<a id='L109' name='L109'></a> 109                 <em class='comment'>// exptypes. However it does contain enough information about all names</em>
+<a id='L110' name='L110'></a> 110                 <em class='comment'>// in the translet's namesArray. If the expType does not fall into the</em>
+<a id='L111' name='L111'></a> 111                 <em class='comment'>// range of the mapping array, it means that the expType is not for one</em>
+<a id='L112' name='L112'></a> 112                 <em class='comment'>// of the recognized names. In this case we can just set the type to -1.</em>
+<a id='L113' name='L113'></a> 113                 <strong class='reserved'>if</strong> (expType &gt;= 0 &amp;&amp; expType &lt; <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>)
+<a id='L114' name='L114'></a> 114                   <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <a href='../S/910.html#L351' title='Defined at 351 in src/java/util/stream/Collectors.java.'>mapping</a>[expType];
+<a id='L115' name='L115'></a> 115                 <strong class='reserved'>else</strong>
+<a id='L116' name='L116'></a> 116                   <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = -1;
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118             <em class='brace'>}</em>
+<a id='L119' name='L119'></a> 119             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L120' name='L120'></a> 120                 <strong class='reserved'>return</strong> INHERIT;
+<a id='L121' name='L121'></a> 121             <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123             <strong class='reserved'>if</strong> (m_filter.<a href='../D/34962.html' title='Multiple defined in 2 places.'>stripSpace</a>(dom, <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>, <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>)) <em class='brace'>{</em>
+<a id='L124' name='L124'></a> 124                 <strong class='reserved'>return</strong> STRIP;
+<a id='L125' name='L125'></a> 125             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L126' name='L126'></a> 126                 <strong class='reserved'>return</strong> NOTSTRIP;
+<a id='L127' name='L127'></a> 127             <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129             <strong class='reserved'>return</strong> NOTSTRIP;
+<a id='L130' name='L130'></a> 130         <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131     <em class='brace'>}</em>
+<a id='L132' name='L132'></a> 132 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;][^]<a href='#L81'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

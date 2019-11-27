@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/jmx/snmp/IPAcl/Host.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7851.html'>snmp</a>/<a href='../files/7852.html'>IPAcl</a>/Host.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L146'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L57' title='Defined at 57.'>createAssociatedPrincipal</a></li>
+<li><a href='#L60' title='Defined at 60.'>getHname</a></li>
+<li><a href='#L62' title='Defined at 62.'>buildAclEntries</a></li>
+<li><a href='#L103' title='Defined at 103.'>registerPermission</a></li>
+<li><a href='#L113' title='Defined at 113.'>buildTrapEntries</a></li>
+<li><a href='#L146' title='Defined at 146.'>buildInformEntries</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>package</strong> com.sun.jmx.snmp.IPAcl;
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <em class='comment'>// java import</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'>//</em>
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.io.Serializable;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.net.InetAddress;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.net.UnknownHostException;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.Hashtable;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.logging.Level;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.Vector;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.security.acl.NotOwnerException;
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> static com.sun.jmx.defaults.JmxProperties.SNMP_LOGGER;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <em class='comment'>/**</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * The class defines an abstract representation of a host.</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> *</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> */</em>
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/3450.html' title='Multiple referred from 11 places.'>Host</a> <strong class='reserved'>extends</strong> <a href='../S/6353.html#L35' title='Defined at 35 in src/com/sun/jmx/snmp/IPAcl/SimpleNode.java.'>SimpleNode</a> <strong class='reserved'>implements</strong> <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> <em class='brace'>{</em>
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49     <strong class='reserved'>public</strong> Host(<strong class='reserved'>int</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>) <em class='brace'>{</em>
+<a id='L50' name='L50'></a>  50         <strong class='reserved'>super</strong>(<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>);
+<a id='L51' name='L51'></a>  51     <em class='brace'>}</em>
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>public</strong> Host(<a href='../D/6629.html' title='Multiple defined in 9 places.'>Parser</a> p, <strong class='reserved'>int</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>) <em class='brace'>{</em>
+<a id='L54' name='L54'></a>  54         <strong class='reserved'>super</strong>(p, <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>);
+<a id='L55' name='L55'></a>  55     <em class='brace'>}</em>
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <a href='../D/6818.html' title='Multiple defined in 2 places.'>PrincipalImpl</a> <a href='../S/6356.html#L67' title='Referred from 67 in src/com/sun/jmx/snmp/IPAcl/Host.java.'>createAssociatedPrincipal</a>()
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>throws</strong> <a href='../D/9351.html' title='Multiple defined in 2 places.'>UnknownHostException</a>;
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16896.html' title='Multiple referred from 2 places.'>getHname</a>();
+<a id='L61' name='L61'></a>  61 
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/10685.html' title='Multiple referred from 2 places.'>buildAclEntries</a>(<a href='../D/6818.html' title='Multiple defined in 2 places.'>PrincipalImpl</a> <a href='../D/28636.html' title='Multiple defined in 2 places.'>owner</a>, <a href='../S/6332.html#L55' title='Defined at 55 in src/com/sun/jmx/snmp/IPAcl/AclImpl.java.'>AclImpl</a> acl) <em class='brace'>{</em>
+<a id='L63' name='L63'></a>  63         <em class='comment'>// Create a principal</em>
+<a id='L64' name='L64'></a>  64         <em class='comment'>//</em>
+<a id='L65' name='L65'></a>  65         <a href='../D/6818.html' title='Multiple defined in 2 places.'>PrincipalImpl</a> p=<strong class='reserved'>null</strong>;
+<a id='L66' name='L66'></a>  66         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67             p = <a href='../D/13615.html' title='Multiple defined in 6 places.'>createAssociatedPrincipal</a>();
+<a id='L68' name='L68'></a>  68         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../D/9351.html' title='Multiple defined in 2 places.'>UnknownHostException</a> e) <em class='brace'>{</em>
+<a id='L69' name='L69'></a>  69             <strong class='reserved'>if</strong> (SNMP_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70                 SNMP_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../D/3807.html' title='Multiple defined in 2 places.'>Host</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L71' name='L71'></a>  71                         "buildAclEntries",
+<a id='L72' name='L72'></a>  72                         "Cannot create ACL entry; got exception", e);
+<a id='L73' name='L73'></a>  73             <em class='brace'>}</em>
+<a id='L74' name='L74'></a>  74             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Cannot create ACL entry for " + e.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
+<a id='L75' name='L75'></a>  75         <em class='brace'>}</em>
+<a id='L76' name='L76'></a>  76 
+<a id='L77' name='L77'></a>  77         <em class='comment'>// Create an AclEntry</em>
+<a id='L78' name='L78'></a>  78         <em class='comment'>//</em>
+<a id='L79' name='L79'></a>  79         <a href='../S/6318.html#L49' title='Defined at 49 in src/com/sun/jmx/snmp/IPAcl/AclEntryImpl.java.'>AclEntryImpl</a> entry= <strong class='reserved'>null</strong>;
+<a id='L80' name='L80'></a>  80         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L81' name='L81'></a>  81             entry = <strong class='reserved'>new</strong> <a href='../S/6318.html#L49' title='Defined at 49 in src/com/sun/jmx/snmp/IPAcl/AclEntryImpl.java.'>AclEntryImpl</a>(p);
+<a id='L82' name='L82'></a>  82             <em class='comment'>// Add permission</em>
+<a id='L83' name='L83'></a>  83             <em class='comment'>//</em>
+<a id='L84' name='L84'></a>  84             <a href='../S/6356.html#L103' title='Defined at 103 in src/com/sun/jmx/snmp/IPAcl/Host.java.'>registerPermission</a>(entry);
+<a id='L85' name='L85'></a>  85             acl.<a href='../D/10783.html' title='Multiple defined in 9 places.'>addEntry</a>(<a href='../D/28636.html' title='Multiple defined in 2 places.'>owner</a>, entry);
+<a id='L86' name='L86'></a>  86         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../D/9351.html' title='Multiple defined in 2 places.'>UnknownHostException</a> e) <em class='brace'>{</em>
+<a id='L87' name='L87'></a>  87             <strong class='reserved'>if</strong> (SNMP_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88                 SNMP_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../D/3807.html' title='Multiple defined in 2 places.'>Host</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L89' name='L89'></a>  89                         "buildAclEntries",
+<a id='L90' name='L90'></a>  90                         "Cannot create ACL entry; got exception", e);
+<a id='L91' name='L91'></a>  91             <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92             <strong class='reserved'>return</strong>;
+<a id='L93' name='L93'></a>  93         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../S/1348.html#L35' title='Defined at 35 in src/java/security/acl/NotOwnerException.java.'>NotOwnerException</a> <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>) <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94             <strong class='reserved'>if</strong> (SNMP_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95                 SNMP_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../D/3807.html' title='Multiple defined in 2 places.'>Host</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L96' name='L96'></a>  96                         "buildAclEntries",
+<a id='L97' name='L97'></a>  97                         "Cannot create ACL entry; got exception", <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>);
+<a id='L98' name='L98'></a>  98             <em class='brace'>}</em>
+<a id='L99' name='L99'></a>  99             <strong class='reserved'>return</strong>;
+<a id='L100' name='L100'></a> 100         <em class='brace'>}</em>
+<a id='L101' name='L101'></a> 101     <em class='brace'>}</em>
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6356.html#L84' title='Referred from 84 in src/com/sun/jmx/snmp/IPAcl/Host.java.'>registerPermission</a>(<a href='../S/6318.html#L49' title='Defined at 49 in src/com/sun/jmx/snmp/IPAcl/AclEntryImpl.java.'>AclEntryImpl</a> entry) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104         <a href='../S/6347.html#L32' title='Defined at 32 in src/com/sun/jmx/snmp/IPAcl/JDMHost.java.'>JDMHost</a> host= (<a href='../S/6347.html#L32' title='Defined at 32 in src/com/sun/jmx/snmp/IPAcl/JDMHost.java.'>JDMHost</a>) <a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L105' name='L105'></a> 105         <a href='../S/6361.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMManagers.java.'>JDMManagers</a> manager= (<a href='../S/6361.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMManagers.java.'>JDMManagers</a>) host.<a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L106' name='L106'></a> 106         <a href='../S/6346.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMAclItem.java.'>JDMAclItem</a> acl= (<a href='../S/6346.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMAclItem.java.'>JDMAclItem</a>) manager.<a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L107' name='L107'></a> 107         <a href='../S/6334.html#L32' title='Defined at 32 in src/com/sun/jmx/snmp/IPAcl/JDMAccess.java.'>JDMAccess</a> <a href='../S/1421.html#L608' title='Defined at 608 in src/java/io/WinNTFileSystem.java.'>access</a>= acl.<a href='../S/6346.html#L51' title='Defined at 51 in src/com/sun/jmx/snmp/IPAcl/JDMAclItem.java.'>getAccess</a>();
+<a id='L108' name='L108'></a> 108         <a href='../S/1421.html#L608' title='Defined at 608 in src/java/io/WinNTFileSystem.java.'>access</a>.<a href='../S/6334.html#L51' title='Defined at 51 in src/com/sun/jmx/snmp/IPAcl/JDMAccess.java.'>putPermission</a>(entry);
+<a id='L109' name='L109'></a> 109         <a href='../S/6360.html#L32' title='Defined at 32 in src/com/sun/jmx/snmp/IPAcl/JDMCommunities.java.'>JDMCommunities</a> comm= acl.<a href='../S/6346.html#L55' title='Defined at 55 in src/com/sun/jmx/snmp/IPAcl/JDMAclItem.java.'>getCommunities</a>();
+<a id='L110' name='L110'></a> 110         comm.<a href='../S/6360.html#L49' title='Defined at 49 in src/com/sun/jmx/snmp/IPAcl/JDMCommunities.java.'>buildCommunities</a>(entry);
+<a id='L111' name='L111'></a> 111     <em class='brace'>}</em>
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/10729.html' title='Multiple referred from 2 places.'>buildTrapEntries</a>(<a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>&lt;<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a>, <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt;&gt; dest) <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115         <a href='../S/6351.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMHostTrap.java.'>JDMHostTrap</a> host= (<a href='../S/6351.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMHostTrap.java.'>JDMHostTrap</a>) <a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L116' name='L116'></a> 116         <a href='../S/6330.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMTrapInterestedHost.java.'>JDMTrapInterestedHost</a> hosts= (<a href='../S/6330.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMTrapInterestedHost.java.'>JDMTrapInterestedHost</a>) host.<a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L117' name='L117'></a> 117         <a href='../S/6323.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMTrapItem.java.'>JDMTrapItem</a> trap = (<a href='../S/6323.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMTrapItem.java.'>JDMTrapItem</a>) hosts.<a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L118' name='L118'></a> 118         <a href='../S/6325.html#L31' title='Defined at 31 in src/com/sun/jmx/snmp/IPAcl/JDMTrapCommunity.java.'>JDMTrapCommunity</a> community = trap.<a href='../D/17843.html' title='Multiple defined in 5 places.'>getCommunity</a>();
+<a id='L119' name='L119'></a> 119         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> comm = community.<a href='../D/17843.html' title='Multiple defined in 5 places.'>getCommunity</a>();
+<a id='L120' name='L120'></a> 120 
+<a id='L121' name='L121'></a> 121         <a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> <a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a> = <strong class='reserved'>null</strong>;
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L123' name='L123'></a> 123             <a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a> = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.net.<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a>.<a href='../D/17396.html' title='Multiple defined in 3 places.'>getByName</a>(<a href='../D/19473.html' title='Multiple defined in 5 places.'>getHname</a>());
+<a id='L124' name='L124'></a> 124         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../D/9351.html' title='Multiple defined in 2 places.'>UnknownHostException</a> e) <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125             <strong class='reserved'>if</strong> (SNMP_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L126' name='L126'></a> 126                 SNMP_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../D/3807.html' title='Multiple defined in 2 places.'>Host</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L127' name='L127'></a> 127                         "buildTrapEntries",
+<a id='L128' name='L128'></a> 128                         "Cannot create TRAP entry; got exception", e);
+<a id='L129' name='L129'></a> 129             <em class='brace'>}</em>
+<a id='L130' name='L130'></a> 130             <strong class='reserved'>return</strong>;
+<a id='L131' name='L131'></a> 131         <em class='brace'>}</em>
+<a id='L132' name='L132'></a> 132 
+<a id='L133' name='L133'></a> 133         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt; <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>null</strong>;
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>if</strong> (dest.<a href='../D/13333.html' title='Multiple defined in 42 places.'>containsKey</a>(<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>))<em class='brace'>{</em>
+<a id='L135' name='L135'></a> 135             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = dest.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>);
+<a id='L136' name='L136'></a> 136             <strong class='reserved'>if</strong> (!<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(comm))<em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137                 <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(comm);
+<a id='L138' name='L138'></a> 138             <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt;();
+<a id='L141' name='L141'></a> 141             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(comm);
+<a id='L142' name='L142'></a> 142             dest.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>,<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>);
+<a id='L143' name='L143'></a> 143         <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144     <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/10709.html' title='Multiple referred from 2 places.'>buildInformEntries</a>(<a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>&lt;<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a>, <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt;&gt; dest) <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148         <a href='../S/6327.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMHostInform.java.'>JDMHostInform</a> host= (<a href='../S/6327.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMHostInform.java.'>JDMHostInform</a>) <a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L149' name='L149'></a> 149         <a href='../S/6337.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMInformInterestedHost.java.'>JDMInformInterestedHost</a> hosts= (<a href='../S/6337.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMInformInterestedHost.java.'>JDMInformInterestedHost</a>) host.<a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L150' name='L150'></a> 150         <a href='../S/6326.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMInformItem.java.'>JDMInformItem</a> inform = (<a href='../S/6326.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMInformItem.java.'>JDMInformItem</a>) hosts.<a href='../D/26693.html' title='Multiple defined in 2 places.'>jjtGetParent</a>();
+<a id='L151' name='L151'></a> 151         <a href='../S/6362.html#L30' title='Defined at 30 in src/com/sun/jmx/snmp/IPAcl/JDMInformCommunity.java.'>JDMInformCommunity</a> community = inform.<a href='../D/17843.html' title='Multiple defined in 5 places.'>getCommunity</a>();
+<a id='L152' name='L152'></a> 152         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> comm = community.<a href='../D/17843.html' title='Multiple defined in 5 places.'>getCommunity</a>();
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154         <a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> <a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a> = <strong class='reserved'>null</strong>;
+<a id='L155' name='L155'></a> 155         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L156' name='L156'></a> 156             <a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a> = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.net.<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a>.<a href='../D/17396.html' title='Multiple defined in 3 places.'>getByName</a>(<a href='../D/19473.html' title='Multiple defined in 5 places.'>getHname</a>());
+<a id='L157' name='L157'></a> 157         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../D/9351.html' title='Multiple defined in 2 places.'>UnknownHostException</a> e) <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158             <strong class='reserved'>if</strong> (SNMP_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159                 SNMP_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../D/3807.html' title='Multiple defined in 2 places.'>Host</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L160' name='L160'></a> 160                         "buildTrapEntries",
+<a id='L161' name='L161'></a> 161                         "Cannot create INFORM entry; got exception", e);
+<a id='L162' name='L162'></a> 162             <em class='brace'>}</em>
+<a id='L163' name='L163'></a> 163             <strong class='reserved'>return</strong>;
+<a id='L164' name='L164'></a> 164         <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165 
+<a id='L166' name='L166'></a> 166         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt; <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>null</strong>;
+<a id='L167' name='L167'></a> 167         <strong class='reserved'>if</strong> (dest.<a href='../D/13333.html' title='Multiple defined in 42 places.'>containsKey</a>(<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>))<em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = dest.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>);
+<a id='L169' name='L169'></a> 169             <strong class='reserved'>if</strong> (!<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(comm))<em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170                 <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(comm);
+<a id='L171' name='L171'></a> 171             <em class='brace'>}</em>
+<a id='L172' name='L172'></a> 172         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L173' name='L173'></a> 173             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt;();
+<a id='L174' name='L174'></a> 174             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(comm);
+<a id='L175' name='L175'></a> 175             dest.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>,<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>);
+<a id='L176' name='L176'></a> 176         <em class='brace'>}</em>
+<a id='L177' name='L177'></a> 177     <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180 
+<a id='L181' name='L181'></a> 181 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L146'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

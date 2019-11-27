@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/awt/image/RGBImageFilter.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/7986.html'>awt</a>/<a href='../files/7996.html'>image</a>/RGBImageFilter.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L114'>[^]</a><a href='#L291'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L114' title='Defined at 114.'>setColorModel</a></li>
+<li><a href='#L132' title='Defined at 132.'>substituteColorModel</a></li>
+<li><a href='#L147' title='Defined at 147.'>filterIndexColorModel</a></li>
+<li><a href='#L194' title='Defined at 194.'>filterRGBPixels</a></li>
+<li><a href='#L224' title='Defined at 224.'>setPixels</a></li>
+<li><a href='#L261' title='Defined at 261.'>setPixels</a></li>
+<li><a href='#L291' title='Defined at 291.'>filterRGB</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.awt.image;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.image.ImageConsumer;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.image.ColorModel;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <em class='comment'>/**</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * This class provides an easy way to create an ImageFilter which modifies</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * the pixels of an image in the default RGB ColorModel.  It is meant to</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * be used in conjunction with a FilteredImageSource object to produce</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * filtered versions of existing images.  It is an abstract class that</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * provides the calls needed to channel all of the pixel data through a</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * single method which converts pixels one at a time in the default RGB</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * ColorModel regardless of the ColorModel being used by the ImageProducer.</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * The only method which needs to be defined to create a useable image</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * filter is the filterRGB method.  Here is an example of a definition</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * of a filter which swaps the red and blue components of an image:</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * &lt;pre&gt;{@code</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> *</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *      class RedBlueSwapFilter extends RGBImageFilter {</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> *          public RedBlueSwapFilter() {</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> *              // The filter's operation does not depend on the</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *              // pixel's location, so IndexColorModels can be</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> *              // filtered directly.</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> *              canFilterIndexColorModel = true;</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> *          }</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> *</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> *          public int filterRGB(int x, int y, int rgb) {</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> *              return ((rgb &amp; 0xff00ff00)</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> *                      | ((rgb &amp; 0xff0000) &gt;&gt; 16)</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> *                      | ((rgb &amp; 0xff) &lt;&lt; 16));</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> *          }</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *      }</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * }&lt;/pre&gt;</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * @see FilteredImageSource</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * @see ImageFilter</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * @see ColorModel#getRGBdefault</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> *</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * @author      Jim Graham</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> */</em>
+<a id='L67' name='L67'></a>  67 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/6411.html' title='Multiple referred from 7 places.'>RGBImageFilter</a> <strong class='reserved'>extends</strong> <a href='../S/2239.html#L45' title='Defined at 45 in src/java/awt/image/ImageFilter.java.'>ImageFilter</a> <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <em class='comment'>/**</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * The &lt;code&gt;ColorModel&lt;/code&gt; to be replaced by</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * &lt;code&gt;newmodel&lt;/code&gt; when the user calls</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * {@link #substituteColorModel(ColorModel, ColorModel) substituteColorModel}.</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     */</em>
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>protected</strong> <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> origmodel;
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>/**</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * The &lt;code&gt;ColorModel&lt;/code&gt; with which to</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * replace &lt;code&gt;origmodel&lt;/code&gt; when the user calls</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * &lt;code&gt;substituteColorModel&lt;/code&gt;.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     */</em>
+<a id='L81' name='L81'></a>  81     <strong class='reserved'>protected</strong> <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> newmodel;
+<a id='L82' name='L82'></a>  82 
+<a id='L83' name='L83'></a>  83     <em class='comment'>/**</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     * This boolean indicates whether or not it is acceptable to apply</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * the color filtering of the filterRGB method to the color table</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * entries of an IndexColorModel object in lieu of pixel by pixel</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * filtering.  Subclasses should set this variable to true in their</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     * constructor if their filterRGB method does not depend on the</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * coordinate of the pixel being filtered.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * @see #substituteColorModel</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * @see #filterRGB</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * @see IndexColorModel</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     */</em>
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>protected</strong> <strong class='reserved'>boolean</strong> canFilterIndexColorModel;
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <em class='comment'>/**</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * If the ColorModel is an IndexColorModel and the subclass has</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * set the canFilterIndexColorModel flag to true, we substitute</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * a filtered version of the color model here and wherever</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * that original ColorModel object appears in the setPixels methods.</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * If the ColorModel is not an IndexColorModel or is null, this method</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * overrides the default ColorModel used by the ImageProducer and</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * specifies the default RGB ColorModel instead.</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * Note: This method is intended to be called by the</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * &lt;code&gt;ImageProducer&lt;/code&gt; of the &lt;code&gt;Image&lt;/code&gt; whose pixels</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * are being filtered. Developers using</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * this class to filter pixels from an image should avoid calling</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * this method directly since that operation could interfere</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * with the filtering operation.</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * @see ImageConsumer</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * @see ColorModel#getRGBdefault</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     */</em>
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27059.html' title='Multiple referred from 5 places.'>setColorModel</a>(<a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> model) <em class='brace'>{</em>
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>if</strong> (canFilterIndexColorModel &amp;&amp; (model <strong class='reserved'>instanceof</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>)) <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116             <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> newcm = <a href='../S/2279.html#L147' title='Defined at 147 in src/java/awt/image/RGBImageFilter.java.'>filterIndexColorModel</a>((<a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>)model);
+<a id='L117' name='L117'></a> 117             <a href='../S/2279.html#L132' title='Defined at 132 in src/java/awt/image/RGBImageFilter.java.'>substituteColorModel</a>(model, newcm);
+<a id='L118' name='L118'></a> 118             consumer.<a href='../D/32184.html' title='Multiple defined in 5 places.'>setColorModel</a>(newcm);
+<a id='L119' name='L119'></a> 119         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L120' name='L120'></a> 120             consumer.<a href='../D/32184.html' title='Multiple defined in 5 places.'>setColorModel</a>(<a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a>.<a href='../S/2256.html#L240' title='Defined at 240 in src/java/awt/image/ColorModel.java.'>getRGBdefault</a>());
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122     <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123 
+<a id='L124' name='L124'></a> 124     <em class='comment'>/**</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * Registers two ColorModel objects for substitution.  If the oldcm</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * is encountered during any of the setPixels methods, the newcm</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * is substituted and the pixels passed through</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * untouched (but with the new ColorModel object).</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * @param oldcm the ColorModel object to be replaced on the fly</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @param newcm the ColorModel object to replace oldcm on the fly</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     */</em>
+<a id='L132' name='L132'></a> 132     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/2279.html#L117' title='Referred from 117 in src/java/awt/image/RGBImageFilter.java.'>substituteColorModel</a>(<a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> oldcm, <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> newcm) <em class='brace'>{</em>
+<a id='L133' name='L133'></a> 133         origmodel = oldcm;
+<a id='L134' name='L134'></a> 134         newmodel = newcm;
+<a id='L135' name='L135'></a> 135     <em class='brace'>}</em>
+<a id='L136' name='L136'></a> 136 
+<a id='L137' name='L137'></a> 137     <em class='comment'>/**</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * Filters an IndexColorModel object by running each entry in its</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * color tables through the filterRGB function that RGBImageFilter</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * subclasses must provide.  Uses coordinates of -1 to indicate that</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * a color table entry is being filtered rather than an actual</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * pixel value.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * @param icm the IndexColorModel object to be filtered</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * @exception NullPointerException if &lt;code&gt;icm&lt;/code&gt; is null</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * @return a new IndexColorModel representing the filtered colors</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     */</em>
+<a id='L147' name='L147'></a> 147     <strong class='reserved'>public</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a> <a href='../S/2279.html#L116' title='Referred from 116 in src/java/awt/image/RGBImageFilter.java.'>filterIndexColorModel</a>(<a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a> icm) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>int</strong> mapsize = icm.<a href='../S/2242.html#L637' title='Defined at 637 in src/java/awt/image/IndexColorModel.java.'>getMapSize</a>();
+<a id='L149' name='L149'></a> 149         <strong class='reserved'>byte</strong> r[] = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[mapsize];
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>byte</strong> g[] = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[mapsize];
+<a id='L151' name='L151'></a> 151         <strong class='reserved'>byte</strong> b[] = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[mapsize];
+<a id='L152' name='L152'></a> 152         <strong class='reserved'>byte</strong> <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[] = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[mapsize];
+<a id='L153' name='L153'></a> 153         icm.<a href='../S/2242.html#L664' title='Defined at 664 in src/java/awt/image/IndexColorModel.java.'>getReds</a>(r);
+<a id='L154' name='L154'></a> 154         icm.<a href='../S/2242.html#L677' title='Defined at 677 in src/java/awt/image/IndexColorModel.java.'>getGreens</a>(g);
+<a id='L155' name='L155'></a> 155         icm.<a href='../S/2242.html#L690' title='Defined at 690 in src/java/awt/image/IndexColorModel.java.'>getBlues</a>(b);
+<a id='L156' name='L156'></a> 156         icm.<a href='../S/2242.html#L703' title='Defined at 703 in src/java/awt/image/IndexColorModel.java.'>getAlphas</a>(<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>);
+<a id='L157' name='L157'></a> 157         <strong class='reserved'>int</strong> trans = icm.<a href='../S/2242.html#L653' title='Defined at 653 in src/java/awt/image/IndexColorModel.java.'>getTransparentPixel</a>();
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>boolean</strong> needalpha = <strong class='reserved'>false</strong>;
+<a id='L159' name='L159'></a> 159         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; mapsize; i++) <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160             <strong class='reserved'>int</strong> rgb = <a href='../D/16072.html' title='Multiple defined in 7 places.'>filterRGB</a>(-1, -1, icm.<a href='../D/21814.html' title='Multiple defined in 13 places.'>getRGB</a>(i));
+<a id='L161' name='L161'></a> 161             <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i] = (<strong class='reserved'>byte</strong>) (rgb &gt;&gt; 24);
+<a id='L162' name='L162'></a> 162             <strong class='reserved'>if</strong> (<a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>[i] != ((<strong class='reserved'>byte</strong>)0xff) &amp;&amp; i != trans) <em class='brace'>{</em>
+<a id='L163' name='L163'></a> 163                 needalpha = <strong class='reserved'>true</strong>;
+<a id='L164' name='L164'></a> 164             <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165             r[i] = (<strong class='reserved'>byte</strong>) (rgb &gt;&gt; 16);
+<a id='L166' name='L166'></a> 166             g[i] = (<strong class='reserved'>byte</strong>) (rgb &gt;&gt; 8);
+<a id='L167' name='L167'></a> 167             b[i] = (<strong class='reserved'>byte</strong>) (rgb &gt;&gt; 0);
+<a id='L168' name='L168'></a> 168         <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>if</strong> (needalpha) <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>(icm.<a href='../S/2256.html#L442' title='Defined at 442 in src/java/awt/image/ColorModel.java.'>getPixelSize</a>(), mapsize,
+<a id='L171' name='L171'></a> 171                                        r, g, b, <a href='../D/10513.html' title='Multiple defined in 3 places.'>a</a>);
+<a id='L172' name='L172'></a> 172         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L173' name='L173'></a> 173             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>(icm.<a href='../S/2256.html#L442' title='Defined at 442 in src/java/awt/image/ColorModel.java.'>getPixelSize</a>(), mapsize,
+<a id='L174' name='L174'></a> 174                                        r, g, b, trans);
+<a id='L175' name='L175'></a> 175         <em class='brace'>}</em>
+<a id='L176' name='L176'></a> 176     <em class='brace'>}</em>
+<a id='L177' name='L177'></a> 177 
+<a id='L178' name='L178'></a> 178     <em class='comment'>/**</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * Filters a buffer of pixels in the default RGB ColorModel by passing</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * them one by one through the filterRGB method.</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * @param x the X coordinate of the upper-left corner of the region</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     *          of pixels</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * @param y the Y coordinate of the upper-left corner of the region</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     *          of pixels</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * @param w the width of the region of pixels</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * @param h the height of the region of pixels</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * @param pixels the array of pixels</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     * @param off the offset into the &lt;code&gt;pixels&lt;/code&gt; array</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * @param scansize the distance from one row of pixels to the next</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     *        in the array</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * @see ColorModel#getRGBdefault</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     * @see #filterRGB</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>     */</em>
+<a id='L194' name='L194'></a> 194     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/14332.html' title='Multiple referred from 2 places.'>filterRGBPixels</a>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, <strong class='reserved'>int</strong> y, <strong class='reserved'>int</strong> w, <strong class='reserved'>int</strong> h,
+<a id='L195' name='L195'></a> 195                                 <strong class='reserved'>int</strong> pixels[], <strong class='reserved'>int</strong> off, <strong class='reserved'>int</strong> scansize) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = off;
+<a id='L197' name='L197'></a> 197         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> cy = 0; cy &lt; h; cy++) <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> cx = 0; cx &lt; w; cx++) <em class='brace'>{</em>
+<a id='L199' name='L199'></a> 199                 pixels[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>] = <a href='../D/16072.html' title='Multiple defined in 7 places.'>filterRGB</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> + cx, y + cy, pixels[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>]);
+<a id='L200' name='L200'></a> 200                 <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>++;
+<a id='L201' name='L201'></a> 201             <em class='brace'>}</em>
+<a id='L202' name='L202'></a> 202             <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> += scansize - w;
+<a id='L203' name='L203'></a> 203         <em class='brace'>}</em>
+<a id='L204' name='L204'></a> 204         consumer.<a href='../D/33549.html' title='Multiple defined in 27 places.'>setPixels</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, y, w, h, <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a>.<a href='../S/2256.html#L240' title='Defined at 240 in src/java/awt/image/ColorModel.java.'>getRGBdefault</a>(),
+<a id='L205' name='L205'></a> 205                            pixels, off, scansize);
+<a id='L206' name='L206'></a> 206     <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208     <em class='comment'>/**</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * If the ColorModel object is the same one that has already</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * been converted, then simply passes the pixels through with the</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * converted ColorModel. Otherwise converts the buffer of byte</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * pixels to the default RGB ColorModel and passes the converted</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * buffer to the filterRGBPixels method to be converted one by one.</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * Note: This method is intended to be called by the</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * &lt;code&gt;ImageProducer&lt;/code&gt; of the &lt;code&gt;Image&lt;/code&gt; whose pixels</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * are being filtered. Developers using</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * this class to filter pixels from an image should avoid calling</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * this method directly since that operation could interfere</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * with the filtering operation.</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * @see ColorModel#getRGBdefault</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * @see #filterRGBPixels</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     */</em>
+<a id='L224' name='L224'></a> 224     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27930.html' title='Multiple referred from 28 places.'>setPixels</a>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, <strong class='reserved'>int</strong> y, <strong class='reserved'>int</strong> w, <strong class='reserved'>int</strong> h,
+<a id='L225' name='L225'></a> 225                           <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> model, <strong class='reserved'>byte</strong> pixels[], <strong class='reserved'>int</strong> off,
+<a id='L226' name='L226'></a> 226                           <strong class='reserved'>int</strong> scansize) <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227         <strong class='reserved'>if</strong> (model == origmodel) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228             consumer.<a href='../D/33549.html' title='Multiple defined in 27 places.'>setPixels</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, y, w, h, newmodel, pixels, off, scansize);
+<a id='L229' name='L229'></a> 229         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L230' name='L230'></a> 230             <strong class='reserved'>int</strong> filteredpixels[] = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[w];
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = off;
+<a id='L232' name='L232'></a> 232             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> cy = 0; cy &lt; h; cy++) <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> cx = 0; cx &lt; w; cx++) <em class='brace'>{</em>
+<a id='L234' name='L234'></a> 234                     filteredpixels[cx] = model.<a href='../D/21814.html' title='Multiple defined in 13 places.'>getRGB</a>((pixels[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>] &amp; 0xff));
+<a id='L235' name='L235'></a> 235                     <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>++;
+<a id='L236' name='L236'></a> 236                 <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237                 <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> += scansize - w;
+<a id='L238' name='L238'></a> 238                 <a href='../S/2279.html#L194' title='Defined at 194 in src/java/awt/image/RGBImageFilter.java.'>filterRGBPixels</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, y + cy, w, 1, filteredpixels, 0, w);
+<a id='L239' name='L239'></a> 239             <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240         <em class='brace'>}</em>
+<a id='L241' name='L241'></a> 241     <em class='brace'>}</em>
+<a id='L242' name='L242'></a> 242 
+<a id='L243' name='L243'></a> 243     <em class='comment'>/**</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * If the ColorModel object is the same one that has already</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * been converted, then simply passes the pixels through with the</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * converted ColorModel, otherwise converts the buffer of integer</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * pixels to the default RGB ColorModel and passes the converted</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * buffer to the filterRGBPixels method to be converted one by one.</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * Converts a buffer of integer pixels to the default RGB ColorModel</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * and passes the converted buffer to the filterRGBPixels method.</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * Note: This method is intended to be called by the</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     * &lt;code&gt;ImageProducer&lt;/code&gt; of the &lt;code&gt;Image&lt;/code&gt; whose pixels</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * are being filtered. Developers using</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     * this class to filter pixels from an image should avoid calling</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * this method directly since that operation could interfere</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     * with the filtering operation.</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     * @see ColorModel#getRGBdefault</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     * @see #filterRGBPixels</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     */</em>
+<a id='L261' name='L261'></a> 261     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27930.html' title='Multiple referred from 28 places.'>setPixels</a>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, <strong class='reserved'>int</strong> y, <strong class='reserved'>int</strong> w, <strong class='reserved'>int</strong> h,
+<a id='L262' name='L262'></a> 262                           <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> model, <strong class='reserved'>int</strong> pixels[], <strong class='reserved'>int</strong> off,
+<a id='L263' name='L263'></a> 263                           <strong class='reserved'>int</strong> scansize) <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264         <strong class='reserved'>if</strong> (model == origmodel) <em class='brace'>{</em>
+<a id='L265' name='L265'></a> 265             consumer.<a href='../D/33549.html' title='Multiple defined in 27 places.'>setPixels</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, y, w, h, newmodel, pixels, off, scansize);
+<a id='L266' name='L266'></a> 266         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L267' name='L267'></a> 267             <strong class='reserved'>int</strong> filteredpixels[] = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[w];
+<a id='L268' name='L268'></a> 268             <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = off;
+<a id='L269' name='L269'></a> 269             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> cy = 0; cy &lt; h; cy++) <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> cx = 0; cx &lt; w; cx++) <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271                     filteredpixels[cx] = model.<a href='../D/21814.html' title='Multiple defined in 13 places.'>getRGB</a>(pixels[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>]);
+<a id='L272' name='L272'></a> 272                     <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>++;
+<a id='L273' name='L273'></a> 273                 <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274                 <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> += scansize - w;
+<a id='L275' name='L275'></a> 275                 <a href='../S/2279.html#L194' title='Defined at 194 in src/java/awt/image/RGBImageFilter.java.'>filterRGBPixels</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, y + cy, w, 1, filteredpixels, 0, w);
+<a id='L276' name='L276'></a> 276             <em class='brace'>}</em>
+<a id='L277' name='L277'></a> 277         <em class='brace'>}</em>
+<a id='L278' name='L278'></a> 278     <em class='brace'>}</em>
+<a id='L279' name='L279'></a> 279 
+<a id='L280' name='L280'></a> 280     <em class='comment'>/**</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * Subclasses must specify a method to convert a single input pixel</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * in the default RGB ColorModel to a single output pixel.</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * @param x the X coordinate of the pixel</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     * @param y the Y coordinate of the pixel</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * @param rgb the integer pixel representation in the default RGB</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     *            color model</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * @return a filtered pixel in the default RGB color model.</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * @see ColorModel#getRGBdefault</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * @see #filterRGBPixels</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     */</em>
+<a id='L291' name='L291'></a> 291     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/14331.html' title='Multiple referred from 2 places.'>filterRGB</a>(<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, <strong class='reserved'>int</strong> y, <strong class='reserved'>int</strong> rgb);
+<a id='L292' name='L292'></a> 292 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L114'>[^]</a><a href='#L291'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

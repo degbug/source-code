@@ -1,0 +1,332 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/lang/management/MemoryUsage.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8003.html'>lang</a>/<a href='../files/8007.html'>management</a>/MemoryUsage.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L192'>[^]</a><a href='#L289'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L192' title='Defined at 192.'>getInit</a></li>
+<li><a href='#L202' title='Defined at 202.'>getUsed</a></li>
+<li><a href='#L214' title='Defined at 214.'>getCommitted</a></li>
+<li><a href='#L232' title='Defined at 232.'>getMax</a></li>
+<li><a href='#L239' title='Defined at 239.'>toString</a></li>
+<li><a href='#L289' title='Defined at 289.'>from</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.management;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> javax.management.openmbean.CompositeData;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> sun.management.MemoryUsageCompositeData;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <em class='comment'>/**</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * A &lt;tt&gt;MemoryUsage&lt;/tt&gt; object represents a snapshot of memory usage.</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * Instances of the &lt;tt&gt;MemoryUsage&lt;/tt&gt; class are usually constructed</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * by methods that are used to obtain memory usage</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * information about individual memory pool of the Java virtual machine or</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * the heap or non-heap memory of the Java virtual machine as a whole.</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> *</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * &lt;p&gt; A &lt;tt&gt;MemoryUsage&lt;/tt&gt; object contains four values:</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * &lt;table summary="Describes the MemoryUsage object content"&gt;</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;td valign=top&gt; &lt;tt&gt;init&lt;/tt&gt; &lt;/td&gt;</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * &lt;td valign=top&gt; represents the initial amount of memory (in bytes) that</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> *      the Java virtual machine requests from the operating system</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *      for memory management during startup.  The Java virtual machine</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> *      may request additional memory from the operating system and</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> *      may also release memory to the system over time.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *      The value of &lt;tt&gt;init&lt;/tt&gt; may be undefined.</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * &lt;/td&gt;</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;td valign=top&gt; &lt;tt&gt;used&lt;/tt&gt; &lt;/td&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * &lt;td valign=top&gt; represents the amount of memory currently used (in bytes).</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * &lt;/td&gt;</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * &lt;td valign=top&gt; &lt;tt&gt;committed&lt;/tt&gt; &lt;/td&gt;</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * &lt;td valign=top&gt; represents the amount of memory (in bytes) that is</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *      guaranteed to be available for use by the Java virtual machine.</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> *      The amount of committed memory may change over time (increase</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *      or decrease).  The Java virtual machine may release memory to</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *      the system and &lt;tt&gt;committed&lt;/tt&gt; could be less than &lt;tt&gt;init&lt;/tt&gt;.</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *      &lt;tt&gt;committed&lt;/tt&gt; will always be greater than</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> *      or equal to &lt;tt&gt;used&lt;/tt&gt;.</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * &lt;/td&gt;</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * &lt;tr&gt;</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> * &lt;td valign=top&gt; &lt;tt&gt;max&lt;/tt&gt; &lt;/td&gt;</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * &lt;td valign=top&gt; represents the maximum amount of memory (in bytes)</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> *      that can be used for memory management. Its value may be undefined.</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> *      The maximum amount of memory may change over time if defined.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> *      The amount of used and committed memory will always be less than</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> *      or equal to &lt;tt&gt;max&lt;/tt&gt; if &lt;tt&gt;max&lt;/tt&gt; is defined.</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> *      A memory allocation may fail if it attempts to increase the</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> *      used memory such that &lt;tt&gt;used &amp;gt; committed&lt;/tt&gt; even</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *      if &lt;tt&gt;used &amp;lt;= max&lt;/tt&gt; would still be true (for example,</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> *      when the system is low on virtual memory).</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> * &lt;/td&gt;</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> * &lt;/tr&gt;</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * &lt;/table&gt;</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> *</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * Below is a picture showing an example of a memory pool:</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> *</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * &lt;pre&gt;</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> *        +----------------------------------------------+</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> *        +////////////////           |                  +</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> *        +////////////////           |                  +</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> *        +----------------------------------------------+</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> *</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'> *        |--------|</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'> *           init</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'> *        |---------------|</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'> *               used</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'> *        |---------------------------|</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'> *                  committed</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'> *        |----------------------------------------------|</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'> *                            max</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'> * &lt;/pre&gt;</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'> *</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'> * &lt;h3&gt;MXBean Mapping&lt;/h3&gt;</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'> * &lt;tt&gt;MemoryUsage&lt;/tt&gt; is mapped to a {@link CompositeData CompositeData}</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'> * with attributes as specified in the {@link #from from} method.</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'> *</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'> * @author   Mandy Chung</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'> * @since   1.5</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'> */</em>
+<a id='L106' name='L106'></a> 106 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/5002.html' title='Multiple referred from 12 places.'>MemoryUsage</a> <em class='brace'>{</em>
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>;
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> used;
+<a id='L109' name='L109'></a> 109     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> committed;
+<a id='L110' name='L110'></a> 110     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>;
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112     <em class='comment'>/**</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * Constructs a &lt;tt&gt;MemoryUsage&lt;/tt&gt; object.</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     *</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * @param init      the initial amount of memory in bytes that</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     *                  the Java virtual machine allocates;</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     *                  or &lt;tt&gt;-1&lt;/tt&gt; if undefined.</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * @param used      the amount of used memory in bytes.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * @param committed the amount of committed memory in bytes.</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * @param max       the maximum amount of memory in bytes that</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *                  can be used; or &lt;tt&gt;-1&lt;/tt&gt; if undefined.</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     *</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     * @throws IllegalArgumentException if</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * &lt;ul&gt;</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * &lt;li&gt; the value of &lt;tt&gt;init&lt;/tt&gt; or &lt;tt&gt;max&lt;/tt&gt; is negative</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     *      but not &lt;tt&gt;-1&lt;/tt&gt;; or&lt;/li&gt;</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * &lt;li&gt; the value of &lt;tt&gt;used&lt;/tt&gt; or &lt;tt&gt;committed&lt;/tt&gt; is negative;</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     *      or&lt;/li&gt;</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * &lt;li&gt; &lt;tt&gt;used&lt;/tt&gt; is greater than the value of &lt;tt&gt;committed&lt;/tt&gt;;</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     *      or&lt;/li&gt;</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * &lt;li&gt; &lt;tt&gt;committed&lt;/tt&gt; is greater than the value of &lt;tt&gt;max&lt;/tt&gt;</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     *      &lt;tt&gt;max&lt;/tt&gt; if defined.&lt;/li&gt;</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * &lt;/ul&gt;</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     */</em>
+<a id='L135' name='L135'></a> 135     <strong class='reserved'>public</strong> MemoryUsage(<strong class='reserved'>long</strong> <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>,
+<a id='L136' name='L136'></a> 136                        <strong class='reserved'>long</strong> used,
+<a id='L137' name='L137'></a> 137                        <strong class='reserved'>long</strong> committed,
+<a id='L138' name='L138'></a> 138                        <strong class='reserved'>long</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139         <strong class='reserved'>if</strong> (<a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> &lt; -1) <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>( "init parameter = " +
+<a id='L141' name='L141'></a> 141                 <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> + " is negative but not -1.");
+<a id='L142' name='L142'></a> 142         <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>if</strong> (<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> &lt; -1) <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>( "max parameter = " +
+<a id='L145' name='L145'></a> 145                 <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> + " is negative but not -1.");
+<a id='L146' name='L146'></a> 146         <em class='brace'>}</em>
+<a id='L147' name='L147'></a> 147         <strong class='reserved'>if</strong> (used &lt; 0) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>( "used parameter = " +
+<a id='L149' name='L149'></a> 149                 used + " is negative.");
+<a id='L150' name='L150'></a> 150         <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151         <strong class='reserved'>if</strong> (committed &lt; 0) <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>( "committed parameter = " +
+<a id='L153' name='L153'></a> 153                 committed + " is negative.");
+<a id='L154' name='L154'></a> 154         <em class='brace'>}</em>
+<a id='L155' name='L155'></a> 155         <strong class='reserved'>if</strong> (used &gt; committed) <em class='brace'>{</em>
+<a id='L156' name='L156'></a> 156             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>( "used = " + used +
+<a id='L157' name='L157'></a> 157                 " should be &lt;= committed = " + committed);
+<a id='L158' name='L158'></a> 158         <em class='brace'>}</em>
+<a id='L159' name='L159'></a> 159         <strong class='reserved'>if</strong> (<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> &gt;= 0 &amp;&amp; committed &gt; <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>( "committed = " + committed +
+<a id='L161' name='L161'></a> 161                 " should be &lt; max = " + <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>);
+<a id='L162' name='L162'></a> 162         <em class='brace'>}</em>
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164         <strong class='reserved'>this</strong>.<a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> = <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>;
+<a id='L165' name='L165'></a> 165         <strong class='reserved'>this</strong>.used = used;
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>this</strong>.committed = committed;
+<a id='L167' name='L167'></a> 167         <strong class='reserved'>this</strong>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> = <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>;
+<a id='L168' name='L168'></a> 168     <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169 
+<a id='L170' name='L170'></a> 170     <em class='comment'>/**</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * Constructs a &lt;tt&gt;MemoryUsage&lt;/tt&gt; object from a</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * {@link CompositeData CompositeData}.</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     */</em>
+<a id='L174' name='L174'></a> 174     <strong class='reserved'>private</strong> MemoryUsage(<a href='../S/3583.html#L45' title='Defined at 45 in src/javax/management/openmbean/CompositeData.java.'>CompositeData</a> cd) <em class='brace'>{</em>
+<a id='L175' name='L175'></a> 175         <em class='comment'>// validate the input composite data</em>
+<a id='L176' name='L176'></a> 176         MemoryUsageCompositeData.validateCompositeData(cd);
+<a id='L177' name='L177'></a> 177 
+<a id='L178' name='L178'></a> 178         <strong class='reserved'>this</strong>.<a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> = MemoryUsageCompositeData.<a href='../S/1684.html#L192' title='Defined at 192 in src/java/lang/management/MemoryUsage.java.'>getInit</a>(cd);
+<a id='L179' name='L179'></a> 179         <strong class='reserved'>this</strong>.used = MemoryUsageCompositeData.<a href='../S/1684.html#L202' title='Defined at 202 in src/java/lang/management/MemoryUsage.java.'>getUsed</a>(cd);
+<a id='L180' name='L180'></a> 180         <strong class='reserved'>this</strong>.committed = MemoryUsageCompositeData.<a href='../S/1684.html#L214' title='Defined at 214 in src/java/lang/management/MemoryUsage.java.'>getCommitted</a>(cd);
+<a id='L181' name='L181'></a> 181         <strong class='reserved'>this</strong>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> = MemoryUsageCompositeData.<a href='../D/20418.html' title='Multiple defined in 6 places.'>getMax</a>(cd);
+<a id='L182' name='L182'></a> 182     <em class='brace'>}</em>
+<a id='L183' name='L183'></a> 183 
+<a id='L184' name='L184'></a> 184     <em class='comment'>/**</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * Returns the amount of memory in bytes that the Java virtual machine</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * initially requests from the operating system for memory management.</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * This method returns &lt;tt&gt;-1&lt;/tt&gt; if the initial memory size is undefined.</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     *</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * @return the initial size of memory in bytes;</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     * &lt;tt&gt;-1&lt;/tt&gt; if undefined.</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     */</em>
+<a id='L192' name='L192'></a> 192     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../S/1684.html#L178' title='Referred from 178 in src/java/lang/management/MemoryUsage.java.'>getInit</a>() <em class='brace'>{</em>
+<a id='L193' name='L193'></a> 193         <strong class='reserved'>return</strong> <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>;
+<a id='L194' name='L194'></a> 194     <em class='brace'>}</em>
+<a id='L195' name='L195'></a> 195 
+<a id='L196' name='L196'></a> 196     <em class='comment'>/**</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * Returns the amount of used memory in bytes.</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     *</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     * @return the amount of used memory in bytes.</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     *</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     */</em>
+<a id='L202' name='L202'></a> 202     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../S/1684.html#L179' title='Referred from 179 in src/java/lang/management/MemoryUsage.java.'>getUsed</a>() <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203         <strong class='reserved'>return</strong> used;
+<a id='L204' name='L204'></a> 204     <em class='brace'>}</em>;
+<a id='L205' name='L205'></a> 205 
+<a id='L206' name='L206'></a> 206     <em class='comment'>/**</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     * Returns the amount of memory in bytes that is committed for</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     * the Java virtual machine to use.  This amount of memory is</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * guaranteed for the Java virtual machine to use.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     *</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * @return the amount of committed memory in bytes.</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     *</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     */</em>
+<a id='L214' name='L214'></a> 214     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../S/1684.html#L180' title='Referred from 180 in src/java/lang/management/MemoryUsage.java.'>getCommitted</a>() <em class='brace'>{</em>
+<a id='L215' name='L215'></a> 215         <strong class='reserved'>return</strong> committed;
+<a id='L216' name='L216'></a> 216     <em class='brace'>}</em>;
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218     <em class='comment'>/**</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * Returns the maximum amount of memory in bytes that can be</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * used for memory management.  This method returns &lt;tt&gt;-1&lt;/tt&gt;</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * if the maximum memory size is undefined.</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     *</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * &lt;p&gt; This amount of memory is not guaranteed to be available</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * for memory management if it is greater than the amount of</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * committed memory.  The Java virtual machine may fail to allocate</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * memory even if the amount of used memory does not exceed this</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * maximum size.</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     *</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * @return the maximum amount of memory in bytes;</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * &lt;tt&gt;-1&lt;/tt&gt; if undefined.</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     */</em>
+<a id='L232' name='L232'></a> 232     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/17572.html' title='Multiple referred from 19 places.'>getMax</a>() <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233         <strong class='reserved'>return</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>;
+<a id='L234' name='L234'></a> 234     <em class='brace'>}</em>;
+<a id='L235' name='L235'></a> 235 
+<a id='L236' name='L236'></a> 236     <em class='comment'>/**</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     * Returns a descriptive representation of this memory usage.</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     */</em>
+<a id='L239' name='L239'></a> 239     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
+<a id='L240' name='L240'></a> 240         <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a> = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>();
+<a id='L241' name='L241'></a> 241         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("init = " + <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> + "(" + (<a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a> &gt;&gt; 10) + "K) ");
+<a id='L242' name='L242'></a> 242         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("used = " + used + "(" + (used &gt;&gt; 10) + "K) ");
+<a id='L243' name='L243'></a> 243         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("committed = " + committed + "(" +
+<a id='L244' name='L244'></a> 244                    (committed &gt;&gt; 10) + "K) " );
+<a id='L245' name='L245'></a> 245         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("max = " + <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> + "(" + (<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a> &gt;&gt; 10) + "K)");
+<a id='L246' name='L246'></a> 246         <strong class='reserved'>return</strong> <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L247' name='L247'></a> 247     <em class='brace'>}</em>
+<a id='L248' name='L248'></a> 248 
+<a id='L249' name='L249'></a> 249     <em class='comment'>/**</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * Returns a &lt;tt&gt;MemoryUsage&lt;/tt&gt; object represented by the</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     * given &lt;tt&gt;CompositeData&lt;/tt&gt;. The given &lt;tt&gt;CompositeData&lt;/tt&gt;</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * must contain the following attributes:</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     *</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * &lt;blockquote&gt;</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     * &lt;table border summary="The attributes and the types the given CompositeData contains"&gt;</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * &lt;tr&gt;</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     *   &lt;th align=left&gt;Attribute Name&lt;/th&gt;</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     *   &lt;th align=left&gt;Type&lt;/th&gt;</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     * &lt;/tr&gt;</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>     * &lt;tr&gt;</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     *   &lt;td&gt;init&lt;/td&gt;</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     *   &lt;td&gt;&lt;tt&gt;java.lang.Long&lt;/tt&gt;&lt;/td&gt;</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * &lt;/tr&gt;</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * &lt;tr&gt;</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     *   &lt;td&gt;used&lt;/td&gt;</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     *   &lt;td&gt;&lt;tt&gt;java.lang.Long&lt;/tt&gt;&lt;/td&gt;</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * &lt;/tr&gt;</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     * &lt;tr&gt;</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     *   &lt;td&gt;committed&lt;/td&gt;</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     *   &lt;td&gt;&lt;tt&gt;java.lang.Long&lt;/tt&gt;&lt;/td&gt;</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     * &lt;/tr&gt;</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * &lt;tr&gt;</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     *   &lt;td&gt;max&lt;/td&gt;</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     *   &lt;td&gt;&lt;tt&gt;java.lang.Long&lt;/tt&gt;&lt;/td&gt;</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * &lt;/tr&gt;</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * &lt;/table&gt;</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * &lt;/blockquote&gt;</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     *</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * @param cd &lt;tt&gt;CompositeData&lt;/tt&gt; representing a &lt;tt&gt;MemoryUsage&lt;/tt&gt;</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     *</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * @throws IllegalArgumentException if &lt;tt&gt;cd&lt;/tt&gt; does not</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     *   represent a &lt;tt&gt;MemoryUsage&lt;/tt&gt; with the attributes described</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     *   above.</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     *</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * @return a &lt;tt&gt;MemoryUsage&lt;/tt&gt; object represented by &lt;tt&gt;cd&lt;/tt&gt;</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     *         if &lt;tt&gt;cd&lt;/tt&gt; is not &lt;tt&gt;null&lt;/tt&gt;;</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     *         &lt;tt&gt;null&lt;/tt&gt; otherwise.</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     */</em>
+<a id='L289' name='L289'></a> 289     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/1684.html#L106' title='Defined at 106 in src/java/lang/management/MemoryUsage.java.'>MemoryUsage</a> <a href='../R/14799.html' title='Multiple referred from 407 places.'>from</a>(<a href='../S/3583.html#L45' title='Defined at 45 in src/javax/management/openmbean/CompositeData.java.'>CompositeData</a> cd) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290         <strong class='reserved'>if</strong> (cd == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L291' name='L291'></a> 291             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L292' name='L292'></a> 292         <em class='brace'>}</em>
+<a id='L293' name='L293'></a> 293 
+<a id='L294' name='L294'></a> 294         <strong class='reserved'>if</strong> (cd <strong class='reserved'>instanceof</strong> MemoryUsageCompositeData) <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295             <strong class='reserved'>return</strong> ((MemoryUsageCompositeData) cd).getMemoryUsage();
+<a id='L296' name='L296'></a> 296         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L297' name='L297'></a> 297             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1684.html#L106' title='Defined at 106 in src/java/lang/management/MemoryUsage.java.'>MemoryUsage</a>(cd);
+<a id='L298' name='L298'></a> 298         <em class='brace'>}</em>
+<a id='L299' name='L299'></a> 299 
+<a id='L300' name='L300'></a> 300     <em class='brace'>}</em>
+<a id='L301' name='L301'></a> 301 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L192'>[^]</a><a href='#L289'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

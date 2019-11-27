@@ -1,0 +1,798 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7923.html'>xml</a>/<a href='../files/7924.html'>internal</a>/<a href='../files/7961.html'>utils</a>/NamespaceSupport2.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L96'>[^]</a><a href='#L730'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L96' title='Defined at 96.'>reset</a></li>
+<li><a href='#L120' title='Defined at 120.'>pushContext</a></li>
+<li><a href='#L153' title='Defined at 153.'>popContext</a></li>
+<li><a href='#L197' title='Defined at 197.'>declarePrefix</a></li>
+<li><a href='#L246' title='Defined at 246.'>processName</a></li>
+<li><a href='#L272' title='Defined at 272.'>getURI</a></li>
+<li><a href='#L291' title='Defined at 291.'>getPrefixes</a></li>
+<li><a href='#L315' title='Defined at 315.'>getPrefix</a></li>
+<li><a href='#L341' title='Defined at 341.'>getPrefixes</a></li>
+<li><a href='#L369' title='Defined at 369.'>getDeclaredPrefixes</a></li>
+<li><a href='#L406' title='Defined at 406.'>hasMoreElements</a></li>
+<li><a href='#L423' title='Defined at 423.'>nextElement</a></li>
+<li><a href='#L495' title='Defined at 495.'>getChild</a></li>
+<li><a href='#L504' title='Defined at 504.'>getParent</a></li>
+<li><a href='#L516' title='Defined at 516.'>setParent</a></li>
+<li><a href='#L537' title='Defined at 537.'>declarePrefix</a></li>
+<li><a href='#L574' title='Defined at 574.'>processName</a></li>
+<li><a href='#L648' title='Defined at 648.'>getURI</a></li>
+<li><a href='#L670' title='Defined at 670.'>getPrefix</a></li>
+<li><a href='#L686' title='Defined at 686.'>getDeclaredPrefixes</a></li>
+<li><a href='#L705' title='Defined at 705.'>getPrefixes</a></li>
+<li><a href='#L730' title='Defined at 730.'>copyTables</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 1999-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: NamespaceSupport2.java,v 1.3 2005/09/28 13:49:20 pvedula Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>package</strong> com.sun.org.apache.xml.internal.utils;
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> java.util.EmptyStackException;
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> java.util.Enumeration;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.util.Hashtable;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Vector;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <em class='comment'>/**</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * Encapsulate Namespace tracking logic for use by SAX drivers.</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> *</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * &lt;p&gt;This class is an attempt to rewrite the SAX NamespaceSupport</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * "helper" class for improved efficiency. It can be used to track the</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * namespace declarations currently in scope, providing lookup</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * routines to map prefixes to URIs and vice versa.&lt;/p&gt;</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> *</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * &lt;p&gt;ISSUE: For testing purposes, I've extended NamespaceSupport even</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * though I'm completely reasserting all behaviors and fields.</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * Wasteful.... But SAX did not put an interface under that object and</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * we seem to have written that SAX class into our APIs... and I don't</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * want to argue with it right now. &lt;/p&gt;</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> *</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * @see org.xml.sax.helpers.NamespaceSupport</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * */</em>
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/5454.html' title='Multiple referred from 2 places.'>NamespaceSupport2</a>
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>extends</strong> org.xml.sax.helpers.<a href='../D/5978.html' title='Multiple defined in 2 places.'>NamespaceSupport</a>
+<a id='L48' name='L48'></a>  48 <em class='brace'>{</em>
+<a id='L49' name='L49'></a>  49     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L50' name='L50'></a>  50     <em class='comment'>// Internal state.</em>
+<a id='L51' name='L51'></a>  51     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>private</strong> <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> currentContext; <em class='comment'>// Current point on the double-linked stack</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L57' name='L57'></a>  57     <em class='comment'>// Constants.</em>
+<a id='L58' name='L58'></a>  58     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60 
+<a id='L61' name='L61'></a>  61     <em class='comment'>/**</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * The XML Namespace as a constant.</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     *</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * &lt;p&gt;This is the Namespace URI that is automatically mapped</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * to the "xml" prefix.&lt;/p&gt;</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     */</em>
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> XMLNS =
+<a id='L68' name='L68'></a>  68         "http://www.w3.org/XML/1998/namespace";
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70 
+<a id='L71' name='L71'></a>  71     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L72' name='L72'></a>  72     <em class='comment'>// Constructor.</em>
+<a id='L73' name='L73'></a>  73     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>/**</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * Create a new Namespace support object.</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     */</em>
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>public</strong> NamespaceSupport2 ()
+<a id='L80' name='L80'></a>  80     <em class='brace'>{</em>
+<a id='L81' name='L81'></a>  81         <a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L82' name='L82'></a>  82     <em class='brace'>}</em>
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L86' name='L86'></a>  86     <em class='comment'>// Context management.</em>
+<a id='L87' name='L87'></a>  87     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L88' name='L88'></a>  88 
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90     <em class='comment'>/**</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * Reset this Namespace support object for reuse.</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     *</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * &lt;p&gt;It is necessary to invoke this method before reusing the</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * Namespace support object for a new session.&lt;/p&gt;</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     */</em>
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a> ()
+<a id='L97' name='L97'></a>  97     <em class='brace'>{</em>
+<a id='L98' name='L98'></a>  98         <em class='comment'>// Discarding the whole stack doesn't save us a lot versus</em>
+<a id='L99' name='L99'></a>  99         <em class='comment'>// creating a new NamespaceSupport. Do we care, or should we</em>
+<a id='L100' name='L100'></a> 100         <em class='comment'>// change this to just reset the root context?</em>
+<a id='L101' name='L101'></a> 101         currentContext = <strong class='reserved'>new</strong> <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a>(<strong class='reserved'>null</strong>);
+<a id='L102' name='L102'></a> 102         currentContext.<a href='../D/14512.html' title='Multiple defined in 8 places.'>declarePrefix</a>("xml", XMLNS);
+<a id='L103' name='L103'></a> 103     <em class='brace'>}</em>
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106     <em class='comment'>/**</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * Start a new Namespace context.</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     *</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * &lt;p&gt;Normally, you should push a new context at the beginning</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * of each XML element: the new context will automatically inherit</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * the declarations of its parent context, but it will also keep</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * track of which declarations were made within this context.&lt;/p&gt;</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * &lt;p&gt;The Namespace support object always starts with a base context</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * already in force: in this context, only the "xml" prefix is</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * declared.&lt;/p&gt;</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     *</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * @see #popContext</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     */</em>
+<a id='L120' name='L120'></a> 120     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25262.html' title='Multiple referred from 29 places.'>pushContext</a> ()
+<a id='L121' name='L121'></a> 121     <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122         <em class='comment'>// JJK: Context has a parent pointer.</em>
+<a id='L123' name='L123'></a> 123         <em class='comment'>// That means we don't need a stack to pop.</em>
+<a id='L124' name='L124'></a> 124         <em class='comment'>// We may want to retain for reuse, but that can be done via</em>
+<a id='L125' name='L125'></a> 125         <em class='comment'>// a child pointer.</em>
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127         <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> parentContext=currentContext;
+<a id='L128' name='L128'></a> 128         currentContext = parentContext.<a href='../D/17626.html' title='Multiple defined in 28 places.'>getChild</a>();
+<a id='L129' name='L129'></a> 129         <strong class='reserved'>if</strong> (currentContext == <strong class='reserved'>null</strong>)<em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130                 currentContext = <strong class='reserved'>new</strong> <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a>(parentContext);
+<a id='L131' name='L131'></a> 131             <em class='brace'>}</em>
+<a id='L132' name='L132'></a> 132         <strong class='reserved'>else</strong><em class='brace'>{</em>
+<a id='L133' name='L133'></a> 133             <em class='comment'>// JJK: This will wipe out any leftover data</em>
+<a id='L134' name='L134'></a> 134             <em class='comment'>// if we're reusing a previously allocated Context.</em>
+<a id='L135' name='L135'></a> 135             currentContext.<a href='../D/33509.html' title='Multiple defined in 44 places.'>setParent</a>(parentContext);
+<a id='L136' name='L136'></a> 136         <em class='brace'>}</em>
+<a id='L137' name='L137'></a> 137     <em class='brace'>}</em>
+<a id='L138' name='L138'></a> 138 
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140     <em class='comment'>/**</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * Revert to the previous Namespace context.</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     *</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * &lt;p&gt;Normally, you should pop the context at the end of each</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * XML element.  After popping the context, all Namespace prefix</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * mappings that were previously in force are restored.&lt;/p&gt;</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     *</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * &lt;p&gt;You must not attempt to declare additional Namespace</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * prefixes after popping a context, unless you push another</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * context first.&lt;/p&gt;</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     *</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * @see #pushContext</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     */</em>
+<a id='L153' name='L153'></a> 153     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24809.html' title='Multiple referred from 23 places.'>popContext</a> ()
+<a id='L154' name='L154'></a> 154     <em class='brace'>{</em>
+<a id='L155' name='L155'></a> 155         <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> parentContext=currentContext.<a href='../D/21392.html' title='Multiple defined in 42 places.'>getParent</a>();
+<a id='L156' name='L156'></a> 156         <strong class='reserved'>if</strong>(parentContext==<strong class='reserved'>null</strong>)
+<a id='L157' name='L157'></a> 157             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1158.html#L37' title='Defined at 37 in src/java/util/EmptyStackException.java.'>EmptyStackException</a>();
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>else</strong>
+<a id='L159' name='L159'></a> 159             currentContext = parentContext;
+<a id='L160' name='L160'></a> 160     <em class='brace'>}</em>
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L165' name='L165'></a> 165     <em class='comment'>// Operations within a context.</em>
+<a id='L166' name='L166'></a> 166     <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168 
+<a id='L169' name='L169'></a> 169     <em class='comment'>/**</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * Declare a Namespace prefix.</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     *</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * &lt;p&gt;This method declares a prefix in the current Namespace</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * context; the prefix will remain in force until this context</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * is popped, unless it is shadowed in a descendant context.&lt;/p&gt;</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     *</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * &lt;p&gt;To declare a default Namespace, use the empty string.  The</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     * prefix must not be "xml" or "xmlns".&lt;/p&gt;</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     *</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * &lt;p&gt;Note that you must &lt;em&gt;not&lt;/em&gt; declare a prefix after</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * you've pushed and popped another Namespace.&lt;/p&gt;</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     *</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * &lt;p&gt;Note that there is an asymmetry in this library: while {@link</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * #getPrefix getPrefix} will not return the default "" prefix,</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * even if you have declared one; to check for a default prefix,</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * you have to look it up explicitly using {@link #getURI getURI}.</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * This asymmetry exists to make it easier to look up prefixes</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * for attribute names, where the default prefix is not allowed.&lt;/p&gt;</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     *</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * @param prefix The prefix to declare, or null for the empty</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     *        string.</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * @param uri The Namespace URI to associate with the prefix.</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     * @return true if the prefix was legal, false otherwise</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>     * @see #processName</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     * @see #getURI</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * @see #getPrefix</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     */</em>
+<a id='L197' name='L197'></a> 197     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/12937.html' title='Multiple referred from 42 places.'>declarePrefix</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri)
+<a id='L198' name='L198'></a> 198     <em class='brace'>{</em>
+<a id='L199' name='L199'></a> 199         <strong class='reserved'>if</strong> (<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("xml") || <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("xmlns")) <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L201' name='L201'></a> 201         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L202' name='L202'></a> 202             currentContext.<a href='../D/14512.html' title='Multiple defined in 8 places.'>declarePrefix</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, uri);
+<a id='L203' name='L203'></a> 203             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L204' name='L204'></a> 204         <em class='brace'>}</em>
+<a id='L205' name='L205'></a> 205     <em class='brace'>}</em>
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208     <em class='comment'>/**</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * Process a raw XML 1.0 name.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     *</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * &lt;p&gt;This method processes a raw XML 1.0 name in the current</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * context by removing the prefix and looking it up among the</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * prefixes currently declared.  The return value will be the</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * array supplied by the caller, filled in as follows:&lt;/p&gt;</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     *</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * &lt;dl&gt;</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * &lt;dt&gt;parts[0]&lt;/dt&gt;</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * &lt;dd&gt;The Namespace URI, or an empty string if none is</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     *  in use.&lt;/dd&gt;</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * &lt;dt&gt;parts[1]&lt;/dt&gt;</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * &lt;dd&gt;The local name (without prefix).&lt;/dd&gt;</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * &lt;dt&gt;parts[2]&lt;/dt&gt;</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * &lt;dd&gt;The original raw name.&lt;/dd&gt;</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * &lt;/dl&gt;</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     *</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * &lt;p&gt;All of the strings in the array will be internalized.  If</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * the raw name has a prefix that has not been declared, then</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * the return value will be null.&lt;/p&gt;</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     *</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * &lt;p&gt;Note that attribute names are processed differently than</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * element names: an unprefixed element name will received the</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * default Namespace (if any), while an unprefixed element name</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * will not.&lt;/p&gt;</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     *</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * @param qName The raw XML 1.0 name to be processed.</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     * @param parts A string array supplied by the caller, capable of</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     *        holding at least three members.</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     * @param isAttribute A flag indicating whether this is an</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     *        attribute name (true) or an element name (false).</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * @return The supplied array holding three internalized strings</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     *        representing the Namespace URI (or empty string), the</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>     *        local name, and the raw XML 1.0 name; or null if there</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     *        is an undeclared prefix.</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * @see #declarePrefix</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * @see java.lang.String#intern */</em>
+<a id='L246' name='L246'></a> 246     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> [] <a href='../R/25166.html' title='Multiple referred from 6 places.'>processName</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> qName, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] parts,
+<a id='L247' name='L247'></a> 247                                   <strong class='reserved'>boolean</strong> <a href='../D/25219.html' title='Multiple defined in 7 places.'>isAttribute</a>)
+<a id='L248' name='L248'></a> 248     <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>=currentContext.<a href='../D/29835.html' title='Multiple defined in 5 places.'>processName</a>(qName, <a href='../D/25219.html' title='Multiple defined in 7 places.'>isAttribute</a>);
+<a id='L250' name='L250'></a> 250         <strong class='reserved'>if</strong>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>==<strong class='reserved'>null</strong>)
+<a id='L251' name='L251'></a> 251             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253         <em class='comment'>// JJK: This recopying is required because processName may return</em>
+<a id='L254' name='L254'></a> 254         <em class='comment'>// a cached result. I Don't Like It. *****</em>
+<a id='L255' name='L255'></a> 255         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,0,parts,0,3);
+<a id='L256' name='L256'></a> 256         <strong class='reserved'>return</strong> parts;
+<a id='L257' name='L257'></a> 257     <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258 
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260     <em class='comment'>/**</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>     * Look up a prefix and get the currently-mapped Namespace URI.</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     *</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     * &lt;p&gt;This method looks up the prefix in the current context.</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * Use the empty string ("") for the default Namespace.&lt;/p&gt;</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     *</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * @param prefix The prefix to look up.</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * @return The associated Namespace URI, or null if the prefix</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     *         is undeclared in this context.</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * @see #getPrefix</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     * @see #getPrefixes</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     */</em>
+<a id='L272' name='L272'></a> 272     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/19651.html' title='Multiple referred from 112 places.'>getURI</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)
+<a id='L273' name='L273'></a> 273     <em class='brace'>{</em>
+<a id='L274' name='L274'></a> 274         <strong class='reserved'>return</strong> currentContext.<a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>);
+<a id='L275' name='L275'></a> 275     <em class='brace'>}</em>
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277 
+<a id='L278' name='L278'></a> 278     <em class='comment'>/**</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * Return an enumeration of all prefixes currently declared.</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     *</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; if there is a default prefix, it will not be</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * returned in this enumeration; check for the default prefix</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * using the {@link #getURI getURI} with an argument of "".&lt;/p&gt;</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     *</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * @return An enumeration of all prefixes declared in the</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     *         current context except for the empty (default)</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     *         prefix.</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     * @see #getDeclaredPrefixes</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * @see #getURI</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     */</em>
+<a id='L291' name='L291'></a> 291     <strong class='reserved'>public</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> <a href='../R/18424.html' title='Multiple referred from 5 places.'>getPrefixes</a> ()
+<a id='L292' name='L292'></a> 292     <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293         <strong class='reserved'>return</strong> currentContext.<a href='../D/21601.html' title='Multiple defined in 11 places.'>getPrefixes</a>();
+<a id='L294' name='L294'></a> 294     <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296 
+<a id='L297' name='L297'></a> 297     <em class='comment'>/**</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     * Return one of the prefixes mapped to a Namespace URI.</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     *</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     * &lt;p&gt;If more than one prefix is currently mapped to the same</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     * URI, this method will make an arbitrary selection; if you</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     * want all of the prefixes, use the {@link #getPrefixes}</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     * method instead.&lt;/p&gt;</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     *</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; this will never return the empty</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * (default) prefix; to check for a default prefix, use the {@link</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     * #getURI getURI} method with an argument of "".&lt;/p&gt;</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'>     *</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>     * @param uri The Namespace URI.</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>     * @return One of the prefixes currently mapped to the URI supplied,</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>     *         or null if none is mapped or if the URI is assigned to</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>     *         the default Namespace.</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>     * @see #getPrefixes(java.lang.String)</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>     * @see #getURI */</em>
+<a id='L315' name='L315'></a> 315     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18418.html' title='Multiple referred from 112 places.'>getPrefix</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri)
+<a id='L316' name='L316'></a> 316     <em class='brace'>{</em>
+<a id='L317' name='L317'></a> 317         <strong class='reserved'>return</strong> currentContext.<a href='../D/21592.html' title='Multiple defined in 61 places.'>getPrefix</a>(uri);
+<a id='L318' name='L318'></a> 318     <em class='brace'>}</em>
+<a id='L319' name='L319'></a> 319 
+<a id='L320' name='L320'></a> 320 
+<a id='L321' name='L321'></a> 321     <em class='comment'>/**</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     * Return an enumeration of all prefixes currently declared for a URI.</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     *</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>     * &lt;p&gt;This method returns prefixes mapped to a specific Namespace</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     * URI.  The xml: prefix will be included.  If you want only one</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     * prefix that's mapped to the Namespace URI, and you don't care</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * which one you get, use the {@link #getPrefix getPrefix}</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     *  method instead.&lt;/p&gt;</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     *</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; the empty (default) prefix is</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * &lt;em&gt;never&lt;/em&gt; included in this enumeration; to check for the</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     * presence of a default Namespace, use the {@link #getURI getURI}</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     * method with an argument of "".&lt;/p&gt;</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     *</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>     * @param uri The Namespace URI.</em>
+<a id='L336' name='L336'></a> 336 <em class='comment'>     * @return An enumeration of all prefixes declared in the</em>
+<a id='L337' name='L337'></a> 337 <em class='comment'>     *         current context.</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * @see #getPrefix</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     * @see #getDeclaredPrefixes</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     * @see #getURI */</em>
+<a id='L341' name='L341'></a> 341     <strong class='reserved'>public</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> <a href='../R/18424.html' title='Multiple referred from 5 places.'>getPrefixes</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri)
+<a id='L342' name='L342'></a> 342     <em class='brace'>{</em>
+<a id='L343' name='L343'></a> 343         <em class='comment'>// JJK: The old code involved creating a vector, filling it</em>
+<a id='L344' name='L344'></a> 344         <em class='comment'>// with all the matching prefixes, and then getting its</em>
+<a id='L345' name='L345'></a> 345         <em class='comment'>// elements enumerator. Wastes storage, wastes cycles if we</em>
+<a id='L346' name='L346'></a> 346         <em class='comment'>// don't actually need them all. Better to either implement</em>
+<a id='L347' name='L347'></a> 347         <em class='comment'>// a specific enumerator for these prefixes... or a filter</em>
+<a id='L348' name='L348'></a> 348         <em class='comment'>// around the all-prefixes enumerator, which comes out to</em>
+<a id='L349' name='L349'></a> 349         <em class='comment'>// roughly the same thing.</em>
+<a id='L350' name='L350'></a> 350         <em class='comment'>//</em>
+<a id='L351' name='L351'></a> 351         <em class='comment'>// **** Currently a filter. That may not be most efficient</em>
+<a id='L352' name='L352'></a> 352         <em class='comment'>// when I'm done restructuring storage!</em>
+<a id='L353' name='L353'></a> 353         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/5837.html#L390' title='Defined at 390 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>PrefixForUriEnumerator</a>(<strong class='reserved'>this</strong>,uri,<a href='../D/21601.html' title='Multiple defined in 11 places.'>getPrefixes</a>());
+<a id='L354' name='L354'></a> 354     <em class='brace'>}</em>
+<a id='L355' name='L355'></a> 355 
+<a id='L356' name='L356'></a> 356 
+<a id='L357' name='L357'></a> 357     <em class='comment'>/**</em>
+<a id='L358' name='L358'></a> 358 <em class='comment'>     * Return an enumeration of all prefixes declared in this context.</em>
+<a id='L359' name='L359'></a> 359 <em class='comment'>     *</em>
+<a id='L360' name='L360'></a> 360 <em class='comment'>     * &lt;p&gt;The empty (default) prefix will be included in this</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>     * enumeration; note that this behaviour differs from that of</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * {@link #getPrefix} and {@link #getPrefixes}.&lt;/p&gt;</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     *</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>     * @return An enumeration of all prefixes declared in this</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     *         context.</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * @see #getPrefixes</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     * @see #getURI</em>
+<a id='L368' name='L368'></a> 368 <em class='comment'>     */</em>
+<a id='L369' name='L369'></a> 369     <strong class='reserved'>public</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> <a href='../R/15992.html' title='Multiple referred from 3 places.'>getDeclaredPrefixes</a> ()
+<a id='L370' name='L370'></a> 370     <em class='brace'>{</em>
+<a id='L371' name='L371'></a> 371         <strong class='reserved'>return</strong> currentContext.<a href='../D/18260.html' title='Multiple defined in 5 places.'>getDeclaredPrefixes</a>();
+<a id='L372' name='L372'></a> 372     <em class='brace'>}</em>
+<a id='L373' name='L373'></a> 373 
+<a id='L374' name='L374'></a> 374 
+<a id='L375' name='L375'></a> 375 
+<a id='L376' name='L376'></a> 376 <em class='brace'>}</em>
+<a id='L377' name='L377'></a> 377 
+<a id='L378' name='L378'></a> 378 <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L379' name='L379'></a> 379 <em class='comment'>// Local classes.</em>
+<a id='L380' name='L380'></a> 380 <em class='comment'>// These were _internal_ classes... but in fact they don't have to be,</em>
+<a id='L381' name='L381'></a> 381 <em class='comment'>// and may be more efficient if they aren't.</em>
+<a id='L382' name='L382'></a> 382 <em class='comment'>////////////////////////////////////////////////////////////////////</em>
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384 <em class='comment'>/**</em>
+<a id='L385' name='L385'></a> 385 <em class='comment'> * Implementation of Enumeration filter, wrapped</em>
+<a id='L386' name='L386'></a> 386 <em class='comment'> * aroung the get-all-prefixes version of the operation. This is NOT</em>
+<a id='L387' name='L387'></a> 387 <em class='comment'> * necessarily the most efficient approach; finding the URI and then asking</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'> * what prefixes apply to it might make much more sense.</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'> */</em>
+<a id='L390' name='L390'></a> 390 <strong class='reserved'>class</strong> <a href='../S/5837.html#L353' title='Referred from 353 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>PrefixForUriEnumerator</a> <strong class='reserved'>implements</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a>
+<a id='L391' name='L391'></a> 391 <em class='brace'>{</em>
+<a id='L392' name='L392'></a> 392     <strong class='reserved'>private</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> allPrefixes;
+<a id='L393' name='L393'></a> 393     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri;
+<a id='L394' name='L394'></a> 394     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27091.html' title='Multiple defined in 2 places.'>lookahead</a>=<strong class='reserved'>null</strong>;
+<a id='L395' name='L395'></a> 395     <strong class='reserved'>private</strong> <a href='../S/5837.html#L46' title='Defined at 46 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>NamespaceSupport2</a> nsup;
+<a id='L396' name='L396'></a> 396 
+<a id='L397' name='L397'></a> 397     <em class='comment'>// Kluge: Since one can't do a constructor on an</em>
+<a id='L398' name='L398'></a> 398     <em class='comment'>// anonymous class (as far as I know)...</em>
+<a id='L399' name='L399'></a> 399     PrefixForUriEnumerator(<a href='../S/5837.html#L46' title='Defined at 46 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>NamespaceSupport2</a> nsup,<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri, <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> allPrefixes)
+<a id='L400' name='L400'></a> 400     <em class='brace'>{</em>
+<a id='L401' name='L401'></a> 401         <strong class='reserved'>this</strong>.nsup=nsup;
+<a id='L402' name='L402'></a> 402         <strong class='reserved'>this</strong>.uri=uri;
+<a id='L403' name='L403'></a> 403         <strong class='reserved'>this</strong>.allPrefixes=allPrefixes;
+<a id='L404' name='L404'></a> 404     <em class='brace'>}</em>
+<a id='L405' name='L405'></a> 405 
+<a id='L406' name='L406'></a> 406     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/20227.html' title='Multiple referred from 465 places.'>hasMoreElements</a>()
+<a id='L407' name='L407'></a> 407     <em class='brace'>{</em>
+<a id='L408' name='L408'></a> 408         <strong class='reserved'>if</strong>(<a href='../D/27091.html' title='Multiple defined in 2 places.'>lookahead</a>!=<strong class='reserved'>null</strong>)
+<a id='L409' name='L409'></a> 409             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L410' name='L410'></a> 410 
+<a id='L411' name='L411'></a> 411         <strong class='reserved'>while</strong>(allPrefixes.<a href='../D/24128.html' title='Multiple defined in 32 places.'>hasMoreElements</a>())
+<a id='L412' name='L412'></a> 412             <em class='brace'>{</em>
+<a id='L413' name='L413'></a> 413                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>=(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)allPrefixes.<a href='../D/28145.html' title='Multiple defined in 35 places.'>nextElement</a>();
+<a id='L414' name='L414'></a> 414                 <strong class='reserved'>if</strong>(uri.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(nsup.<a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)))
+<a id='L415' name='L415'></a> 415                     <em class='brace'>{</em>
+<a id='L416' name='L416'></a> 416                         <a href='../D/27091.html' title='Multiple defined in 2 places.'>lookahead</a>=<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>;
+<a id='L417' name='L417'></a> 417                         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L418' name='L418'></a> 418                     <em class='brace'>}</em>
+<a id='L419' name='L419'></a> 419             <em class='brace'>}</em>
+<a id='L420' name='L420'></a> 420         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L421' name='L421'></a> 421     <em class='brace'>}</em>
+<a id='L422' name='L422'></a> 422 
+<a id='L423' name='L423'></a> 423     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/23661.html' title='Multiple referred from 479 places.'>nextElement</a>()
+<a id='L424' name='L424'></a> 424     <em class='brace'>{</em>
+<a id='L425' name='L425'></a> 425         <strong class='reserved'>if</strong>(<a href='../D/24128.html' title='Multiple defined in 32 places.'>hasMoreElements</a>())
+<a id='L426' name='L426'></a> 426             <em class='brace'>{</em>
+<a id='L427' name='L427'></a> 427                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> tmp=<a href='../D/27091.html' title='Multiple defined in 2 places.'>lookahead</a>;
+<a id='L428' name='L428'></a> 428                 <a href='../D/27091.html' title='Multiple defined in 2 places.'>lookahead</a>=<strong class='reserved'>null</strong>;
+<a id='L429' name='L429'></a> 429                 <strong class='reserved'>return</strong> tmp;
+<a id='L430' name='L430'></a> 430             <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431         <strong class='reserved'>else</strong>
+<a id='L432' name='L432'></a> 432             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../S/1128.html#L38' title='Defined at 38 in src/java/util/NoSuchElementException.java.'>NoSuchElementException</a>();
+<a id='L433' name='L433'></a> 433     <em class='brace'>}</em>
+<a id='L434' name='L434'></a> 434 <em class='brace'>}</em>
+<a id='L435' name='L435'></a> 435 
+<a id='L436' name='L436'></a> 436 <em class='comment'>/**</em>
+<a id='L437' name='L437'></a> 437 <em class='comment'> * Internal class for a single Namespace context.</em>
+<a id='L438' name='L438'></a> 438 <em class='comment'> *</em>
+<a id='L439' name='L439'></a> 439 <em class='comment'> * &lt;p&gt;This module caches and reuses Namespace contexts, so the number allocated</em>
+<a id='L440' name='L440'></a> 440 <em class='comment'> * will be equal to the element depth of the document, not to the total</em>
+<a id='L441' name='L441'></a> 441 <em class='comment'> * number of elements (i.e. 5-10 rather than tens of thousands).&lt;/p&gt;</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'> */</em>
+<a id='L443' name='L443'></a> 443 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/1709.html' title='Multiple referred from 11 places.'>Context2</a> <em class='brace'>{</em>
+<a id='L444' name='L444'></a> 444 
+<a id='L445' name='L445'></a> 445     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L446' name='L446'></a> 446     <em class='comment'>// Manefest Constants</em>
+<a id='L447' name='L447'></a> 447     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L448' name='L448'></a> 448 
+<a id='L449' name='L449'></a> 449     <em class='comment'>/**</em>
+<a id='L450' name='L450'></a> 450 <em class='comment'>     * An empty enumeration.</em>
+<a id='L451' name='L451'></a> 451 <em class='comment'>     */</em>
+<a id='L452' name='L452'></a> 452     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> EMPTY_ENUMERATION =
+<a id='L453' name='L453'></a> 453         <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>().<a href='../D/15313.html' title='Multiple defined in 25 places.'>elements</a>();
+<a id='L454' name='L454'></a> 454 
+<a id='L455' name='L455'></a> 455     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L456' name='L456'></a> 456     <em class='comment'>// Protected state.</em>
+<a id='L457' name='L457'></a> 457     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L458' name='L458'></a> 458 
+<a id='L459' name='L459'></a> 459     <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> prefixTable;
+<a id='L460' name='L460'></a> 460     <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> uriTable;
+<a id='L461' name='L461'></a> 461     <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> elementNameTable;
+<a id='L462' name='L462'></a> 462     <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> attributeNameTable;
+<a id='L463' name='L463'></a> 463     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> defaultNS = <strong class='reserved'>null</strong>;
+<a id='L464' name='L464'></a> 464 
+<a id='L465' name='L465'></a> 465     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L466' name='L466'></a> 466     <em class='comment'>// Internal state.</em>
+<a id='L467' name='L467'></a> 467     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L468' name='L468'></a> 468 
+<a id='L469' name='L469'></a> 469     <strong class='reserved'>private</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a> declarations = <strong class='reserved'>null</strong>;
+<a id='L470' name='L470'></a> 470     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> tablesDirty = <strong class='reserved'>false</strong>;
+<a id='L471' name='L471'></a> 471     <strong class='reserved'>private</strong> <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a> = <strong class='reserved'>null</strong>;
+<a id='L472' name='L472'></a> 472     <strong class='reserved'>private</strong> <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> child = <strong class='reserved'>null</strong>;
+<a id='L473' name='L473'></a> 473 
+<a id='L474' name='L474'></a> 474     <em class='comment'>/**</em>
+<a id='L475' name='L475'></a> 475 <em class='comment'>     * Create a new Namespace context.</em>
+<a id='L476' name='L476'></a> 476 <em class='comment'>     */</em>
+<a id='L477' name='L477'></a> 477     <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> (Context2 <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>)
+<a id='L478' name='L478'></a> 478     <em class='brace'>{</em>
+<a id='L479' name='L479'></a> 479         <strong class='reserved'>if</strong>(<a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>==<strong class='reserved'>null</strong>)
+<a id='L480' name='L480'></a> 480             <em class='brace'>{</em>
+<a id='L481' name='L481'></a> 481                 prefixTable = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L482' name='L482'></a> 482                 uriTable = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L483' name='L483'></a> 483                 elementNameTable=<strong class='reserved'>null</strong>;
+<a id='L484' name='L484'></a> 484                 attributeNameTable=<strong class='reserved'>null</strong>;
+<a id='L485' name='L485'></a> 485             <em class='brace'>}</em>
+<a id='L486' name='L486'></a> 486         <strong class='reserved'>else</strong>
+<a id='L487' name='L487'></a> 487             <a href='../D/33509.html' title='Multiple defined in 44 places.'>setParent</a>(<a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>);
+<a id='L488' name='L488'></a> 488     <em class='brace'>}</em>
+<a id='L489' name='L489'></a> 489 
+<a id='L490' name='L490'></a> 490 
+<a id='L491' name='L491'></a> 491     <em class='comment'>/**</em>
+<a id='L492' name='L492'></a> 492 <em class='comment'>     * @returns The child Namespace context object, or null if this</em>
+<a id='L493' name='L493'></a> 493 <em class='comment'>     * is the last currently on the chain.</em>
+<a id='L494' name='L494'></a> 494 <em class='comment'>     */</em>
+<a id='L495' name='L495'></a> 495     <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> <a href='../R/15535.html' title='Multiple referred from 151 places.'>getChild</a>()
+<a id='L496' name='L496'></a> 496     <em class='brace'>{</em>
+<a id='L497' name='L497'></a> 497         <strong class='reserved'>return</strong> child;
+<a id='L498' name='L498'></a> 498     <em class='brace'>}</em>
+<a id='L499' name='L499'></a> 499 
+<a id='L500' name='L500'></a> 500     <em class='comment'>/**</em>
+<a id='L501' name='L501'></a> 501 <em class='comment'>     * @returns The parent Namespace context object, or null if this</em>
+<a id='L502' name='L502'></a> 502 <em class='comment'>     * is the root.</em>
+<a id='L503' name='L503'></a> 503 <em class='comment'>     */</em>
+<a id='L504' name='L504'></a> 504     <a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> <a href='../R/18269.html' title='Multiple referred from 606 places.'>getParent</a>()
+<a id='L505' name='L505'></a> 505     <em class='brace'>{</em>
+<a id='L506' name='L506'></a> 506         <strong class='reserved'>return</strong> <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>;
+<a id='L507' name='L507'></a> 507     <em class='brace'>}</em>
+<a id='L508' name='L508'></a> 508 
+<a id='L509' name='L509'></a> 509     <em class='comment'>/**</em>
+<a id='L510' name='L510'></a> 510 <em class='comment'>     * (Re)set the parent of this Namespace context.</em>
+<a id='L511' name='L511'></a> 511 <em class='comment'>     * This is separate from the c'tor because it's re-applied</em>
+<a id='L512' name='L512'></a> 512 <em class='comment'>     * when a Context2 is reused by push-after-pop.</em>
+<a id='L513' name='L513'></a> 513 <em class='comment'>     *</em>
+<a id='L514' name='L514'></a> 514 <em class='comment'>     * @param parent The parent Namespace context object.</em>
+<a id='L515' name='L515'></a> 515 <em class='comment'>     */</em>
+<a id='L516' name='L516'></a> 516     <strong class='reserved'>void</strong> <a href='../R/27912.html' title='Multiple referred from 145 places.'>setParent</a> (<a href='../S/5837.html#L443' title='Defined at 443 in src/com/sun/org/apache/xml/internal/utils/NamespaceSupport2.java.'>Context2</a> <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>)
+<a id='L517' name='L517'></a> 517     <em class='brace'>{</em>
+<a id='L518' name='L518'></a> 518         <strong class='reserved'>this</strong>.<a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a> = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>;
+<a id='L519' name='L519'></a> 519         <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.child = <strong class='reserved'>this</strong>;        <em class='comment'>// JJK: Doubly-linked</em>
+<a id='L520' name='L520'></a> 520         declarations = <strong class='reserved'>null</strong>;
+<a id='L521' name='L521'></a> 521         prefixTable = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.prefixTable;
+<a id='L522' name='L522'></a> 522         uriTable = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.uriTable;
+<a id='L523' name='L523'></a> 523         elementNameTable = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.elementNameTable;
+<a id='L524' name='L524'></a> 524         attributeNameTable = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.attributeNameTable;
+<a id='L525' name='L525'></a> 525         defaultNS = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.defaultNS;
+<a id='L526' name='L526'></a> 526         tablesDirty = <strong class='reserved'>false</strong>;
+<a id='L527' name='L527'></a> 527     <em class='brace'>}</em>
+<a id='L528' name='L528'></a> 528 
+<a id='L529' name='L529'></a> 529 
+<a id='L530' name='L530'></a> 530     <em class='comment'>/**</em>
+<a id='L531' name='L531'></a> 531 <em class='comment'>     * Declare a Namespace prefix for this context.</em>
+<a id='L532' name='L532'></a> 532 <em class='comment'>     *</em>
+<a id='L533' name='L533'></a> 533 <em class='comment'>     * @param prefix The prefix to declare.</em>
+<a id='L534' name='L534'></a> 534 <em class='comment'>     * @param uri The associated Namespace URI.</em>
+<a id='L535' name='L535'></a> 535 <em class='comment'>     * @see org.xml.sax.helpers.NamespaceSupport2#declarePrefix</em>
+<a id='L536' name='L536'></a> 536 <em class='comment'>     */</em>
+<a id='L537' name='L537'></a> 537     <strong class='reserved'>void</strong> <a href='../R/12937.html' title='Multiple referred from 42 places.'>declarePrefix</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri)
+<a id='L538' name='L538'></a> 538     <em class='brace'>{</em>
+<a id='L539' name='L539'></a> 539                                 <em class='comment'>// Lazy processing...</em>
+<a id='L540' name='L540'></a> 540         <strong class='reserved'>if</strong> (!tablesDirty) <em class='brace'>{</em>
+<a id='L541' name='L541'></a> 541             <a href='../D/13521.html' title='Multiple defined in 2 places.'>copyTables</a>();
+<a id='L542' name='L542'></a> 542         <em class='brace'>}</em>
+<a id='L543' name='L543'></a> 543         <strong class='reserved'>if</strong> (declarations == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L544' name='L544'></a> 544             declarations = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>();
+<a id='L545' name='L545'></a> 545         <em class='brace'>}</em>
+<a id='L546' name='L546'></a> 546 
+<a id='L547' name='L547'></a> 547         <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>.<a href='../S/1729.html#L3167' title='Defined at 3167 in src/java/lang/String.java.'>intern</a>();
+<a id='L548' name='L548'></a> 548         uri = uri.<a href='../S/1729.html#L3167' title='Defined at 3167 in src/java/lang/String.java.'>intern</a>();
+<a id='L549' name='L549'></a> 549         <strong class='reserved'>if</strong> ("".<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)) <em class='brace'>{</em>
+<a id='L550' name='L550'></a> 550             <strong class='reserved'>if</strong> ("".<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(uri)) <em class='brace'>{</em>
+<a id='L551' name='L551'></a> 551                 defaultNS = <strong class='reserved'>null</strong>;
+<a id='L552' name='L552'></a> 552             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L553' name='L553'></a> 553                 defaultNS = uri;
+<a id='L554' name='L554'></a> 554             <em class='brace'>}</em>
+<a id='L555' name='L555'></a> 555         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L556' name='L556'></a> 556             prefixTable.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, uri);
+<a id='L557' name='L557'></a> 557             uriTable.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(uri, <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>); <em class='comment'>// may wipe out another prefix</em>
+<a id='L558' name='L558'></a> 558         <em class='brace'>}</em>
+<a id='L559' name='L559'></a> 559         declarations.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>);
+<a id='L560' name='L560'></a> 560     <em class='brace'>}</em>
+<a id='L561' name='L561'></a> 561 
+<a id='L562' name='L562'></a> 562 
+<a id='L563' name='L563'></a> 563     <em class='comment'>/**</em>
+<a id='L564' name='L564'></a> 564 <em class='comment'>     * Process a raw XML 1.0 name in this context.</em>
+<a id='L565' name='L565'></a> 565 <em class='comment'>     *</em>
+<a id='L566' name='L566'></a> 566 <em class='comment'>     * @param qName The raw XML 1.0 name.</em>
+<a id='L567' name='L567'></a> 567 <em class='comment'>     * @param isAttribute true if this is an attribute name.</em>
+<a id='L568' name='L568'></a> 568 <em class='comment'>     * @return An array of three strings containing the</em>
+<a id='L569' name='L569'></a> 569 <em class='comment'>     *         URI part (or empty string), the local part,</em>
+<a id='L570' name='L570'></a> 570 <em class='comment'>     *         and the raw name, all internalized, or null</em>
+<a id='L571' name='L571'></a> 571 <em class='comment'>     *         if there is an undeclared prefix.</em>
+<a id='L572' name='L572'></a> 572 <em class='comment'>     * @see org.xml.sax.helpers.NamespaceSupport2#processName</em>
+<a id='L573' name='L573'></a> 573 <em class='comment'>     */</em>
+<a id='L574' name='L574'></a> 574     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> [] <a href='../R/25166.html' title='Multiple referred from 6 places.'>processName</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> qName, <strong class='reserved'>boolean</strong> <a href='../D/25219.html' title='Multiple defined in 7 places.'>isAttribute</a>)
+<a id='L575' name='L575'></a> 575     <em class='brace'>{</em>
+<a id='L576' name='L576'></a> 576         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[];
+<a id='L577' name='L577'></a> 577         <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> table;
+<a id='L578' name='L578'></a> 578 
+<a id='L579' name='L579'></a> 579                                 <em class='comment'>// Select the appropriate table.</em>
+<a id='L580' name='L580'></a> 580         <strong class='reserved'>if</strong> (<a href='../D/25219.html' title='Multiple defined in 7 places.'>isAttribute</a>) <em class='brace'>{</em>
+<a id='L581' name='L581'></a> 581             <strong class='reserved'>if</strong>(elementNameTable==<strong class='reserved'>null</strong>)
+<a id='L582' name='L582'></a> 582                 elementNameTable=<strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L583' name='L583'></a> 583             table = elementNameTable;
+<a id='L584' name='L584'></a> 584         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L585' name='L585'></a> 585             <strong class='reserved'>if</strong>(attributeNameTable==<strong class='reserved'>null</strong>)
+<a id='L586' name='L586'></a> 586                 attributeNameTable=<strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L587' name='L587'></a> 587             table = attributeNameTable;
+<a id='L588' name='L588'></a> 588         <em class='brace'>}</em>
+<a id='L589' name='L589'></a> 589 
+<a id='L590' name='L590'></a> 590                                 <em class='comment'>// Start by looking in the cache, and</em>
+<a id='L591' name='L591'></a> 591                                 <em class='comment'>// return immediately if the name</em>
+<a id='L592' name='L592'></a> 592                                 <em class='comment'>// is already known in this content</em>
+<a id='L593' name='L593'></a> 593         <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[])table.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(qName);
+<a id='L594' name='L594'></a> 594         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L595' name='L595'></a> 595             <strong class='reserved'>return</strong> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>;
+<a id='L596' name='L596'></a> 596         <em class='brace'>}</em>
+<a id='L597' name='L597'></a> 597 
+<a id='L598' name='L598'></a> 598                                 <em class='comment'>// We haven't seen this name in this</em>
+<a id='L599' name='L599'></a> 599                                 <em class='comment'>// context before.</em>
+<a id='L600' name='L600'></a> 600         <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[3];
+<a id='L601' name='L601'></a> 601         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = qName.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>(':');
+<a id='L602' name='L602'></a> 602 
+<a id='L603' name='L603'></a> 603 
+<a id='L604' name='L604'></a> 604                                 <em class='comment'>// No prefix.</em>
+<a id='L605' name='L605'></a> 605         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> == -1) <em class='brace'>{</em>
+<a id='L606' name='L606'></a> 606             <strong class='reserved'>if</strong> (<a href='../D/25219.html' title='Multiple defined in 7 places.'>isAttribute</a> || defaultNS == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L607' name='L607'></a> 607                 <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[0] = "";
+<a id='L608' name='L608'></a> 608             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L609' name='L609'></a> 609                 <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[0] = defaultNS;
+<a id='L610' name='L610'></a> 610             <em class='brace'>}</em>
+<a id='L611' name='L611'></a> 611             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[1] = qName.<a href='../S/1729.html#L3167' title='Defined at 3167 in src/java/lang/String.java.'>intern</a>();
+<a id='L612' name='L612'></a> 612             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[2] = <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[1];
+<a id='L613' name='L613'></a> 613         <em class='brace'>}</em>
+<a id='L614' name='L614'></a> 614 
+<a id='L615' name='L615'></a> 615                                 <em class='comment'>// Prefix</em>
+<a id='L616' name='L616'></a> 616         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L617' name='L617'></a> 617             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = qName.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(0, <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L618' name='L618'></a> 618             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> local = qName.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>+1);
+<a id='L619' name='L619'></a> 619             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri;
+<a id='L620' name='L620'></a> 620             <strong class='reserved'>if</strong> ("".<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)) <em class='brace'>{</em>
+<a id='L621' name='L621'></a> 621                 uri = defaultNS;
+<a id='L622' name='L622'></a> 622             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L623' name='L623'></a> 623                 uri = (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)prefixTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>);
+<a id='L624' name='L624'></a> 624             <em class='brace'>}</em>
+<a id='L625' name='L625'></a> 625             <strong class='reserved'>if</strong> (uri == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L626' name='L626'></a> 626                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L627' name='L627'></a> 627             <em class='brace'>}</em>
+<a id='L628' name='L628'></a> 628             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[0] = uri;
+<a id='L629' name='L629'></a> 629             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[1] = local.<a href='../S/1729.html#L3167' title='Defined at 3167 in src/java/lang/String.java.'>intern</a>();
+<a id='L630' name='L630'></a> 630             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[2] = qName.<a href='../S/1729.html#L3167' title='Defined at 3167 in src/java/lang/String.java.'>intern</a>();
+<a id='L631' name='L631'></a> 631         <em class='brace'>}</em>
+<a id='L632' name='L632'></a> 632 
+<a id='L633' name='L633'></a> 633                                 <em class='comment'>// Save in the cache for future use.</em>
+<a id='L634' name='L634'></a> 634         table.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>[2], <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L635' name='L635'></a> 635         tablesDirty = <strong class='reserved'>true</strong>;
+<a id='L636' name='L636'></a> 636         <strong class='reserved'>return</strong> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>;
+<a id='L637' name='L637'></a> 637     <em class='brace'>}</em>
+<a id='L638' name='L638'></a> 638 
+<a id='L639' name='L639'></a> 639 
+<a id='L640' name='L640'></a> 640     <em class='comment'>/**</em>
+<a id='L641' name='L641'></a> 641 <em class='comment'>     * Look up the URI associated with a prefix in this context.</em>
+<a id='L642' name='L642'></a> 642 <em class='comment'>     *</em>
+<a id='L643' name='L643'></a> 643 <em class='comment'>     * @param prefix The prefix to look up.</em>
+<a id='L644' name='L644'></a> 644 <em class='comment'>     * @return The associated Namespace URI, or null if none is</em>
+<a id='L645' name='L645'></a> 645 <em class='comment'>     *         declared.</em>
+<a id='L646' name='L646'></a> 646 <em class='comment'>     * @see org.xml.sax.helpers.NamespaceSupport2#getURI</em>
+<a id='L647' name='L647'></a> 647 <em class='comment'>     */</em>
+<a id='L648' name='L648'></a> 648     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/19651.html' title='Multiple referred from 112 places.'>getURI</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)
+<a id='L649' name='L649'></a> 649     <em class='brace'>{</em>
+<a id='L650' name='L650'></a> 650         <strong class='reserved'>if</strong> ("".<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)) <em class='brace'>{</em>
+<a id='L651' name='L651'></a> 651             <strong class='reserved'>return</strong> defaultNS;
+<a id='L652' name='L652'></a> 652         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (prefixTable == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L653' name='L653'></a> 653             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L654' name='L654'></a> 654         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L655' name='L655'></a> 655             <strong class='reserved'>return</strong> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)prefixTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>);
+<a id='L656' name='L656'></a> 656         <em class='brace'>}</em>
+<a id='L657' name='L657'></a> 657     <em class='brace'>}</em>
+<a id='L658' name='L658'></a> 658 
+<a id='L659' name='L659'></a> 659 
+<a id='L660' name='L660'></a> 660     <em class='comment'>/**</em>
+<a id='L661' name='L661'></a> 661 <em class='comment'>     * Look up one of the prefixes associated with a URI in this context.</em>
+<a id='L662' name='L662'></a> 662 <em class='comment'>     *</em>
+<a id='L663' name='L663'></a> 663 <em class='comment'>     * &lt;p&gt;Since many prefixes may be mapped to the same URI,</em>
+<a id='L664' name='L664'></a> 664 <em class='comment'>     * the return value may be unreliable.&lt;/p&gt;</em>
+<a id='L665' name='L665'></a> 665 <em class='comment'>     *</em>
+<a id='L666' name='L666'></a> 666 <em class='comment'>     * @param uri The URI to look up.</em>
+<a id='L667' name='L667'></a> 667 <em class='comment'>     * @return The associated prefix, or null if none is declared.</em>
+<a id='L668' name='L668'></a> 668 <em class='comment'>     * @see org.xml.sax.helpers.NamespaceSupport2#getPrefix</em>
+<a id='L669' name='L669'></a> 669 <em class='comment'>     */</em>
+<a id='L670' name='L670'></a> 670     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18418.html' title='Multiple referred from 112 places.'>getPrefix</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri)
+<a id='L671' name='L671'></a> 671     <em class='brace'>{</em>
+<a id='L672' name='L672'></a> 672         <strong class='reserved'>if</strong> (uriTable == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L673' name='L673'></a> 673             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L674' name='L674'></a> 674         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L675' name='L675'></a> 675             <strong class='reserved'>return</strong> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)uriTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(uri);
+<a id='L676' name='L676'></a> 676         <em class='brace'>}</em>
+<a id='L677' name='L677'></a> 677     <em class='brace'>}</em>
+<a id='L678' name='L678'></a> 678 
+<a id='L679' name='L679'></a> 679 
+<a id='L680' name='L680'></a> 680     <em class='comment'>/**</em>
+<a id='L681' name='L681'></a> 681 <em class='comment'>     * Return an enumeration of prefixes declared in this context.</em>
+<a id='L682' name='L682'></a> 682 <em class='comment'>     *</em>
+<a id='L683' name='L683'></a> 683 <em class='comment'>     * @return An enumeration of prefixes (possibly empty).</em>
+<a id='L684' name='L684'></a> 684 <em class='comment'>     * @see org.xml.sax.helpers.NamespaceSupport2#getDeclaredPrefixes</em>
+<a id='L685' name='L685'></a> 685 <em class='comment'>     */</em>
+<a id='L686' name='L686'></a> 686     <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> <a href='../R/15992.html' title='Multiple referred from 3 places.'>getDeclaredPrefixes</a> ()
+<a id='L687' name='L687'></a> 687     <em class='brace'>{</em>
+<a id='L688' name='L688'></a> 688         <strong class='reserved'>if</strong> (declarations == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L689' name='L689'></a> 689             <strong class='reserved'>return</strong> EMPTY_ENUMERATION;
+<a id='L690' name='L690'></a> 690         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L691' name='L691'></a> 691             <strong class='reserved'>return</strong> declarations.<a href='../D/15313.html' title='Multiple defined in 25 places.'>elements</a>();
+<a id='L692' name='L692'></a> 692         <em class='brace'>}</em>
+<a id='L693' name='L693'></a> 693     <em class='brace'>}</em>
+<a id='L694' name='L694'></a> 694 
+<a id='L695' name='L695'></a> 695 
+<a id='L696' name='L696'></a> 696     <em class='comment'>/**</em>
+<a id='L697' name='L697'></a> 697 <em class='comment'>     * Return an enumeration of all prefixes currently in force.</em>
+<a id='L698' name='L698'></a> 698 <em class='comment'>     *</em>
+<a id='L699' name='L699'></a> 699 <em class='comment'>     * &lt;p&gt;The default prefix, if in force, is &lt;em&gt;not&lt;/em&gt;</em>
+<a id='L700' name='L700'></a> 700 <em class='comment'>     * returned, and will have to be checked for separately.&lt;/p&gt;</em>
+<a id='L701' name='L701'></a> 701 <em class='comment'>     *</em>
+<a id='L702' name='L702'></a> 702 <em class='comment'>     * @return An enumeration of prefixes (never empty).</em>
+<a id='L703' name='L703'></a> 703 <em class='comment'>     * @see org.xml.sax.helpers.NamespaceSupport2#getPrefixes</em>
+<a id='L704' name='L704'></a> 704 <em class='comment'>     */</em>
+<a id='L705' name='L705'></a> 705     <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> <a href='../R/18424.html' title='Multiple referred from 5 places.'>getPrefixes</a> ()
+<a id='L706' name='L706'></a> 706     <em class='brace'>{</em>
+<a id='L707' name='L707'></a> 707         <strong class='reserved'>if</strong> (prefixTable == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L708' name='L708'></a> 708             <strong class='reserved'>return</strong> EMPTY_ENUMERATION;
+<a id='L709' name='L709'></a> 709         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L710' name='L710'></a> 710             <strong class='reserved'>return</strong> prefixTable.<a href='../D/26726.html' title='Multiple defined in 22 places.'>keys</a>();
+<a id='L711' name='L711'></a> 711         <em class='brace'>}</em>
+<a id='L712' name='L712'></a> 712     <em class='brace'>}</em>
+<a id='L713' name='L713'></a> 713 
+<a id='L714' name='L714'></a> 714     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L715' name='L715'></a> 715     <em class='comment'>// Internal methods.</em>
+<a id='L716' name='L716'></a> 716     <em class='comment'>////////////////////////////////////////////////////////////////</em>
+<a id='L717' name='L717'></a> 717 
+<a id='L718' name='L718'></a> 718     <em class='comment'>/**</em>
+<a id='L719' name='L719'></a> 719 <em class='comment'>     * Copy on write for the internal tables in this context.</em>
+<a id='L720' name='L720'></a> 720 <em class='comment'>     *</em>
+<a id='L721' name='L721'></a> 721 <em class='comment'>     * &lt;p&gt;This class is optimized for the normal case where most</em>
+<a id='L722' name='L722'></a> 722 <em class='comment'>     * elements do not contain Namespace declarations. In that case,</em>
+<a id='L723' name='L723'></a> 723 <em class='comment'>     * the Context2 will share data structures with its parent.</em>
+<a id='L724' name='L724'></a> 724 <em class='comment'>     * New tables are obtained only when new declarations are issued,</em>
+<a id='L725' name='L725'></a> 725 <em class='comment'>     * so they can be popped off the stack.&lt;/p&gt;</em>
+<a id='L726' name='L726'></a> 726 <em class='comment'>     *</em>
+<a id='L727' name='L727'></a> 727 <em class='comment'>     * &lt;p&gt; JJK: **** Alternative: each Context2 might declare</em>
+<a id='L728' name='L728'></a> 728 <em class='comment'>     *  _only_ its local bindings, and delegate upward if not found.&lt;/p&gt;</em>
+<a id='L729' name='L729'></a> 729 <em class='comment'>     */</em>
+<a id='L730' name='L730'></a> 730     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/12132.html' title='Multiple referred from 3 places.'>copyTables</a> ()
+<a id='L731' name='L731'></a> 731     <em class='brace'>{</em>
+<a id='L732' name='L732'></a> 732         <em class='comment'>// Start by copying our parent's bindings</em>
+<a id='L733' name='L733'></a> 733         prefixTable = (<a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>)prefixTable.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L734' name='L734'></a> 734         uriTable = (<a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>)uriTable.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L735' name='L735'></a> 735 
+<a id='L736' name='L736'></a> 736         <em class='comment'>// Replace the caches with empty ones, rather than</em>
+<a id='L737' name='L737'></a> 737         <em class='comment'>// trying to determine which bindings should be flushed.</em>
+<a id='L738' name='L738'></a> 738         <em class='comment'>// As far as I can tell, these caches are never actually</em>
+<a id='L739' name='L739'></a> 739         <em class='comment'>// used in Xalan... More efficient to remove the whole</em>
+<a id='L740' name='L740'></a> 740         <em class='comment'>// cache system? ****</em>
+<a id='L741' name='L741'></a> 741         <strong class='reserved'>if</strong>(elementNameTable!=<strong class='reserved'>null</strong>)
+<a id='L742' name='L742'></a> 742             elementNameTable=<strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L743' name='L743'></a> 743         <strong class='reserved'>if</strong>(attributeNameTable!=<strong class='reserved'>null</strong>)
+<a id='L744' name='L744'></a> 744             attributeNameTable=<strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
+<a id='L745' name='L745'></a> 745         tablesDirty = <strong class='reserved'>true</strong>;
+<a id='L746' name='L746'></a> 746     <em class='brace'>}</em>
+<a id='L747' name='L747'></a> 747 
+<a id='L748' name='L748'></a> 748 <em class='brace'>}</em>
+<a id='L749' name='L749'></a> 749 
+<a id='L750' name='L750'></a> 750 
+<a id='L751' name='L751'></a> 751 <em class='comment'>// end of NamespaceSupport2.java</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L96'>[^]</a><a href='#L730'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

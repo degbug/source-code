@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/sound/midi/Synthesizer.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8098.html'>sound</a>/<a href='../files/8099.html'>midi</a>/Synthesizer.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L89'>[^]</a><a href='#L336'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L89' title='Defined at 89.'>getMaxPolyphony</a></li>
+<li><a href='#L104' title='Defined at 104.'>getLatency</a></li>
+<li><a href='#L120' title='Defined at 120.'>getChannels</a></li>
+<li><a href='#L136' title='Defined at 136.'>getVoiceStatus</a></li>
+<li><a href='#L152' title='Defined at 152.'>isSoundbankSupported</a></li>
+<li><a href='#L183' title='Defined at 183.'>loadInstrument</a></li>
+<li><a href='#L198' title='Defined at 198.'>unloadInstrument</a></li>
+<li><a href='#L226' title='Defined at 226.'>remapInstrument</a></li>
+<li><a href='#L237' title='Defined at 237.'>getDefaultSoundbank</a></li>
+<li><a href='#L260' title='Defined at 260.'>getAvailableInstruments</a></li>
+<li><a href='#L271' title='Defined at 271.'>getLoadedInstruments</a></li>
+<li><a href='#L288' title='Defined at 288.'>loadAllInstruments</a></li>
+<li><a href='#L300' title='Defined at 300.'>unloadAllInstruments</a></li>
+<li><a href='#L322' title='Defined at 322.'>loadInstruments</a></li>
+<li><a href='#L336' title='Defined at 336.'>unloadInstruments</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.sound.midi;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> javax.sound.sampled.Control;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <em class='comment'>/**</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * A &lt;code&gt;Synthesizer&lt;/code&gt; generates sound.  This usually happens when one of</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * the &lt;code&gt;Synthesizer&lt;/code&gt;'s {@link MidiChannel} objects receives a</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * {@link MidiChannel#noteOn(int, int) noteOn} message, either</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * directly or via the &lt;code&gt;Synthesizer&lt;/code&gt; object.</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * Many &lt;code&gt;Synthesizer&lt;/code&gt;s support &lt;code&gt;Receivers&lt;/code&gt;, through which</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * MIDI events can be delivered to the &lt;code&gt;Synthesizer&lt;/code&gt;.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * In such cases, the &lt;code&gt;Synthesizer&lt;/code&gt; typically responds by sending</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * a corresponding message to the appropriate &lt;code&gt;MidiChannel&lt;/code&gt;, or by</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * processing the event itself if the event isn't one of the MIDI channel</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * messages.</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * &lt;p&gt;</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * The &lt;code&gt;Synthesizer&lt;/code&gt; interface includes methods for loading and</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * unloading instruments from soundbanks.  An instrument is a specification for synthesizing a</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * certain type of sound, whether that sound emulates a traditional instrument or is</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * some kind of sound effect or other imaginary sound. A soundbank is a collection of instruments, organized</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * by bank and program number (via the instrument's &lt;code&gt;Patch&lt;/code&gt; object).</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * Different &lt;code&gt;Synthesizer&lt;/code&gt; classes might implement different sound-synthesis</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * techniques, meaning that some instruments and not others might be compatible with a</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * given synthesizer.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * Also, synthesizers may have a limited amount of memory for instruments, meaning</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * that not every soundbank and instrument can be used by every synthesizer, even if</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * the synthesis technique is compatible.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * To see whether the instruments from</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * a certain soundbank can be played by a given synthesizer, invoke the</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * {@link #isSoundbankSupported(Soundbank) isSoundbankSupported} method of</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * &lt;code&gt;Synthesizer&lt;/code&gt;.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * &lt;p&gt;</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * "Loading" an instrument means that that instrument becomes available for</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * synthesizing notes.  The instrument is loaded into the bank and</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * program location specified by its &lt;code&gt;Patch&lt;/code&gt; object.  Loading does</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> * not necessarily mean that subsequently played notes will immediately have</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * the sound of this newly loaded instrument.  For the instrument to play notes,</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * one of the synthesizer's &lt;code&gt;MidiChannel&lt;/code&gt; objects must receive (or have received)</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * a program-change message that causes that particular instrument's</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * bank and program number to be selected.</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> *</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * @see MidiSystem#getSynthesizer</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * @see Soundbank</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * @see Instrument</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * @see MidiChannel#programChange(int, int)</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * @see Receiver</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * @see Transmitter</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> * @see MidiDevice</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> *</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * @author Kara Kytle</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> */</em>
+<a id='L78' name='L78'></a>  78 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/7890.html' title='Multiple referred from 5 places.'>Synthesizer</a> <strong class='reserved'>extends</strong> <a href='../S/4410.html#L110' title='Defined at 110 in src/javax/sound/midi/MidiDevice.java.'>MidiDevice</a> <em class='brace'>{</em>
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80 
+<a id='L81' name='L81'></a>  81     <em class='comment'>// SYNTHESIZER METHODS</em>
+<a id='L82' name='L82'></a>  82 
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <em class='comment'>/**</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * Obtains the maximum number of notes that this synthesizer can sound simultaneously.</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * @return the maximum number of simultaneous notes</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * @see #getVoiceStatus</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     */</em>
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> getMaxPolyphony();
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91 
+<a id='L92' name='L92'></a>  92     <em class='comment'>/**</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * Obtains the processing latency incurred by this synthesizer, expressed in</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * microseconds.  This latency measures the worst-case delay between the</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * time a MIDI message is delivered to the synthesizer and the time that the</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * synthesizer actually produces the corresponding result.</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * Although the latency is expressed in microseconds, a synthesizer's actual measured</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * delay may vary over a wider range than this resolution suggests.  For example,</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * a synthesizer might have a worst-case delay of a few milliseconds or more.</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     *</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * @return the worst-case delay, in microseconds</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     */</em>
+<a id='L104' name='L104'></a> 104     <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../S/6065.html#L330' title='Referred from 330 in src/com/sun/org/apache/xalan/internal/xsltc/dom/DocumentCache.java.'>getLatency</a>();
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106 
+<a id='L107' name='L107'></a> 107     <em class='comment'>/**</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * Obtains the set of MIDI channels controlled by this synthesizer.  Each</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * non-null element in the returned array is a &lt;code&gt;MidiChannel&lt;/code&gt; that</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * receives the MIDI messages sent on that channel number.</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * The MIDI 1.0 specification provides for 16 channels, so this</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * method returns an array of at least 16 elements.  However, if this synthesizer</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * doesn't make use of all 16 channels, some of the elements of the array</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * might be &lt;code&gt;null&lt;/code&gt;, so you should check each element</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * before using it.</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * @return an array of the &lt;code&gt;MidiChannel&lt;/code&gt; objects managed by this</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * &lt;code&gt;Synthesizer&lt;/code&gt;.  Some of the array elements may be &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     */</em>
+<a id='L120' name='L120'></a> 120     <strong class='reserved'>public</strong> <a href='../S/4413.html#L67' title='Defined at 67 in src/javax/sound/midi/MidiChannel.java.'>MidiChannel</a>[] <a href='../R/15495.html' title='Multiple referred from 6 places.'>getChannels</a>();
+<a id='L121' name='L121'></a> 121 
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123     <em class='comment'>/**</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * Obtains the current status of the voices produced by this synthesizer.</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * If this class of &lt;code&gt;Synthesizer&lt;/code&gt; does not provide voice</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * information, the returned array will always be of length 0.  Otherwise,</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * its length is always equal to the total number of voices, as returned by</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * &lt;code&gt;getMaxPolyphony()&lt;/code&gt;.  (See the &lt;code&gt;VoiceStatus&lt;/code&gt; class</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * description for an explanation of synthesizer voices.)</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     *</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     * @return an array of &lt;code&gt;VoiceStatus&lt;/code&gt; objects that supply</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * information about the corresponding synthesizer voices</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * @see #getMaxPolyphony</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * @see VoiceStatus</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     */</em>
+<a id='L136' name='L136'></a> 136     <strong class='reserved'>public</strong> <a href='../S/4425.html#L87' title='Defined at 87 in src/javax/sound/midi/VoiceStatus.java.'>VoiceStatus</a>[] getVoiceStatus();
+<a id='L137' name='L137'></a> 137 
+<a id='L138' name='L138'></a> 138 
+<a id='L139' name='L139'></a> 139     <em class='comment'>/**</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * Informs the caller whether this synthesizer is capable of loading</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * instruments from the specified soundbank.</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * If the soundbank is unsupported, any attempts to load instruments from</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * it will result in an &lt;code&gt;IllegalArgumentException&lt;/code&gt;.</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * @param soundbank soundbank for which support is queried</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the soundbank is supported, otherwise &lt;code&gt;false&lt;/code&gt;</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * @see #loadInstruments</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * @see #loadAllInstruments</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * @see #unloadInstruments</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * @see #unloadAllInstruments</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * @see #getDefaultSoundbank</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     */</em>
+<a id='L152' name='L152'></a> 152     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> isSoundbankSupported(<a href='../S/4424.html#L72' title='Defined at 72 in src/javax/sound/midi/Soundbank.java.'>Soundbank</a> soundbank);
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155     <em class='comment'>/**</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * Makes a particular instrument available for synthesis.  This instrument</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * is loaded into the patch location specified by its &lt;code&gt;Patch&lt;/code&gt;</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * object, so that if a program-change message is</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * received (or has been received) that causes that patch to be selected,</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * subsequent notes will be played using the sound of</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * &lt;code&gt;instrument&lt;/code&gt;.  If the specified instrument is already loaded,</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * this method does nothing and returns &lt;code&gt;true&lt;/code&gt;.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * The instrument must be part of a soundbank</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * that this &lt;code&gt;Synthesizer&lt;/code&gt; supports.  (To make sure, you can use</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * the &lt;code&gt;getSoundbank&lt;/code&gt; method of &lt;code&gt;Instrument&lt;/code&gt; and the</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * &lt;code&gt;isSoundbankSupported&lt;/code&gt; method of &lt;code&gt;Synthesizer&lt;/code&gt;.)</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     * @param instrument instrument to load</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the instrument is successfully loaded (or</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * already had been), &lt;code&gt;false&lt;/code&gt; if the instrument could not be</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * loaded (for example, if the synthesizer has insufficient</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * memory to load it)</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * @throws IllegalArgumentException if this</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * &lt;code&gt;Synthesizer&lt;/code&gt; doesn't support the specified instrument's</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * soundbank</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * @see #unloadInstrument</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     * @see #loadInstruments</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * @see #loadAllInstruments</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * @see #remapInstrument</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * @see SoundbankResource#getSoundbank</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * @see MidiChannel#programChange(int, int)</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     */</em>
+<a id='L183' name='L183'></a> 183     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> loadInstrument(<a href='../S/4429.html#L51' title='Defined at 51 in src/javax/sound/midi/Instrument.java.'>Instrument</a> instrument);
+<a id='L184' name='L184'></a> 184 
+<a id='L185' name='L185'></a> 185 
+<a id='L186' name='L186'></a> 186     <em class='comment'>/**</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * Unloads a particular instrument.</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     * @param instrument instrument to unload</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * @throws IllegalArgumentException if this</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     * &lt;code&gt;Synthesizer&lt;/code&gt; doesn't support the specified instrument's</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * soundbank</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     * @see #loadInstrument</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>     * @see #unloadInstruments</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     * @see #unloadAllInstruments</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * @see #getLoadedInstruments</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * @see #remapInstrument</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     */</em>
+<a id='L198' name='L198'></a> 198     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> unloadInstrument(<a href='../S/4429.html#L51' title='Defined at 51 in src/javax/sound/midi/Instrument.java.'>Instrument</a> instrument);
+<a id='L199' name='L199'></a> 199 
+<a id='L200' name='L200'></a> 200 
+<a id='L201' name='L201'></a> 201     <em class='comment'>/**</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * Remaps an instrument. Instrument &lt;code&gt;to&lt;/code&gt; takes the</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * place of instrument &lt;code&gt;from&lt;/code&gt;.&lt;br&gt;</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * For example, if &lt;code&gt;from&lt;/code&gt; was located at bank number 2,</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     * program number 11, remapping causes that bank and program location</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * to be occupied instead by &lt;code&gt;to&lt;/code&gt;.&lt;br&gt;</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     * If the function succeeds,  instrument &lt;code&gt;from&lt;/code&gt; is unloaded.</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     * &lt;p&gt;To cancel the remapping reload instrument &lt;code&gt;from&lt;/code&gt; by</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * invoking one of {@link #loadInstrument}, {@link #loadInstruments}</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * or {@link #loadAllInstruments}.</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     *</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * @param from the &lt;code&gt;Instrument&lt;/code&gt; object to be replaced</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * @param to the &lt;code&gt;Instrument&lt;/code&gt; object to be used in place</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * of the old instrument, it should be loaded into the synthesizer</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the instrument successfully remapped,</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; if feature is not implemented by synthesizer</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * @throws IllegalArgumentException if instrument</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * &lt;code&gt;from&lt;/code&gt; or instrument &lt;code&gt;to&lt;/code&gt; aren't supported by</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * synthesizer or if instrument &lt;code&gt;to&lt;/code&gt; is not loaded</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * @throws NullPointerException if &lt;code&gt;from&lt;/code&gt; or</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * &lt;code&gt;to&lt;/code&gt; parameters have null value</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * @see #loadInstrument</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * @see #loadInstruments</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * @see #loadAllInstruments</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     */</em>
+<a id='L226' name='L226'></a> 226     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> remapInstrument(<a href='../S/4429.html#L51' title='Defined at 51 in src/javax/sound/midi/Instrument.java.'>Instrument</a> <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>, <a href='../S/4429.html#L51' title='Defined at 51 in src/javax/sound/midi/Instrument.java.'>Instrument</a> <a href='../D/35341.html' title='Multiple defined in 2 places.'>to</a>);
+<a id='L227' name='L227'></a> 227 
+<a id='L228' name='L228'></a> 228 
+<a id='L229' name='L229'></a> 229     <em class='comment'>/**</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * Obtains the default soundbank for the synthesizer, if one exists.</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     * (Some synthesizers provide a default or built-in soundbank.)</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * If a synthesizer doesn't have a default soundbank, instruments must</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * be loaded explicitly from an external soundbank.</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @return default soundbank, or &lt;code&gt;null&lt;/code&gt; if one does not exist.</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * @see #isSoundbankSupported</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     */</em>
+<a id='L237' name='L237'></a> 237     <strong class='reserved'>public</strong> <a href='../S/4424.html#L72' title='Defined at 72 in src/javax/sound/midi/Soundbank.java.'>Soundbank</a> getDefaultSoundbank();
+<a id='L238' name='L238'></a> 238 
+<a id='L239' name='L239'></a> 239 
+<a id='L240' name='L240'></a> 240     <em class='comment'>/**</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     * Obtains a list of instruments that come with the synthesizer.  These</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>     * instruments might be built into the synthesizer, or they might be</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * part of a default soundbank provided with the synthesizer, etc.</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * Note that you don't use this method  to find out which instruments are</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * currently loaded onto the synthesizer; for that purpose, you use</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     * &lt;code&gt;getLoadedInstruments()&lt;/code&gt;.</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>     * Nor does the method indicate all the instruments that can be loaded onto</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * the synthesizer; it only indicates the subset that come with the synthesizer.</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * To learn whether another instrument can be loaded, you can invoke</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     * &lt;code&gt;isSoundbankSupported()&lt;/code&gt;, and if the instrument's</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * &lt;code&gt;Soundbank&lt;/code&gt; is supported, you can try loading the instrument.</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     *</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     * @return list of available instruments. If the synthesizer</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>     * has no instruments coming with it, an array of length 0 is returned.</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>     * @see #getLoadedInstruments</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>     * @see #isSoundbankSupported(Soundbank)</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>     * @see #loadInstrument</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>     */</em>
+<a id='L260' name='L260'></a> 260     <strong class='reserved'>public</strong> <a href='../S/4429.html#L51' title='Defined at 51 in src/javax/sound/midi/Instrument.java.'>Instrument</a>[] getAvailableInstruments();
+<a id='L261' name='L261'></a> 261 
+<a id='L262' name='L262'></a> 262 
+<a id='L263' name='L263'></a> 263     <em class='comment'>/**</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * Obtains a list of the instruments that are currently loaded onto this</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * &lt;code&gt;Synthesizer&lt;/code&gt;.</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * @return a list of currently loaded instruments</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * @see #loadInstrument</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     * @see #getAvailableInstruments</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * @see Soundbank#getInstruments</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     */</em>
+<a id='L271' name='L271'></a> 271     <strong class='reserved'>public</strong> <a href='../S/4429.html#L51' title='Defined at 51 in src/javax/sound/midi/Instrument.java.'>Instrument</a>[] getLoadedInstruments();
+<a id='L272' name='L272'></a> 272 
+<a id='L273' name='L273'></a> 273 
+<a id='L274' name='L274'></a> 274     <em class='comment'>/**</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * Loads onto the &lt;code&gt;Synthesizer&lt;/code&gt; all instruments contained</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     * in the specified &lt;code&gt;Soundbank&lt;/code&gt;.</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     * @param soundbank the &lt;code&gt;Soundbank&lt;/code&gt; whose are instruments are</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>     * to be loaded</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the instruments are all successfully loaded (or</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>     * already had been), &lt;code&gt;false&lt;/code&gt; if any instrument could not be</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>     * loaded (for example, if the &lt;code&gt;Synthesizer&lt;/code&gt; had insufficient memory)</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * @throws IllegalArgumentException if the requested soundbank is</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * incompatible with this synthesizer.</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     * @see #isSoundbankSupported</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>     * @see #loadInstrument</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     * @see #loadInstruments</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     */</em>
+<a id='L288' name='L288'></a> 288     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> loadAllInstruments(<a href='../S/4424.html#L72' title='Defined at 72 in src/javax/sound/midi/Soundbank.java.'>Soundbank</a> soundbank);
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290 
+<a id='L291' name='L291'></a> 291 
+<a id='L292' name='L292'></a> 292     <em class='comment'>/**</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * Unloads all instruments contained in the specified &lt;code&gt;Soundbank&lt;/code&gt;.</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     * @param soundbank soundbank containing instruments to unload</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>     * @throws IllegalArgumentException thrown if the soundbank is not supported.</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     * @see #isSoundbankSupported</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>     * @see #unloadInstrument</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     * @see #unloadInstruments</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     */</em>
+<a id='L300' name='L300'></a> 300     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> unloadAllInstruments(<a href='../S/4424.html#L72' title='Defined at 72 in src/javax/sound/midi/Soundbank.java.'>Soundbank</a> soundbank);
+<a id='L301' name='L301'></a> 301 
+<a id='L302' name='L302'></a> 302 
+<a id='L303' name='L303'></a> 303     <em class='comment'>/**</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     * Loads the instruments referenced by the specified patches, from the</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>     * specified &lt;code&gt;Soundbank&lt;/code&gt;.  Each of the &lt;code&gt;Patch&lt;/code&gt; objects</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>     * indicates a bank and program number; the &lt;code&gt;Instrument&lt;/code&gt; that</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     * has the matching &lt;code&gt;Patch&lt;/code&gt; is loaded into that bank and program</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'>     * location.</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>     * @param soundbank the &lt;code&gt;Soundbank&lt;/code&gt; containing the instruments to load</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>     * @param patchList list of patches for which instruments should be loaded</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if the instruments are all successfully loaded (or</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>     * already had been), &lt;code&gt;false&lt;/code&gt; if any instrument could not be</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>     * loaded (for example, if the &lt;code&gt;Synthesizer&lt;/code&gt; had insufficient memory)</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>     * @throws IllegalArgumentException thrown if the soundbank is not supported.</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>     * @see #isSoundbankSupported</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>     * @see Instrument#getPatch</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>     * @see #loadAllInstruments</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>     * @see #loadInstrument</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     * @see Soundbank#getInstrument(Patch)</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>     * @see Sequence#getPatchList()</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     */</em>
+<a id='L322' name='L322'></a> 322     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> loadInstruments(<a href='../S/4424.html#L72' title='Defined at 72 in src/javax/sound/midi/Soundbank.java.'>Soundbank</a> soundbank, <a href='../S/4405.html#L59' title='Defined at 59 in src/javax/sound/midi/Patch.java.'>Patch</a>[] patchList);
+<a id='L323' name='L323'></a> 323 
+<a id='L324' name='L324'></a> 324     <em class='comment'>/**</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>     * Unloads the instruments referenced by the specified patches, from the MIDI sound bank specified.</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>     * @param soundbank soundbank containing instruments to unload</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * @param patchList list of patches for which instruments should be unloaded</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     * @throws IllegalArgumentException thrown if the soundbank is not supported.</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     *</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     * @see #unloadInstrument</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * @see #unloadAllInstruments</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     * @see #isSoundbankSupported</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     * @see Instrument#getPatch</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     * @see #loadInstruments</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>     */</em>
+<a id='L336' name='L336'></a> 336     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> unloadInstruments(<a href='../S/4424.html#L72' title='Defined at 72 in src/javax/sound/midi/Soundbank.java.'>Soundbank</a> soundbank, <a href='../S/4405.html#L59' title='Defined at 59 in src/javax/sound/midi/Patch.java.'>Patch</a>[] patchList);
+<a id='L337' name='L337'></a> 337 
+<a id='L338' name='L338'></a> 338 
+<a id='L339' name='L339'></a> 339     <em class='comment'>// RECEIVER METHODS</em>
+<a id='L340' name='L340'></a> 340 
+<a id='L341' name='L341'></a> 341     <em class='comment'>/**</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * Obtains the name of the receiver.</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     * @return receiver name</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     */</em>
+<a id='L345' name='L345'></a> 345     <em class='comment'>//  public abstract String getName();</em>
+<a id='L346' name='L346'></a> 346 
+<a id='L347' name='L347'></a> 347 
+<a id='L348' name='L348'></a> 348     <em class='comment'>/**</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * Opens the receiver.</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     * @throws MidiUnavailableException if the receiver is cannot be opened,</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>     * usually because the MIDI device is in use by another application.</em>
+<a id='L352' name='L352'></a> 352 <em class='comment'>     * @throws SecurityException if the receiver cannot be opened due to security</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>     * restrictions.</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>     */</em>
+<a id='L355' name='L355'></a> 355     <em class='comment'>//  public abstract void open() throws MidiUnavailableException, SecurityException;</em>
+<a id='L356' name='L356'></a> 356 
+<a id='L357' name='L357'></a> 357 
+<a id='L358' name='L358'></a> 358     <em class='comment'>/**</em>
+<a id='L359' name='L359'></a> 359 <em class='comment'>     * Closes the receiver.</em>
+<a id='L360' name='L360'></a> 360 <em class='comment'>     */</em>
+<a id='L361' name='L361'></a> 361     <em class='comment'>//  public abstract void close();</em>
+<a id='L362' name='L362'></a> 362 
+<a id='L363' name='L363'></a> 363 
+<a id='L364' name='L364'></a> 364     <em class='comment'>/**</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     * Sends a MIDI event to the receiver.</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * @param event event to send.</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     * @throws IllegalStateException if the receiver is not open.</em>
+<a id='L368' name='L368'></a> 368 <em class='comment'>     */</em>
+<a id='L369' name='L369'></a> 369     <em class='comment'>//  public void send(MidiEvent event) throws IllegalStateException {</em>
+<a id='L370' name='L370'></a> 370     <em class='comment'>//</em>
+<a id='L371' name='L371'></a> 371     <em class='comment'>//  }</em>
+<a id='L372' name='L372'></a> 372 
+<a id='L373' name='L373'></a> 373 
+<a id='L374' name='L374'></a> 374     <em class='comment'>/**</em>
+<a id='L375' name='L375'></a> 375 <em class='comment'>     * Obtains the set of controls supported by the</em>
+<a id='L376' name='L376'></a> 376 <em class='comment'>     * element.  If no controls are supported, returns an</em>
+<a id='L377' name='L377'></a> 377 <em class='comment'>     * array of length 0.</em>
+<a id='L378' name='L378'></a> 378 <em class='comment'>     * @return set of controls</em>
+<a id='L379' name='L379'></a> 379 <em class='comment'>     */</em>
+<a id='L380' name='L380'></a> 380     <em class='comment'>// $$kk: 03.04.99: josh bloch recommends getting rid of this:</em>
+<a id='L381' name='L381'></a> 381     <em class='comment'>// what can you really do with a set of untyped controls??</em>
+<a id='L382' name='L382'></a> 382     <em class='comment'>// $$kk: 03.05.99: i am putting this back in.  for one thing,</em>
+<a id='L383' name='L383'></a> 383     <em class='comment'>// you can check the length and know whether you should keep</em>
+<a id='L384' name='L384'></a> 384     <em class='comment'>// looking....</em>
+<a id='L385' name='L385'></a> 385     <em class='comment'>// public Control[] getControls();</em>
+<a id='L386' name='L386'></a> 386 
+<a id='L387' name='L387'></a> 387     <em class='comment'>/**</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'>     * Obtains the specified control.</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'>     * @param controlClass class of the requested control</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     * @return requested control object, or null if the</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     * control is not supported.</em>
+<a id='L392' name='L392'></a> 392 <em class='comment'>     */</em>
+<a id='L393' name='L393'></a> 393     <em class='comment'>// public Control getControl(Class controlClass);</em>
+<a id='L394' name='L394'></a> 394 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L89'>[^]</a><a href='#L336'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

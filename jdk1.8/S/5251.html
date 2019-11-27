@@ -1,0 +1,551 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xerces/internal/xinclude/XIncludeTextReader.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7916.html'>xinclude</a>/XIncludeTextReader.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L95'>[^]</a><a href='#L510'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L95' title='Defined at 95.'>setErrorReporter</a></li>
+<li><a href='#L104' title='Defined at 104.'>getReader</a></li>
+<li><a href='#L269' title='Defined at 269.'>getEncodingName</a></li>
+<li><a href='#L293' title='Defined at 293.'>consumeBOM</a></li>
+<li><a href='#L347' title='Defined at 347.'>getEncodingName</a></li>
+<li><a href='#L413' title='Defined at 413.'>parse</a></li>
+<li><a href='#L477' title='Defined at 477.'>setInputSource</a></li>
+<li><a href='#L487' title='Defined at 487.'>close</a></li>
+<li><a href='#L500' title='Defined at 500.'>isValid</a></li>
+<li><a href='#L510' title='Defined at 510.'>setBufferSize</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2003-2005 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.xinclude;
+<a id='L21' name='L21'></a>  21 
+<a id='L22' name='L22'></a>  22 <strong class='reserved'>import</strong> java.io.BufferedInputStream;
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>import</strong> java.io.InputStream;
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> java.io.InputStreamReader;
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> java.io.Reader;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.net.HttpURLConnection;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.net.URL;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.net.URLConnection;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Locale;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.util.Map;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.impl.io.ASCIIReader;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.impl.io.UTF8Reader;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.EncodingMap;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.HTTPInputSource;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.MessageFormatter;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.XMLChar;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XMLString;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46 <em class='comment'>/**</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * This class is used for reading resources requested in &amp;lt;include&amp;gt; elements,</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * when the parse attribute of the &amp;lt;include&amp;gt; element is "text".  Using this</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * class will open the location, detect the encoding, and discard the byte order</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * mark, if applicable.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> *</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * REVISIT:</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * Much of the code in this class is taken from XMLEntityManager.  It would be nice</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * if this code could be shared in some way.  However, since XMLEntityManager is used</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * for reading files as XML, and this needs to read files as text, there would need</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * to be some refactoring done.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * @author Michael Glavassevich, IBM</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * @author Peter McCracken, IBM</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * @author Ankit Pasricha, IBM</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * @author Arun Yadav, Sun Microsystems Inc.</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> *</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * @see XIncludeHandler</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> */</em>
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/8938.html' title='Multiple referred from 5 places.'>XIncludeTextReader</a> <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>private</strong> <a href='../S/1412.html#L51' title='Defined at 51 in src/java/io/Reader.java.'>Reader</a> fReader;
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>private</strong> <a href='../S/5246.html#L122' title='Defined at 122 in src/com/sun/org/apache/xerces/internal/xinclude/XIncludeHandler.java.'>XIncludeHandler</a> fHandler;
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>private</strong> <a href='../S/5494.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/xni/parser/XMLInputSource.java.'>XMLInputSource</a> fSource;
+<a id='L71' name='L71'></a>  71     <strong class='reserved'>private</strong> <a href='../S/5041.html#L116' title='Defined at 116 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>XMLErrorReporter</a> fErrorReporter;
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>private</strong> <a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a> fTempString = <strong class='reserved'>new</strong> <a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a>();
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <em class='comment'>/**</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * Construct the XIncludeReader using the XMLInputSource and XIncludeHandler.</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     *</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * @param source The XMLInputSource to use.</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * @param handler The XIncludeHandler to use.</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * @param bufferSize The size of this text reader's buffer.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     */</em>
+<a id='L81' name='L81'></a>  81     <strong class='reserved'>public</strong> XIncludeTextReader(<a href='../S/5494.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/xni/parser/XMLInputSource.java.'>XMLInputSource</a> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>, <a href='../S/5246.html#L122' title='Defined at 122 in src/com/sun/org/apache/xerces/internal/xinclude/XIncludeHandler.java.'>XIncludeHandler</a> <a href='../S/5398.html#L302' title='Defined at 302 in src/com/sun/org/apache/xerces/internal/jaxp/JAXPValidatorComponent.java.'>handler</a>, <strong class='reserved'>int</strong> bufferSize)
+<a id='L82' name='L82'></a>  82         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83         fHandler = <a href='../S/5398.html#L302' title='Defined at 302 in src/com/sun/org/apache/xerces/internal/jaxp/JAXPValidatorComponent.java.'>handler</a>;
+<a id='L84' name='L84'></a>  84         fSource = <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>;
+<a id='L85' name='L85'></a>  85         fTempString = <strong class='reserved'>new</strong> <a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a>(<strong class='reserved'>new</strong> <strong class='reserved'>char</strong>[bufferSize + 1], 0, 0);
+<a id='L86' name='L86'></a>  86     <em class='brace'>}</em>
+<a id='L87' name='L87'></a>  87 
+<a id='L88' name='L88'></a>  88     <em class='comment'>/**</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * Sets the XMLErrorReporter used for reporting errors while</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * reading the text include.</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     *</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * @param errorReporter the XMLErrorReporter to be used for</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * reporting errors.</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     */</em>
+<a id='L95' name='L95'></a>  95     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27350.html' title='Multiple referred from 5 places.'>setErrorReporter</a>(<a href='../S/5041.html#L116' title='Defined at 116 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>XMLErrorReporter</a> errorReporter) <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96         fErrorReporter = errorReporter;
+<a id='L97' name='L97'></a>  97     <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99     <em class='comment'>/**</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * Return the Reader for given XMLInputSource.</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     *</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * @param source The XMLInputSource to use.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     */</em>
+<a id='L104' name='L104'></a> 104     <strong class='reserved'>protected</strong> <a href='../S/1412.html#L51' title='Defined at 51 in src/java/io/Reader.java.'>Reader</a> <a href='../R/18611.html' title='Multiple referred from 15 places.'>getReader</a>(<a href='../S/5494.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/xni/parser/XMLInputSource.java.'>XMLInputSource</a> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L105' name='L105'></a> 105         <strong class='reserved'>if</strong> (<a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/17614.html' title='Multiple defined in 15 places.'>getCharacterStream</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L106' name='L106'></a> 106             <strong class='reserved'>return</strong> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/17614.html' title='Multiple defined in 15 places.'>getCharacterStream</a>();
+<a id='L107' name='L107'></a> 107         <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L109' name='L109'></a> 109             <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>null</strong>;
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/18747.html' title='Multiple defined in 37 places.'>getEncoding</a>();
+<a id='L112' name='L112'></a> 112             <strong class='reserved'>if</strong> (<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L113' name='L113'></a> 113                 <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = "UTF-8";
+<a id='L114' name='L114'></a> 114             <em class='brace'>}</em>
+<a id='L115' name='L115'></a> 115             <strong class='reserved'>if</strong> (<a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/17410.html' title='Multiple defined in 6 places.'>getByteStream</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116                 <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/17410.html' title='Multiple defined in 6 places.'>getByteStream</a>();
+<a id='L117' name='L117'></a> 117                 <em class='comment'>// Wrap the InputStream so that it is possible to rewind it.</em>
+<a id='L118' name='L118'></a> 118                 <strong class='reserved'>if</strong> (!(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> <strong class='reserved'>instanceof</strong> <a href='../S/1411.html#L51' title='Defined at 51 in src/java/io/BufferedInputStream.java.'>BufferedInputStream</a>)) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119                     <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>new</strong> <a href='../S/1411.html#L51' title='Defined at 51 in src/java/io/BufferedInputStream.java.'>BufferedInputStream</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>, fTempString.ch.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L120' name='L120'></a> 120                 <em class='brace'>}</em>
+<a id='L121' name='L121'></a> 121             <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L123' name='L123'></a> 123                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> expandedSystemId = <a href='../S/5242.html#L88' title='Defined at 88 in src/com/sun/org/apache/xerces/internal/impl/XMLEntityManager.java.'>XMLEntityManager</a>.<a href='../D/15858.html' title='Multiple defined in 3 places.'>expandSystemId</a>(<a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/22911.html' title='Multiple defined in 50 places.'>getSystemId</a>(), <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/17201.html' title='Multiple defined in 10 places.'>getBaseSystemId</a>(), <strong class='reserved'>false</strong>);
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125                 <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> url = <strong class='reserved'>new</strong> <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a>(expandedSystemId);
+<a id='L126' name='L126'></a> 126                 <a href='../S/758.html#L160' title='Defined at 160 in src/java/net/URLConnection.java.'>URLConnection</a> urlCon = url.<a href='../D/28514.html' title='Multiple defined in 5 places.'>openConnection</a>();
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128                 <em class='comment'>// If this is an HTTP connection attach any request properties to the request.</em>
+<a id='L129' name='L129'></a> 129                 <strong class='reserved'>if</strong> (urlCon <strong class='reserved'>instanceof</strong> <a href='../S/788.html#L69' title='Defined at 69 in src/java/net/HttpURLConnection.java.'>HttpURLConnection</a> &amp;&amp; <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a> <strong class='reserved'>instanceof</strong> <a href='../S/5328.html#L44' title='Defined at 44 in src/com/sun/org/apache/xerces/internal/util/HTTPInputSource.java.'>HTTPInputSource</a>) <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130                     <strong class='reserved'>final</strong> <a href='../S/788.html#L69' title='Defined at 69 in src/java/net/HttpURLConnection.java.'>HttpURLConnection</a> urlConnection = (<a href='../S/788.html#L69' title='Defined at 69 in src/java/net/HttpURLConnection.java.'>HttpURLConnection</a>) urlCon;
+<a id='L131' name='L131'></a> 131                     <strong class='reserved'>final</strong> <a href='../S/5328.html#L44' title='Defined at 44 in src/com/sun/org/apache/xerces/internal/util/HTTPInputSource.java.'>HTTPInputSource</a> httpInputSource = (<a href='../S/5328.html#L44' title='Defined at 44 in src/com/sun/org/apache/xerces/internal/util/HTTPInputSource.java.'>HTTPInputSource</a>) <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>;
+<a id='L132' name='L132'></a> 132 
+<a id='L133' name='L133'></a> 133                     <em class='comment'>// set request properties</em>
+<a id='L134' name='L134'></a> 134                     <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> propIter = httpInputSource.<a href='../S/5328.html#L175' title='Defined at 175 in src/com/sun/org/apache/xerces/internal/util/HTTPInputSource.java.'>getHTTPRequestProperties</a>();
+<a id='L135' name='L135'></a> 135                     <strong class='reserved'>while</strong> (propIter.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136                         <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>.<a href='../D/2925.html' title='Multiple defined in 20 places.'>Entry</a> entry = (<a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>.<a href='../D/2925.html' title='Multiple defined in 20 places.'>Entry</a>) propIter.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L137' name='L137'></a> 137                         urlConnection.<a href='../S/758.html#L1072' title='Defined at 1072 in src/java/net/URLConnection.java.'>setRequestProperty</a>((<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>) entry.<a href='../D/19919.html' title='Multiple defined in 41 places.'>getKey</a>(), (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>) entry.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>());
+<a id='L138' name='L138'></a> 138                     <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140                     <em class='comment'>// set preference for redirection</em>
+<a id='L141' name='L141'></a> 141                     <strong class='reserved'>boolean</strong> followRedirects = httpInputSource.<a href='../S/5328.html#L139' title='Defined at 139 in src/com/sun/org/apache/xerces/internal/util/HTTPInputSource.java.'>getFollowHTTPRedirects</a>();
+<a id='L142' name='L142'></a> 142                     <strong class='reserved'>if</strong> (!followRedirects) <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143                         <a href='../S/5242.html#L88' title='Defined at 88 in src/com/sun/org/apache/xerces/internal/impl/XMLEntityManager.java.'>XMLEntityManager</a>.<a href='../D/32968.html' title='Multiple defined in 2 places.'>setInstanceFollowRedirects</a>(urlConnection, followRedirects);
+<a id='L144' name='L144'></a> 144                     <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145                 <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147                 <em class='comment'>// Wrap the InputStream so that it is possible to rewind it.</em>
+<a id='L148' name='L148'></a> 148                 <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>new</strong> <a href='../S/1411.html#L51' title='Defined at 51 in src/java/io/BufferedInputStream.java.'>BufferedInputStream</a>(urlCon.<a href='../D/19744.html' title='Multiple defined in 16 places.'>getInputStream</a>());
+<a id='L149' name='L149'></a> 149 
+<a id='L150' name='L150'></a> 150                 <em class='comment'>// content type will be string like "text/xml; charset=UTF-8" or "text/xml"</em>
+<a id='L151' name='L151'></a> 151                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> rawContentType = urlCon.<a href='../D/17970.html' title='Multiple defined in 10 places.'>getContentType</a>();
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153                 <em class='comment'>// text/xml and application/xml offer only one optional parameter</em>
+<a id='L154' name='L154'></a> 154                 <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = (rawContentType != <strong class='reserved'>null</strong>) ? rawContentType.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>(';') : -1;
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> contentType = <strong class='reserved'>null</strong>;
+<a id='L157' name='L157'></a> 157                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> = <strong class='reserved'>null</strong>;
+<a id='L158' name='L158'></a> 158                 <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> != -1) <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159                     <em class='comment'>// this should be something like "text/xml"</em>
+<a id='L160' name='L160'></a> 160                     contentType = rawContentType.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(0, <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>).<a href='../D/35698.html' title='Multiple defined in 9 places.'>trim</a>();
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162                     <em class='comment'>// this should be something like "charset=UTF-8", but we want to</em>
+<a id='L163' name='L163'></a> 163                     <em class='comment'>// strip it down to just "UTF-8"</em>
+<a id='L164' name='L164'></a> 164                     <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> = rawContentType.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> + 1).<a href='../D/35698.html' title='Multiple defined in 9 places.'>trim</a>();
+<a id='L165' name='L165'></a> 165                     <strong class='reserved'>if</strong> (<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>("charset=")) <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166                         <em class='comment'>// 8 is the length of "charset="</em>
+<a id='L167' name='L167'></a> 167                         <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> = <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(8).<a href='../D/35698.html' title='Multiple defined in 9 places.'>trim</a>();
+<a id='L168' name='L168'></a> 168                         <em class='comment'>// strip quotes, if present</em>
+<a id='L169' name='L169'></a> 169                         <strong class='reserved'>if</strong> ((<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(0) == '"'
+<a id='L170' name='L170'></a> 170                             &amp;&amp; <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - 1) == '"')
+<a id='L171' name='L171'></a> 171                             || (<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(0) == '\''
+<a id='L172' name='L172'></a> 172                                 &amp;&amp; <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - 1)
+<a id='L173' name='L173'></a> 173                                     == '\'')) <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174                             <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> =
+<a id='L175' name='L175'></a> 175                                 <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(1, <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - 1);
+<a id='L176' name='L176'></a> 176                         <em class='brace'>}</em>
+<a id='L177' name='L177'></a> 177                     <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178                     <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179                         <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> = <strong class='reserved'>null</strong>;
+<a id='L180' name='L180'></a> 180                     <em class='brace'>}</em>
+<a id='L181' name='L181'></a> 181                 <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182                 <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183                     contentType = rawContentType.<a href='../D/35698.html' title='Multiple defined in 9 places.'>trim</a>();
+<a id='L184' name='L184'></a> 184                 <em class='brace'>}</em>
+<a id='L185' name='L185'></a> 185 
+<a id='L186' name='L186'></a> 186                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> detectedEncoding = <strong class='reserved'>null</strong>;
+<a id='L187' name='L187'></a> 187                 <em class='comment'>/**  The encoding of such a resource is determined by:</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>                    1 external encoding information, if available, otherwise</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>                         -- the most common type of external information is the "charset" parameter of a MIME package</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>                    2 if the media type of the resource is text/xml, application/xml, or matches the conventions text/*+xml or application/*+xml as described in XML Media Types [IETF RFC 3023], the encoding is recognized as specified in XML 1.0, otherwise</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>                    3 the value of the encoding attribute if one exists, otherwise</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>                    4 UTF-8.</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>                 **/</em>
+<a id='L194' name='L194'></a> 194                 <strong class='reserved'>if</strong> (contentType.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("text/xml")) <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195                     <strong class='reserved'>if</strong> (<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196                         detectedEncoding = <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>;
+<a id='L197' name='L197'></a> 197                     <em class='brace'>}</em>
+<a id='L198' name='L198'></a> 198                     <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L199' name='L199'></a> 199                         <em class='comment'>// see RFC2376 or 3023, section 3.1</em>
+<a id='L200' name='L200'></a> 200                         detectedEncoding = "US-ASCII";
+<a id='L201' name='L201'></a> 201                     <em class='brace'>}</em>
+<a id='L202' name='L202'></a> 202                 <em class='brace'>}</em>
+<a id='L203' name='L203'></a> 203                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (contentType.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("application/xml")) <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204                     <strong class='reserved'>if</strong> (<a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L205' name='L205'></a> 205                         detectedEncoding = <a href='../D/12344.html' title='Multiple defined in 2 places.'>charset</a>;
+<a id='L206' name='L206'></a> 206                     <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207                     <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L208' name='L208'></a> 208                         <em class='comment'>// see RFC2376 or 3023, section 3.2</em>
+<a id='L209' name='L209'></a> 209                         detectedEncoding = <a href='../D/18751.html' title='Multiple defined in 4 places.'>getEncodingName</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>);
+<a id='L210' name='L210'></a> 210                     <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211                 <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (contentType.<a href='../D/15495.html' title='Multiple defined in 12 places.'>endsWith</a>("+xml")) <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213                     detectedEncoding = <a href='../D/18751.html' title='Multiple defined in 4 places.'>getEncodingName</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>);
+<a id='L214' name='L214'></a> 214                 <em class='brace'>}</em>
+<a id='L215' name='L215'></a> 215 
+<a id='L216' name='L216'></a> 216                 <strong class='reserved'>if</strong> (detectedEncoding != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L217' name='L217'></a> 217                     <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = detectedEncoding;
+<a id='L218' name='L218'></a> 218                 <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219                 <em class='comment'>// else 3 or 4.</em>
+<a id='L220' name='L220'></a> 220             <em class='brace'>}</em>
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>.<a href='../D/35514.html' title='Multiple defined in 18 places.'>toUpperCase</a>(<a href='../S/1034.html#L484' title='Defined at 484 in src/java/util/Locale.java.'>Locale</a>.ENGLISH);
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224             <em class='comment'>// eat the Byte Order Mark</em>
+<a id='L225' name='L225'></a> 225             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <a href='../S/5251.html#L293' title='Defined at 293 in src/com/sun/org/apache/xerces/internal/xinclude/XIncludeTextReader.java.'>consumeBOM</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>, <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>);
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227             <em class='comment'>// If the document is UTF-8 or US-ASCII use</em>
+<a id='L228' name='L228'></a> 228             <em class='comment'>// the Xerces readers for these encodings. For</em>
+<a id='L229' name='L229'></a> 229             <em class='comment'>// US-ASCII consult the encoding map since</em>
+<a id='L230' name='L230'></a> 230             <em class='comment'>// this encoding has many aliases.</em>
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>if</strong> (<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("UTF-8")) <em class='brace'>{</em>
+<a id='L232' name='L232'></a> 232                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/5039.html#L42' title='Defined at 42 in src/com/sun/org/apache/xerces/internal/impl/io/UTF8Reader.java.'>UTF8Reader</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>,
+<a id='L233' name='L233'></a> 233                     fTempString.ch.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>,
+<a id='L234' name='L234'></a> 234                     fErrorReporter.<a href='../S/5041.html#L293' title='Defined at 293 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>getMessageFormatter</a>(<a href='../S/5027.html#L39' title='Defined at 39 in src/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java.'>XMLMessageFormatter</a>.XML_DOMAIN),
+<a id='L235' name='L235'></a> 235                     fErrorReporter.<a href='../D/20224.html' title='Multiple defined in 51 places.'>getLocale</a>() );
+<a id='L236' name='L236'></a> 236             <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238             <em class='comment'>// Try to use a Java reader.</em>
+<a id='L239' name='L239'></a> 239             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> javaEncoding = <a href='../S/5292.html#L473' title='Defined at 473 in src/com/sun/org/apache/xerces/internal/util/EncodingMap.java.'>EncodingMap</a>.<a href='../S/5292.html#L976' title='Defined at 976 in src/com/sun/org/apache/xerces/internal/util/EncodingMap.java.'>getIANA2JavaMapping</a>(<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>);
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241             <em class='comment'>// If the specified encoding wasn't a recognized IANA encoding throw an IOException.</em>
+<a id='L242' name='L242'></a> 242             <em class='comment'>// The XIncludeHandler will report this as a ResourceError and then will</em>
+<a id='L243' name='L243'></a> 243             <em class='comment'>// attempt to include a fallback if there is one.</em>
+<a id='L244' name='L244'></a> 244             <strong class='reserved'>if</strong> (javaEncoding == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L245' name='L245'></a> 245                 <a href='../S/5331.html#L36' title='Defined at 36 in src/com/sun/org/apache/xerces/internal/util/MessageFormatter.java.'>MessageFormatter</a> aFormatter =
+<a id='L246' name='L246'></a> 246                     fErrorReporter.<a href='../S/5041.html#L293' title='Defined at 293 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>getMessageFormatter</a>(<a href='../S/5027.html#L39' title='Defined at 39 in src/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java.'>XMLMessageFormatter</a>.XML_DOMAIN);
+<a id='L247' name='L247'></a> 247                 <a href='../S/1034.html#L484' title='Defined at 484 in src/java/util/Locale.java.'>Locale</a> aLocale = fErrorReporter.<a href='../D/20224.html' title='Multiple defined in 51 places.'>getLocale</a>();
+<a id='L248' name='L248'></a> 248                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>( aFormatter.<a href='../D/16540.html' title='Multiple defined in 20 places.'>formatMessage</a>( aLocale,
+<a id='L249' name='L249'></a> 249                     "EncodingDeclInvalid",
+<a id='L250' name='L250'></a> 250                     <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em><a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a><em class='brace'>}</em> ) );
+<a id='L251' name='L251'></a> 251             <em class='brace'>}</em>
+<a id='L252' name='L252'></a> 252             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (javaEncoding.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("ASCII")) <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/5040.html#L42' title='Defined at 42 in src/com/sun/org/apache/xerces/internal/impl/io/ASCIIReader.java.'>ASCIIReader</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>,
+<a id='L254' name='L254'></a> 254                     fTempString.ch.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>,
+<a id='L255' name='L255'></a> 255                     fErrorReporter.<a href='../S/5041.html#L293' title='Defined at 293 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>getMessageFormatter</a>(<a href='../S/5027.html#L39' title='Defined at 39 in src/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java.'>XMLMessageFormatter</a>.XML_DOMAIN),
+<a id='L256' name='L256'></a> 256                     fErrorReporter.<a href='../D/20224.html' title='Multiple defined in 51 places.'>getLocale</a>() );
+<a id='L257' name='L257'></a> 257             <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258 
+<a id='L259' name='L259'></a> 259             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1416.html#L62' title='Defined at 62 in src/java/io/InputStreamReader.java.'>InputStreamReader</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>, javaEncoding);
+<a id='L260' name='L260'></a> 260         <em class='brace'>}</em>
+<a id='L261' name='L261'></a> 261     <em class='brace'>}</em>
+<a id='L262' name='L262'></a> 262 
+<a id='L263' name='L263'></a> 263     <em class='comment'>/**</em>
+<a id='L264' name='L264'></a> 264 <em class='comment'>     * XMLEntityManager cares about endian-ness, since it creates its own optimized</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>     * readers. Since we're just using generic Java readers for now, we're not caring</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>     * about endian-ness.  If this changes, even more code needs to be copied from</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>     * XMLEntity manager. -- PJM</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>     */</em>
+<a id='L269' name='L269'></a> 269     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16359.html' title='Multiple referred from 4 places.'>getEncodingName</a>(<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270         <strong class='reserved'>final</strong> <strong class='reserved'>byte</strong>[] b4 = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[4];
+<a id='L271' name='L271'></a> 271         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <strong class='reserved'>null</strong>;
+<a id='L272' name='L272'></a> 272 
+<a id='L273' name='L273'></a> 273         <em class='comment'>// this has the potential to throw an exception</em>
+<a id='L274' name='L274'></a> 274         <em class='comment'>// it will be fixed when we ensure the stream is rewindable (see note above)</em>
+<a id='L275' name='L275'></a> 275         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/27489.html' title='Multiple defined in 38 places.'>mark</a>(4);
+<a id='L276' name='L276'></a> 276         <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(b4, 0, 4);
+<a id='L277' name='L277'></a> 277         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L278' name='L278'></a> 278         <strong class='reserved'>if</strong> (<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> == 4) <em class='brace'>{</em>
+<a id='L279' name='L279'></a> 279             <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a> = <a href='../D/18751.html' title='Multiple defined in 4 places.'>getEncodingName</a>(b4);
+<a id='L280' name='L280'></a> 280         <em class='brace'>}</em>
+<a id='L281' name='L281'></a> 281 
+<a id='L282' name='L282'></a> 282         <strong class='reserved'>return</strong> <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>;
+<a id='L283' name='L283'></a> 283     <em class='brace'>}</em>
+<a id='L284' name='L284'></a> 284 
+<a id='L285' name='L285'></a> 285     <em class='comment'>/**</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>     * Removes the byte order mark from the stream, if</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>     * it exists and returns the encoding name.</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>     *</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * @param stream</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * @param encoding</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * @throws IOException</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     */</em>
+<a id='L293' name='L293'></a> 293     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/5251.html#L225' title='Referred from 225 in src/com/sun/org/apache/xerces/internal/xinclude/XIncludeTextReader.java.'>consumeBOM</a>(<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>)
+<a id='L294' name='L294'></a> 294         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296         <strong class='reserved'>byte</strong>[] b = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[3];
+<a id='L297' name='L297'></a> 297         <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = 0;
+<a id='L298' name='L298'></a> 298         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/27489.html' title='Multiple defined in 38 places.'>mark</a>(3);
+<a id='L299' name='L299'></a> 299         <strong class='reserved'>if</strong> (<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("UTF-8")) <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300             <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(b, 0, 3);
+<a id='L301' name='L301'></a> 301             <strong class='reserved'>if</strong> (<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> == 3) <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> b0 = b[0] &amp; 0xFF;
+<a id='L303' name='L303'></a> 303                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> b1 = b[1] &amp; 0xFF;
+<a id='L304' name='L304'></a> 304                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> b2 = b[2] &amp; 0xFF;
+<a id='L305' name='L305'></a> 305                 <strong class='reserved'>if</strong> (b0 != 0xEF || b1 != 0xBB || b2 != 0xBF) <em class='brace'>{</em>
+<a id='L306' name='L306'></a> 306                     <em class='comment'>// First three bytes are not BOM, so reset.</em>
+<a id='L307' name='L307'></a> 307                     <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L308' name='L308'></a> 308                 <em class='brace'>}</em>
+<a id='L309' name='L309'></a> 309             <em class='brace'>}</em>
+<a id='L310' name='L310'></a> 310             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L311' name='L311'></a> 311                 <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L312' name='L312'></a> 312             <em class='brace'>}</em>
+<a id='L313' name='L313'></a> 313         <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>("UTF-16")) <em class='brace'>{</em>
+<a id='L315' name='L315'></a> 315             <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(b, 0, 2);
+<a id='L316' name='L316'></a> 316             <strong class='reserved'>if</strong> (<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> == 2) <em class='brace'>{</em>
+<a id='L317' name='L317'></a> 317                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> b0 = b[0] &amp; 0xFF;
+<a id='L318' name='L318'></a> 318                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> b1 = b[1] &amp; 0xFF;
+<a id='L319' name='L319'></a> 319                 <strong class='reserved'>if</strong> (b0 == 0xFE &amp;&amp; b1 == 0xFF) <em class='brace'>{</em>
+<a id='L320' name='L320'></a> 320                     <strong class='reserved'>return</strong> "UTF-16BE";
+<a id='L321' name='L321'></a> 321                 <em class='brace'>}</em>
+<a id='L322' name='L322'></a> 322                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (b0 == 0xFF &amp;&amp; b1 == 0xFE) <em class='brace'>{</em>
+<a id='L323' name='L323'></a> 323                     <strong class='reserved'>return</strong> "UTF-16LE";
+<a id='L324' name='L324'></a> 324                 <em class='brace'>}</em>
+<a id='L325' name='L325'></a> 325             <em class='brace'>}</em>
+<a id='L326' name='L326'></a> 326             <em class='comment'>// First two bytes are not BOM, so reset.</em>
+<a id='L327' name='L327'></a> 327             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L328' name='L328'></a> 328         <em class='brace'>}</em>
+<a id='L329' name='L329'></a> 329         <em class='comment'>// We could do UTF-32, but since the getEncodingName() doesn't support that</em>
+<a id='L330' name='L330'></a> 330         <em class='comment'>// we won't support it here.</em>
+<a id='L331' name='L331'></a> 331         <em class='comment'>// To implement UTF-32, look for:  00 00 FE FF for big-endian</em>
+<a id='L332' name='L332'></a> 332         <em class='comment'>//                             or  FF FE 00 00 for little-endian</em>
+<a id='L333' name='L333'></a> 333         <strong class='reserved'>return</strong> <a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>;
+<a id='L334' name='L334'></a> 334     <em class='brace'>}</em>
+<a id='L335' name='L335'></a> 335 
+<a id='L336' name='L336'></a> 336     <em class='comment'>/**</em>
+<a id='L337' name='L337'></a> 337 <em class='comment'>     * REVISIT: This code is taken from com.sun.org.apache.xerces.internal.impl.XMLEntityManager.</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     *          Is there any way we can share the code, without having it implemented twice?</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     *          I think we should make it public and static in XMLEntityManager. --PJM</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     *</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     * Returns the IANA encoding name that is auto-detected from</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * the bytes specified, with the endian-ness of that encoding where appropriate.</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     *</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * @param b4    The first four bytes of the input.</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     * @return the encoding name, or null if no encoding could be detected</em>
+<a id='L346' name='L346'></a> 346 <em class='comment'>     */</em>
+<a id='L347' name='L347'></a> 347     <strong class='reserved'>protected</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16359.html' title='Multiple referred from 4 places.'>getEncodingName</a>(<strong class='reserved'>byte</strong>[] b4) <em class='brace'>{</em>
+<a id='L348' name='L348'></a> 348 
+<a id='L349' name='L349'></a> 349         <em class='comment'>// UTF-16, with BOM</em>
+<a id='L350' name='L350'></a> 350         <strong class='reserved'>int</strong> b0 = b4[0] &amp; 0xFF;
+<a id='L351' name='L351'></a> 351         <strong class='reserved'>int</strong> b1 = b4[1] &amp; 0xFF;
+<a id='L352' name='L352'></a> 352         <strong class='reserved'>if</strong> (b0 == 0xFE &amp;&amp; b1 == 0xFF) <em class='brace'>{</em>
+<a id='L353' name='L353'></a> 353             <em class='comment'>// UTF-16, big-endian</em>
+<a id='L354' name='L354'></a> 354             <strong class='reserved'>return</strong> "UTF-16BE";
+<a id='L355' name='L355'></a> 355         <em class='brace'>}</em>
+<a id='L356' name='L356'></a> 356         <strong class='reserved'>if</strong> (b0 == 0xFF &amp;&amp; b1 == 0xFE) <em class='brace'>{</em>
+<a id='L357' name='L357'></a> 357             <em class='comment'>// UTF-16, little-endian</em>
+<a id='L358' name='L358'></a> 358             <strong class='reserved'>return</strong> "UTF-16LE";
+<a id='L359' name='L359'></a> 359         <em class='brace'>}</em>
+<a id='L360' name='L360'></a> 360 
+<a id='L361' name='L361'></a> 361         <em class='comment'>// UTF-8 with a BOM</em>
+<a id='L362' name='L362'></a> 362         <strong class='reserved'>int</strong> b2 = b4[2] &amp; 0xFF;
+<a id='L363' name='L363'></a> 363         <strong class='reserved'>if</strong> (b0 == 0xEF &amp;&amp; b1 == 0xBB &amp;&amp; b2 == 0xBF) <em class='brace'>{</em>
+<a id='L364' name='L364'></a> 364             <strong class='reserved'>return</strong> "UTF-8";
+<a id='L365' name='L365'></a> 365         <em class='brace'>}</em>
+<a id='L366' name='L366'></a> 366 
+<a id='L367' name='L367'></a> 367         <em class='comment'>// other encodings</em>
+<a id='L368' name='L368'></a> 368         <strong class='reserved'>int</strong> b3 = b4[3] &amp; 0xFF;
+<a id='L369' name='L369'></a> 369         <strong class='reserved'>if</strong> (b0 == 0x00 &amp;&amp; b1 == 0x00 &amp;&amp; b2 == 0x00 &amp;&amp; b3 == 0x3C) <em class='brace'>{</em>
+<a id='L370' name='L370'></a> 370             <em class='comment'>// UCS-4, big endian (1234)</em>
+<a id='L371' name='L371'></a> 371             <strong class='reserved'>return</strong> "ISO-10646-UCS-4";
+<a id='L372' name='L372'></a> 372         <em class='brace'>}</em>
+<a id='L373' name='L373'></a> 373         <strong class='reserved'>if</strong> (b0 == 0x3C &amp;&amp; b1 == 0x00 &amp;&amp; b2 == 0x00 &amp;&amp; b3 == 0x00) <em class='brace'>{</em>
+<a id='L374' name='L374'></a> 374             <em class='comment'>// UCS-4, little endian (4321)</em>
+<a id='L375' name='L375'></a> 375             <strong class='reserved'>return</strong> "ISO-10646-UCS-4";
+<a id='L376' name='L376'></a> 376         <em class='brace'>}</em>
+<a id='L377' name='L377'></a> 377         <strong class='reserved'>if</strong> (b0 == 0x00 &amp;&amp; b1 == 0x00 &amp;&amp; b2 == 0x3C &amp;&amp; b3 == 0x00) <em class='brace'>{</em>
+<a id='L378' name='L378'></a> 378             <em class='comment'>// UCS-4, unusual octet order (2143)</em>
+<a id='L379' name='L379'></a> 379             <strong class='reserved'>return</strong> "ISO-10646-UCS-4";
+<a id='L380' name='L380'></a> 380         <em class='brace'>}</em>
+<a id='L381' name='L381'></a> 381         <strong class='reserved'>if</strong> (b0 == 0x00 &amp;&amp; b1 == 0x3C &amp;&amp; b2 == 0x00 &amp;&amp; b3 == 0x00) <em class='brace'>{</em>
+<a id='L382' name='L382'></a> 382             <em class='comment'>// UCS-4, unusual octect order (3412)</em>
+<a id='L383' name='L383'></a> 383             <strong class='reserved'>return</strong> "ISO-10646-UCS-4";
+<a id='L384' name='L384'></a> 384         <em class='brace'>}</em>
+<a id='L385' name='L385'></a> 385         <strong class='reserved'>if</strong> (b0 == 0x00 &amp;&amp; b1 == 0x3C &amp;&amp; b2 == 0x00 &amp;&amp; b3 == 0x3F) <em class='brace'>{</em>
+<a id='L386' name='L386'></a> 386             <em class='comment'>// UTF-16, big-endian, no BOM</em>
+<a id='L387' name='L387'></a> 387             <em class='comment'>// (or could turn out to be UCS-2...</em>
+<a id='L388' name='L388'></a> 388             <strong class='reserved'>return</strong> "UTF-16BE";
+<a id='L389' name='L389'></a> 389         <em class='brace'>}</em>
+<a id='L390' name='L390'></a> 390         <strong class='reserved'>if</strong> (b0 == 0x3C &amp;&amp; b1 == 0x00 &amp;&amp; b2 == 0x3F &amp;&amp; b3 == 0x00) <em class='brace'>{</em>
+<a id='L391' name='L391'></a> 391             <em class='comment'>// UTF-16, little-endian, no BOM</em>
+<a id='L392' name='L392'></a> 392             <em class='comment'>// (or could turn out to be UCS-2...</em>
+<a id='L393' name='L393'></a> 393             <strong class='reserved'>return</strong> "UTF-16LE";
+<a id='L394' name='L394'></a> 394         <em class='brace'>}</em>
+<a id='L395' name='L395'></a> 395         <strong class='reserved'>if</strong> (b0 == 0x4C &amp;&amp; b1 == 0x6F &amp;&amp; b2 == 0xA7 &amp;&amp; b3 == 0x94) <em class='brace'>{</em>
+<a id='L396' name='L396'></a> 396             <em class='comment'>// EBCDIC</em>
+<a id='L397' name='L397'></a> 397             <em class='comment'>// a la xerces1, return CP037 instead of EBCDIC here</em>
+<a id='L398' name='L398'></a> 398             <strong class='reserved'>return</strong> "CP037";
+<a id='L399' name='L399'></a> 399         <em class='brace'>}</em>
+<a id='L400' name='L400'></a> 400 
+<a id='L401' name='L401'></a> 401         <em class='comment'>// this signals us to use the value from the encoding attribute</em>
+<a id='L402' name='L402'></a> 402         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L403' name='L403'></a> 403 
+<a id='L404' name='L404'></a> 404     <em class='brace'>}</em> <em class='comment'>// getEncodingName(byte[]):Object[]</em>
+<a id='L405' name='L405'></a> 405 
+<a id='L406' name='L406'></a> 406     <em class='comment'>/**</em>
+<a id='L407' name='L407'></a> 407 <em class='comment'>     * Read the input stream as text, and pass the text on to the XIncludeHandler</em>
+<a id='L408' name='L408'></a> 408 <em class='comment'>     * using calls to characters().  This will read all of the text it can from the</em>
+<a id='L409' name='L409'></a> 409 <em class='comment'>     * resource.</em>
+<a id='L410' name='L410'></a> 410 <em class='comment'>     *</em>
+<a id='L411' name='L411'></a> 411 <em class='comment'>     * @throws IOException</em>
+<a id='L412' name='L412'></a> 412 <em class='comment'>     */</em>
+<a id='L413' name='L413'></a> 413     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24493.html' title='Multiple referred from 256 places.'>parse</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414 
+<a id='L415' name='L415'></a> 415         fReader = <a href='../D/21876.html' title='Multiple defined in 7 places.'>getReader</a>(fSource);
+<a id='L416' name='L416'></a> 416         fSource = <strong class='reserved'>null</strong>;
+<a id='L417' name='L417'></a> 417         <strong class='reserved'>int</strong> <a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a> = fReader.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(fTempString.ch, 0, fTempString.ch.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1);
+<a id='L418' name='L418'></a> 418         <strong class='reserved'>while</strong> (<a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a> != -1) <em class='brace'>{</em>
+<a id='L419' name='L419'></a> 419             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a>; ++i) <em class='brace'>{</em>
+<a id='L420' name='L420'></a> 420                 <strong class='reserved'>char</strong> ch = fTempString.ch[i];
+<a id='L421' name='L421'></a> 421                 <strong class='reserved'>if</strong> (!<a href='../D/26427.html' title='Multiple defined in 40 places.'>isValid</a>(ch)) <em class='brace'>{</em>
+<a id='L422' name='L422'></a> 422                     <strong class='reserved'>if</strong> (<a href='../D/9870.html' title='Multiple defined in 2 places.'>XMLChar</a>.<a href='../D/25654.html' title='Multiple defined in 4 places.'>isHighSurrogate</a>(ch)) <em class='brace'>{</em>
+<a id='L423' name='L423'></a> 423                         <strong class='reserved'>int</strong> ch2;
+<a id='L424' name='L424'></a> 424                         <em class='comment'>// retrieve next character</em>
+<a id='L425' name='L425'></a> 425                         <strong class='reserved'>if</strong> (++i &lt; <a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a>) <em class='brace'>{</em>
+<a id='L426' name='L426'></a> 426                             ch2 = fTempString.ch[i];
+<a id='L427' name='L427'></a> 427                         <em class='brace'>}</em>
+<a id='L428' name='L428'></a> 428                         <em class='comment'>// handle rare boundary case</em>
+<a id='L429' name='L429'></a> 429                         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L430' name='L430'></a> 430                             ch2 = fReader.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>();
+<a id='L431' name='L431'></a> 431                             <strong class='reserved'>if</strong> (ch2 != -1) <em class='brace'>{</em>
+<a id='L432' name='L432'></a> 432                                 fTempString.ch[<a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a>++] = (<strong class='reserved'>char</strong>) ch2;
+<a id='L433' name='L433'></a> 433                             <em class='brace'>}</em>
+<a id='L434' name='L434'></a> 434                         <em class='brace'>}</em>
+<a id='L435' name='L435'></a> 435                         <strong class='reserved'>if</strong> (<a href='../D/9870.html' title='Multiple defined in 2 places.'>XMLChar</a>.<a href='../D/25841.html' title='Multiple defined in 4 places.'>isLowSurrogate</a>(ch2)) <em class='brace'>{</em>
+<a id='L436' name='L436'></a> 436                             <em class='comment'>// convert surrogates to a supplemental character</em>
+<a id='L437' name='L437'></a> 437                             <strong class='reserved'>int</strong> sup = <a href='../D/9870.html' title='Multiple defined in 2 places.'>XMLChar</a>.<a href='../D/35050.html' title='Multiple defined in 2 places.'>supplemental</a>(ch, (<strong class='reserved'>char</strong>)ch2);
+<a id='L438' name='L438'></a> 438                             <strong class='reserved'>if</strong> (!<a href='../D/26427.html' title='Multiple defined in 40 places.'>isValid</a>(sup)) <em class='brace'>{</em>
+<a id='L439' name='L439'></a> 439                                 fErrorReporter.<a href='../D/31088.html' title='Multiple defined in 17 places.'>reportError</a>(<a href='../S/5027.html#L39' title='Defined at 39 in src/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java.'>XMLMessageFormatter</a>.XML_DOMAIN,
+<a id='L440' name='L440'></a> 440                                                            "InvalidCharInContent",
+<a id='L441' name='L441'></a> 441                                                            <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(sup, 16) <em class='brace'>}</em>,
+<a id='L442' name='L442'></a> 442                                                            <a href='../S/5041.html#L116' title='Defined at 116 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>XMLErrorReporter</a>.SEVERITY_FATAL_ERROR);
+<a id='L443' name='L443'></a> 443                             <em class='brace'>}</em>
+<a id='L444' name='L444'></a> 444                         <em class='brace'>}</em>
+<a id='L445' name='L445'></a> 445                         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L446' name='L446'></a> 446                             fErrorReporter.<a href='../D/31088.html' title='Multiple defined in 17 places.'>reportError</a>(<a href='../S/5027.html#L39' title='Defined at 39 in src/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java.'>XMLMessageFormatter</a>.XML_DOMAIN,
+<a id='L447' name='L447'></a> 447                                                        "InvalidCharInContent",
+<a id='L448' name='L448'></a> 448                                                        <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(ch2, 16) <em class='brace'>}</em>,
+<a id='L449' name='L449'></a> 449                                                        <a href='../S/5041.html#L116' title='Defined at 116 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>XMLErrorReporter</a>.SEVERITY_FATAL_ERROR);
+<a id='L450' name='L450'></a> 450                         <em class='brace'>}</em>
+<a id='L451' name='L451'></a> 451                     <em class='brace'>}</em>
+<a id='L452' name='L452'></a> 452                     <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L453' name='L453'></a> 453                         fErrorReporter.<a href='../D/31088.html' title='Multiple defined in 17 places.'>reportError</a>(<a href='../S/5027.html#L39' title='Defined at 39 in src/com/sun/org/apache/xerces/internal/impl/msg/XMLMessageFormatter.java.'>XMLMessageFormatter</a>.XML_DOMAIN,
+<a id='L454' name='L454'></a> 454                                                    "InvalidCharInContent",
+<a id='L455' name='L455'></a> 455                                                    <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(ch, 16) <em class='brace'>}</em>,
+<a id='L456' name='L456'></a> 456                                                    <a href='../S/5041.html#L116' title='Defined at 116 in src/com/sun/org/apache/xerces/internal/impl/XMLErrorReporter.java.'>XMLErrorReporter</a>.SEVERITY_FATAL_ERROR);
+<a id='L457' name='L457'></a> 457                     <em class='brace'>}</em>
+<a id='L458' name='L458'></a> 458                 <em class='brace'>}</em>
+<a id='L459' name='L459'></a> 459             <em class='brace'>}</em>
+<a id='L460' name='L460'></a> 460             <strong class='reserved'>if</strong> (fHandler != <strong class='reserved'>null</strong> &amp;&amp; <a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a> &gt; 0) <em class='brace'>{</em>
+<a id='L461' name='L461'></a> 461                 fTempString.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = 0;
+<a id='L462' name='L462'></a> 462                 fTempString.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a>;
+<a id='L463' name='L463'></a> 463                 fHandler.<a href='../D/12339.html' title='Multiple defined in 98 places.'>characters</a>(
+<a id='L464' name='L464'></a> 464                     fTempString,
+<a id='L465' name='L465'></a> 465                     fHandler.<a href='../D/27752.html' title='Multiple defined in 2 places.'>modifyAugmentations</a>(<strong class='reserved'>null</strong>, <strong class='reserved'>true</strong>));
+<a id='L466' name='L466'></a> 466             <em class='brace'>}</em>
+<a id='L467' name='L467'></a> 467             <a href='../S/7114.html#L880' title='Defined at 880 in src/com/sun/corba/se/impl/protocol/giopmsgheaders/MessageBase.java.'>readSize</a> = fReader.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(fTempString.ch, 0, fTempString.ch.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1);
+<a id='L468' name='L468'></a> 468         <em class='brace'>}</em>
+<a id='L469' name='L469'></a> 469 
+<a id='L470' name='L470'></a> 470     <em class='brace'>}</em>
+<a id='L471' name='L471'></a> 471 
+<a id='L472' name='L472'></a> 472     <em class='comment'>/**</em>
+<a id='L473' name='L473'></a> 473 <em class='comment'>     * Sets the input source on this text reader.</em>
+<a id='L474' name='L474'></a> 474 <em class='comment'>     *</em>
+<a id='L475' name='L475'></a> 475 <em class='comment'>     * @param source The XMLInputSource to use.</em>
+<a id='L476' name='L476'></a> 476 <em class='comment'>     */</em>
+<a id='L477' name='L477'></a> 477     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27578.html' title='Multiple referred from 25 places.'>setInputSource</a>(<a href='../S/5494.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/xni/parser/XMLInputSource.java.'>XMLInputSource</a> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>) <em class='brace'>{</em>
+<a id='L478' name='L478'></a> 478         fSource = <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>;
+<a id='L479' name='L479'></a> 479     <em class='brace'>}</em>
+<a id='L480' name='L480'></a> 480 
+<a id='L481' name='L481'></a> 481     <em class='comment'>/**</em>
+<a id='L482' name='L482'></a> 482 <em class='comment'>     * Closes the stream.  Call this after parse(), or when there is no longer any need</em>
+<a id='L483' name='L483'></a> 483 <em class='comment'>     * for this object.</em>
+<a id='L484' name='L484'></a> 484 <em class='comment'>     *</em>
+<a id='L485' name='L485'></a> 485 <em class='comment'>     * @throws IOException</em>
+<a id='L486' name='L486'></a> 486 <em class='comment'>     */</em>
+<a id='L487' name='L487'></a> 487     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L488' name='L488'></a> 488         <strong class='reserved'>if</strong> (fReader != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L489' name='L489'></a> 489             fReader.<a href='../D/12922.html' title='Multiple defined in 218 places.'>close</a>();
+<a id='L490' name='L490'></a> 490             fReader = <strong class='reserved'>null</strong>;
+<a id='L491' name='L491'></a> 491         <em class='brace'>}</em>
+<a id='L492' name='L492'></a> 492     <em class='brace'>}</em>
+<a id='L493' name='L493'></a> 493 
+<a id='L494' name='L494'></a> 494     <em class='comment'>/**</em>
+<a id='L495' name='L495'></a> 495 <em class='comment'>     * Returns true if the specified character is a valid XML character</em>
+<a id='L496' name='L496'></a> 496 <em class='comment'>     * as per the rules of XML 1.0.</em>
+<a id='L497' name='L497'></a> 497 <em class='comment'>     *</em>
+<a id='L498' name='L498'></a> 498 <em class='comment'>     * @param ch The character to check.</em>
+<a id='L499' name='L499'></a> 499 <em class='comment'>     */</em>
+<a id='L500' name='L500'></a> 500     <strong class='reserved'>protected</strong> <strong class='reserved'>boolean</strong> <a href='../R/22162.html' title='Multiple referred from 125 places.'>isValid</a>(<strong class='reserved'>int</strong> ch) <em class='brace'>{</em>
+<a id='L501' name='L501'></a> 501         <strong class='reserved'>return</strong> <a href='../D/9870.html' title='Multiple defined in 2 places.'>XMLChar</a>.<a href='../D/26427.html' title='Multiple defined in 40 places.'>isValid</a>(ch);
+<a id='L502' name='L502'></a> 502     <em class='brace'>}</em>
+<a id='L503' name='L503'></a> 503 
+<a id='L504' name='L504'></a> 504     <em class='comment'>/**</em>
+<a id='L505' name='L505'></a> 505 <em class='comment'>     * Sets the buffer size property for the reader which decides the chunk sizes that are parsed</em>
+<a id='L506' name='L506'></a> 506 <em class='comment'>     * by the reader at a time and passed to the handler</em>
+<a id='L507' name='L507'></a> 507 <em class='comment'>     *</em>
+<a id='L508' name='L508'></a> 508 <em class='comment'>     * @param bufferSize The size of the buffer desired</em>
+<a id='L509' name='L509'></a> 509 <em class='comment'>     */</em>
+<a id='L510' name='L510'></a> 510     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/26973.html' title='Multiple referred from 8 places.'>setBufferSize</a>(<strong class='reserved'>int</strong> bufferSize) <em class='brace'>{</em>
+<a id='L511' name='L511'></a> 511         <strong class='reserved'>if</strong> (fTempString.ch.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != ++bufferSize) <em class='brace'>{</em>
+<a id='L512' name='L512'></a> 512             fTempString.ch = <strong class='reserved'>new</strong> <strong class='reserved'>char</strong>[bufferSize];
+<a id='L513' name='L513'></a> 513         <em class='brace'>}</em>
+<a id='L514' name='L514'></a> 514     <em class='brace'>}</em>
+<a id='L515' name='L515'></a> 515 
+<a id='L516' name='L516'></a> 516 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L95'>[^]</a><a href='#L510'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

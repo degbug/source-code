@@ -1,0 +1,440 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7963.html'>xpath</a>/<a href='../files/7964.html'>internal</a>/<a href='../files/7966.html'>compiler</a>/FunctionTable.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L314'>[^]</a><a href='#L401'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L314' title='Defined at 314.'>getFunctionName</a></li>
+<li><a href='#L331' title='Defined at 331.'>getFunction</a></li>
+<li><a href='#L354' title='Defined at 354.'>getFunctionID</a></li>
+<li><a href='#L366' title='Defined at 366.'>installFunction</a></li>
+<li><a href='#L401' title='Defined at 401.'>functionAvailable</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 1999-2005 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: FunctionTable.java,v 1.3 2005/09/28 13:49:34 pvedula Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>package</strong> com.sun.org.apache.xpath.internal.compiler;
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> com.sun.org.apache.xpath.internal.Expression;
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xpath.internal.functions.Function;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.util.HashMap;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> javax.xml.transform.TransformerException;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <em class='comment'>/**</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * The function table for XPath.</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> */</em>
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/3178.html' title='Multiple referred from 58 places.'>FunctionTable</a>
+<a id='L34' name='L34'></a>  34 <em class='brace'>{</em>
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36   <em class='comment'>/** The 'current()' id. */</em>
+<a id='L37' name='L37'></a>  37   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_CURRENT = 0;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39   <em class='comment'>/** The 'last()' id. */</em>
+<a id='L40' name='L40'></a>  40   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_LAST = 1;
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42   <em class='comment'>/** The 'position()' id. */</em>
+<a id='L43' name='L43'></a>  43   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_POSITION = 2;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45   <em class='comment'>/** The 'count()' id. */</em>
+<a id='L46' name='L46'></a>  46   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_COUNT = 3;
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48   <em class='comment'>/** The 'id()' id. */</em>
+<a id='L49' name='L49'></a>  49   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_ID = 4;
+<a id='L50' name='L50'></a>  50 
+<a id='L51' name='L51'></a>  51   <em class='comment'>/** The 'key()' id (XSLT). */</em>
+<a id='L52' name='L52'></a>  52   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_KEY = 5;
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54   <em class='comment'>/** The 'local-name()' id. */</em>
+<a id='L55' name='L55'></a>  55   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_LOCAL_PART = 7;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57   <em class='comment'>/** The 'namespace-uri()' id. */</em>
+<a id='L58' name='L58'></a>  58   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_NAMESPACE = 8;
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60   <em class='comment'>/** The 'name()' id. */</em>
+<a id='L61' name='L61'></a>  61   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_QNAME = 9;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63   <em class='comment'>/** The 'generate-id()' id. */</em>
+<a id='L64' name='L64'></a>  64   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_GENERATE_ID = 10;
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66   <em class='comment'>/** The 'not()' id. */</em>
+<a id='L67' name='L67'></a>  67   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_NOT = 11;
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69   <em class='comment'>/** The 'true()' id. */</em>
+<a id='L70' name='L70'></a>  70   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_TRUE = 12;
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72   <em class='comment'>/** The 'false()' id. */</em>
+<a id='L73' name='L73'></a>  73   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_FALSE = 13;
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75   <em class='comment'>/** The 'boolean()' id. */</em>
+<a id='L76' name='L76'></a>  76   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_BOOLEAN = 14;
+<a id='L77' name='L77'></a>  77 
+<a id='L78' name='L78'></a>  78   <em class='comment'>/** The 'number()' id. */</em>
+<a id='L79' name='L79'></a>  79   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_NUMBER = 15;
+<a id='L80' name='L80'></a>  80 
+<a id='L81' name='L81'></a>  81   <em class='comment'>/** The 'floor()' id. */</em>
+<a id='L82' name='L82'></a>  82   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_FLOOR = 16;
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84   <em class='comment'>/** The 'ceiling()' id. */</em>
+<a id='L85' name='L85'></a>  85   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_CEILING = 17;
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87   <em class='comment'>/** The 'round()' id. */</em>
+<a id='L88' name='L88'></a>  88   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_ROUND = 18;
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90   <em class='comment'>/** The 'sum()' id. */</em>
+<a id='L91' name='L91'></a>  91   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_SUM = 19;
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93   <em class='comment'>/** The 'string()' id. */</em>
+<a id='L94' name='L94'></a>  94   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_STRING = 20;
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96   <em class='comment'>/** The 'starts-with()' id. */</em>
+<a id='L97' name='L97'></a>  97   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_STARTS_WITH = 21;
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99   <em class='comment'>/** The 'contains()' id. */</em>
+<a id='L100' name='L100'></a> 100   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_CONTAINS = 22;
+<a id='L101' name='L101'></a> 101 
+<a id='L102' name='L102'></a> 102   <em class='comment'>/** The 'substring-before()' id. */</em>
+<a id='L103' name='L103'></a> 103   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_SUBSTRING_BEFORE = 23;
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105   <em class='comment'>/** The 'substring-after()' id. */</em>
+<a id='L106' name='L106'></a> 106   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_SUBSTRING_AFTER = 24;
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108   <em class='comment'>/** The 'normalize-space()' id. */</em>
+<a id='L109' name='L109'></a> 109   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_NORMALIZE_SPACE = 25;
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111   <em class='comment'>/** The 'translate()' id. */</em>
+<a id='L112' name='L112'></a> 112   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_TRANSLATE = 26;
+<a id='L113' name='L113'></a> 113 
+<a id='L114' name='L114'></a> 114   <em class='comment'>/** The 'concat()' id. */</em>
+<a id='L115' name='L115'></a> 115   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_CONCAT = 27;
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117   <em class='comment'>/** The 'substring()' id. */</em>
+<a id='L118' name='L118'></a> 118   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_SUBSTRING = 29;
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120   <em class='comment'>/** The 'string-length()' id. */</em>
+<a id='L121' name='L121'></a> 121   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_STRING_LENGTH = 30;
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123   <em class='comment'>/** The 'system-property()' id. */</em>
+<a id='L124' name='L124'></a> 124   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_SYSTEM_PROPERTY = 31;
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126   <em class='comment'>/** The 'lang()' id. */</em>
+<a id='L127' name='L127'></a> 127   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_LANG = 32;
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129   <em class='comment'>/** The 'function-available()' id (XSLT). */</em>
+<a id='L130' name='L130'></a> 130   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_EXT_FUNCTION_AVAILABLE = 33;
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132   <em class='comment'>/** The 'element-available()' id (XSLT). */</em>
+<a id='L133' name='L133'></a> 133   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_EXT_ELEM_AVAILABLE = 34;
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135   <em class='comment'>/** The 'unparsed-entity-uri()' id (XSLT). */</em>
+<a id='L136' name='L136'></a> 136   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_UNPARSED_ENTITY_URI = 36;
+<a id='L137' name='L137'></a> 137 
+<a id='L138' name='L138'></a> 138   <em class='comment'>// Proprietary</em>
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140   <em class='comment'>/** The 'document-location()' id (Proprietary). */</em>
+<a id='L141' name='L141'></a> 141   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> FUNC_DOCLOCATION = 35;
+<a id='L142' name='L142'></a> 142 
+<a id='L143' name='L143'></a> 143   <em class='comment'>/**</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>   * The function table.</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>   */</em>
+<a id='L146' name='L146'></a> 146   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> m_functions[];
+<a id='L147' name='L147'></a> 147 
+<a id='L148' name='L148'></a> 148   <em class='comment'>/** Table of function name to function ID associations. */</em>
+<a id='L149' name='L149'></a> 149   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a> m_functionID = <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>();
+<a id='L150' name='L150'></a> 150 
+<a id='L151' name='L151'></a> 151   <em class='comment'>/**</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>   * The function table contains customized functions</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>   */</em>
+<a id='L154' name='L154'></a> 154   <strong class='reserved'>private</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> m_functions_customer[] = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[NUM_ALLOWABLE_ADDINS];
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156   <em class='comment'>/**</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>   * Table of function name to function ID associations for customized functions</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>   */</em>
+<a id='L159' name='L159'></a> 159   <strong class='reserved'>private</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a> m_functionID_customer = <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>();
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161   <em class='comment'>/**</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>   * Number of built in functions.  Be sure to update this as</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>   * built-in functions are added.</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>   */</em>
+<a id='L165' name='L165'></a> 165   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NUM_BUILT_IN_FUNCS = 37;
+<a id='L166' name='L166'></a> 166 
+<a id='L167' name='L167'></a> 167   <em class='comment'>/**</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>   * Number of built-in functions that may be added.</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>   */</em>
+<a id='L170' name='L170'></a> 170   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NUM_ALLOWABLE_ADDINS = 30;
+<a id='L171' name='L171'></a> 171 
+<a id='L172' name='L172'></a> 172   <em class='comment'>/**</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>   * The index to the next free function index.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>   */</em>
+<a id='L175' name='L175'></a> 175   <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> m_funcNextFreeIndex = NUM_BUILT_IN_FUNCS;
+<a id='L176' name='L176'></a> 176 
+<a id='L177' name='L177'></a> 177   <strong class='reserved'>static</strong>
+<a id='L178' name='L178'></a> 178   <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179     m_functions = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[NUM_BUILT_IN_FUNCS];
+<a id='L180' name='L180'></a> 180     m_functions[FUNC_CURRENT] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4960.html#L42' title='Defined at 42 in src/com/sun/org/apache/xpath/internal/functions/FuncCurrent.java.'>FuncCurrent</a>.<strong class='reserved'>class</strong>;
+<a id='L181' name='L181'></a> 181     m_functions[FUNC_LAST] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4977.html#L37' title='Defined at 37 in src/com/sun/org/apache/xpath/internal/functions/FuncLast.java.'>FuncLast</a>.<strong class='reserved'>class</strong>;
+<a id='L182' name='L182'></a> 182     m_functions[FUNC_POSITION] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4978.html#L37' title='Defined at 37 in src/com/sun/org/apache/xpath/internal/functions/FuncPosition.java.'>FuncPosition</a>.<strong class='reserved'>class</strong>;
+<a id='L183' name='L183'></a> 183     m_functions[FUNC_COUNT] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4958.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncCount.java.'>FuncCount</a>.<strong class='reserved'>class</strong>;
+<a id='L184' name='L184'></a> 184     m_functions[FUNC_ID] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4976.html#L40' title='Defined at 40 in src/com/sun/org/apache/xpath/internal/functions/FuncId.java.'>FuncId</a>.<strong class='reserved'>class</strong>;
+<a id='L185' name='L185'></a> 185     <em class='comment'>// J2SE does not support Xalan interpretive</em>
+<a id='L186' name='L186'></a> 186     <em class='comment'>// m_functions[FUNC_KEY] =</em>
+<a id='L187' name='L187'></a> 187     <em class='comment'>//   com.sun.org.apache.xalan.internal.templates.FuncKey.class;</em>
+<a id='L188' name='L188'></a> 188     m_functions[FUNC_LOCAL_PART] =
+<a id='L189' name='L189'></a> 189       com.sun.org.apache.xpath.internal.functions.<a href='../S/4970.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncLocalPart.java.'>FuncLocalPart</a>.<strong class='reserved'>class</strong>;
+<a id='L190' name='L190'></a> 190     m_functions[FUNC_NAMESPACE] =
+<a id='L191' name='L191'></a> 191       com.sun.org.apache.xpath.internal.functions.<a href='../S/4973.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncNamespace.java.'>FuncNamespace</a>.<strong class='reserved'>class</strong>;
+<a id='L192' name='L192'></a> 192     m_functions[FUNC_QNAME] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4984.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncQname.java.'>FuncQname</a>.<strong class='reserved'>class</strong>;
+<a id='L193' name='L193'></a> 193     m_functions[FUNC_GENERATE_ID] =
+<a id='L194' name='L194'></a> 194       com.sun.org.apache.xpath.internal.functions.<a href='../S/4959.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncGenerateId.java.'>FuncGenerateId</a>.<strong class='reserved'>class</strong>;
+<a id='L195' name='L195'></a> 195     m_functions[FUNC_NOT] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4974.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncNot.java.'>FuncNot</a>.<strong class='reserved'>class</strong>;
+<a id='L196' name='L196'></a> 196     m_functions[FUNC_TRUE] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4965.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncTrue.java.'>FuncTrue</a>.<strong class='reserved'>class</strong>;
+<a id='L197' name='L197'></a> 197     m_functions[FUNC_FALSE] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4955.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncFalse.java.'>FuncFalse</a>.<strong class='reserved'>class</strong>;
+<a id='L198' name='L198'></a> 198     m_functions[FUNC_BOOLEAN] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4981.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncBoolean.java.'>FuncBoolean</a>.<strong class='reserved'>class</strong>;
+<a id='L199' name='L199'></a> 199     m_functions[FUNC_LANG] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4975.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncLang.java.'>FuncLang</a>.<strong class='reserved'>class</strong>;
+<a id='L200' name='L200'></a> 200     m_functions[FUNC_NUMBER] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4964.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncNumber.java.'>FuncNumber</a>.<strong class='reserved'>class</strong>;
+<a id='L201' name='L201'></a> 201     m_functions[FUNC_FLOOR] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4988.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncFloor.java.'>FuncFloor</a>.<strong class='reserved'>class</strong>;
+<a id='L202' name='L202'></a> 202     m_functions[FUNC_CEILING] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4966.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncCeiling.java.'>FuncCeiling</a>.<strong class='reserved'>class</strong>;
+<a id='L203' name='L203'></a> 203     m_functions[FUNC_ROUND] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4950.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncRound.java.'>FuncRound</a>.<strong class='reserved'>class</strong>;
+<a id='L204' name='L204'></a> 204     m_functions[FUNC_SUM] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4952.html#L36' title='Defined at 36 in src/com/sun/org/apache/xpath/internal/functions/FuncSum.java.'>FuncSum</a>.<strong class='reserved'>class</strong>;
+<a id='L205' name='L205'></a> 205     m_functions[FUNC_STRING] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4972.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncString.java.'>FuncString</a>.<strong class='reserved'>class</strong>;
+<a id='L206' name='L206'></a> 206     m_functions[FUNC_STARTS_WITH] =
+<a id='L207' name='L207'></a> 207       com.sun.org.apache.xpath.internal.functions.<a href='../S/4980.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncStartsWith.java.'>FuncStartsWith</a>.<strong class='reserved'>class</strong>;
+<a id='L208' name='L208'></a> 208     m_functions[FUNC_CONTAINS] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4956.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncContains.java.'>FuncContains</a>.<strong class='reserved'>class</strong>;
+<a id='L209' name='L209'></a> 209     m_functions[FUNC_SUBSTRING_BEFORE] =
+<a id='L210' name='L210'></a> 210       com.sun.org.apache.xpath.internal.functions.<a href='../S/4951.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncSubstringBefore.java.'>FuncSubstringBefore</a>.<strong class='reserved'>class</strong>;
+<a id='L211' name='L211'></a> 211     m_functions[FUNC_SUBSTRING_AFTER] =
+<a id='L212' name='L212'></a> 212       com.sun.org.apache.xpath.internal.functions.<a href='../S/4982.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncSubstringAfter.java.'>FuncSubstringAfter</a>.<strong class='reserved'>class</strong>;
+<a id='L213' name='L213'></a> 213     m_functions[FUNC_NORMALIZE_SPACE] =
+<a id='L214' name='L214'></a> 214       com.sun.org.apache.xpath.internal.functions.<a href='../S/4954.html#L36' title='Defined at 36 in src/com/sun/org/apache/xpath/internal/functions/FuncNormalizeSpace.java.'>FuncNormalizeSpace</a>.<strong class='reserved'>class</strong>;
+<a id='L215' name='L215'></a> 215     m_functions[FUNC_TRANSLATE] =
+<a id='L216' name='L216'></a> 216       com.sun.org.apache.xpath.internal.functions.<a href='../S/4948.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncTranslate.java.'>FuncTranslate</a>.<strong class='reserved'>class</strong>;
+<a id='L217' name='L217'></a> 217     m_functions[FUNC_CONCAT] = com.sun.org.apache.xpath.internal.functions.<a href='../S/4947.html#L34' title='Defined at 34 in src/com/sun/org/apache/xpath/internal/functions/FuncConcat.java.'>FuncConcat</a>.<strong class='reserved'>class</strong>;
+<a id='L218' name='L218'></a> 218     m_functions[FUNC_SYSTEM_PROPERTY] =
+<a id='L219' name='L219'></a> 219       com.sun.org.apache.xpath.internal.functions.<a href='../S/4953.html#L41' title='Defined at 41 in src/com/sun/org/apache/xpath/internal/functions/FuncSystemProperty.java.'>FuncSystemProperty</a>.<strong class='reserved'>class</strong>;
+<a id='L220' name='L220'></a> 220     m_functions[FUNC_EXT_FUNCTION_AVAILABLE] =
+<a id='L221' name='L221'></a> 221       com.sun.org.apache.xpath.internal.functions.<a href='../S/4986.html#L36' title='Defined at 36 in src/com/sun/org/apache/xpath/internal/functions/FuncExtFunctionAvailable.java.'>FuncExtFunctionAvailable</a>.<strong class='reserved'>class</strong>;
+<a id='L222' name='L222'></a> 222     m_functions[FUNC_EXT_ELEM_AVAILABLE] =
+<a id='L223' name='L223'></a> 223       com.sun.org.apache.xpath.internal.functions.<a href='../S/4971.html#L40' title='Defined at 40 in src/com/sun/org/apache/xpath/internal/functions/FuncExtElementAvailable.java.'>FuncExtElementAvailable</a>.<strong class='reserved'>class</strong>;
+<a id='L224' name='L224'></a> 224     m_functions[FUNC_SUBSTRING] =
+<a id='L225' name='L225'></a> 225       com.sun.org.apache.xpath.internal.functions.<a href='../S/4949.html#L36' title='Defined at 36 in src/com/sun/org/apache/xpath/internal/functions/FuncSubstring.java.'>FuncSubstring</a>.<strong class='reserved'>class</strong>;
+<a id='L226' name='L226'></a> 226     m_functions[FUNC_STRING_LENGTH] =
+<a id='L227' name='L227'></a> 227       com.sun.org.apache.xpath.internal.functions.<a href='../S/4963.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncStringLength.java.'>FuncStringLength</a>.<strong class='reserved'>class</strong>;
+<a id='L228' name='L228'></a> 228     m_functions[FUNC_DOCLOCATION] =
+<a id='L229' name='L229'></a> 229       com.sun.org.apache.xpath.internal.functions.<a href='../S/4969.html#L35' title='Defined at 35 in src/com/sun/org/apache/xpath/internal/functions/FuncDoclocation.java.'>FuncDoclocation</a>.<strong class='reserved'>class</strong>;
+<a id='L230' name='L230'></a> 230     m_functions[FUNC_UNPARSED_ENTITY_URI] =
+<a id='L231' name='L231'></a> 231       com.sun.org.apache.xpath.internal.functions.<a href='../S/4987.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/functions/FuncUnparsedEntityURI.java.'>FuncUnparsedEntityURI</a>.<strong class='reserved'>class</strong>;
+<a id='L232' name='L232'></a> 232   <em class='brace'>}</em>
+<a id='L233' name='L233'></a> 233 
+<a id='L234' name='L234'></a> 234   <strong class='reserved'>static</strong><em class='brace'>{</em>
+<a id='L235' name='L235'></a> 235           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_CURRENT_STRING,
+<a id='L236' name='L236'></a> 236                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_CURRENT));
+<a id='L237' name='L237'></a> 237           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_LAST_STRING,
+<a id='L238' name='L238'></a> 238                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_LAST));
+<a id='L239' name='L239'></a> 239           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_POSITION_STRING,
+<a id='L240' name='L240'></a> 240                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_POSITION));
+<a id='L241' name='L241'></a> 241           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_COUNT_STRING,
+<a id='L242' name='L242'></a> 242                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_COUNT));
+<a id='L243' name='L243'></a> 243           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_ID_STRING,
+<a id='L244' name='L244'></a> 244                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_ID));
+<a id='L245' name='L245'></a> 245           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_KEY_STRING,
+<a id='L246' name='L246'></a> 246                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_KEY));
+<a id='L247' name='L247'></a> 247           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_LOCAL_PART_STRING,
+<a id='L248' name='L248'></a> 248                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_LOCAL_PART));
+<a id='L249' name='L249'></a> 249           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_NAMESPACE_STRING,
+<a id='L250' name='L250'></a> 250                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_NAMESPACE));
+<a id='L251' name='L251'></a> 251           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_NAME_STRING,
+<a id='L252' name='L252'></a> 252                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_QNAME));
+<a id='L253' name='L253'></a> 253           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_GENERATE_ID_STRING,
+<a id='L254' name='L254'></a> 254                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_GENERATE_ID));
+<a id='L255' name='L255'></a> 255           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_NOT_STRING,
+<a id='L256' name='L256'></a> 256                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_NOT));
+<a id='L257' name='L257'></a> 257           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_TRUE_STRING,
+<a id='L258' name='L258'></a> 258                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_TRUE));
+<a id='L259' name='L259'></a> 259           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_FALSE_STRING,
+<a id='L260' name='L260'></a> 260                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_FALSE));
+<a id='L261' name='L261'></a> 261           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_BOOLEAN_STRING,
+<a id='L262' name='L262'></a> 262                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_BOOLEAN));
+<a id='L263' name='L263'></a> 263           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_LANG_STRING,
+<a id='L264' name='L264'></a> 264                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_LANG));
+<a id='L265' name='L265'></a> 265           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_NUMBER_STRING,
+<a id='L266' name='L266'></a> 266                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_NUMBER));
+<a id='L267' name='L267'></a> 267           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_FLOOR_STRING,
+<a id='L268' name='L268'></a> 268                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_FLOOR));
+<a id='L269' name='L269'></a> 269           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_CEILING_STRING,
+<a id='L270' name='L270'></a> 270                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_CEILING));
+<a id='L271' name='L271'></a> 271           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_ROUND_STRING,
+<a id='L272' name='L272'></a> 272                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_ROUND));
+<a id='L273' name='L273'></a> 273           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_SUM_STRING,
+<a id='L274' name='L274'></a> 274                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_SUM));
+<a id='L275' name='L275'></a> 275           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_STRING_STRING,
+<a id='L276' name='L276'></a> 276                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_STRING));
+<a id='L277' name='L277'></a> 277           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_STARTS_WITH_STRING,
+<a id='L278' name='L278'></a> 278                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_STARTS_WITH));
+<a id='L279' name='L279'></a> 279           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_CONTAINS_STRING,
+<a id='L280' name='L280'></a> 280                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_CONTAINS));
+<a id='L281' name='L281'></a> 281           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_SUBSTRING_BEFORE_STRING,
+<a id='L282' name='L282'></a> 282                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_SUBSTRING_BEFORE));
+<a id='L283' name='L283'></a> 283           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_SUBSTRING_AFTER_STRING,
+<a id='L284' name='L284'></a> 284                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_SUBSTRING_AFTER));
+<a id='L285' name='L285'></a> 285           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_NORMALIZE_SPACE_STRING,
+<a id='L286' name='L286'></a> 286                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_NORMALIZE_SPACE));
+<a id='L287' name='L287'></a> 287           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_TRANSLATE_STRING,
+<a id='L288' name='L288'></a> 288                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_TRANSLATE));
+<a id='L289' name='L289'></a> 289           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_CONCAT_STRING,
+<a id='L290' name='L290'></a> 290                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_CONCAT));
+<a id='L291' name='L291'></a> 291           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_SYSTEM_PROPERTY_STRING,
+<a id='L292' name='L292'></a> 292                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_SYSTEM_PROPERTY));
+<a id='L293' name='L293'></a> 293           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_EXT_FUNCTION_AVAILABLE_STRING,
+<a id='L294' name='L294'></a> 294                         <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_EXT_FUNCTION_AVAILABLE));
+<a id='L295' name='L295'></a> 295           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_EXT_ELEM_AVAILABLE_STRING,
+<a id='L296' name='L296'></a> 296                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_EXT_ELEM_AVAILABLE));
+<a id='L297' name='L297'></a> 297           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_SUBSTRING_STRING,
+<a id='L298' name='L298'></a> 298                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_SUBSTRING));
+<a id='L299' name='L299'></a> 299           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_STRING_LENGTH_STRING,
+<a id='L300' name='L300'></a> 300                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_STRING_LENGTH));
+<a id='L301' name='L301'></a> 301           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_UNPARSED_ENTITY_URI_STRING,
+<a id='L302' name='L302'></a> 302                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_UNPARSED_ENTITY_URI));
+<a id='L303' name='L303'></a> 303           m_functionID.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/4993.html#L31' title='Defined at 31 in src/com/sun/org/apache/xpath/internal/compiler/Keywords.java.'>Keywords</a>.FUNC_DOCLOCATION_STRING,
+<a id='L304' name='L304'></a> 304                           <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../S/4995.html#L33' title='Defined at 33 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>FunctionTable</a>.FUNC_DOCLOCATION));
+<a id='L305' name='L305'></a> 305   <em class='brace'>}</em>
+<a id='L306' name='L306'></a> 306 
+<a id='L307' name='L307'></a> 307   <strong class='reserved'>public</strong> FunctionTable()<em class='brace'>{</em>
+<a id='L308' name='L308'></a> 308   <em class='brace'>}</em>
+<a id='L309' name='L309'></a> 309 
+<a id='L310' name='L310'></a> 310   <em class='comment'>/**</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>   * Return the name of the a function in the static table. Needed to avoid</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>   * making the table publicly available.</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>   */</em>
+<a id='L314' name='L314'></a> 314   <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16741.html' title='Multiple referred from 2 places.'>getFunctionName</a>(<strong class='reserved'>int</strong> funcID) <em class='brace'>{</em>
+<a id='L315' name='L315'></a> 315       <strong class='reserved'>if</strong> (funcID &lt; NUM_BUILT_IN_FUNCS) <strong class='reserved'>return</strong> m_functions[funcID].<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L316' name='L316'></a> 316       <strong class='reserved'>else</strong> <strong class='reserved'>return</strong> m_functions_customer[funcID - NUM_BUILT_IN_FUNCS].<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L317' name='L317'></a> 317   <em class='brace'>}</em>
+<a id='L318' name='L318'></a> 318 
+<a id='L319' name='L319'></a> 319   <em class='comment'>/**</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>   * Obtain a new Function object from a function ID.</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>   *</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>   * @param which  The function ID, which may correspond to one of the FUNC_XXX</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>   *    values found in {@link com.sun.org.apache.xpath.internal.compiler.FunctionTable}, but may</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>   *    be a value installed by an external module.</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>   *</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>   * @return a a new Function instance.</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>   *</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>   * @throws javax.xml.transform.TransformerException if ClassNotFoundException,</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>   *    IllegalAccessException, or InstantiationException is thrown.</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>   */</em>
+<a id='L331' name='L331'></a> 331   <a href='../D/3453.html' title='Multiple defined in 3 places.'>Function</a> <a href='../S/4997.html#L1033' title='Referred from 1033 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>getFunction</a>(<strong class='reserved'>int</strong> <a href='../D/36852.html' title='Multiple defined in 6 places.'>which</a>)
+<a id='L332' name='L332'></a> 332           <strong class='reserved'>throws</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.xml.<a href='../D/35592.html' title='Multiple defined in 22 places.'>transform</a>.<a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a>
+<a id='L333' name='L333'></a> 333   <em class='brace'>{</em>
+<a id='L334' name='L334'></a> 334           <strong class='reserved'>try</strong><em class='brace'>{</em>
+<a id='L335' name='L335'></a> 335               <strong class='reserved'>if</strong> (<a href='../D/36852.html' title='Multiple defined in 6 places.'>which</a> &lt; NUM_BUILT_IN_FUNCS)
+<a id='L336' name='L336'></a> 336                   <strong class='reserved'>return</strong> (<a href='../D/3453.html' title='Multiple defined in 3 places.'>Function</a>) m_functions[<a href='../D/36852.html' title='Multiple defined in 6 places.'>which</a>].<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>();
+<a id='L337' name='L337'></a> 337               <strong class='reserved'>else</strong>
+<a id='L338' name='L338'></a> 338                   <strong class='reserved'>return</strong> (<a href='../D/3453.html' title='Multiple defined in 3 places.'>Function</a>) m_functions_customer[
+<a id='L339' name='L339'></a> 339                       <a href='../D/36852.html' title='Multiple defined in 6 places.'>which</a>-NUM_BUILT_IN_FUNCS].<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>();
+<a id='L340' name='L340'></a> 340           <em class='brace'>}</em><strong class='reserved'>catch</strong> (<a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>)<em class='brace'>{</em>
+<a id='L341' name='L341'></a> 341                   <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
+<a id='L342' name='L342'></a> 342           <em class='brace'>}</em><strong class='reserved'>catch</strong> (<a href='../S/1743.html#L46' title='Defined at 46 in src/java/lang/InstantiationException.java.'>InstantiationException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>)<em class='brace'>{</em>
+<a id='L343' name='L343'></a> 343                   <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
+<a id='L344' name='L344'></a> 344           <em class='brace'>}</em>
+<a id='L345' name='L345'></a> 345   <em class='brace'>}</em>
+<a id='L346' name='L346'></a> 346 
+<a id='L347' name='L347'></a> 347   <em class='comment'>/**</em>
+<a id='L348' name='L348'></a> 348 <em class='comment'>   * Obtain a function ID from a given function name</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>   * @param key the function name in a java.lang.String format.</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>   * @return a function ID, which may correspond to one of the FUNC_XXX values</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>   * found in {@link com.sun.org.apache.xpath.internal.compiler.FunctionTable}, but may be a</em>
+<a id='L352' name='L352'></a> 352 <em class='comment'>   * value installed by an external module.</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>   */</em>
+<a id='L354' name='L354'></a> 354   <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/16740.html' title='Multiple referred from 2 places.'>getFunctionID</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>)<em class='brace'>{</em>
+<a id='L355' name='L355'></a> 355           <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = m_functionID_customer.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L356' name='L356'></a> 356           <strong class='reserved'>if</strong> (<strong class='reserved'>null</strong> == <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>) <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = m_functionID.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L357' name='L357'></a> 357           <strong class='reserved'>return</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>;
+<a id='L358' name='L358'></a> 358   <em class='brace'>}</em>
+<a id='L359' name='L359'></a> 359 
+<a id='L360' name='L360'></a> 360   <em class='comment'>/**</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>   * Install a built-in function.</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>   * @param name The unqualified name of the function, must not be null</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>   * @param func A Implementation of an XPath Function object.</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>   * @return the position of the function in the internal index.</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>   */</em>
+<a id='L366' name='L366'></a> 366   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/20852.html' title='Multiple referred from 5 places.'>installFunction</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> func)
+<a id='L367' name='L367'></a> 367   <em class='brace'>{</em>
+<a id='L368' name='L368'></a> 368 
+<a id='L369' name='L369'></a> 369     <strong class='reserved'>int</strong> funcIndex;
+<a id='L370' name='L370'></a> 370     <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> funcIndexObj = <a href='../S/4995.html#L354' title='Defined at 354 in src/com/sun/org/apache/xpath/internal/compiler/FunctionTable.java.'>getFunctionID</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
+<a id='L371' name='L371'></a> 371 
+<a id='L372' name='L372'></a> 372     <strong class='reserved'>if</strong> (<strong class='reserved'>null</strong> != funcIndexObj)
+<a id='L373' name='L373'></a> 373     <em class='brace'>{</em>
+<a id='L374' name='L374'></a> 374       funcIndex = ((<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>) funcIndexObj).<a href='../D/24897.html' title='Multiple defined in 21 places.'>intValue</a>();
+<a id='L375' name='L375'></a> 375 
+<a id='L376' name='L376'></a> 376       <strong class='reserved'>if</strong> (funcIndex &lt; NUM_BUILT_IN_FUNCS)<em class='brace'>{</em>
+<a id='L377' name='L377'></a> 377               funcIndex = m_funcNextFreeIndex++;
+<a id='L378' name='L378'></a> 378               m_functionID_customer.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(funcIndex));
+<a id='L379' name='L379'></a> 379       <em class='brace'>}</em>
+<a id='L380' name='L380'></a> 380       m_functions_customer[funcIndex - NUM_BUILT_IN_FUNCS] = func;
+<a id='L381' name='L381'></a> 381     <em class='brace'>}</em>
+<a id='L382' name='L382'></a> 382     <strong class='reserved'>else</strong>
+<a id='L383' name='L383'></a> 383     <em class='brace'>{</em>
+<a id='L384' name='L384'></a> 384             funcIndex = m_funcNextFreeIndex++;
+<a id='L385' name='L385'></a> 385 
+<a id='L386' name='L386'></a> 386             m_functions_customer[funcIndex-NUM_BUILT_IN_FUNCS] = func;
+<a id='L387' name='L387'></a> 387 
+<a id='L388' name='L388'></a> 388             m_functionID_customer.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
+<a id='L389' name='L389'></a> 389                 <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(funcIndex));
+<a id='L390' name='L390'></a> 390     <em class='brace'>}</em>
+<a id='L391' name='L391'></a> 391     <strong class='reserved'>return</strong> funcIndex;
+<a id='L392' name='L392'></a> 392   <em class='brace'>}</em>
+<a id='L393' name='L393'></a> 393 
+<a id='L394' name='L394'></a> 394   <em class='comment'>/**</em>
+<a id='L395' name='L395'></a> 395 <em class='comment'>   * Tell if a built-in, non-namespaced function is available.</em>
+<a id='L396' name='L396'></a> 396 <em class='comment'>   *</em>
+<a id='L397' name='L397'></a> 397 <em class='comment'>   * @param methName The local name of the function.</em>
+<a id='L398' name='L398'></a> 398 <em class='comment'>   *</em>
+<a id='L399' name='L399'></a> 399 <em class='comment'>   * @return True if the function can be executed.</em>
+<a id='L400' name='L400'></a> 400 <em class='comment'>   */</em>
+<a id='L401' name='L401'></a> 401   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/14829.html' title='Multiple referred from 2 places.'>functionAvailable</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> methName)
+<a id='L402' name='L402'></a> 402   <em class='brace'>{</em>
+<a id='L403' name='L403'></a> 403       <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> tblEntry = m_functionID.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(methName);
+<a id='L404' name='L404'></a> 404       <strong class='reserved'>if</strong> (<strong class='reserved'>null</strong> != tblEntry) <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L405' name='L405'></a> 405       <strong class='reserved'>else</strong><em class='brace'>{</em>
+<a id='L406' name='L406'></a> 406               tblEntry = m_functionID_customer.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(methName);
+<a id='L407' name='L407'></a> 407               <strong class='reserved'>return</strong> (<strong class='reserved'>null</strong> != tblEntry)? <strong class='reserved'>true</strong> : <strong class='reserved'>false</strong>;
+<a id='L408' name='L408'></a> 408       <em class='brace'>}</em>
+<a id='L409' name='L409'></a> 409   <em class='brace'>}</em>
+<a id='L410' name='L410'></a> 410 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L314'>[^]</a><a href='#L401'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

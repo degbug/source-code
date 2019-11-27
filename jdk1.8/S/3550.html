@@ -1,0 +1,532 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/management/MBeanServerInvocationHandler.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8067.html'>management</a>/MBeanServerInvocationHandler.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L166'>[^]</a><a href='#L474'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L166' title='Defined at 166.'>getMBeanServerConnection</a></li>
+<li><a href='#L178' title='Defined at 178.'>getObjectName</a></li>
+<li><a href='#L190' title='Defined at 190.'>isMXBean</a></li>
+<li><a href='#L236' title='Defined at 236.'>newProxyInstance</a></li>
+<li><a href='#L243' title='Defined at 243.'>invoke</a></li>
+<li><a href='#L322' title='Defined at 322.'>findMXBeanProxy</a></li>
+<li><a href='#L347' title='Defined at 347.'>invokeBroadcasterMethod</a></li>
+<li><a href='#L416' title='Defined at 416.'>shouldDoLocally</a></li>
+<li><a href='#L434' title='Defined at 434.'>doLocally</a></li>
+<li><a href='#L474' title='Defined at 474.'>isLocal</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.management;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.jmx.mbeanserver.MXBeanProxy;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.lang.ref.WeakReference;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.lang.reflect.InvocationHandler;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.lang.reflect.Method;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.lang.reflect.Proxy;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.util.Arrays;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.util.WeakHashMap;
+<a id='L36' name='L36'></a>  36 
+<a id='L37' name='L37'></a>  37 <em class='comment'>/**</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * &lt;p&gt;{@link InvocationHandler} that forwards methods in an MBean's</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * management interface through the MBean server to the MBean.&lt;/p&gt;</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;p&gt;Given an {@link MBeanServerConnection}, the {@link ObjectName}</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * of an MBean within that MBean server, and a Java interface</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * &lt;code&gt;Intf&lt;/code&gt; that describes the management interface of the</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * MBean using the patterns for a Standard MBean or an MXBean, this</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * class can be used to construct a proxy for the MBean.  The proxy</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * implements the interface &lt;code&gt;Intf&lt;/code&gt; such that all of its</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * methods are forwarded through the MBean server to the MBean.&lt;/p&gt;</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> *</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;p&gt;If the {@code InvocationHandler} is for an MXBean, then the parameters of</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * a method are converted from the type declared in the MXBean</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * interface into the corresponding mapped type, and the return value</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * is converted from the mapped type into the declared type.  For</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * example, with the method&lt;br&gt;</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'></em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * {@code public List&lt;String&gt; reverse(List&lt;String&gt; list);}&lt;br&gt;</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'></em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * and given that the mapped type for {@code List&lt;String&gt;} is {@code</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * String[]}, a call to {@code proxy.reverse(someList)} will convert</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * {@code someList} from a {@code List&lt;String&gt;} to a {@code String[]},</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * call the MBean operation {@code reverse}, then convert the returned</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * {@code String[]} into a {@code List&lt;String&gt;}.&lt;/p&gt;</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;p&gt;The method Object.toString(), Object.hashCode(), or</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * Object.equals(Object), when invoked on a proxy using this</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> * invocation handler, is forwarded to the MBean server as a method on</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * the proxied MBean only if it appears in one of the proxy's</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> * interfaces.  For a proxy created with {@link</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class)</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * JMX.newMBeanProxy} or {@link</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * JMX#newMXBeanProxy(MBeanServerConnection, ObjectName, Class)</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * JMX.newMXBeanProxy}, this means that the method must appear in the</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * Standard MBean or MXBean interface.  Otherwise these methods have</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * the following behavior:</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> * &lt;ul&gt;</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> * &lt;li&gt;toString() returns a string representation of the proxy</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * &lt;li&gt;hashCode() returns a hash code for the proxy such</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> * that two equal proxies have the same hash code</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'> * &lt;li&gt;equals(Object)</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'> * returns true if and only if the Object argument is of the same</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'> * proxy class as this proxy, with an MBeanServerInvocationHandler</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'> * that has the same MBeanServerConnection and ObjectName; if one</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'> * of the {@code MBeanServerInvocationHandler}s was constructed with</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'> * a {@code Class} argument then the other must have been constructed</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'> * with the same {@code Class} for {@code equals} to return true.</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'> * &lt;/ul&gt;</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'> *</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'> * @since 1.5</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'> */</em>
+<a id='L89' name='L89'></a>  89 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/4837.html' title='Multiple referred from 9 places.'>MBeanServerInvocationHandler</a> <strong class='reserved'>implements</strong> <a href='../S/1641.html#L41' title='Defined at 41 in src/java/lang/reflect/InvocationHandler.java.'>InvocationHandler</a> <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90     <em class='comment'>/**</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * &lt;p&gt;Invocation handler that forwards methods through an MBean</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * server to a Standard MBean.  This constructor may be called</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * instead of relying on {@link</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class)</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * JMX.newMBeanProxy}, for instance if you need to supply a</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * different {@link ClassLoader} to {@link Proxy#newProxyInstance</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * Proxy.newProxyInstance}.&lt;/p&gt;</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     *</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * &lt;p&gt;This constructor is not appropriate for an MXBean.  Use</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * {@link #MBeanServerInvocationHandler(MBeanServerConnection,</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * ObjectName, boolean)} for that.  This constructor is equivalent</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * to {@code new MBeanServerInvocationHandler(connection,</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * objectName, false)}.&lt;/p&gt;</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     *</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * @param connection the MBean server connection through which all</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * methods of a proxy using this handler will be forwarded.</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     *</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * @param objectName the name of the MBean within the MBean server</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * to which methods will be forwarded.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     */</em>
+<a id='L111' name='L111'></a> 111     <strong class='reserved'>public</strong> MBeanServerInvocationHandler(<a href='../S/3521.html#L42' title='Defined at 42 in src/javax/management/MBeanServerConnection.java.'>MBeanServerConnection</a> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>,
+<a id='L112' name='L112'></a> 112                                         <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> objectName) <em class='brace'>{</em>
+<a id='L113' name='L113'></a> 113 
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>this</strong>(<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>, objectName, <strong class='reserved'>false</strong>);
+<a id='L115' name='L115'></a> 115     <em class='brace'>}</em>
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117     <em class='comment'>/**</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * &lt;p&gt;Invocation handler that can forward methods through an MBean</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * server to a Standard MBean or MXBean.  This constructor may be called</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * instead of relying on {@link</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * JMX#newMXBeanProxy(MBeanServerConnection, ObjectName, Class)</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * JMX.newMXBeanProxy}, for instance if you need to supply a</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     * different {@link ClassLoader} to {@link Proxy#newProxyInstance</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * Proxy.newProxyInstance}.&lt;/p&gt;</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     *</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * @param connection the MBean server connection through which all</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * methods of a proxy using this handler will be forwarded.</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     *</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * @param objectName the name of the MBean within the MBean server</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * to which methods will be forwarded.</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * @param isMXBean if true, the proxy is for an {@link MXBean}, and</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * appropriate mappings will be applied to method parameters and return</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * values.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     *</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * @since 1.6</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     */</em>
+<a id='L138' name='L138'></a> 138     <strong class='reserved'>public</strong> MBeanServerInvocationHandler(<a href='../S/3521.html#L42' title='Defined at 42 in src/javax/management/MBeanServerConnection.java.'>MBeanServerConnection</a> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>,
+<a id='L139' name='L139'></a> 139                                         <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> objectName,
+<a id='L140' name='L140'></a> 140                                         <strong class='reserved'>boolean</strong> <a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>) <em class='brace'>{</em>
+<a id='L141' name='L141'></a> 141         <strong class='reserved'>if</strong> (<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L142' name='L142'></a> 142             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Null connection");
+<a id='L143' name='L143'></a> 143         <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144         <strong class='reserved'>if</strong> (<a href='../D/6957.html' title='Multiple defined in 2 places.'>Proxy</a>.<a href='../S/1663.html#L790' title='Defined at 790 in src/java/lang/reflect/Proxy.java.'>isProxyClass</a>(<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>())) <em class='brace'>{</em>
+<a id='L145' name='L145'></a> 145             <strong class='reserved'>if</strong> (<a href='../S/3550.html#L89' title='Defined at 89 in src/javax/management/MBeanServerInvocationHandler.java.'>MBeanServerInvocationHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(
+<a id='L146' name='L146'></a> 146                     <a href='../D/6957.html' title='Multiple defined in 2 places.'>Proxy</a>.<a href='../D/19828.html' title='Multiple defined in 4 places.'>getInvocationHandler</a>(<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>).<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>())) <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Wrapping MBeanServerInvocationHandler");
+<a id='L148' name='L148'></a> 148             <em class='brace'>}</em>
+<a id='L149' name='L149'></a> 149         <em class='brace'>}</em>
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>if</strong> (objectName == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Null object name");
+<a id='L152' name='L152'></a> 152         <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153         <strong class='reserved'>this</strong>.<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a> = <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>;
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>this</strong>.objectName = objectName;
+<a id='L155' name='L155'></a> 155         <strong class='reserved'>this</strong>.<a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a> = <a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>;
+<a id='L156' name='L156'></a> 156     <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158     <em class='comment'>/**</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * &lt;p&gt;The MBean server connection through which the methods of</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * a proxy using this handler are forwarded.&lt;/p&gt;</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     *</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * @return the MBean server connection.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     *</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * @since 1.6</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     */</em>
+<a id='L166' name='L166'></a> 166     <strong class='reserved'>public</strong> <a href='../S/3521.html#L42' title='Defined at 42 in src/javax/management/MBeanServerConnection.java.'>MBeanServerConnection</a> <a href='../R/17511.html' title='Multiple referred from 2 places.'>getMBeanServerConnection</a>() <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167         <strong class='reserved'>return</strong> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>;
+<a id='L168' name='L168'></a> 168     <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169 
+<a id='L170' name='L170'></a> 170     <em class='comment'>/**</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * &lt;p&gt;The name of the MBean within the MBean server to which methods</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * are forwarded.</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     *</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * @return the object name.</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     *</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * @since 1.6</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     */</em>
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>public</strong> <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../R/18101.html' title='Multiple referred from 18 places.'>getObjectName</a>() <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179         <strong class='reserved'>return</strong> objectName;
+<a id='L180' name='L180'></a> 180     <em class='brace'>}</em>
+<a id='L181' name='L181'></a> 181 
+<a id='L182' name='L182'></a> 182     <em class='comment'>/**</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * &lt;p&gt;If true, the proxy is for an MXBean, and appropriate mappings</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * are applied to method parameters and return values.</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     *</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * @return whether the proxy is for an MXBean.</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     *</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     * @since 1.6</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     */</em>
+<a id='L190' name='L190'></a> 190     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21708.html' title='Multiple referred from 24 places.'>isMXBean</a>() <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191         <strong class='reserved'>return</strong> <a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>;
+<a id='L192' name='L192'></a> 192     <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194     <em class='comment'>/**</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * &lt;p&gt;Return a proxy that implements the given interface by</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * forwarding its methods through the given MBean server to the</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * named MBean.  As of 1.6, the methods {@link</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     * JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class)} and</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     * {@link JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class,</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>     * boolean)} are preferred to this method.&lt;/p&gt;</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     *</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * &lt;p&gt;This method is equivalent to {@link Proxy#newProxyInstance</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * Proxy.newProxyInstance}&lt;code&gt;(interfaceClass.getClassLoader(),</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * interfaces, handler)&lt;/code&gt;.  Here &lt;code&gt;handler&lt;/code&gt; is the</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     * result of {@link #MBeanServerInvocationHandler new</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * MBeanServerInvocationHandler(connection, objectName)}, and</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     * &lt;code&gt;interfaces&lt;/code&gt; is an array that has one element if</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>     * &lt;code&gt;notificationBroadcaster&lt;/code&gt; is false and two if it is</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>     * true.  The first element of &lt;code&gt;interfaces&lt;/code&gt; is</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * &lt;code&gt;interfaceClass&lt;/code&gt; and the second, if present, is</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * &lt;code&gt;NotificationEmitter.class&lt;/code&gt;.</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     *</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * @param connection the MBean server to forward to.</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * @param objectName the name of the MBean within</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * &lt;code&gt;connection&lt;/code&gt; to forward to.</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * @param interfaceClass the management interface that the MBean</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     * exports, which will also be implemented by the returned proxy.</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>     * @param notificationBroadcaster make the returned proxy</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * implement {@link NotificationEmitter} by forwarding its methods</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * via &lt;code&gt;connection&lt;/code&gt;. A call to {@link</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * NotificationBroadcaster#addNotificationListener} on the proxy will</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * result in a call to {@link</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * MBeanServerConnection#addNotificationListener(ObjectName,</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * NotificationListener, NotificationFilter, Object)}, and likewise</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * for the other methods of {@link NotificationBroadcaster} and {@link</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     * NotificationEmitter}.</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     *</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     * @param &lt;T&gt; allows the compiler to know that if the {@code</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>     * interfaceClass} parameter is {@code MyMBean.class}, for example,</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * then the return type is {@code MyMBean}.</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     *</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * @return the new proxy instance.</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     *</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @see JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class, boolean)</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     */</em>
+<a id='L236' name='L236'></a> 236     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <a href='../R/23600.html' title='Multiple referred from 7 places.'>newProxyInstance</a>(<a href='../S/3521.html#L42' title='Defined at 42 in src/javax/management/MBeanServerConnection.java.'>MBeanServerConnection</a> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>,
+<a id='L237' name='L237'></a> 237                                          <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> objectName,
+<a id='L238' name='L238'></a> 238                                          <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; interfaceClass,
+<a id='L239' name='L239'></a> 239                                          <strong class='reserved'>boolean</strong> notificationBroadcaster) <em class='brace'>{</em>
+<a id='L240' name='L240'></a> 240         <strong class='reserved'>return</strong> <a href='../S/3543.html#L39' title='Defined at 39 in src/javax/management/JMX.java.'>JMX</a>.<a href='../D/28035.html' title='Multiple defined in 2 places.'>newMBeanProxy</a>(<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>, objectName, interfaceClass, notificationBroadcaster);
+<a id='L241' name='L241'></a> 241     <em class='brace'>}</em>
+<a id='L242' name='L242'></a> 242 
+<a id='L243' name='L243'></a> 243     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/21052.html' title='Multiple referred from 440 places.'>invoke</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> proxy, <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> method, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args)
+<a id='L244' name='L244'></a> 244             <strong class='reserved'>throws</strong> <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> <em class='brace'>{</em>
+<a id='L245' name='L245'></a> 245         <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; methodClass = method.<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>();
+<a id='L246' name='L246'></a> 246 
+<a id='L247' name='L247'></a> 247         <strong class='reserved'>if</strong> (methodClass.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3441.html#L73' title='Defined at 73 in src/javax/management/NotificationBroadcaster.java.'>NotificationBroadcaster</a>.<strong class='reserved'>class</strong>)
+<a id='L248' name='L248'></a> 248             || methodClass.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3574.html#L72' title='Defined at 72 in src/javax/management/NotificationEmitter.java.'>NotificationEmitter</a>.<strong class='reserved'>class</strong>))
+<a id='L249' name='L249'></a> 249             <strong class='reserved'>return</strong> <a href='../S/3550.html#L347' title='Defined at 347 in src/javax/management/MBeanServerInvocationHandler.java.'>invokeBroadcasterMethod</a>(proxy, method, args);
+<a id='L250' name='L250'></a> 250 
+<a id='L251' name='L251'></a> 251         <em class='comment'>// local or not: equals, toString, hashCode</em>
+<a id='L252' name='L252'></a> 252         <strong class='reserved'>if</strong> (<a href='../S/3550.html#L416' title='Defined at 416 in src/javax/management/MBeanServerInvocationHandler.java.'>shouldDoLocally</a>(proxy, method))
+<a id='L253' name='L253'></a> 253             <strong class='reserved'>return</strong> <a href='../S/3550.html#L434' title='Defined at 434 in src/javax/management/MBeanServerInvocationHandler.java.'>doLocally</a>(proxy, method, args);
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L256' name='L256'></a> 256             <strong class='reserved'>if</strong> (<a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>()) <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257                 <a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a> p = <a href='../S/3550.html#L322' title='Defined at 322 in src/javax/management/MBeanServerInvocationHandler.java.'>findMXBeanProxy</a>(methodClass);
+<a id='L258' name='L258'></a> 258                 <strong class='reserved'>return</strong> p.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>(<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>, objectName, method, args);
+<a id='L259' name='L259'></a> 259             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L260' name='L260'></a> 260                 <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a> = method.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L261' name='L261'></a> 261                 <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] paramTypes = method.<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>();
+<a id='L262' name='L262'></a> 262                 <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a> = method.<a href='../D/22080.html' title='Multiple defined in 12 places.'>getReturnType</a>();
+<a id='L263' name='L263'></a> 263 
+<a id='L264' name='L264'></a> 264                 <em class='comment'>/* Inexplicably, InvocationHandler specifies that args is null</em>
+<a id='L265' name='L265'></a> 265 <em class='comment'>                   when the method takes no arguments rather than a</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>                   zero-length array.  */</em>
+<a id='L267' name='L267'></a> 267                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> nargs = (args == <strong class='reserved'>null</strong>) ? 0 : args.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L268' name='L268'></a> 268 
+<a id='L269' name='L269'></a> 269                 <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>("get")
+<a id='L270' name='L270'></a> 270                     &amp;&amp; <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; 3
+<a id='L271' name='L271'></a> 271                     &amp;&amp; nargs == 0
+<a id='L272' name='L272'></a> 272                     &amp;&amp; !<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE)) <em class='brace'>{</em>
+<a id='L273' name='L273'></a> 273                     <strong class='reserved'>return</strong> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/17064.html' title='Multiple defined in 72 places.'>getAttribute</a>(objectName,
+<a id='L274' name='L274'></a> 274                         <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(3));
+<a id='L275' name='L275'></a> 275                 <em class='brace'>}</em>
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277                 <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>("is")
+<a id='L278' name='L278'></a> 278                     &amp;&amp; <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; 2
+<a id='L279' name='L279'></a> 279                     &amp;&amp; nargs == 0
+<a id='L280' name='L280'></a> 280                     &amp;&amp; (<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a>.TYPE)
+<a id='L281' name='L281'></a> 281                     || <a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a>.<strong class='reserved'>class</strong>))) <em class='brace'>{</em>
+<a id='L282' name='L282'></a> 282                     <strong class='reserved'>return</strong> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/17064.html' title='Multiple defined in 72 places.'>getAttribute</a>(objectName,
+<a id='L283' name='L283'></a> 283                         <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(2));
+<a id='L284' name='L284'></a> 284                 <em class='brace'>}</em>
+<a id='L285' name='L285'></a> 285 
+<a id='L286' name='L286'></a> 286                 <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>("set")
+<a id='L287' name='L287'></a> 287                     &amp;&amp; <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; 3
+<a id='L288' name='L288'></a> 288                     &amp;&amp; nargs == 1
+<a id='L289' name='L289'></a> 289                     &amp;&amp; <a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE)) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290                     <a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a> <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a> = <strong class='reserved'>new</strong> <a href='../D/567.html' title='Multiple defined in 12 places.'>Attribute</a>(<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(3), args[0]);
+<a id='L291' name='L291'></a> 291                     <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/31941.html' title='Multiple defined in 34 places.'>setAttribute</a>(objectName, <a href='../D/11626.html' title='Multiple defined in 2 places.'>attr</a>);
+<a id='L292' name='L292'></a> 292                     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L293' name='L293'></a> 293                 <em class='brace'>}</em>
+<a id='L294' name='L294'></a> 294 
+<a id='L295' name='L295'></a> 295                 <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a> = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[paramTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>];
+<a id='L296' name='L296'></a> 296                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; paramTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L297' name='L297'></a> 297                     <a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>[i] = paramTypes[i].<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L298' name='L298'></a> 298                 <strong class='reserved'>return</strong> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>(objectName, <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>,
+<a id='L299' name='L299'></a> 299                                          args, <a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>);
+<a id='L300' name='L300'></a> 300             <em class='brace'>}</em>
+<a id='L301' name='L301'></a> 301         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/3501.html#L37' title='Defined at 37 in src/javax/management/MBeanException.java.'>MBeanException</a> e) <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302             <strong class='reserved'>throw</strong> e.<a href='../D/23010.html' title='Multiple defined in 6 places.'>getTargetException</a>();
+<a id='L303' name='L303'></a> 303         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/3503.html#L37' title='Defined at 37 in src/javax/management/RuntimeMBeanException.java.'>RuntimeMBeanException</a> re) <em class='brace'>{</em>
+<a id='L304' name='L304'></a> 304             <strong class='reserved'>throw</strong> re.<a href='../D/23010.html' title='Multiple defined in 6 places.'>getTargetException</a>();
+<a id='L305' name='L305'></a> 305         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/3446.html#L36' title='Defined at 36 in src/javax/management/RuntimeErrorException.java.'>RuntimeErrorException</a> rre) <em class='brace'>{</em>
+<a id='L306' name='L306'></a> 306             <strong class='reserved'>throw</strong> rre.<a href='../S/3446.html#L72' title='Defined at 72 in src/javax/management/RuntimeErrorException.java.'>getTargetError</a>();
+<a id='L307' name='L307'></a> 307         <em class='brace'>}</em>
+<a id='L308' name='L308'></a> 308         <em class='comment'>/* The invoke may fail because it can't get to the MBean, with</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>           one of the these exceptions declared by</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>           MBeanServerConnection.invoke:</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>           - RemoteException: can't talk to MBeanServer;</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>           - InstanceNotFoundException: objectName is not registered;</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>           - ReflectionException: objectName is registered but does not</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>             have the method being invoked.</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>           In all of these cases, the exception will be wrapped by the</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>           proxy mechanism in an UndeclaredThrowableException unless</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>           it happens to be declared in the "throws" clause of the</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>           method being invoked on the proxy.</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>         */</em>
+<a id='L320' name='L320'></a> 320     <em class='brace'>}</em>
+<a id='L321' name='L321'></a> 321 
+<a id='L322' name='L322'></a> 322     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a> <a href='../S/3550.html#L257' title='Referred from 257 in src/javax/management/MBeanServerInvocationHandler.java.'>findMXBeanProxy</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; mxbeanInterface) <em class='brace'>{</em>
+<a id='L323' name='L323'></a> 323         <strong class='reserved'>synchronized</strong> (mxbeanProxies) <em class='brace'>{</em>
+<a id='L324' name='L324'></a> 324             <a href='../S/1569.html#L48' title='Defined at 48 in src/java/lang/ref/WeakReference.java.'>WeakReference</a>&lt;<a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a>&gt; proxyRef =
+<a id='L325' name='L325'></a> 325                     mxbeanProxies.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(mxbeanInterface);
+<a id='L326' name='L326'></a> 326             <a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a> p = (proxyRef == <strong class='reserved'>null</strong>) ? <strong class='reserved'>null</strong> : proxyRef.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>();
+<a id='L327' name='L327'></a> 327             <strong class='reserved'>if</strong> (p == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L328' name='L328'></a> 328                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L329' name='L329'></a> 329                     p = <strong class='reserved'>new</strong> <a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a>(mxbeanInterface);
+<a id='L330' name='L330'></a> 330                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> e) <em class='brace'>{</em>
+<a id='L331' name='L331'></a> 331                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> = "Cannot make MXBean proxy for " +
+<a id='L332' name='L332'></a> 332                             mxbeanInterface.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() + ": " + e.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>();
+<a id='L333' name='L333'></a> 333                     <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a> iae =
+<a id='L334' name='L334'></a> 334                             <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>, e.<a href='../D/17525.html' title='Multiple defined in 41 places.'>getCause</a>());
+<a id='L335' name='L335'></a> 335                     iae.<a href='../S/1726.html#L862' title='Defined at 862 in src/java/lang/Throwable.java.'>setStackTrace</a>(e.<a href='../D/22687.html' title='Multiple defined in 3 places.'>getStackTrace</a>());
+<a id='L336' name='L336'></a> 336                     <strong class='reserved'>throw</strong> iae;
+<a id='L337' name='L337'></a> 337                 <em class='brace'>}</em>
+<a id='L338' name='L338'></a> 338                 mxbeanProxies.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(mxbeanInterface,
+<a id='L339' name='L339'></a> 339                                   <strong class='reserved'>new</strong> <a href='../S/1569.html#L48' title='Defined at 48 in src/java/lang/ref/WeakReference.java.'>WeakReference</a>&lt;<a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a>&gt;(p));
+<a id='L340' name='L340'></a> 340             <em class='brace'>}</em>
+<a id='L341' name='L341'></a> 341             <strong class='reserved'>return</strong> p;
+<a id='L342' name='L342'></a> 342         <em class='brace'>}</em>
+<a id='L343' name='L343'></a> 343     <em class='brace'>}</em>
+<a id='L344' name='L344'></a> 344     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/934.html#L136' title='Defined at 136 in src/java/util/WeakHashMap.java.'>WeakHashMap</a>&lt;<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;, <a href='../S/1569.html#L48' title='Defined at 48 in src/java/lang/ref/WeakReference.java.'>WeakReference</a>&lt;<a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a>&gt;&gt;
+<a id='L345' name='L345'></a> 345             mxbeanProxies = <strong class='reserved'>new</strong> <a href='../S/934.html#L136' title='Defined at 136 in src/java/util/WeakHashMap.java.'>WeakHashMap</a>&lt;<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;, <a href='../S/1569.html#L48' title='Defined at 48 in src/java/lang/ref/WeakReference.java.'>WeakReference</a>&lt;<a href='../S/6290.html#L47' title='Defined at 47 in src/com/sun/jmx/mbeanserver/MXBeanProxy.java.'>MXBeanProxy</a>&gt;&gt;();
+<a id='L346' name='L346'></a> 346 
+<a id='L347' name='L347'></a> 347     <strong class='reserved'>private</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/3550.html#L249' title='Referred from 249 in src/javax/management/MBeanServerInvocationHandler.java.'>invokeBroadcasterMethod</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> proxy, <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> method,
+<a id='L348' name='L348'></a> 348                                            <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args) <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <em class='brace'>{</em>
+<a id='L349' name='L349'></a> 349         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a> = method.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L350' name='L350'></a> 350         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> nargs = (args == <strong class='reserved'>null</strong>) ? 0 : args.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L351' name='L351'></a> 351 
+<a id='L352' name='L352'></a> 352         <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("addNotificationListener")) <em class='brace'>{</em>
+<a id='L353' name='L353'></a> 353             <em class='comment'>/* The various throws of IllegalArgumentException here</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>               should not happen, since we know what the methods in</em>
+<a id='L355' name='L355'></a> 355 <em class='comment'>               NotificationBroadcaster and NotificationEmitter</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>               are.  */</em>
+<a id='L357' name='L357'></a> 357             <strong class='reserved'>if</strong> (nargs != 3) <em class='brace'>{</em>
+<a id='L358' name='L358'></a> 358                 <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> =
+<a id='L359' name='L359'></a> 359                     "Bad arg count to addNotificationListener: " + nargs;
+<a id='L360' name='L360'></a> 360                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L361' name='L361'></a> 361             <em class='brace'>}</em>
+<a id='L362' name='L362'></a> 362             <em class='comment'>/* Other inconsistencies will produce ClassCastException</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>               below.  */</em>
+<a id='L364' name='L364'></a> 364 
+<a id='L365' name='L365'></a> 365             <a href='../S/3533.html#L34' title='Defined at 34 in src/javax/management/NotificationListener.java.'>NotificationListener</a> listener = (<a href='../S/3533.html#L34' title='Defined at 34 in src/javax/management/NotificationListener.java.'>NotificationListener</a>) args[0];
+<a id='L366' name='L366'></a> 366             <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a> = (<a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a>) args[1];
+<a id='L367' name='L367'></a> 367             <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> handback = args[2];
+<a id='L368' name='L368'></a> 368             <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/10974.html' title='Multiple defined in 26 places.'>addNotificationListener</a>(objectName,
+<a id='L369' name='L369'></a> 369                                                listener,
+<a id='L370' name='L370'></a> 370                                                <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>,
+<a id='L371' name='L371'></a> 371                                                handback);
+<a id='L372' name='L372'></a> 372             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L373' name='L373'></a> 373 
+<a id='L374' name='L374'></a> 374         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("removeNotificationListener")) <em class='brace'>{</em>
+<a id='L375' name='L375'></a> 375 
+<a id='L376' name='L376'></a> 376             <em class='comment'>/* NullPointerException if method with no args, but that</em>
+<a id='L377' name='L377'></a> 377 <em class='comment'>               shouldn't happen because removeNL does have args.  */</em>
+<a id='L378' name='L378'></a> 378             <a href='../S/3533.html#L34' title='Defined at 34 in src/javax/management/NotificationListener.java.'>NotificationListener</a> listener = (<a href='../S/3533.html#L34' title='Defined at 34 in src/javax/management/NotificationListener.java.'>NotificationListener</a>) args[0];
+<a id='L379' name='L379'></a> 379 
+<a id='L380' name='L380'></a> 380             <strong class='reserved'>switch</strong> (nargs) <em class='brace'>{</em>
+<a id='L381' name='L381'></a> 381             <strong class='reserved'>case</strong> 1:
+<a id='L382' name='L382'></a> 382                 <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/30900.html' title='Multiple defined in 49 places.'>removeNotificationListener</a>(objectName, listener);
+<a id='L383' name='L383'></a> 383                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L384' name='L384'></a> 384 
+<a id='L385' name='L385'></a> 385             <strong class='reserved'>case</strong> 3:
+<a id='L386' name='L386'></a> 386                 <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a> = (<a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a>) args[1];
+<a id='L387' name='L387'></a> 387                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> handback = args[2];
+<a id='L388' name='L388'></a> 388                 <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/30900.html' title='Multiple defined in 49 places.'>removeNotificationListener</a>(objectName,
+<a id='L389' name='L389'></a> 389                                                       listener,
+<a id='L390' name='L390'></a> 390                                                       <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>,
+<a id='L391' name='L391'></a> 391                                                       handback);
+<a id='L392' name='L392'></a> 392                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L393' name='L393'></a> 393 
+<a id='L394' name='L394'></a> 394             <strong class='reserved'>default</strong>:
+<a id='L395' name='L395'></a> 395                 <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> =
+<a id='L396' name='L396'></a> 396                     "Bad arg count to removeNotificationListener: " + nargs;
+<a id='L397' name='L397'></a> 397                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L398' name='L398'></a> 398             <em class='brace'>}</em>
+<a id='L399' name='L399'></a> 399 
+<a id='L400' name='L400'></a> 400         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("getNotificationInfo")) <em class='brace'>{</em>
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402             <strong class='reserved'>if</strong> (args != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L403' name='L403'></a> 403                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("getNotificationInfo has " +
+<a id='L404' name='L404'></a> 404                                                    "args");
+<a id='L405' name='L405'></a> 405             <em class='brace'>}</em>
+<a id='L406' name='L406'></a> 406 
+<a id='L407' name='L407'></a> 407             <a href='../S/3541.html#L107' title='Defined at 107 in src/javax/management/MBeanInfo.java.'>MBeanInfo</a> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a> = <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/20317.html' title='Multiple defined in 16 places.'>getMBeanInfo</a>(objectName);
+<a id='L408' name='L408'></a> 408             <strong class='reserved'>return</strong> <a href='../D/24493.html' title='Multiple defined in 8 places.'>info</a>.<a href='../D/21041.html' title='Multiple defined in 5 places.'>getNotifications</a>();
+<a id='L409' name='L409'></a> 409 
+<a id='L410' name='L410'></a> 410         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L411' name='L411'></a> 411             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Bad method name: " +
+<a id='L412' name='L412'></a> 412                                                <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>);
+<a id='L413' name='L413'></a> 413         <em class='brace'>}</em>
+<a id='L414' name='L414'></a> 414     <em class='brace'>}</em>
+<a id='L415' name='L415'></a> 415 
+<a id='L416' name='L416'></a> 416     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../S/3550.html#L252' title='Referred from 252 in src/javax/management/MBeanServerInvocationHandler.java.'>shouldDoLocally</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> proxy, <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> method) <em class='brace'>{</em>
+<a id='L417' name='L417'></a> 417         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a> = method.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L418' name='L418'></a> 418         <strong class='reserved'>if</strong> ((<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("hashCode") || <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("toString"))
+<a id='L419' name='L419'></a> 419             &amp;&amp; method.<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 0
+<a id='L420' name='L420'></a> 420             &amp;&amp; <a href='../D/25819.html' title='Multiple defined in 13 places.'>isLocal</a>(proxy, method))
+<a id='L421' name='L421'></a> 421             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L422' name='L422'></a> 422         <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("equals")
+<a id='L423' name='L423'></a> 423             &amp;&amp; <a href='../S/1150.html#L71' title='Defined at 71 in src/java/util/Arrays.java.'>Arrays</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(method.<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>(),
+<a id='L424' name='L424'></a> 424                              <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] <em class='brace'>{</em><a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>.<strong class='reserved'>class</strong><em class='brace'>}</em>)
+<a id='L425' name='L425'></a> 425             &amp;&amp; <a href='../D/25819.html' title='Multiple defined in 13 places.'>isLocal</a>(proxy, method))
+<a id='L426' name='L426'></a> 426             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L427' name='L427'></a> 427         <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("finalize")
+<a id='L428' name='L428'></a> 428             &amp;&amp; method.<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>().<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 0) <em class='brace'>{</em>
+<a id='L429' name='L429'></a> 429             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L430' name='L430'></a> 430         <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L432' name='L432'></a> 432     <em class='brace'>}</em>
+<a id='L433' name='L433'></a> 433 
+<a id='L434' name='L434'></a> 434     <strong class='reserved'>private</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/3550.html#L253' title='Referred from 253 in src/javax/management/MBeanServerInvocationHandler.java.'>doLocally</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> proxy, <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> method, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args) <em class='brace'>{</em>
+<a id='L435' name='L435'></a> 435         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a> = method.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L436' name='L436'></a> 436 
+<a id='L437' name='L437'></a> 437         <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("equals")) <em class='brace'>{</em>
+<a id='L438' name='L438'></a> 438 
+<a id='L439' name='L439'></a> 439             <strong class='reserved'>if</strong> (<strong class='reserved'>this</strong> == args[0]) <em class='brace'>{</em>
+<a id='L440' name='L440'></a> 440                 <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L441' name='L441'></a> 441             <em class='brace'>}</em>
+<a id='L442' name='L442'></a> 442 
+<a id='L443' name='L443'></a> 443             <strong class='reserved'>if</strong> (!(args[0] <strong class='reserved'>instanceof</strong> <a href='../D/6957.html' title='Multiple defined in 2 places.'>Proxy</a>)) <em class='brace'>{</em>
+<a id='L444' name='L444'></a> 444                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L445' name='L445'></a> 445             <em class='brace'>}</em>
+<a id='L446' name='L446'></a> 446 
+<a id='L447' name='L447'></a> 447             <strong class='reserved'>final</strong> <a href='../S/1641.html#L41' title='Defined at 41 in src/java/lang/reflect/InvocationHandler.java.'>InvocationHandler</a> ihandler =
+<a id='L448' name='L448'></a> 448                 <a href='../D/6957.html' title='Multiple defined in 2 places.'>Proxy</a>.<a href='../D/19828.html' title='Multiple defined in 4 places.'>getInvocationHandler</a>(args[0]);
+<a id='L449' name='L449'></a> 449 
+<a id='L450' name='L450'></a> 450             <strong class='reserved'>if</strong> (ihandler == <strong class='reserved'>null</strong> ||
+<a id='L451' name='L451'></a> 451                 !(ihandler <strong class='reserved'>instanceof</strong> <a href='../S/3550.html#L89' title='Defined at 89 in src/javax/management/MBeanServerInvocationHandler.java.'>MBeanServerInvocationHandler</a>)) <em class='brace'>{</em>
+<a id='L452' name='L452'></a> 452                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L453' name='L453'></a> 453             <em class='brace'>}</em>
+<a id='L454' name='L454'></a> 454 
+<a id='L455' name='L455'></a> 455             <strong class='reserved'>final</strong> <a href='../S/3550.html#L89' title='Defined at 89 in src/javax/management/MBeanServerInvocationHandler.java.'>MBeanServerInvocationHandler</a> <a href='../S/5398.html#L302' title='Defined at 302 in src/com/sun/org/apache/xerces/internal/jaxp/JAXPValidatorComponent.java.'>handler</a> =
+<a id='L456' name='L456'></a> 456                 (<a href='../S/3550.html#L89' title='Defined at 89 in src/javax/management/MBeanServerInvocationHandler.java.'>MBeanServerInvocationHandler</a>)ihandler;
+<a id='L457' name='L457'></a> 457 
+<a id='L458' name='L458'></a> 458             <strong class='reserved'>return</strong> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/5398.html#L302' title='Defined at 302 in src/com/sun/org/apache/xerces/internal/jaxp/JAXPValidatorComponent.java.'>handler</a>.<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>) &amp;&amp;
+<a id='L459' name='L459'></a> 459                 objectName.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/5398.html#L302' title='Defined at 302 in src/com/sun/org/apache/xerces/internal/jaxp/JAXPValidatorComponent.java.'>handler</a>.objectName) &amp;&amp;
+<a id='L460' name='L460'></a> 460                 proxy.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(args[0].<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>());
+<a id='L461' name='L461'></a> 461         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("toString")) <em class='brace'>{</em>
+<a id='L462' name='L462'></a> 462             <strong class='reserved'>return</strong> (<a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>() ? "MX" : "M") + "BeanProxy(" +
+<a id='L463' name='L463'></a> 463                 <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a> + "[" + objectName + "])";
+<a id='L464' name='L464'></a> 464         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("hashCode")) <em class='brace'>{</em>
+<a id='L465' name='L465'></a> 465             <strong class='reserved'>return</strong> objectName.<a href='../D/24220.html' title='Multiple defined in 552 places.'>hashCode</a>()+<a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>.<a href='../D/24220.html' title='Multiple defined in 552 places.'>hashCode</a>();
+<a id='L466' name='L466'></a> 466         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("finalize")) <em class='brace'>{</em>
+<a id='L467' name='L467'></a> 467             <em class='comment'>// ignore the finalizer invocation via proxy</em>
+<a id='L468' name='L468'></a> 468             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L469' name='L469'></a> 469         <em class='brace'>}</em>
+<a id='L470' name='L470'></a> 470 
+<a id='L471' name='L471'></a> 471         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>("Unexpected method name: " + <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>);
+<a id='L472' name='L472'></a> 472     <em class='brace'>}</em>
+<a id='L473' name='L473'></a> 473 
+<a id='L474' name='L474'></a> 474     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21682.html' title='Multiple referred from 26 places.'>isLocal</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> proxy, <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> method) <em class='brace'>{</em>
+<a id='L475' name='L475'></a> 475         <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] <a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a> = proxy.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/19802.html' title='Multiple defined in 13 places.'>getInterfaces</a>();
+<a id='L476' name='L476'></a> 476         <strong class='reserved'>if</strong>(<a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L477' name='L477'></a> 477             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L478' name='L478'></a> 478         <em class='brace'>}</em>
+<a id='L479' name='L479'></a> 479 
+<a id='L480' name='L480'></a> 480         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a> = method.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L481' name='L481'></a> 481         <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a> = method.<a href='../D/21380.html' title='Multiple defined in 7 places.'>getParameterTypes</a>();
+<a id='L482' name='L482'></a> 482         <strong class='reserved'>for</strong> (<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; intf : <a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a>) <em class='brace'>{</em>
+<a id='L483' name='L483'></a> 483             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L484' name='L484'></a> 484                 intf.<a href='../D/20584.html' title='Multiple defined in 21 places.'>getMethod</a>(<a href='../S/6276.html#L204' title='Defined at 204 in src/com/sun/jmx/mbeanserver/ConvertingMethod.java.'>methodName</a>, <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>);
+<a id='L485' name='L485'></a> 485                 <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>; <em class='comment'>// found method in one of our interfaces</em>
+<a id='L486' name='L486'></a> 486             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1776.html#L35' title='Defined at 35 in src/java/lang/NoSuchMethodException.java.'>NoSuchMethodException</a> nsme) <em class='brace'>{</em>
+<a id='L487' name='L487'></a> 487                 <em class='comment'>// OK.</em>
+<a id='L488' name='L488'></a> 488             <em class='brace'>}</em>
+<a id='L489' name='L489'></a> 489         <em class='brace'>}</em>
+<a id='L490' name='L490'></a> 490 
+<a id='L491' name='L491'></a> 491         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;  <em class='comment'>// did not find in any interface</em>
+<a id='L492' name='L492'></a> 492     <em class='brace'>}</em>
+<a id='L493' name='L493'></a> 493 
+<a id='L494' name='L494'></a> 494     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/3521.html#L42' title='Defined at 42 in src/javax/management/MBeanServerConnection.java.'>MBeanServerConnection</a> <a href='../D/13259.html' title='Multiple defined in 3 places.'>connection</a>;
+<a id='L495' name='L495'></a> 495     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> objectName;
+<a id='L496' name='L496'></a> 496     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> <a href='../D/25852.html' title='Multiple defined in 7 places.'>isMXBean</a>;
+<a id='L497' name='L497'></a> 497 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L166'>[^]</a><a href='#L474'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/spi/servicecontext/ServiceContext.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7786.html'>spi</a>/<a href='../files/7812.html'>servicecontext</a>/ServiceContext.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L68'>[^]</a><a href='#L117'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L68' title='Defined at 68.'>dprint</a></li>
+<li><a href='#L87' title='Defined at 87.'>getId</a></li>
+<li><a href='#L93' title='Defined at 93.'>write</a></li>
+<li><a href='#L109' title='Defined at 109.'>writeData</a></li>
+<li><a href='#L117' title='Defined at 117.'>toString</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.spi.servicecontext;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> org.omg.CORBA.SystemException;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> org.omg.CORBA.INTERNAL;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.CORBA_2_3.portable.InputStream ;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> org.omg.CORBA_2_3.portable.OutputStream ;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.GIOPVersion;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB ;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.CDRInputStream ;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.EncapsInputStream ;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.EncapsOutputStream ;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility ;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 <em class='comment'>/** Base class for all ServiceContext classes.</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'>* There is a derived ServiceContext class for each service context that</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'>* the ORB supports.  Each subclass encapsulates the representation of</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'>* the service context and provides any needed methods for manipulating</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'>* the service context.  Each subclass must provide the following</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'>* members:</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'>* &lt;p&gt;</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'>* &lt;ul&gt;</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'>* &lt;/li&gt;a public static final int SERVICE_CONTEXT_ID that gives the OMG</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'>* (or other) defined id for the service context.  This is needed for the</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'>* registration mechanism defined in ServiceContexts. OMG defined</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'>* service context ids are taken from section 13.6.7 of ptc/98-12-04.&lt;/li&gt;</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>* &lt;li&gt;a public constructor that takes an InputStream as its argument.&lt;/li&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>* &lt;li&gt;Appropriate definitions of getId() and writeData().  getId() must</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'>* return SERVICE_CONTEXT_ID.&lt;/li&gt;</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>* &lt;/ul&gt;</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>* &lt;p&gt;</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>* The subclass can be constructed either directly from the service context</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>* representation, or by reading the representation from an input stream.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>* These cases are needed when the service context is created and written to</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>* the request or reply, and when the service context is read from the</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>* received request or reply.</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>*/</em>
+<a id='L62' name='L62'></a>  62 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/7140.html' title='Multiple referred from 67 places.'>ServiceContext</a> <em class='brace'>{</em>
+<a id='L63' name='L63'></a>  63     <em class='comment'>/** Simple default constructor used when subclass is constructed</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * from its representation.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     */</em>
+<a id='L66' name='L66'></a>  66     <strong class='reserved'>protected</strong> ServiceContext() <em class='brace'>{</em> <em class='brace'>}</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/13496.html' title='Multiple referred from 536 places.'>dprint</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> )
+<a id='L69' name='L69'></a>  69     <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70         <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>( <strong class='reserved'>this</strong>, <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a> ) ;
+<a id='L71' name='L71'></a>  71     <em class='brace'>}</em>
+<a id='L72' name='L72'></a>  72 
+<a id='L73' name='L73'></a>  73     <em class='comment'>/** Stream constructor used when subclass is constructed from an</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     * InputStream.  This constructor must be called by super( stream )</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * in the subclass.  After this constructor completes, the service</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     * context representation can be read from in.</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * Note that the service context id has been consumed from the input</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * stream before this object is constructed.</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     */</em>
+<a id='L80' name='L80'></a>  80     <strong class='reserved'>protected</strong> ServiceContext(<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> s, <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> gv) <strong class='reserved'>throws</strong> <a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>
+<a id='L81' name='L81'></a>  81     <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82         <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a> = s;
+<a id='L83' name='L83'></a>  83     <em class='brace'>}</em>
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85     <em class='comment'>/** Returns Service context id.  Must be overloaded in subclass.</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     */</em>
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/16968.html' title='Multiple referred from 227 places.'>getId</a>() ;
+<a id='L88' name='L88'></a>  88 
+<a id='L89' name='L89'></a>  89     <em class='comment'>/** Write the service context to an output stream.  This method</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * must be used for writing the service context to a request or reply</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * header.</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     */</em>
+<a id='L93' name='L93'></a>  93     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> s, <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> gv) <strong class='reserved'>throws</strong> <a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>
+<a id='L94' name='L94'></a>  94     <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95         <a href='../S/6985.html#L57' title='Defined at 57 in src/com/sun/corba/se/impl/encoding/EncapsOutputStream.java.'>EncapsOutputStream</a> os =
+<a id='L96' name='L96'></a>  96             sun.corba.<a href='../S/6997.html#L65' title='Defined at 65 in src/com/sun/corba/se/impl/encoding/CDROutputStream.java.'>OutputStreamFactory</a>.newEncapsOutputStream((<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)(s.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>()), gv);
+<a id='L97' name='L97'></a>  97         os.<a href='../D/29993.html' title='Multiple defined in 5 places.'>putEndian</a>() ;
+<a id='L98' name='L98'></a>  98         <a href='../D/37031.html' title='Multiple defined in 12 places.'>writeData</a>( os ) ;
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = os.<a href='../D/35362.html' title='Multiple defined in 10 places.'>toByteArray</a>() ;
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101         s.<a href='../D/37244.html' title='Multiple defined in 8 places.'>write_long</a>(<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>());
+<a id='L102' name='L102'></a> 102         s.<a href='../D/37244.html' title='Multiple defined in 8 places.'>write_long</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L103' name='L103'></a> 103         s.<a href='../D/37251.html' title='Multiple defined in 7 places.'>write_octet_array</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, 0, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L104' name='L104'></a> 104     <em class='brace'>}</em>
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106     <em class='comment'>/** Writes the data used to represent the subclasses service context</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * into an encapsulation stream.  Must be overloaded in subclass.</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     */</em>
+<a id='L109' name='L109'></a> 109     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/30596.html' title='Multiple referred from 16 places.'>writeData</a>( <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> os ) ;
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111     <em class='comment'>/** in is the stream containing the service context representation.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * It is constructed by the stream constructor, and available for use</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * in the subclass stream constructor.</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     */</em>
+<a id='L115' name='L115'></a> 115     <strong class='reserved'>protected</strong> <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a> = <strong class='reserved'>null</strong> ;
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>()
+<a id='L118' name='L118'></a> 118     <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119         <strong class='reserved'>return</strong> "ServiceContext[ id=" + <a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() + " ]" ;
+<a id='L120' name='L120'></a> 120     <em class='brace'>}</em>
+<a id='L121' name='L121'></a> 121 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L68'>[^]</a><a href='#L117'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOM.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7892.html'>impl</a>/<a href='../files/7904.html'>xs</a>/<a href='../files/7907.html'>opti</a>/SchemaDOM.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L66'>[^]</a><a href='#L427'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L66' title='Defined at 66.'>startElement</a></li>
+<li><a href='#L75' title='Defined at 75.'>emptyElement</a></li>
+<li><a href='#L82' title='Defined at 82.'>startElement</a></li>
+<li><a href='#L87' title='Defined at 87.'>emptyElement</a></li>
+<li><a href='#L92' title='Defined at 92.'>processElement</a></li>
+<li><a href='#L146' title='Defined at 146.'>endElement</a></li>
+<li><a href='#L154' title='Defined at 154.'>comment</a></li>
+<li><a href='#L163' title='Defined at 163.'>processingInstruction</a></li>
+<li><a href='#L172' title='Defined at 172.'>characters</a></li>
+<li><a href='#L208' title='Defined at 208.'>charactersRaw</a></li>
+<li><a href='#L212' title='Defined at 212.'>endAnnotation</a></li>
+<li><a href='#L219' title='Defined at 219.'>endAnnotationElement</a></li>
+<li><a href='#L223' title='Defined at 223.'>endAnnotationElement</a></li>
+<li><a href='#L227' title='Defined at 227.'>endSyntheticAnnotationElement</a></li>
+<li><a href='#L231' title='Defined at 231.'>endSyntheticAnnotationElement</a></li>
+<li><a href='#L247' title='Defined at 247.'>startAnnotationCDATA</a></li>
+<li><a href='#L252' title='Defined at 252.'>endAnnotationCDATA</a></li>
+<li><a href='#L257' title='Defined at 257.'>resizeRelations</a></li>
+<li><a href='#L266' title='Defined at 266.'>resizeRelations</a></li>
+<li><a href='#L273' title='Defined at 273.'>reset</a></li>
+<li><a href='#L293' title='Defined at 293.'>printDOM</a></li>
+<li><a href='#L312' title='Defined at 312.'>traverse</a></li>
+<li><a href='#L338' title='Defined at 338.'>indent</a></li>
+<li><a href='#L345' title='Defined at 345.'>getDocumentElement</a></li>
+<li><a href='#L350' title='Defined at 350.'>getImplementation</a></li>
+<li><a href='#L355' title='Defined at 355.'>startAnnotation</a></li>
+<li><a href='#L359' title='Defined at 359.'>startAnnotation</a></li>
+<li><a href='#L402' title='Defined at 402.'>startAnnotationElement</a></li>
+<li><a href='#L405' title='Defined at 405.'>startAnnotationElement</a></li>
+<li><a href='#L414' title='Defined at 414.'>processAttValue</a></li>
+<li><a href='#L427' title='Defined at 427.'>escapeAttValue</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2001-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 
+<a id='L21' name='L21'></a>  21 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.xs.opti;
+<a id='L22' name='L22'></a>  22 
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>import</strong> java.util.ArrayList;
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>import</strong> java.util.Enumeration;
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.XMLSymbols;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.QName;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XMLAttributes;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XMLString;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> org.w3c.dom.Attr;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> org.w3c.dom.DOMImplementation;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.w3c.dom.Element;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.w3c.dom.NamedNodeMap;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.w3c.dom.Node;
+<a id='L36' name='L36'></a>  36 
+<a id='L37' name='L37'></a>  37 <em class='comment'>/**</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * @xerces.internal</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> *</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * @author Rahul Srivastava, Sun Microsystems Inc.</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * @author Sandy Gao, IBM</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> *</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * @version $Id: SchemaDOM.java,v 1.7 2010-11-01 04:40:01 joehw Exp $</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> */</em>
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/6926.html' title='Multiple referred from 7 places.'>SchemaDOM</a> <strong class='reserved'>extends</strong> <a href='../S/5127.html#L47' title='Defined at 47 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/DefaultDocument.java.'>DefaultDocument</a> <em class='brace'>{</em>
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> relationsRowResizeFactor = 15;
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> relationsColResizeFactor = 10;
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[][] relations;
+<a id='L51' name='L51'></a>  51     <em class='comment'>// parent must be an element in this scheme</em>
+<a id='L52' name='L52'></a>  52     <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>;
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>int</strong> currLoc;
+<a id='L54' name='L54'></a>  54     <strong class='reserved'>int</strong> nextFreeLoc;
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>boolean</strong> hidden;
+<a id='L56' name='L56'></a>  56     <strong class='reserved'>boolean</strong> inCDATA;
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58     <em class='comment'>// for annotation support:</em>
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>private</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> fAnnotationBuffer = <strong class='reserved'>null</strong>;
+<a id='L60' name='L60'></a>  60 
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>public</strong> SchemaDOM() <em class='brace'>{</em>
+<a id='L62' name='L62'></a>  62         <a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L63' name='L63'></a>  63     <em class='brace'>}</em>
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66     <strong class='reserved'>public</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../R/28813.html' title='Multiple referred from 116 places.'>startElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L67' name='L67'></a>  67             <strong class='reserved'>int</strong> <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <strong class='reserved'>int</strong> <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>) <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68         <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a> = <strong class='reserved'>new</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a>(<a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L69' name='L69'></a>  69         <a href='../S/5117.html#L92' title='Defined at 92 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOM.java.'>processElement</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>, <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L70' name='L70'></a>  70         <em class='comment'>// now the current node added, becomes the parent</em>
+<a id='L71' name='L71'></a>  71         <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a> = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L72' name='L72'></a>  72         <strong class='reserved'>return</strong> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L73' name='L73'></a>  73     <em class='brace'>}</em>
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75     <strong class='reserved'>public</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../R/13687.html' title='Multiple referred from 19 places.'>emptyElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L76' name='L76'></a>  76             <strong class='reserved'>int</strong> <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <strong class='reserved'>int</strong> <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>) <em class='brace'>{</em>
+<a id='L77' name='L77'></a>  77         <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a> = <strong class='reserved'>new</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a>(<a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>);
+<a id='L78' name='L78'></a>  78         <a href='../S/5117.html#L92' title='Defined at 92 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOM.java.'>processElement</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>, <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L79' name='L79'></a>  79         <strong class='reserved'>return</strong> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L80' name='L80'></a>  80     <em class='brace'>}</em>
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <strong class='reserved'>public</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../R/28813.html' title='Multiple referred from 116 places.'>startElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L83' name='L83'></a>  83             <strong class='reserved'>int</strong> <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <strong class='reserved'>int</strong> <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>) <em class='brace'>{</em>
+<a id='L84' name='L84'></a>  84         <strong class='reserved'>return</strong> <a href='../D/34781.html' title='Multiple defined in 105 places.'>startElement</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>, <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>, -1);
+<a id='L85' name='L85'></a>  85     <em class='brace'>}</em>
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>public</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../R/13687.html' title='Multiple referred from 19 places.'>emptyElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>int</strong> <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <strong class='reserved'>int</strong> <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>) <em class='brace'>{</em>
+<a id='L89' name='L89'></a>  89         <strong class='reserved'>return</strong> <a href='../D/15350.html' title='Multiple defined in 24 places.'>emptyElement</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>, <a href='../S/7696.html#L44' title='Defined at 44 in src/com/sun/javadoc/SourcePosition.java.'>line</a>, <a href='../S/7696.html#L51' title='Defined at 51 in src/com/sun/javadoc/SourcePosition.java.'>column</a>, -1);
+<a id='L90' name='L90'></a>  90     <em class='brace'>}</em>
+<a id='L91' name='L91'></a>  91 
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25130.html' title='Multiple referred from 2 places.'>processElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>, <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <em class='brace'>{</em>
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94         <em class='comment'>// populate node</em>
+<a id='L95' name='L95'></a>  95         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>;
+<a id='L96' name='L96'></a>  96         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.localpart = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.localpart;
+<a id='L97' name='L97'></a>  97         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.rawname = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.rawname;
+<a id='L98' name='L98'></a>  98         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.uri = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.uri;
+<a id='L99' name='L99'></a>  99         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.schemaDOM = <strong class='reserved'>this</strong>;
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101         <em class='comment'>// set the attributes</em>
+<a id='L102' name='L102'></a> 102         <a href='../S/54.html#L186' title='Defined at 186 in src/org/w3c/dom/Attr.java.'>Attr</a>[] attrs = <strong class='reserved'>new</strong> <a href='../S/54.html#L186' title='Defined at 186 in src/org/w3c/dom/Attr.java.'>Attr</a>[<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>()];
+<a id='L103' name='L103'></a> 103         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i&lt;<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>(); i++) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104             attrs[i] = <strong class='reserved'>new</strong> <a href='../D/564.html' title='Multiple defined in 2 places.'>AttrImpl</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>,
+<a id='L105' name='L105'></a> 105                     <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/21592.html' title='Multiple defined in 61 places.'>getPrefix</a>(i),
+<a id='L106' name='L106'></a> 106                     <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/20201.html' title='Multiple defined in 44 places.'>getLocalName</a>(i),
+<a id='L107' name='L107'></a> 107                     <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/21788.html' title='Multiple defined in 20 places.'>getQName</a>(i),
+<a id='L108' name='L108'></a> 108                     <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(i),
+<a id='L109' name='L109'></a> 109                     <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>(i));
+<a id='L110' name='L110'></a> 110         <em class='brace'>}</em>
+<a id='L111' name='L111'></a> 111         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.attrs = attrs;
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113         <em class='comment'>// check if array needs to be resized</em>
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>if</strong> (nextFreeLoc == relations.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <em class='brace'>{</em>
+<a id='L115' name='L115'></a> 115             <a href='../D/31235.html' title='Multiple defined in 2 places.'>resizeRelations</a>();
+<a id='L116' name='L116'></a> 116         <em class='brace'>}</em>
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118         <em class='comment'>// store the current parent</em>
+<a id='L119' name='L119'></a> 119         <em class='comment'>//if (relations[currLoc][0] == null || relations[currLoc][0] != parent) {</em>
+<a id='L120' name='L120'></a> 120         <strong class='reserved'>if</strong> (relations[currLoc][0] != <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>) <em class='brace'>{</em>
+<a id='L121' name='L121'></a> 121             relations[nextFreeLoc][0] = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>;
+<a id='L122' name='L122'></a> 122             currLoc = nextFreeLoc++;
+<a id='L123' name='L123'></a> 123         <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125         <em class='comment'>// add the current node as child of parent</em>
+<a id='L126' name='L126'></a> 126         <strong class='reserved'>boolean</strong> foundPlace = <strong class='reserved'>false</strong>;
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>int</strong> i = 1;
+<a id='L128' name='L128'></a> 128         <strong class='reserved'>for</strong> (i = 1; i&lt;relations[currLoc].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129             <strong class='reserved'>if</strong> (relations[currLoc][i] == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130                 foundPlace = <strong class='reserved'>true</strong>;
+<a id='L131' name='L131'></a> 131                 <strong class='reserved'>break</strong>;
+<a id='L132' name='L132'></a> 132             <em class='brace'>}</em>
+<a id='L133' name='L133'></a> 133         <em class='brace'>}</em>
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>if</strong> (!foundPlace) <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136             <a href='../D/31235.html' title='Multiple defined in 2 places.'>resizeRelations</a>(currLoc);
+<a id='L137' name='L137'></a> 137         <em class='brace'>}</em>
+<a id='L138' name='L138'></a> 138         relations[currLoc][i] = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140         <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.parentRow = currLoc;
+<a id='L141' name='L141'></a> 141         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.row = currLoc;
+<a id='L142' name='L142'></a> 142         <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.col = i;
+<a id='L143' name='L143'></a> 143     <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13766.html' title='Multiple referred from 95 places.'>endElement</a>()  <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147         <em class='comment'>// the parent of current parent node becomes the parent</em>
+<a id='L148' name='L148'></a> 148         <em class='comment'>// for the next node.</em>
+<a id='L149' name='L149'></a> 149         currLoc = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.row;
+<a id='L150' name='L150'></a> 150         <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a> = (<a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a>)relations[currLoc][0];
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <em class='comment'>// note that this will only be called within appinfo/documentation</em>
+<a id='L154' name='L154'></a> 154     <strong class='reserved'>void</strong> <a href='../R/11671.html' title='Multiple referred from 126 places.'>comment</a>(<a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>) <em class='brace'>{</em>
+<a id='L155' name='L155'></a> 155         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;!--");
+<a id='L156' name='L156'></a> 156         <strong class='reserved'>if</strong> (<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0) <em class='brace'>{</em>
+<a id='L157' name='L157'></a> 157             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.ch, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L158' name='L158'></a> 158         <em class='brace'>}</em>
+<a id='L159' name='L159'></a> 159         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("--&gt;");
+<a id='L160' name='L160'></a> 160     <em class='brace'>}</em>
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162     <em class='comment'>// note that this will only be called within appinfo/documentation</em>
+<a id='L163' name='L163'></a> 163     <strong class='reserved'>void</strong> <a href='../R/25204.html' title='Multiple referred from 66 places.'>processingInstruction</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>, <a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a> <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>) <em class='brace'>{</em>
+<a id='L164' name='L164'></a> 164         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;?").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L165' name='L165'></a> 165         <strong class='reserved'>if</strong> (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0) <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(' ').<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.ch, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L167' name='L167'></a> 167         <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("?&gt;");
+<a id='L169' name='L169'></a> 169     <em class='brace'>}</em>
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171     <em class='comment'>// note that this will only be called within appinfo/documentation</em>
+<a id='L172' name='L172'></a> 172     <strong class='reserved'>void</strong> <a href='../R/11056.html' title='Multiple referred from 150 places.'>characters</a>(<a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>) <em class='brace'>{</em>
+<a id='L173' name='L173'></a> 173 
+<a id='L174' name='L174'></a> 174         <em class='comment'>// escape characters if necessary</em>
+<a id='L175' name='L175'></a> 175         <strong class='reserved'>if</strong> (!inCDATA) <em class='brace'>{</em>
+<a id='L176' name='L176'></a> 176             <strong class='reserved'>final</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> annotationBuffer = fAnnotationBuffer;
+<a id='L177' name='L177'></a> 177             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>; i &lt; <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>+<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ++i) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178                 <strong class='reserved'>char</strong> ch = <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.ch[i];
+<a id='L179' name='L179'></a> 179                 <strong class='reserved'>if</strong> (ch == '&amp;') <em class='brace'>{</em>
+<a id='L180' name='L180'></a> 180                     annotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;amp;");
+<a id='L181' name='L181'></a> 181                 <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (ch == '&lt;') <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183                     annotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;lt;");
+<a id='L184' name='L184'></a> 184                 <em class='brace'>}</em>
+<a id='L185' name='L185'></a> 185                 <em class='comment'>// character sequence "]]&gt;" cannot appear in content,</em>
+<a id='L186' name='L186'></a> 186                 <em class='comment'>// therefore we should escape '&gt;'.</em>
+<a id='L187' name='L187'></a> 187                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (ch == '&gt;') <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188                     annotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;gt;");
+<a id='L189' name='L189'></a> 189                 <em class='brace'>}</em>
+<a id='L190' name='L190'></a> 190                 <em class='comment'>// If CR is part of the document's content, it</em>
+<a id='L191' name='L191'></a> 191                 <em class='comment'>// must not be printed as a literal otherwise</em>
+<a id='L192' name='L192'></a> 192                 <em class='comment'>// it would be normalized to LF when the document</em>
+<a id='L193' name='L193'></a> 193                 <em class='comment'>// is reparsed.</em>
+<a id='L194' name='L194'></a> 194                 <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (ch == '\r') <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195                     annotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;#xD;");
+<a id='L196' name='L196'></a> 196                 <em class='brace'>}</em>
+<a id='L197' name='L197'></a> 197                 <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198                     annotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(ch);
+<a id='L199' name='L199'></a> 199                 <em class='brace'>}</em>
+<a id='L200' name='L200'></a> 200             <em class='brace'>}</em>
+<a id='L201' name='L201'></a> 201         <em class='brace'>}</em>
+<a id='L202' name='L202'></a> 202         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.ch, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L204' name='L204'></a> 204         <em class='brace'>}</em>
+<a id='L205' name='L205'></a> 205     <em class='brace'>}</em>
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207     <em class='comment'>// note that this will only be called within appinfo/documentation</em>
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>void</strong> <a href='../R/11058.html' title='Multiple referred from 4 places.'>charactersRaw</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>) <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a>);
+<a id='L210' name='L210'></a> 210     <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211 
+<a id='L212' name='L212'></a> 212     <strong class='reserved'>void</strong> <a href='../R/13750.html' title='Multiple referred from 2 places.'>endAnnotation</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> elemName, <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a> annotation) <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\n&lt;/").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(elemName.rawname).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt;");
+<a id='L214' name='L214'></a> 214         annotation.fAnnotation = fAnnotationBuffer.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L215' name='L215'></a> 215         <em class='comment'>// apparently, there is no sensible way of resetting these things</em>
+<a id='L216' name='L216'></a> 216         fAnnotationBuffer = <strong class='reserved'>null</strong>;
+<a id='L217' name='L217'></a> 217     <em class='brace'>}</em>
+<a id='L218' name='L218'></a> 218 
+<a id='L219' name='L219'></a> 219     <strong class='reserved'>void</strong> <a href='../R/13752.html' title='Multiple referred from 4 places.'>endAnnotationElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> elemName) <em class='brace'>{</em>
+<a id='L220' name='L220'></a> 220         <a href='../D/15434.html' title='Multiple defined in 2 places.'>endAnnotationElement</a>(elemName.rawname);
+<a id='L221' name='L221'></a> 221     <em class='brace'>}</em>
+<a id='L222' name='L222'></a> 222 
+<a id='L223' name='L223'></a> 223     <strong class='reserved'>void</strong> <a href='../R/13752.html' title='Multiple referred from 4 places.'>endAnnotationElement</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> elemRawName) <em class='brace'>{</em>
+<a id='L224' name='L224'></a> 224         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(elemRawName).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt;");
+<a id='L225' name='L225'></a> 225     <em class='brace'>}</em>
+<a id='L226' name='L226'></a> 226 
+<a id='L227' name='L227'></a> 227     <strong class='reserved'>void</strong> <a href='../R/13795.html' title='Multiple referred from 5 places.'>endSyntheticAnnotationElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> elemName, <strong class='reserved'>boolean</strong> <a href='../D/13120.html' title='Multiple defined in 6 places.'>complete</a>) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228         <a href='../D/15481.html' title='Multiple defined in 2 places.'>endSyntheticAnnotationElement</a>(elemName.rawname, <a href='../D/13120.html' title='Multiple defined in 6 places.'>complete</a>);
+<a id='L229' name='L229'></a> 229     <em class='brace'>}</em>
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231     <strong class='reserved'>void</strong> <a href='../R/13795.html' title='Multiple referred from 5 places.'>endSyntheticAnnotationElement</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> elemRawName, <strong class='reserved'>boolean</strong> <a href='../D/13120.html' title='Multiple defined in 6 places.'>complete</a>) <em class='brace'>{</em>
+<a id='L232' name='L232'></a> 232         <strong class='reserved'>if</strong>(<a href='../D/13120.html' title='Multiple defined in 6 places.'>complete</a>) <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\n&lt;/").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(elemRawName).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt;");
+<a id='L234' name='L234'></a> 234             <em class='comment'>// note that this is always called after endElement on &lt;annotation&gt;'s</em>
+<a id='L235' name='L235'></a> 235             <em class='comment'>// child and before endElement on annotation.</em>
+<a id='L236' name='L236'></a> 236             <em class='comment'>// hence, we must make this the child of the current</em>
+<a id='L237' name='L237'></a> 237             <em class='comment'>// parent's only child.</em>
+<a id='L238' name='L238'></a> 238             <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.fSyntheticAnnotation = fAnnotationBuffer.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L239' name='L239'></a> 239 
+<a id='L240' name='L240'></a> 240             <em class='comment'>// apparently, there is no sensible way of resetting</em>
+<a id='L241' name='L241'></a> 241             <em class='comment'>// these things</em>
+<a id='L242' name='L242'></a> 242             fAnnotationBuffer = <strong class='reserved'>null</strong>;
+<a id='L243' name='L243'></a> 243         <em class='brace'>}</em> <strong class='reserved'>else</strong>      <em class='comment'>//capturing character calls</em>
+<a id='L244' name='L244'></a> 244             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;/").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(elemRawName).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt;");
+<a id='L245' name='L245'></a> 245     <em class='brace'>}</em>
+<a id='L246' name='L246'></a> 246 
+<a id='L247' name='L247'></a> 247     <strong class='reserved'>void</strong> <a href='../S/5116.html#L448' title='Referred from 448 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOMParser.java.'>startAnnotationCDATA</a>() <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248         inCDATA = <strong class='reserved'>true</strong>;
+<a id='L249' name='L249'></a> 249         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;![CDATA[");
+<a id='L250' name='L250'></a> 250     <em class='brace'>}</em>
+<a id='L251' name='L251'></a> 251 
+<a id='L252' name='L252'></a> 252     <strong class='reserved'>void</strong> <a href='../S/5116.html#L463' title='Referred from 463 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOMParser.java.'>endAnnotationCDATA</a>() <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("]]&gt;");
+<a id='L254' name='L254'></a> 254         inCDATA = <strong class='reserved'>false</strong>;
+<a id='L255' name='L255'></a> 255     <em class='brace'>}</em>
+<a id='L256' name='L256'></a> 256 
+<a id='L257' name='L257'></a> 257     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/26314.html' title='Multiple referred from 2 places.'>resizeRelations</a>() <em class='brace'>{</em>
+<a id='L258' name='L258'></a> 258         <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[][] temp = <strong class='reserved'>new</strong> <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[relations.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>+relationsRowResizeFactor][];
+<a id='L259' name='L259'></a> 259         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(relations, 0, temp, 0, relations.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L260' name='L260'></a> 260         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = relations.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ; i &lt; temp.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ; i++) <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261             temp[i] = <strong class='reserved'>new</strong> <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[relationsColResizeFactor];
+<a id='L262' name='L262'></a> 262         <em class='brace'>}</em>
+<a id='L263' name='L263'></a> 263         relations = temp;
+<a id='L264' name='L264'></a> 264     <em class='brace'>}</em>
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/26314.html' title='Multiple referred from 2 places.'>resizeRelations</a>(<strong class='reserved'>int</strong> i) <em class='brace'>{</em>
+<a id='L267' name='L267'></a> 267         <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[] temp = <strong class='reserved'>new</strong> <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[relations[i].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>+relationsColResizeFactor];
+<a id='L268' name='L268'></a> 268         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(relations[i], 0, temp, 0, relations[i].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L269' name='L269'></a> 269         relations[i] = temp;
+<a id='L270' name='L270'></a> 270     <em class='brace'>}</em>
+<a id='L271' name='L271'></a> 271 
+<a id='L272' name='L272'></a> 272 
+<a id='L273' name='L273'></a> 273     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>() <em class='brace'>{</em>
+<a id='L274' name='L274'></a> 274 
+<a id='L275' name='L275'></a> 275         <em class='comment'>// help out the garbage collector</em>
+<a id='L276' name='L276'></a> 276         <strong class='reserved'>if</strong>(relations != <strong class='reserved'>null</strong>)
+<a id='L277' name='L277'></a> 277             <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i&lt;relations.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++)
+<a id='L278' name='L278'></a> 278                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> j=0; j&lt;relations[i].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; j++)
+<a id='L279' name='L279'></a> 279                     relations[i][j] = <strong class='reserved'>null</strong>;
+<a id='L280' name='L280'></a> 280         relations = <strong class='reserved'>new</strong> <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[relationsRowResizeFactor][];
+<a id='L281' name='L281'></a> 281         <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a> = <strong class='reserved'>new</strong> <a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a>(0, 0, 0);
+<a id='L282' name='L282'></a> 282         <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>.rawname = "DOCUMENT_NODE";
+<a id='L283' name='L283'></a> 283         currLoc = 0;
+<a id='L284' name='L284'></a> 284         nextFreeLoc = 1;
+<a id='L285' name='L285'></a> 285         inCDATA = <strong class='reserved'>false</strong>;
+<a id='L286' name='L286'></a> 286         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i&lt;relationsRowResizeFactor; i++) <em class='brace'>{</em>
+<a id='L287' name='L287'></a> 287             relations[i] = <strong class='reserved'>new</strong> <a href='../D/6088.html' title='Multiple defined in 3 places.'>NodeImpl</a>[relationsColResizeFactor];
+<a id='L288' name='L288'></a> 288         <em class='brace'>}</em>
+<a id='L289' name='L289'></a> 289         relations[currLoc][0] = <a href='../D/29067.html' title='Multiple defined in 4 places.'>parent</a>;
+<a id='L290' name='L290'></a> 290     <em class='brace'>}</em>
+<a id='L291' name='L291'></a> 291 
+<a id='L292' name='L292'></a> 292 
+<a id='L293' name='L293'></a> 293     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> printDOM() <em class='brace'>{</em>
+<a id='L294' name='L294'></a> 294         <em class='comment'>/*</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>         for (int i=0; i&lt;relations.length; i++) {</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>         if (relations[i][0] != null) {</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>         for (int j=0; j&lt;relations[i].length; j++) {</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>         if (relations[i][j] != null) {</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>         System.out.print(relations[i][j].nodeType+"-"+relations[i][j].parentRow+"  ");</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>         }</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>         }</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>         System.out.println("");</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>         }</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>         }</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>         */</em>
+<a id='L306' name='L306'></a> 306         <em class='comment'>//traverse(getDocumentElement(), 0);</em>
+<a id='L307' name='L307'></a> 307     <em class='brace'>}</em>
+<a id='L308' name='L308'></a> 308 
+<a id='L309' name='L309'></a> 309 
+<a id='L310' name='L310'></a> 310     <em class='comment'>// debug methods</em>
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/29475.html' title='Multiple referred from 12 places.'>traverse</a>(<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>, <strong class='reserved'>int</strong> <a href='../S/3238.html#L188' title='Defined at 188 in src/javax/swing/text/ElementIterator.java.'>depth</a>) <em class='brace'>{</em>
+<a id='L313' name='L313'></a> 313         <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>(<a href='../S/3238.html#L188' title='Defined at 188 in src/javax/swing/text/ElementIterator.java.'>depth</a>);
+<a id='L314' name='L314'></a> 314         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>("&lt;"+<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/20983.html' title='Multiple defined in 37 places.'>getNodeName</a>());
+<a id='L315' name='L315'></a> 315 
+<a id='L316' name='L316'></a> 316         <strong class='reserved'>if</strong> (<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/24061.html' title='Multiple defined in 12 places.'>hasAttributes</a>()) <em class='brace'>{</em>
+<a id='L317' name='L317'></a> 317             <a href='../S/114.html#L56' title='Defined at 56 in src/org/w3c/dom/NamedNodeMap.java.'>NamedNodeMap</a> attrs = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/17112.html' title='Multiple defined in 109 places.'>getAttributes</a>();
+<a id='L318' name='L318'></a> 318             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i&lt;attrs.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>(); i++) <em class='brace'>{</em>
+<a id='L319' name='L319'></a> 319                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>("  "+((<a href='../S/54.html#L186' title='Defined at 186 in src/org/w3c/dom/Attr.java.'>Attr</a>)attrs.<a href='../D/26564.html' title='Multiple defined in 60 places.'>item</a>(i)).<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>()+"=\""+((<a href='../S/54.html#L186' title='Defined at 186 in src/org/w3c/dom/Attr.java.'>Attr</a>)attrs.<a href='../D/26564.html' title='Multiple defined in 60 places.'>item</a>(i)).<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>()+"\"");
+<a id='L320' name='L320'></a> 320             <em class='brace'>}</em>
+<a id='L321' name='L321'></a> 321         <em class='brace'>}</em>
+<a id='L322' name='L322'></a> 322 
+<a id='L323' name='L323'></a> 323         <strong class='reserved'>if</strong> (<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/24077.html' title='Multiple defined in 16 places.'>hasChildNodes</a>()) <em class='brace'>{</em>
+<a id='L324' name='L324'></a> 324             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("&gt;");
+<a id='L325' name='L325'></a> 325             <a href='../S/3238.html#L188' title='Defined at 188 in src/javax/swing/text/ElementIterator.java.'>depth</a>+=4;
+<a id='L326' name='L326'></a> 326             <strong class='reserved'>for</strong> (<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a> child = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/19088.html' title='Multiple defined in 18 places.'>getFirstChild</a>(); child != <strong class='reserved'>null</strong>; child = child.<a href='../D/20935.html' title='Multiple defined in 22 places.'>getNextSibling</a>()) <em class='brace'>{</em>
+<a id='L327' name='L327'></a> 327                 <a href='../D/35644.html' title='Multiple defined in 11 places.'>traverse</a>(child, <a href='../S/3238.html#L188' title='Defined at 188 in src/javax/swing/text/ElementIterator.java.'>depth</a>);
+<a id='L328' name='L328'></a> 328             <em class='brace'>}</em>
+<a id='L329' name='L329'></a> 329             <a href='../S/3238.html#L188' title='Defined at 188 in src/javax/swing/text/ElementIterator.java.'>depth</a>-=4;
+<a id='L330' name='L330'></a> 330             <a href='../D/24457.html' title='Multiple defined in 13 places.'>indent</a>(<a href='../S/3238.html#L188' title='Defined at 188 in src/javax/swing/text/ElementIterator.java.'>depth</a>);
+<a id='L331' name='L331'></a> 331             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("&lt;/"+<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/20983.html' title='Multiple defined in 37 places.'>getNodeName</a>()+"&gt;");
+<a id='L332' name='L332'></a> 332         <em class='brace'>}</em>
+<a id='L333' name='L333'></a> 333         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L334' name='L334'></a> 334             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("/&gt;");
+<a id='L335' name='L335'></a> 335         <em class='brace'>}</em>
+<a id='L336' name='L336'></a> 336     <em class='brace'>}</em>
+<a id='L337' name='L337'></a> 337 
+<a id='L338' name='L338'></a> 338     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/20502.html' title='Multiple referred from 201 places.'>indent</a>(<strong class='reserved'>int</strong> amount) <em class='brace'>{</em>
+<a id='L339' name='L339'></a> 339         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; amount; i++) <em class='brace'>{</em>
+<a id='L340' name='L340'></a> 340             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>(' ');
+<a id='L341' name='L341'></a> 341         <em class='brace'>}</em>
+<a id='L342' name='L342'></a> 342     <em class='brace'>}</em>
+<a id='L343' name='L343'></a> 343 
+<a id='L344' name='L344'></a> 344     <em class='comment'>// org.w3c.dom methods</em>
+<a id='L345' name='L345'></a> 345     <strong class='reserved'>public</strong> <a href='../D/2794.html' title='Multiple defined in 8 places.'>Element</a> <a href='../R/16218.html' title='Multiple referred from 34 places.'>getDocumentElement</a>() <em class='brace'>{</em>
+<a id='L346' name='L346'></a> 346         <em class='comment'>// this returns a parent node, known to be an ElementImpl</em>
+<a id='L347' name='L347'></a> 347         <strong class='reserved'>return</strong> (<a href='../D/2805.html' title='Multiple defined in 2 places.'>ElementImpl</a>)relations[0][1];
+<a id='L348' name='L348'></a> 348     <em class='brace'>}</em>
+<a id='L349' name='L349'></a> 349 
+<a id='L350' name='L350'></a> 350     <strong class='reserved'>public</strong> <a href='../S/119.html#L50' title='Defined at 50 in src/org/w3c/dom/DOMImplementation.java.'>DOMImplementation</a> <a href='../R/17003.html' title='Multiple referred from 8 places.'>getImplementation</a>() <em class='brace'>{</em>
+<a id='L351' name='L351'></a> 351         <strong class='reserved'>return</strong> <a href='../S/5120.html#L33' title='Defined at 33 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOMImplementation.java.'>SchemaDOMImplementation</a>.<a href='../D/18159.html' title='Multiple defined in 12 places.'>getDOMImplementation</a>();
+<a id='L352' name='L352'></a> 352     <em class='brace'>}</em>
+<a id='L353' name='L353'></a> 353 
+<a id='L354' name='L354'></a> 354     <em class='comment'>// commence the serialization of an annotation</em>
+<a id='L355' name='L355'></a> 355     <strong class='reserved'>void</strong> <a href='../R/28785.html' title='Multiple referred from 5 places.'>startAnnotation</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> elemName, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L356' name='L356'></a> 356             <a href='../D/5973.html' title='Multiple defined in 2 places.'>NamespaceContext</a> namespaceContext) <em class='brace'>{</em>
+<a id='L357' name='L357'></a> 357         <a href='../D/34752.html' title='Multiple defined in 2 places.'>startAnnotation</a>(elemName.rawname, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>, namespaceContext);
+<a id='L358' name='L358'></a> 358     <em class='brace'>}</em>
+<a id='L359' name='L359'></a> 359     <strong class='reserved'>void</strong> <a href='../R/28785.html' title='Multiple referred from 5 places.'>startAnnotation</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> elemRawName, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L360' name='L360'></a> 360             <a href='../D/5973.html' title='Multiple defined in 2 places.'>NamespaceContext</a> namespaceContext) <em class='brace'>{</em>
+<a id='L361' name='L361'></a> 361         <strong class='reserved'>if</strong>(fAnnotationBuffer == <strong class='reserved'>null</strong>) fAnnotationBuffer = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>(256);
+<a id='L362' name='L362'></a> 362         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(elemRawName).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" ");
+<a id='L363' name='L363'></a> 363 
+<a id='L364' name='L364'></a> 364         <em class='comment'>// attributes are a bit of a pain.  To get this right, we have to keep track</em>
+<a id='L365' name='L365'></a> 365         <em class='comment'>// of the namespaces we've seen declared, then examine the namespace context</em>
+<a id='L366' name='L366'></a> 366         <em class='comment'>// for other namespaces so that we can also include them.</em>
+<a id='L367' name='L367'></a> 367         <em class='comment'>// optimized for simplicity and the case that not many</em>
+<a id='L368' name='L368'></a> 368         <em class='comment'>// namespaces are declared on this annotation...</em>
+<a id='L369' name='L369'></a> 369         <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a> namespaces = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L370' name='L370'></a> 370         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>(); ++i) <em class='brace'>{</em>
+<a id='L371' name='L371'></a> 371             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> aValue = <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>(i);
+<a id='L372' name='L372'></a> 372             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> aPrefix = <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/21592.html' title='Multiple defined in 61 places.'>getPrefix</a>(i);
+<a id='L373' name='L373'></a> 373             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> aQName = <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/21788.html' title='Multiple defined in 20 places.'>getQName</a>(i);
+<a id='L374' name='L374'></a> 374             <em class='comment'>// if it's xmlns:* or xmlns, must be a namespace decl</em>
+<a id='L375' name='L375'></a> 375             <strong class='reserved'>if</strong> (aPrefix == <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.PREFIX_XMLNS || aQName == <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.PREFIX_XMLNS) <em class='brace'>{</em>
+<a id='L376' name='L376'></a> 376                 namespaces.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(aPrefix == <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.PREFIX_XMLNS ?
+<a id='L377' name='L377'></a> 377                         <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/20201.html' title='Multiple defined in 44 places.'>getLocalName</a>(i) : <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING);
+<a id='L378' name='L378'></a> 378             <em class='brace'>}</em>
+<a id='L379' name='L379'></a> 379             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(aQName).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("=\"").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/29755.html' title='Multiple defined in 2 places.'>processAttValue</a>(aValue)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\" ");
+<a id='L380' name='L380'></a> 380         <em class='brace'>}</em>
+<a id='L381' name='L381'></a> 381         <em class='comment'>// now we have to look through currently in-scope namespaces to see what</em>
+<a id='L382' name='L382'></a> 382         <em class='comment'>// wasn't declared here</em>
+<a id='L383' name='L383'></a> 383         <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> currPrefixes = namespaceContext.<a href='../D/16887.html' title='Multiple defined in 5 places.'>getAllPrefixes</a>();
+<a id='L384' name='L384'></a> 384         <strong class='reserved'>while</strong>(currPrefixes.<a href='../D/24128.html' title='Multiple defined in 32 places.'>hasMoreElements</a>()) <em class='brace'>{</em>
+<a id='L385' name='L385'></a> 385             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)currPrefixes.<a href='../D/28145.html' title='Multiple defined in 35 places.'>nextElement</a>();
+<a id='L386' name='L386'></a> 386             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri = namespaceContext.<a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>);
+<a id='L387' name='L387'></a> 387             <strong class='reserved'>if</strong> (uri == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L388' name='L388'></a> 388                 uri = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L389' name='L389'></a> 389             <em class='brace'>}</em>
+<a id='L390' name='L390'></a> 390             <strong class='reserved'>if</strong> (!namespaces.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>)) <em class='brace'>{</em>
+<a id='L391' name='L391'></a> 391                 <em class='comment'>// have to declare this one</em>
+<a id='L392' name='L392'></a> 392                 <strong class='reserved'>if</strong>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> == <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING) <em class='brace'>{</em>
+<a id='L393' name='L393'></a> 393                     fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("xmlns").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("=\"").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/29755.html' title='Multiple defined in 2 places.'>processAttValue</a>(uri)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\" ");
+<a id='L394' name='L394'></a> 394                 <em class='brace'>}</em>
+<a id='L395' name='L395'></a> 395                 <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L396' name='L396'></a> 396                     fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("xmlns:").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("=\"").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/29755.html' title='Multiple defined in 2 places.'>processAttValue</a>(uri)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\" ");
+<a id='L397' name='L397'></a> 397                 <em class='brace'>}</em>
+<a id='L398' name='L398'></a> 398             <em class='brace'>}</em>
+<a id='L399' name='L399'></a> 399         <em class='brace'>}</em>
+<a id='L400' name='L400'></a> 400         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt;\n");
+<a id='L401' name='L401'></a> 401     <em class='brace'>}</em>
+<a id='L402' name='L402'></a> 402     <strong class='reserved'>void</strong> <a href='../R/28787.html' title='Multiple referred from 6 places.'>startAnnotationElement</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> elemName, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L403' name='L403'></a> 403         <a href='../D/34754.html' title='Multiple defined in 2 places.'>startAnnotationElement</a>(elemName.rawname, <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>);
+<a id='L404' name='L404'></a> 404     <em class='brace'>}</em>
+<a id='L405' name='L405'></a> 405     <strong class='reserved'>void</strong> <a href='../R/28787.html' title='Multiple referred from 6 places.'>startAnnotationElement</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> elemRawName, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>) <em class='brace'>{</em>
+<a id='L406' name='L406'></a> 406         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&lt;").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(elemRawName);
+<a id='L407' name='L407'></a> 407         <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i&lt;<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>(); i++) <em class='brace'>{</em>
+<a id='L408' name='L408'></a> 408             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> aValue = <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>(i);
+<a id='L409' name='L409'></a> 409             fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" ").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>.<a href='../D/21788.html' title='Multiple defined in 20 places.'>getQName</a>(i)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("=\"").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/29755.html' title='Multiple defined in 2 places.'>processAttValue</a>(aValue)).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("\"");
+<a id='L410' name='L410'></a> 410         <em class='brace'>}</em>
+<a id='L411' name='L411'></a> 411         fAnnotationBuffer.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&gt;");
+<a id='L412' name='L412'></a> 412     <em class='brace'>}</em>
+<a id='L413' name='L413'></a> 413 
+<a id='L414' name='L414'></a> 414     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/25088.html' title='Multiple referred from 6 places.'>processAttValue</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> original) <em class='brace'>{</em>
+<a id='L415' name='L415'></a> 415         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = original.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>();
+<a id='L416' name='L416'></a> 416         <em class='comment'>// normally, nothing will happen</em>
+<a id='L417' name='L417'></a> 417         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ++i) <em class='brace'>{</em>
+<a id='L418' name='L418'></a> 418             <strong class='reserved'>char</strong> currChar = original.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i);
+<a id='L419' name='L419'></a> 419             <strong class='reserved'>if</strong> (currChar == '"' || currChar == '&lt;' || currChar == '&amp;' ||
+<a id='L420' name='L420'></a> 420                     currChar == 0x09 || currChar == 0x0A || currChar == 0x0D) <em class='brace'>{</em>
+<a id='L421' name='L421'></a> 421                 <strong class='reserved'>return</strong> <a href='../D/15728.html' title='Multiple defined in 2 places.'>escapeAttValue</a>(original, i);
+<a id='L422' name='L422'></a> 422             <em class='brace'>}</em>
+<a id='L423' name='L423'></a> 423         <em class='brace'>}</em>
+<a id='L424' name='L424'></a> 424         <strong class='reserved'>return</strong> original;
+<a id='L425' name='L425'></a> 425     <em class='brace'>}</em>
+<a id='L426' name='L426'></a> 426 
+<a id='L427' name='L427'></a> 427     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/14031.html' title='Multiple referred from 2 places.'>escapeAttValue</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> original, <strong class='reserved'>int</strong> <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>) <em class='brace'>{</em>
+<a id='L428' name='L428'></a> 428         <strong class='reserved'>int</strong> i;
+<a id='L429' name='L429'></a> 429         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = original.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>();
+<a id='L430' name='L430'></a> 430         <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> newVal = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>(<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L431' name='L431'></a> 431         newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(original.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(0, <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>));
+<a id='L432' name='L432'></a> 432         <strong class='reserved'>for</strong> (i = <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>; i &lt; <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ++i) <em class='brace'>{</em>
+<a id='L433' name='L433'></a> 433             <strong class='reserved'>char</strong> currChar = original.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i);
+<a id='L434' name='L434'></a> 434             <strong class='reserved'>if</strong> (currChar == '"') <em class='brace'>{</em>
+<a id='L435' name='L435'></a> 435                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;quot;");
+<a id='L436' name='L436'></a> 436             <em class='brace'>}</em>
+<a id='L437' name='L437'></a> 437             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (currChar == '&lt;') <em class='brace'>{</em>
+<a id='L438' name='L438'></a> 438                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;lt;");
+<a id='L439' name='L439'></a> 439             <em class='brace'>}</em>
+<a id='L440' name='L440'></a> 440             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (currChar == '&amp;') <em class='brace'>{</em>
+<a id='L441' name='L441'></a> 441                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;amp;");
+<a id='L442' name='L442'></a> 442             <em class='brace'>}</em>
+<a id='L443' name='L443'></a> 443             <em class='comment'>// Must escape 0x09, 0x0A and 0x0D if they appear in attribute</em>
+<a id='L444' name='L444'></a> 444             <em class='comment'>// value so that they may be round-tripped. They would otherwise</em>
+<a id='L445' name='L445'></a> 445             <em class='comment'>// be transformed to a 0x20 during attribute value normalization.</em>
+<a id='L446' name='L446'></a> 446             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (currChar == 0x09) <em class='brace'>{</em>
+<a id='L447' name='L447'></a> 447                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;#x9;");
+<a id='L448' name='L448'></a> 448             <em class='brace'>}</em>
+<a id='L449' name='L449'></a> 449             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (currChar == 0x0A) <em class='brace'>{</em>
+<a id='L450' name='L450'></a> 450                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;#xA;");
+<a id='L451' name='L451'></a> 451             <em class='brace'>}</em>
+<a id='L452' name='L452'></a> 452             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (currChar == 0x0D) <em class='brace'>{</em>
+<a id='L453' name='L453'></a> 453                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("&amp;#xD;");
+<a id='L454' name='L454'></a> 454             <em class='brace'>}</em>
+<a id='L455' name='L455'></a> 455             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L456' name='L456'></a> 456                 newVal.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(currChar);
+<a id='L457' name='L457'></a> 457             <em class='brace'>}</em>
+<a id='L458' name='L458'></a> 458         <em class='brace'>}</em>
+<a id='L459' name='L459'></a> 459         <strong class='reserved'>return</strong> newVal.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L460' name='L460'></a> 460     <em class='brace'>}</em>
+<a id='L461' name='L461'></a> 461 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L66'>[^]</a><a href='#L427'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

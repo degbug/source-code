@@ -1,0 +1,429 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/awt/geom/FlatteningPathIterator.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/7986.html'>awt</a>/<a href='../files/7993.html'>geom</a>/FlatteningPathIterator.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L136'>[^]</a><a href='#L381'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L136' title='Defined at 136.'>getFlatness</a></li>
+<li><a href='#L145' title='Defined at 145.'>getRecursionLimit</a></li>
+<li><a href='#L157' title='Defined at 157.'>getWindingRule</a></li>
+<li><a href='#L166' title='Defined at 166.'>isDone</a></li>
+<li><a href='#L174' title='Defined at 174.'>ensureHoldCapacity</a></li>
+<li><a href='#L193' title='Defined at 193.'>next</a></li>
+<li><a href='#L197' title='Defined at 197.'>next</a></li>
+<li><a href='#L346' title='Defined at 346.'>currentSegment</a></li>
+<li><a href='#L381' title='Defined at 381.'>currentSegment</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.awt.geom;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.*;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <em class='comment'>/**</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * The &lt;code&gt;FlatteningPathIterator&lt;/code&gt; class returns a flattened view of</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * another {@link PathIterator} object.  Other {@link java.awt.Shape Shape}</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * classes can use this class to provide flattening behavior for their paths</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * without having to perform the interpolation calculations themselves.</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> *</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * @author Jim Graham</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> */</em>
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/3011.html' title='Multiple referred from 5 places.'>FlatteningPathIterator</a> <strong class='reserved'>implements</strong> <a href='../S/2327.html#L62' title='Defined at 62 in src/java/awt/geom/PathIterator.java.'>PathIterator</a> <em class='brace'>{</em>
+<a id='L39' name='L39'></a>  39     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> GROW_SIZE = 24;    <em class='comment'>// Multiple of cubic &amp; quad curve size</em>
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41     <a href='../S/2327.html#L62' title='Defined at 62 in src/java/awt/geom/PathIterator.java.'>PathIterator</a> src;                   <em class='comment'>// The source iterator</em>
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43     <strong class='reserved'>double</strong> squareflat;                  <em class='comment'>// Square of the flatness parameter</em>
+<a id='L44' name='L44'></a>  44                                         <em class='comment'>// for testing against squared lengths</em>
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46     <strong class='reserved'>int</strong> <a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>;                          <em class='comment'>// Maximum number of recursion levels</em>
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>double</strong> hold[] = <strong class='reserved'>new</strong> <strong class='reserved'>double</strong>[14];     <em class='comment'>// The cache of interpolated coords</em>
+<a id='L49' name='L49'></a>  49                                         <em class='comment'>// Note that this must be long enough</em>
+<a id='L50' name='L50'></a>  50                                         <em class='comment'>// to store a full cubic segment and</em>
+<a id='L51' name='L51'></a>  51                                         <em class='comment'>// a relative cubic segment to avoid</em>
+<a id='L52' name='L52'></a>  52                                         <em class='comment'>// aliasing when copying the coords</em>
+<a id='L53' name='L53'></a>  53                                         <em class='comment'>// of a curve to the end of the array.</em>
+<a id='L54' name='L54'></a>  54                                         <em class='comment'>// This is also serendipitously equal</em>
+<a id='L55' name='L55'></a>  55                                         <em class='comment'>// to the size of a full quad segment</em>
+<a id='L56' name='L56'></a>  56                                         <em class='comment'>// and 2 relative quad segments.</em>
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>double</strong> curx, cury;                  <em class='comment'>// The ending x,y of the last segment</em>
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <strong class='reserved'>double</strong> movx, movy;                  <em class='comment'>// The x,y of the last move segment</em>
+<a id='L61' name='L61'></a>  61 
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>int</strong> holdType;                       <em class='comment'>// The type of the curve being held</em>
+<a id='L63' name='L63'></a>  63                                         <em class='comment'>// for interpolation</em>
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65     <strong class='reserved'>int</strong> holdEnd;                        <em class='comment'>// The index of the last curve segment</em>
+<a id='L66' name='L66'></a>  66                                         <em class='comment'>// being held for interpolation</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>int</strong> holdIndex;                      <em class='comment'>// The index of the curve segment</em>
+<a id='L69' name='L69'></a>  69                                         <em class='comment'>// that was last interpolated.  This</em>
+<a id='L70' name='L70'></a>  70                                         <em class='comment'>// is the curve segment ready to be</em>
+<a id='L71' name='L71'></a>  71                                         <em class='comment'>// returned in the next call to</em>
+<a id='L72' name='L72'></a>  72                                         <em class='comment'>// currentSegment().</em>
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>int</strong> levels[];                       <em class='comment'>// The recursion level at which</em>
+<a id='L75' name='L75'></a>  75                                         <em class='comment'>// each curve being held in storage</em>
+<a id='L76' name='L76'></a>  76                                         <em class='comment'>// was generated.</em>
+<a id='L77' name='L77'></a>  77 
+<a id='L78' name='L78'></a>  78     <strong class='reserved'>int</strong> levelIndex;                     <em class='comment'>// The index of the entry in the</em>
+<a id='L79' name='L79'></a>  79                                         <em class='comment'>// levels array of the curve segment</em>
+<a id='L80' name='L80'></a>  80                                         <em class='comment'>// at the holdIndex</em>
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <strong class='reserved'>boolean</strong> <a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>;                       <em class='comment'>// True when iteration is done</em>
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <em class='comment'>/**</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * Constructs a new &lt;code&gt;FlatteningPathIterator&lt;/code&gt; object that</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * flattens a path as it iterates over it.  The iterator does not</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * subdivide any curve read from the source iterator to more than</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     * 10 levels of subdivision which yields a maximum of 1024 line</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * segments per curve.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * @param src the original unflattened path being iterated over</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * @param flatness the maximum allowable distance between the</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * control points and the flattened curve</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     */</em>
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>public</strong> FlatteningPathIterator(<a href='../S/2327.html#L62' title='Defined at 62 in src/java/awt/geom/PathIterator.java.'>PathIterator</a> src, <strong class='reserved'>double</strong> flatness) <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>this</strong>(src, flatness, 10);
+<a id='L96' name='L96'></a>  96     <em class='brace'>}</em>
+<a id='L97' name='L97'></a>  97 
+<a id='L98' name='L98'></a>  98     <em class='comment'>/**</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * Constructs a new &lt;code&gt;FlatteningPathIterator&lt;/code&gt; object</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * that flattens a path as it iterates over it.</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * The &lt;code&gt;limit&lt;/code&gt; parameter allows you to control the</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * maximum number of recursive subdivisions that the iterator</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * can make before it assumes that the curve is flat enough</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * without measuring against the &lt;code&gt;flatness&lt;/code&gt; parameter.</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * The flattened iteration therefore never generates more than</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * a maximum of &lt;code&gt;(2^limit)&lt;/code&gt; line segments per curve.</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * @param src the original unflattened path being iterated over</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * @param flatness the maximum allowable distance between the</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * control points and the flattened curve</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * @param limit the maximum number of recursive subdivisions</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * allowed for any curved segment</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * @exception IllegalArgumentException if</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     *          &lt;code&gt;flatness&lt;/code&gt; or &lt;code&gt;limit&lt;/code&gt;</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     *          is less than zero</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     */</em>
+<a id='L116' name='L116'></a> 116     <strong class='reserved'>public</strong> FlatteningPathIterator(<a href='../S/2327.html#L62' title='Defined at 62 in src/java/awt/geom/PathIterator.java.'>PathIterator</a> src, <strong class='reserved'>double</strong> flatness,
+<a id='L117' name='L117'></a> 117                                   <strong class='reserved'>int</strong> <a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>) <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>if</strong> (flatness &lt; 0.0) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("flatness must be &gt;= 0");
+<a id='L120' name='L120'></a> 120         <em class='brace'>}</em>
+<a id='L121' name='L121'></a> 121         <strong class='reserved'>if</strong> (<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a> &lt; 0) <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("limit must be &gt;= 0");
+<a id='L123' name='L123'></a> 123         <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124         <strong class='reserved'>this</strong>.src = src;
+<a id='L125' name='L125'></a> 125         <strong class='reserved'>this</strong>.squareflat = flatness * flatness;
+<a id='L126' name='L126'></a> 126         <strong class='reserved'>this</strong>.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a> = <a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>;
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>this</strong>.levels = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a> + 1];
+<a id='L128' name='L128'></a> 128         <em class='comment'>// prime the first path segment</em>
+<a id='L129' name='L129'></a> 129         <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>(<strong class='reserved'>false</strong>);
+<a id='L130' name='L130'></a> 130     <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132     <em class='comment'>/**</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * Returns the flatness of this iterator.</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * @return the flatness of this &lt;code&gt;FlatteningPathIterator&lt;/code&gt;.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     */</em>
+<a id='L136' name='L136'></a> 136     <strong class='reserved'>public</strong> <strong class='reserved'>double</strong> <a href='../R/16642.html' title='Multiple referred from 2 places.'>getFlatness</a>() <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>return</strong> <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/34735.html' title='Multiple defined in 3 places.'>sqrt</a>(squareflat);
+<a id='L138' name='L138'></a> 138     <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140     <em class='comment'>/**</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * Returns the recursion limit of this iterator.</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @return the recursion limit of this</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * &lt;code&gt;FlatteningPathIterator&lt;/code&gt;.</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     */</em>
+<a id='L145' name='L145'></a> 145     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> getRecursionLimit() <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>return</strong> <a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>;
+<a id='L147' name='L147'></a> 147     <em class='brace'>}</em>
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149     <em class='comment'>/**</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * Returns the winding rule for determining the interior of the</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * path.</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * @return the winding rule of the original unflattened path being</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * iterated over.</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * @see PathIterator#WIND_EVEN_ODD</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * @see PathIterator#WIND_NON_ZERO</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     */</em>
+<a id='L157' name='L157'></a> 157     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/19871.html' title='Multiple referred from 8 places.'>getWindingRule</a>() <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>return</strong> src.<a href='../D/23695.html' title='Multiple defined in 14 places.'>getWindingRule</a>();
+<a id='L159' name='L159'></a> 159     <em class='brace'>}</em>
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161     <em class='comment'>/**</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * Tests if the iteration is complete.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if all the segments have</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * been read; &lt;code&gt;false&lt;/code&gt; otherwise.</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     */</em>
+<a id='L166' name='L166'></a> 166     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21378.html' title='Multiple referred from 29 places.'>isDone</a>() <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167         <strong class='reserved'>return</strong> <a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>;
+<a id='L168' name='L168'></a> 168     <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169 
+<a id='L170' name='L170'></a> 170     <em class='comment'>/*</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * Ensures that the hold array can hold up to (want) more values.</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     * It is currently holding (hold.length - holdIndex) values.</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     */</em>
+<a id='L174' name='L174'></a> 174     <strong class='reserved'>void</strong> <a href='../R/13920.html' title='Multiple referred from 2 places.'>ensureHoldCapacity</a>(<strong class='reserved'>int</strong> want) <em class='brace'>{</em>
+<a id='L175' name='L175'></a> 175         <strong class='reserved'>if</strong> (holdIndex - want &lt; 0) <em class='brace'>{</em>
+<a id='L176' name='L176'></a> 176             <strong class='reserved'>int</strong> have = hold.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - holdIndex;
+<a id='L177' name='L177'></a> 177             <strong class='reserved'>int</strong> newsize = hold.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> + GROW_SIZE;
+<a id='L178' name='L178'></a> 178             <strong class='reserved'>double</strong> newhold[] = <strong class='reserved'>new</strong> <strong class='reserved'>double</strong>[newsize];
+<a id='L179' name='L179'></a> 179             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(hold, holdIndex,
+<a id='L180' name='L180'></a> 180                              newhold, holdIndex + GROW_SIZE,
+<a id='L181' name='L181'></a> 181                              have);
+<a id='L182' name='L182'></a> 182             hold = newhold;
+<a id='L183' name='L183'></a> 183             holdIndex += GROW_SIZE;
+<a id='L184' name='L184'></a> 184             holdEnd += GROW_SIZE;
+<a id='L185' name='L185'></a> 185         <em class='brace'>}</em>
+<a id='L186' name='L186'></a> 186     <em class='brace'>}</em>
+<a id='L187' name='L187'></a> 187 
+<a id='L188' name='L188'></a> 188     <em class='comment'>/**</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * Moves the iterator to the next segment of the path forwards</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     * along the primary direction of traversal as long as there are</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>     * more points in that direction.</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>     */</em>
+<a id='L193' name='L193'></a> 193     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/23650.html' title='Multiple referred from 3301 places.'>next</a>() <em class='brace'>{</em>
+<a id='L194' name='L194'></a> 194         <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>(<strong class='reserved'>true</strong>);
+<a id='L195' name='L195'></a> 195     <em class='brace'>}</em>
+<a id='L196' name='L196'></a> 196 
+<a id='L197' name='L197'></a> 197     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/23650.html' title='Multiple referred from 3301 places.'>next</a>(<strong class='reserved'>boolean</strong> doNext) <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198         <strong class='reserved'>int</strong> level;
+<a id='L199' name='L199'></a> 199 
+<a id='L200' name='L200'></a> 200         <strong class='reserved'>if</strong> (holdIndex &gt;= holdEnd) <em class='brace'>{</em>
+<a id='L201' name='L201'></a> 201             <strong class='reserved'>if</strong> (doNext) <em class='brace'>{</em>
+<a id='L202' name='L202'></a> 202                 src.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L203' name='L203'></a> 203             <em class='brace'>}</em>
+<a id='L204' name='L204'></a> 204             <strong class='reserved'>if</strong> (src.<a href='../D/25461.html' title='Multiple defined in 19 places.'>isDone</a>()) <em class='brace'>{</em>
+<a id='L205' name='L205'></a> 205                 <a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a> = <strong class='reserved'>true</strong>;
+<a id='L206' name='L206'></a> 206                 <strong class='reserved'>return</strong>;
+<a id='L207' name='L207'></a> 207             <em class='brace'>}</em>
+<a id='L208' name='L208'></a> 208             holdType = src.<a href='../D/14431.html' title='Multiple defined in 32 places.'>currentSegment</a>(hold);
+<a id='L209' name='L209'></a> 209             levelIndex = 0;
+<a id='L210' name='L210'></a> 210             levels[0] = 0;
+<a id='L211' name='L211'></a> 211         <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213         <strong class='reserved'>switch</strong> (holdType) <em class='brace'>{</em>
+<a id='L214' name='L214'></a> 214         <strong class='reserved'>case</strong> SEG_MOVETO:
+<a id='L215' name='L215'></a> 215         <strong class='reserved'>case</strong> SEG_LINETO:
+<a id='L216' name='L216'></a> 216             curx = hold[0];
+<a id='L217' name='L217'></a> 217             cury = hold[1];
+<a id='L218' name='L218'></a> 218             <strong class='reserved'>if</strong> (holdType == SEG_MOVETO) <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219                 movx = curx;
+<a id='L220' name='L220'></a> 220                 movy = cury;
+<a id='L221' name='L221'></a> 221             <em class='brace'>}</em>
+<a id='L222' name='L222'></a> 222             holdIndex = 0;
+<a id='L223' name='L223'></a> 223             holdEnd = 0;
+<a id='L224' name='L224'></a> 224             <strong class='reserved'>break</strong>;
+<a id='L225' name='L225'></a> 225         <strong class='reserved'>case</strong> SEG_CLOSE:
+<a id='L226' name='L226'></a> 226             curx = movx;
+<a id='L227' name='L227'></a> 227             cury = movy;
+<a id='L228' name='L228'></a> 228             holdIndex = 0;
+<a id='L229' name='L229'></a> 229             holdEnd = 0;
+<a id='L230' name='L230'></a> 230             <strong class='reserved'>break</strong>;
+<a id='L231' name='L231'></a> 231         <strong class='reserved'>case</strong> SEG_QUADTO:
+<a id='L232' name='L232'></a> 232             <strong class='reserved'>if</strong> (holdIndex &gt;= holdEnd) <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233                 <em class='comment'>// Move the coordinates to the end of the array.</em>
+<a id='L234' name='L234'></a> 234                 holdIndex = hold.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 6;
+<a id='L235' name='L235'></a> 235                 holdEnd = hold.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 2;
+<a id='L236' name='L236'></a> 236                 hold[holdIndex + 0] = curx;
+<a id='L237' name='L237'></a> 237                 hold[holdIndex + 1] = cury;
+<a id='L238' name='L238'></a> 238                 hold[holdIndex + 2] = hold[0];
+<a id='L239' name='L239'></a> 239                 hold[holdIndex + 3] = hold[1];
+<a id='L240' name='L240'></a> 240                 hold[holdIndex + 4] = curx = hold[2];
+<a id='L241' name='L241'></a> 241                 hold[holdIndex + 5] = cury = hold[3];
+<a id='L242' name='L242'></a> 242             <em class='brace'>}</em>
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244             level = levels[levelIndex];
+<a id='L245' name='L245'></a> 245             <strong class='reserved'>while</strong> (level &lt; <a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>) <em class='brace'>{</em>
+<a id='L246' name='L246'></a> 246                 <strong class='reserved'>if</strong> (<a href='../S/2334.html#L45' title='Defined at 45 in src/java/awt/geom/QuadCurve2D.java.'>QuadCurve2D</a>.<a href='../D/19135.html' title='Multiple defined in 6 places.'>getFlatnessSq</a>(hold, holdIndex) &lt; squareflat) <em class='brace'>{</em>
+<a id='L247' name='L247'></a> 247                     <strong class='reserved'>break</strong>;
+<a id='L248' name='L248'></a> 248                 <em class='brace'>}</em>
+<a id='L249' name='L249'></a> 249 
+<a id='L250' name='L250'></a> 250                 <a href='../S/2338.html#L174' title='Defined at 174 in src/java/awt/geom/FlatteningPathIterator.java.'>ensureHoldCapacity</a>(4);
+<a id='L251' name='L251'></a> 251                 <a href='../S/2334.html#L45' title='Defined at 45 in src/java/awt/geom/QuadCurve2D.java.'>QuadCurve2D</a>.<a href='../D/34999.html' title='Multiple defined in 6 places.'>subdivide</a>(hold, holdIndex,
+<a id='L252' name='L252'></a> 252                                       hold, holdIndex - 4,
+<a id='L253' name='L253'></a> 253                                       hold, holdIndex);
+<a id='L254' name='L254'></a> 254                 holdIndex -= 4;
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256                 <em class='comment'>// Now that we have subdivided, we have constructed</em>
+<a id='L257' name='L257'></a> 257                 <em class='comment'>// two curves of one depth lower than the original</em>
+<a id='L258' name='L258'></a> 258                 <em class='comment'>// curve.  One of those curves is in the place of</em>
+<a id='L259' name='L259'></a> 259                 <em class='comment'>// the former curve and one of them is in the next</em>
+<a id='L260' name='L260'></a> 260                 <em class='comment'>// set of held coordinate slots.  We now set both</em>
+<a id='L261' name='L261'></a> 261                 <em class='comment'>// curves level values to the next higher level.</em>
+<a id='L262' name='L262'></a> 262                 level++;
+<a id='L263' name='L263'></a> 263                 levels[levelIndex] = level;
+<a id='L264' name='L264'></a> 264                 levelIndex++;
+<a id='L265' name='L265'></a> 265                 levels[levelIndex] = level;
+<a id='L266' name='L266'></a> 266             <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268             <em class='comment'>// This curve segment is flat enough, or it is too deep</em>
+<a id='L269' name='L269'></a> 269             <em class='comment'>// in recursion levels to try to flatten any more.  The</em>
+<a id='L270' name='L270'></a> 270             <em class='comment'>// two coordinates at holdIndex+4 and holdIndex+5 now</em>
+<a id='L271' name='L271'></a> 271             <em class='comment'>// contain the endpoint of the curve which can be the</em>
+<a id='L272' name='L272'></a> 272             <em class='comment'>// endpoint of an approximating line segment.</em>
+<a id='L273' name='L273'></a> 273             holdIndex += 4;
+<a id='L274' name='L274'></a> 274             levelIndex--;
+<a id='L275' name='L275'></a> 275             <strong class='reserved'>break</strong>;
+<a id='L276' name='L276'></a> 276         <strong class='reserved'>case</strong> SEG_CUBICTO:
+<a id='L277' name='L277'></a> 277             <strong class='reserved'>if</strong> (holdIndex &gt;= holdEnd) <em class='brace'>{</em>
+<a id='L278' name='L278'></a> 278                 <em class='comment'>// Move the coordinates to the end of the array.</em>
+<a id='L279' name='L279'></a> 279                 holdIndex = hold.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 8;
+<a id='L280' name='L280'></a> 280                 holdEnd = hold.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 2;
+<a id='L281' name='L281'></a> 281                 hold[holdIndex + 0] = curx;
+<a id='L282' name='L282'></a> 282                 hold[holdIndex + 1] = cury;
+<a id='L283' name='L283'></a> 283                 hold[holdIndex + 2] = hold[0];
+<a id='L284' name='L284'></a> 284                 hold[holdIndex + 3] = hold[1];
+<a id='L285' name='L285'></a> 285                 hold[holdIndex + 4] = hold[2];
+<a id='L286' name='L286'></a> 286                 hold[holdIndex + 5] = hold[3];
+<a id='L287' name='L287'></a> 287                 hold[holdIndex + 6] = curx = hold[4];
+<a id='L288' name='L288'></a> 288                 hold[holdIndex + 7] = cury = hold[5];
+<a id='L289' name='L289'></a> 289             <em class='brace'>}</em>
+<a id='L290' name='L290'></a> 290 
+<a id='L291' name='L291'></a> 291             level = levels[levelIndex];
+<a id='L292' name='L292'></a> 292             <strong class='reserved'>while</strong> (level &lt; <a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>) <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293                 <strong class='reserved'>if</strong> (<a href='../S/2331.html#L50' title='Defined at 50 in src/java/awt/geom/CubicCurve2D.java.'>CubicCurve2D</a>.<a href='../D/19135.html' title='Multiple defined in 6 places.'>getFlatnessSq</a>(hold, holdIndex) &lt; squareflat) <em class='brace'>{</em>
+<a id='L294' name='L294'></a> 294                     <strong class='reserved'>break</strong>;
+<a id='L295' name='L295'></a> 295                 <em class='brace'>}</em>
+<a id='L296' name='L296'></a> 296 
+<a id='L297' name='L297'></a> 297                 <a href='../S/2338.html#L174' title='Defined at 174 in src/java/awt/geom/FlatteningPathIterator.java.'>ensureHoldCapacity</a>(6);
+<a id='L298' name='L298'></a> 298                 <a href='../S/2331.html#L50' title='Defined at 50 in src/java/awt/geom/CubicCurve2D.java.'>CubicCurve2D</a>.<a href='../D/34999.html' title='Multiple defined in 6 places.'>subdivide</a>(hold, holdIndex,
+<a id='L299' name='L299'></a> 299                                        hold, holdIndex - 6,
+<a id='L300' name='L300'></a> 300                                        hold, holdIndex);
+<a id='L301' name='L301'></a> 301                 holdIndex -= 6;
+<a id='L302' name='L302'></a> 302 
+<a id='L303' name='L303'></a> 303                 <em class='comment'>// Now that we have subdivided, we have constructed</em>
+<a id='L304' name='L304'></a> 304                 <em class='comment'>// two curves of one depth lower than the original</em>
+<a id='L305' name='L305'></a> 305                 <em class='comment'>// curve.  One of those curves is in the place of</em>
+<a id='L306' name='L306'></a> 306                 <em class='comment'>// the former curve and one of them is in the next</em>
+<a id='L307' name='L307'></a> 307                 <em class='comment'>// set of held coordinate slots.  We now set both</em>
+<a id='L308' name='L308'></a> 308                 <em class='comment'>// curves level values to the next higher level.</em>
+<a id='L309' name='L309'></a> 309                 level++;
+<a id='L310' name='L310'></a> 310                 levels[levelIndex] = level;
+<a id='L311' name='L311'></a> 311                 levelIndex++;
+<a id='L312' name='L312'></a> 312                 levels[levelIndex] = level;
+<a id='L313' name='L313'></a> 313             <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314 
+<a id='L315' name='L315'></a> 315             <em class='comment'>// This curve segment is flat enough, or it is too deep</em>
+<a id='L316' name='L316'></a> 316             <em class='comment'>// in recursion levels to try to flatten any more.  The</em>
+<a id='L317' name='L317'></a> 317             <em class='comment'>// two coordinates at holdIndex+6 and holdIndex+7 now</em>
+<a id='L318' name='L318'></a> 318             <em class='comment'>// contain the endpoint of the curve which can be the</em>
+<a id='L319' name='L319'></a> 319             <em class='comment'>// endpoint of an approximating line segment.</em>
+<a id='L320' name='L320'></a> 320             holdIndex += 6;
+<a id='L321' name='L321'></a> 321             levelIndex--;
+<a id='L322' name='L322'></a> 322             <strong class='reserved'>break</strong>;
+<a id='L323' name='L323'></a> 323         <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324     <em class='brace'>}</em>
+<a id='L325' name='L325'></a> 325 
+<a id='L326' name='L326'></a> 326     <em class='comment'>/**</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>     * Returns the coordinates and type of the current path segment in</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     * the iteration.</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     * The return value is the path segment type:</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     * SEG_MOVETO, SEG_LINETO, or SEG_CLOSE.</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * A float array of length 6 must be passed in and can be used to</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     * store the coordinates of the point(s).</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     * Each point is stored as a pair of float x,y coordinates.</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>     * SEG_MOVETO and SEG_LINETO types return one point,</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>     * and SEG_CLOSE does not return any points.</em>
+<a id='L336' name='L336'></a> 336 <em class='comment'>     * @param coords an array that holds the data returned from</em>
+<a id='L337' name='L337'></a> 337 <em class='comment'>     * this method</em>
+<a id='L338' name='L338'></a> 338 <em class='comment'>     * @return the path segment type of the current path segment.</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>     * @exception NoSuchElementException if there</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>     *          are no more elements in the flattening path to be</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>     *          returned.</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>     * @see PathIterator#SEG_MOVETO</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>     * @see PathIterator#SEG_LINETO</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>     * @see PathIterator#SEG_CLOSE</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>     */</em>
+<a id='L346' name='L346'></a> 346     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/12870.html' title='Multiple referred from 5 places.'>currentSegment</a>(<strong class='reserved'>float</strong>[] coords) <em class='brace'>{</em>
+<a id='L347' name='L347'></a> 347         <strong class='reserved'>if</strong> (<a href='../D/25461.html' title='Multiple defined in 19 places.'>isDone</a>()) <em class='brace'>{</em>
+<a id='L348' name='L348'></a> 348             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1128.html#L38' title='Defined at 38 in src/java/util/NoSuchElementException.java.'>NoSuchElementException</a>("flattening iterator out of bounds");
+<a id='L349' name='L349'></a> 349         <em class='brace'>}</em>
+<a id='L350' name='L350'></a> 350         <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = holdType;
+<a id='L351' name='L351'></a> 351         <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != SEG_CLOSE) <em class='brace'>{</em>
+<a id='L352' name='L352'></a> 352             coords[0] = (<strong class='reserved'>float</strong>) hold[holdIndex + 0];
+<a id='L353' name='L353'></a> 353             coords[1] = (<strong class='reserved'>float</strong>) hold[holdIndex + 1];
+<a id='L354' name='L354'></a> 354             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != SEG_MOVETO) <em class='brace'>{</em>
+<a id='L355' name='L355'></a> 355                 <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = SEG_LINETO;
+<a id='L356' name='L356'></a> 356             <em class='brace'>}</em>
+<a id='L357' name='L357'></a> 357         <em class='brace'>}</em>
+<a id='L358' name='L358'></a> 358         <strong class='reserved'>return</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>;
+<a id='L359' name='L359'></a> 359     <em class='brace'>}</em>
+<a id='L360' name='L360'></a> 360 
+<a id='L361' name='L361'></a> 361     <em class='comment'>/**</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * Returns the coordinates and type of the current path segment in</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     * the iteration.</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>     * The return value is the path segment type:</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     * SEG_MOVETO, SEG_LINETO, or SEG_CLOSE.</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * A double array of length 6 must be passed in and can be used to</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     * store the coordinates of the point(s).</em>
+<a id='L368' name='L368'></a> 368 <em class='comment'>     * Each point is stored as a pair of double x,y coordinates.</em>
+<a id='L369' name='L369'></a> 369 <em class='comment'>     * SEG_MOVETO and SEG_LINETO types return one point,</em>
+<a id='L370' name='L370'></a> 370 <em class='comment'>     * and SEG_CLOSE does not return any points.</em>
+<a id='L371' name='L371'></a> 371 <em class='comment'>     * @param coords an array that holds the data returned from</em>
+<a id='L372' name='L372'></a> 372 <em class='comment'>     * this method</em>
+<a id='L373' name='L373'></a> 373 <em class='comment'>     * @return the path segment type of the current path segment.</em>
+<a id='L374' name='L374'></a> 374 <em class='comment'>     * @exception NoSuchElementException if there</em>
+<a id='L375' name='L375'></a> 375 <em class='comment'>     *          are no more elements in the flattening path to be</em>
+<a id='L376' name='L376'></a> 376 <em class='comment'>     *          returned.</em>
+<a id='L377' name='L377'></a> 377 <em class='comment'>     * @see PathIterator#SEG_MOVETO</em>
+<a id='L378' name='L378'></a> 378 <em class='comment'>     * @see PathIterator#SEG_LINETO</em>
+<a id='L379' name='L379'></a> 379 <em class='comment'>     * @see PathIterator#SEG_CLOSE</em>
+<a id='L380' name='L380'></a> 380 <em class='comment'>     */</em>
+<a id='L381' name='L381'></a> 381     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/12870.html' title='Multiple referred from 5 places.'>currentSegment</a>(<strong class='reserved'>double</strong>[] coords) <em class='brace'>{</em>
+<a id='L382' name='L382'></a> 382         <strong class='reserved'>if</strong> (<a href='../D/25461.html' title='Multiple defined in 19 places.'>isDone</a>()) <em class='brace'>{</em>
+<a id='L383' name='L383'></a> 383             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1128.html#L38' title='Defined at 38 in src/java/util/NoSuchElementException.java.'>NoSuchElementException</a>("flattening iterator out of bounds");
+<a id='L384' name='L384'></a> 384         <em class='brace'>}</em>
+<a id='L385' name='L385'></a> 385         <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = holdType;
+<a id='L386' name='L386'></a> 386         <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != SEG_CLOSE) <em class='brace'>{</em>
+<a id='L387' name='L387'></a> 387             coords[0] = hold[holdIndex + 0];
+<a id='L388' name='L388'></a> 388             coords[1] = hold[holdIndex + 1];
+<a id='L389' name='L389'></a> 389             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != SEG_MOVETO) <em class='brace'>{</em>
+<a id='L390' name='L390'></a> 390                 <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = SEG_LINETO;
+<a id='L391' name='L391'></a> 391             <em class='brace'>}</em>
+<a id='L392' name='L392'></a> 392         <em class='brace'>}</em>
+<a id='L393' name='L393'></a> 393         <strong class='reserved'>return</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>;
+<a id='L394' name='L394'></a> 394     <em class='brace'>}</em>
+<a id='L395' name='L395'></a> 395 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L136'>[^]</a><a href='#L381'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

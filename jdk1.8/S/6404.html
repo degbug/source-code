@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/jmx/snmp/agent/AcmChecker.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7851.html'>snmp</a>/<a href='../files/7853.html'>agent</a>/AcmChecker.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L113'>[^]</a><a href='#L134'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L113' title='Defined at 113.'>add</a></li>
+<li><a href='#L118' title='Defined at 118.'>remove</a></li>
+<li><a href='#L123' title='Defined at 123.'>add</a></li>
+<li><a href='#L129' title='Defined at 129.'>remove</a></li>
+<li><a href='#L134' title='Defined at 134.'>checkCurrentOid</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.jmx.snmp.agent;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.Serializable;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Enumeration;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.logging.Level;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Vector;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> javax.management.ObjectName;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> javax.management.MBeanServer;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> javax.management.MalformedObjectNameException;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> javax.management.InstanceAlreadyExistsException;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> javax.management.MBeanRegistrationException;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> javax.management.NotCompliantMBeanException;
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> static com.sun.jmx.defaults.JmxProperties.SNMP_ADAPTOR_LOGGER;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpOid;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpVarBind;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpDefinitions;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpStatusException;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpEngine;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpUnknownModelException;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.jmx.snmp.internal.SnmpAccessControlModel;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> com.sun.jmx.snmp.internal.SnmpEngineImpl;
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50 <em class='comment'>/**</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * Oid Checker makes use of ACM to check each OID during the getnext process.</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> */</em>
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>class</strong> <a href='../R/276.html' title='Multiple referred from 6 places.'>AcmChecker</a> <em class='brace'>{</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56     <a href='../S/6391.html#L36' title='Defined at 36 in src/com/sun/jmx/snmp/internal/SnmpAccessControlModel.java.'>SnmpAccessControlModel</a> model = <strong class='reserved'>null</strong>;
+<a id='L57' name='L57'></a>  57     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1894.html#L297' title='Defined at 297 in src/java/nio/file/attribute/AclEntry.java.'>principal</a> = <strong class='reserved'>null</strong>;
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>int</strong> securityLevel = -1;
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>int</strong> <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a> = -1;
+<a id='L60' name='L60'></a>  60     <strong class='reserved'>int</strong> pduType = -1;
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>int</strong> securityModel = -1;
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>byte</strong>[] contextName = <strong class='reserved'>null</strong>;
+<a id='L63' name='L63'></a>  63     <a href='../S/6385.html#L72' title='Defined at 72 in src/com/sun/jmx/snmp/internal/SnmpEngineImpl.java.'>SnmpEngineImpl</a> engine = <strong class='reserved'>null</strong>;
+<a id='L64' name='L64'></a>  64     <a href='../S/6416.html#L54' title='Defined at 54 in src/com/sun/jmx/snmp/agent/LongList.java.'>LongList</a> l = <strong class='reserved'>null</strong>;
+<a id='L65' name='L65'></a>  65     AcmChecker(<a href='../S/6420.html#L46' title='Defined at 46 in src/com/sun/jmx/snmp/agent/SnmpMibRequest.java.'>SnmpMibRequest</a> req) <em class='brace'>{</em>
+<a id='L66' name='L66'></a>  66         engine = (<a href='../S/6385.html#L72' title='Defined at 72 in src/com/sun/jmx/snmp/internal/SnmpEngineImpl.java.'>SnmpEngineImpl</a>) req.<a href='../D/18782.html' title='Multiple defined in 5 places.'>getEngine</a>();
+<a id='L67' name='L67'></a>  67         <em class='comment'>//We are in V3 architecture, ACM is in the picture.</em>
+<a id='L68' name='L68'></a>  68         <strong class='reserved'>if</strong>(engine != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L69' name='L69'></a>  69             <strong class='reserved'>if</strong>(engine.<a href='../S/6385.html#L323' title='Defined at 323 in src/com/sun/jmx/snmp/internal/SnmpEngineImpl.java.'>isCheckOidActivated</a>()) <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L72' name='L72'></a>  72                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST,
+<a id='L73' name='L73'></a>  73                                 <a href='../S/6424.html#L62' title='Defined at 62 in src/com/sun/jmx/snmp/agent/SnmpMib.java.'>SnmpMib</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L74' name='L74'></a>  74                                 "AcmChecker(SnmpMibRequest)",
+<a id='L75' name='L75'></a>  75                                 "SNMP V3 Access Control to be done");
+<a id='L76' name='L76'></a>  76                     <em class='brace'>}</em>
+<a id='L77' name='L77'></a>  77                     model = (<a href='../S/6391.html#L36' title='Defined at 36 in src/com/sun/jmx/snmp/internal/SnmpAccessControlModel.java.'>SnmpAccessControlModel</a>)
+<a id='L78' name='L78'></a>  78                         engine.<a href='../S/6385.html#L407' title='Defined at 407 in src/com/sun/jmx/snmp/internal/SnmpEngineImpl.java.'>getAccessControlSubSystem</a>().
+<a id='L79' name='L79'></a>  79                         <a href='../D/20699.html' title='Multiple defined in 27 places.'>getModel</a>(<a href='../S/6476.html#L19' title='Defined at 19 in src/com/sun/jmx/snmp/SnmpDefinitions.java.'>SnmpDefinitions</a>.snmpVersionThree);
+<a id='L80' name='L80'></a>  80                     <a href='../S/1894.html#L297' title='Defined at 297 in src/java/nio/file/attribute/AclEntry.java.'>principal</a> = req.<a href='../D/21662.html' title='Multiple defined in 14 places.'>getPrincipal</a>();
+<a id='L81' name='L81'></a>  81                     securityLevel = req.<a href='../D/22323.html' title='Multiple defined in 6 places.'>getSecurityLevel</a>();
+<a id='L82' name='L82'></a>  82                     pduType = req.<a href='../D/21461.html' title='Multiple defined in 3 places.'>getPdu</a>().<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>;
+<a id='L83' name='L83'></a>  83                     <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a> = req.<a href='../D/22009.html' title='Multiple defined in 4 places.'>getRequestPduVersion</a>();
+<a id='L84' name='L84'></a>  84                     securityModel = req.<a href='../D/22325.html' title='Multiple defined in 6 places.'>getSecurityModel</a>();
+<a id='L85' name='L85'></a>  85                     contextName = req.<a href='../D/16721.html' title='Multiple defined in 3 places.'>getAccessContextName</a>();
+<a id='L86' name='L86'></a>  86                     l = <strong class='reserved'>new</strong> <a href='../S/6416.html#L54' title='Defined at 54 in src/com/sun/jmx/snmp/agent/LongList.java.'>LongList</a>();
+<a id='L87' name='L87'></a>  87                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88                         <strong class='reserved'>final</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> strb = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>()
+<a id='L89' name='L89'></a>  89                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("Will check oid for : principal : ")
+<a id='L90' name='L90'></a>  90                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../S/1894.html#L297' title='Defined at 297 in src/java/nio/file/attribute/AclEntry.java.'>principal</a>)
+<a id='L91' name='L91'></a>  91                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("; securityLevel : ").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(securityLevel)
+<a id='L92' name='L92'></a>  92                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("; pduType : ").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(pduType)
+<a id='L93' name='L93'></a>  93                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("; version : ").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(<a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>)
+<a id='L94' name='L94'></a>  94                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("; securityModel : ").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(securityModel)
+<a id='L95' name='L95'></a>  95                         .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("; contextName : ").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(contextName);
+<a id='L96' name='L96'></a>  96                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST,
+<a id='L97' name='L97'></a>  97                                 <a href='../S/6424.html#L62' title='Defined at 62 in src/com/sun/jmx/snmp/agent/SnmpMib.java.'>SnmpMib</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L98' name='L98'></a>  98                                 "AcmChecker(SnmpMibRequest)", strb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L99' name='L99'></a>  99                     <em class='brace'>}</em>
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101                 <em class='brace'>}</em><strong class='reserved'>catch</strong>(<a href='../S/6306.html#L32' title='Defined at 32 in src/com/sun/jmx/snmp/SnmpUnknownModelException.java.'>SnmpUnknownModelException</a> e) <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L103' name='L103'></a> 103                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST,
+<a id='L104' name='L104'></a> 104                                 <a href='../S/6424.html#L62' title='Defined at 62 in src/com/sun/jmx/snmp/agent/SnmpMib.java.'>SnmpMib</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L105' name='L105'></a> 105                                 "AcmChecker(SnmpMibRequest)",
+<a id='L106' name='L106'></a> 106                                 "Unknown Model, no ACM check.");
+<a id='L107' name='L107'></a> 107                     <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108                 <em class='brace'>}</em>
+<a id='L109' name='L109'></a> 109             <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110         <em class='brace'>}</em>
+<a id='L111' name='L111'></a> 111     <em class='brace'>}</em>
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>void</strong> <a href='../R/9592.html' title='Multiple referred from 2612 places.'>add</a>(<strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>, <strong class='reserved'>long</strong> arc) <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>if</strong>(model != <strong class='reserved'>null</strong>)
+<a id='L115' name='L115'></a> 115             l.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>, arc);
+<a id='L116' name='L116'></a> 116     <em class='brace'>}</em>
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118     <strong class='reserved'>void</strong> <a href='../R/25882.html' title='Multiple referred from 1115 places.'>remove</a>(<strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119         <strong class='reserved'>if</strong>(model != <strong class='reserved'>null</strong>)
+<a id='L120' name='L120'></a> 120             l.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L121' name='L121'></a> 121     <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123     <strong class='reserved'>void</strong> <a href='../R/9592.html' title='Multiple referred from 2612 places.'>add</a>(<strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/11601.html' title='Multiple defined in 3 places.'>at</a>,<strong class='reserved'>final</strong> <strong class='reserved'>long</strong>[] src, <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>,
+<a id='L124' name='L124'></a> 124              <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>) <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125         <strong class='reserved'>if</strong>(model != <strong class='reserved'>null</strong>)
+<a id='L126' name='L126'></a> 126             l.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../D/11601.html' title='Multiple defined in 3 places.'>at</a>,src,<a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>,<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>);
+<a id='L127' name='L127'></a> 127     <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <strong class='reserved'>void</strong> <a href='../R/25882.html' title='Multiple referred from 1115 places.'>remove</a>(<strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>, <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>) <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130         <strong class='reserved'>if</strong>(model != <strong class='reserved'>null</strong>)
+<a id='L131' name='L131'></a> 131             l.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/16586.html' title='Multiple defined in 37 places.'>from</a>,<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>);
+<a id='L132' name='L132'></a> 132     <em class='brace'>}</em>
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>void</strong> <a href='../R/11134.html' title='Multiple referred from 2 places.'>checkCurrentOid</a>() <strong class='reserved'>throws</strong> <a href='../S/6312.html#L40' title='Defined at 40 in src/com/sun/jmx/snmp/SnmpStatusException.java.'>SnmpStatusException</a> <em class='brace'>{</em>
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>if</strong>(model != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136             <a href='../S/6468.html#L22' title='Defined at 22 in src/com/sun/jmx/snmp/SnmpOid.java.'>SnmpOid</a> oid = <strong class='reserved'>new</strong> <a href='../S/6468.html#L22' title='Defined at 22 in src/com/sun/jmx/snmp/SnmpOid.java.'>SnmpOid</a>(l.<a href='../D/35348.html' title='Multiple defined in 117 places.'>toArray</a>());
+<a id='L137' name='L137'></a> 137             <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138                 SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6424.html#L62' title='Defined at 62 in src/com/sun/jmx/snmp/agent/SnmpMib.java.'>SnmpMib</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
+<a id='L139' name='L139'></a> 139                         "checkCurrentOid", "Checking access for : " + oid);
+<a id='L140' name='L140'></a> 140             <em class='brace'>}</em>
+<a id='L141' name='L141'></a> 141             model.<a href='../D/12351.html' title='Multiple defined in 20 places.'>checkAccess</a>(<a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>,
+<a id='L142' name='L142'></a> 142                               <a href='../S/1894.html#L297' title='Defined at 297 in src/java/nio/file/attribute/AclEntry.java.'>principal</a>,
+<a id='L143' name='L143'></a> 143                               securityLevel,
+<a id='L144' name='L144'></a> 144                               pduType,
+<a id='L145' name='L145'></a> 145                               securityModel,
+<a id='L146' name='L146'></a> 146                               contextName,
+<a id='L147' name='L147'></a> 147                               oid);
+<a id='L148' name='L148'></a> 148         <em class='brace'>}</em>
+<a id='L149' name='L149'></a> 149     <em class='brace'>}</em>
+<a id='L150' name='L150'></a> 150 
+<a id='L151' name='L151'></a> 151 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L113'>[^]</a><a href='#L134'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

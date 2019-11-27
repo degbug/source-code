@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7786.html'>spi</a>/<a href='../files/7808.html'>presentation</a>/<a href='../files/7809.html'>rmi</a>/StubWrapper.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L59'>[^]</a><a href='#L157'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L59' title='Defined at 59.'>setDelegate</a></li>
+<li><a href='#L64' title='Defined at 64.'>getDelegate</a></li>
+<li><a href='#L69' title='Defined at 69.'>getORB</a></li>
+<li><a href='#L74' title='Defined at 74.'>getTypeIds</a></li>
+<li><a href='#L79' title='Defined at 79.'>connect</a></li>
+<li><a href='#L84' title='Defined at 84.'>isLocal</a></li>
+<li><a href='#L89' title='Defined at 89.'>request</a></li>
+<li><a href='#L94' title='Defined at 94.'>_is_a</a></li>
+<li><a href='#L99' title='Defined at 99.'>_is_equivalent</a></li>
+<li><a href='#L104' title='Defined at 104.'>_non_existent</a></li>
+<li><a href='#L109' title='Defined at 109.'>_hash</a></li>
+<li><a href='#L114' title='Defined at 114.'>_duplicate</a></li>
+<li><a href='#L119' title='Defined at 119.'>_release</a></li>
+<li><a href='#L124' title='Defined at 124.'>_get_interface_def</a></li>
+<li><a href='#L129' title='Defined at 129.'>_request</a></li>
+<li><a href='#L134' title='Defined at 134.'>_create_request</a></li>
+<li><a href='#L140' title='Defined at 140.'>_create_request</a></li>
+<li><a href='#L147' title='Defined at 147.'>_get_policy</a></li>
+<li><a href='#L152' title='Defined at 152.'>_get_domain_managers</a></li>
+<li><a href='#L157' title='Defined at 157.'>_set_policy_override</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.spi.presentation.rmi ;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.rmi.RemoteException ;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.CORBA.portable.Delegate ;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> org.omg.CORBA.ORB ;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> org.omg.CORBA.Request ;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.omg.CORBA.Context ;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.omg.CORBA.NamedValue ;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.omg.CORBA.NVList ;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.omg.CORBA.ContextList ;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.CORBA.ExceptionList ;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> org.omg.CORBA.Policy ;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.omg.CORBA.DomainManager ;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> org.omg.CORBA.SetOverrideType ;
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> org.omg.CORBA.portable.OutputStream ;
+<a id='L43' name='L43'></a>  43 
+<a id='L44' name='L44'></a>  44 <em class='comment'>/** Wrapper that can take any stub (object x such that StubAdapter.isStub(x))</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * and treat it as a DynamicStub.</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> */</em>
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> StubWrapper <strong class='reserved'>implements</strong> <a href='../S/7572.html#L40' title='Defined at 40 in src/com/sun/corba/se/spi/presentation/rmi/DynamicStub.java.'>DynamicStub</a>
+<a id='L48' name='L48'></a>  48 <em class='brace'>{</em>
+<a id='L49' name='L49'></a>  49     <strong class='reserved'>private</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> ;
+<a id='L50' name='L50'></a>  50 
+<a id='L51' name='L51'></a>  51     <strong class='reserved'>public</strong> StubWrapper( org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> )
+<a id='L52' name='L52'></a>  52     <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53         <strong class='reserved'>if</strong> (!(<a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/26294.html' title='Multiple defined in 4 places.'>isStub</a>(<a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>)))
+<a id='L54' name='L54'></a>  54             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>() ;
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56         <strong class='reserved'>this</strong>.<a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> = <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> ;
+<a id='L57' name='L57'></a>  57     <em class='brace'>}</em>
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27211.html' title='Multiple referred from 18 places.'>setDelegate</a>( <a href='../D/2367.html' title='Multiple defined in 7 places.'>Delegate</a> delegate )
+<a id='L60' name='L60'></a>  60     <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61         <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/32424.html' title='Multiple defined in 8 places.'>setDelegate</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>, delegate ) ;
+<a id='L62' name='L62'></a>  62     <em class='brace'>}</em>
+<a id='L63' name='L63'></a>  63 
+<a id='L64' name='L64'></a>  64     <strong class='reserved'>public</strong> <a href='../D/2367.html' title='Multiple defined in 7 places.'>Delegate</a> <a href='../R/16099.html' title='Multiple referred from 36 places.'>getDelegate</a>()
+<a id='L65' name='L65'></a>  65     <em class='brace'>{</em>
+<a id='L66' name='L66'></a>  66         <strong class='reserved'>return</strong> <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/18402.html' title='Multiple defined in 10 places.'>getDelegate</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> ) ;
+<a id='L67' name='L67'></a>  67     <em class='brace'>}</em>
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>public</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../R/18064.html' title='Multiple referred from 23 places.'>getORB</a>()
+<a id='L70' name='L70'></a>  70     <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71         <strong class='reserved'>return</strong> <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/21103.html' title='Multiple defined in 14 places.'>getORB</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> ) ;
+<a id='L72' name='L72'></a>  72     <em class='brace'>}</em>
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../R/19627.html' title='Multiple referred from 13 places.'>getTypeIds</a>()
+<a id='L75' name='L75'></a>  75     <em class='brace'>{</em>
+<a id='L76' name='L76'></a>  76         <strong class='reserved'>return</strong> <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/23330.html' title='Multiple defined in 8 places.'>getTypeIds</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> ) ;
+<a id='L77' name='L77'></a>  77     <em class='brace'>}</em>
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11887.html' title='Multiple referred from 67 places.'>connect</a>( <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ) <strong class='reserved'>throws</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>
+<a id='L80' name='L80'></a>  80     <em class='brace'>{</em>
+<a id='L81' name='L81'></a>  81         <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/13242.html' title='Multiple defined in 53 places.'>connect</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>, (com.sun.corba.se.spi.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ) ;
+<a id='L82' name='L82'></a>  82     <em class='brace'>}</em>
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21682.html' title='Multiple referred from 26 places.'>isLocal</a>()
+<a id='L85' name='L85'></a>  85     <em class='brace'>{</em>
+<a id='L86' name='L86'></a>  86         <strong class='reserved'>return</strong> <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/25819.html' title='Multiple defined in 13 places.'>isLocal</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a> ) ;
+<a id='L87' name='L87'></a>  87     <em class='brace'>}</em>
+<a id='L88' name='L88'></a>  88 
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>public</strong> <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <a href='../R/26212.html' title='Multiple referred from 143 places.'>request</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, <strong class='reserved'>boolean</strong> responseExpected )
+<a id='L90' name='L90'></a>  90     <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91         <strong class='reserved'>return</strong> <a href='../S/7573.html#L59' title='Defined at 59 in src/com/sun/corba/se/spi/presentation/rmi/StubAdapter.java.'>StubAdapter</a>.<a href='../D/31115.html' title='Multiple defined in 8 places.'>request</a>( <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>, <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, responseExpected ) ;
+<a id='L92' name='L92'></a>  92     <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/9429.html' title='Multiple referred from 38 places.'>_is_a</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> repositoryIdentifier)
+<a id='L95' name='L95'></a>  95     <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10448.html' title='Multiple defined in 5 places.'>_is_a</a>( repositoryIdentifier ) ;
+<a id='L97' name='L97'></a>  97     <em class='brace'>}</em>
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../S/7571.html#L101' title='Referred from 101 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_is_equivalent</a>(org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> other)
+<a id='L100' name='L100'></a> 100     <em class='brace'>{</em>
+<a id='L101' name='L101'></a> 101         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10449.html' title='Multiple defined in 4 places.'>_is_equivalent</a>( other ) ;
+<a id='L102' name='L102'></a> 102     <em class='brace'>}</em>
+<a id='L103' name='L103'></a> 103 
+<a id='L104' name='L104'></a> 104     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../S/7571.html#L106' title='Referred from 106 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_non_existent</a>()
+<a id='L105' name='L105'></a> 105     <em class='brace'>{</em>
+<a id='L106' name='L106'></a> 106         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10458.html' title='Multiple defined in 5 places.'>_non_existent</a>() ;
+<a id='L107' name='L107'></a> 107     <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108 
+<a id='L109' name='L109'></a> 109     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../S/7571.html#L111' title='Referred from 111 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_hash</a>(<strong class='reserved'>int</strong> maximum)
+<a id='L110' name='L110'></a> 110     <em class='brace'>{</em>
+<a id='L111' name='L111'></a> 111         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10443.html' title='Multiple defined in 4 places.'>_hash</a>( maximum ) ;
+<a id='L112' name='L112'></a> 112     <em class='brace'>}</em>
+<a id='L113' name='L113'></a> 113 
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>public</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7571.html#L116' title='Referred from 116 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_duplicate</a>()
+<a id='L115' name='L115'></a> 115     <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10423.html' title='Multiple defined in 4 places.'>_duplicate</a>() ;
+<a id='L117' name='L117'></a> 117     <em class='brace'>}</em>
+<a id='L118' name='L118'></a> 118 
+<a id='L119' name='L119'></a> 119     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7571.html#L121' title='Referred from 121 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_release</a>()
+<a id='L120' name='L120'></a> 120     <em class='brace'>{</em>
+<a id='L121' name='L121'></a> 121         <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10495.html' title='Multiple defined in 4 places.'>_release</a>() ;
+<a id='L122' name='L122'></a> 122     <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123 
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>public</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7571.html#L126' title='Referred from 126 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_get_interface_def</a>()
+<a id='L125' name='L125'></a> 125     <em class='brace'>{</em>
+<a id='L126' name='L126'></a> 126         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10441.html' title='Multiple defined in 5 places.'>_get_interface_def</a>() ;
+<a id='L127' name='L127'></a> 127     <em class='brace'>}</em>
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <strong class='reserved'>public</strong> <a href='../S/437.html#L67' title='Defined at 67 in src/org/omg/CORBA/Request.java.'>Request</a> <a href='../R/9476.html' title='Multiple referred from 119 places.'>_request</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>)
+<a id='L130' name='L130'></a> 130     <em class='brace'>{</em>
+<a id='L131' name='L131'></a> 131         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10497.html' title='Multiple defined in 6 places.'>_request</a>( <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a> ) ;
+<a id='L132' name='L132'></a> 132     <em class='brace'>}</em>
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>public</strong> <a href='../S/437.html#L67' title='Defined at 67 in src/org/omg/CORBA/Request.java.'>Request</a> <a href='../R/9401.html' title='Multiple referred from 2 places.'>_create_request</a>( <a href='../D/1859.html' title='Multiple defined in 4 places.'>Context</a> <a href='../D/14411.html' title='Multiple defined in 6 places.'>ctx</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, <a href='../S/274.html#L93' title='Defined at 93 in src/org/omg/CORBA/NVList.java.'>NVList</a> arg_list,
+<a id='L135' name='L135'></a> 135         <a href='../S/284.html#L96' title='Defined at 96 in src/org/omg/CORBA/NamedValue.java.'>NamedValue</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>)
+<a id='L136' name='L136'></a> 136     <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10417.html' title='Multiple defined in 8 places.'>_create_request</a>( <a href='../D/14411.html' title='Multiple defined in 6 places.'>ctx</a>, <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, arg_list, <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> ) ;
+<a id='L138' name='L138'></a> 138     <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140     <strong class='reserved'>public</strong> <a href='../S/437.html#L67' title='Defined at 67 in src/org/omg/CORBA/Request.java.'>Request</a> <a href='../R/9401.html' title='Multiple referred from 2 places.'>_create_request</a>( <a href='../D/1859.html' title='Multiple defined in 4 places.'>Context</a> <a href='../D/14411.html' title='Multiple defined in 6 places.'>ctx</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, <a href='../S/274.html#L93' title='Defined at 93 in src/org/omg/CORBA/NVList.java.'>NVList</a> arg_list,
+<a id='L141' name='L141'></a> 141         <a href='../S/284.html#L96' title='Defined at 96 in src/org/omg/CORBA/NamedValue.java.'>NamedValue</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>, <a href='../S/295.html#L54' title='Defined at 54 in src/org/omg/CORBA/ExceptionList.java.'>ExceptionList</a> exclist, <a href='../S/433.html#L58' title='Defined at 58 in src/org/omg/CORBA/ContextList.java.'>ContextList</a> ctxlist)
+<a id='L142' name='L142'></a> 142     <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10417.html' title='Multiple defined in 8 places.'>_create_request</a>( <a href='../D/14411.html' title='Multiple defined in 6 places.'>ctx</a>, <a href='../D/28537.html' title='Multiple defined in 8 places.'>operation</a>, arg_list, <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>,
+<a id='L144' name='L144'></a> 144             exclist, ctxlist ) ;
+<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147     <strong class='reserved'>public</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> <a href='../S/7571.html#L149' title='Referred from 149 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_get_policy</a>(<strong class='reserved'>int</strong> <a href='../D/29401.html' title='Multiple defined in 13 places.'>policy_type</a>)
+<a id='L148' name='L148'></a> 148     <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10442.html' title='Multiple defined in 4 places.'>_get_policy</a>( <a href='../D/29401.html' title='Multiple defined in 13 places.'>policy_type</a> ) ;
+<a id='L150' name='L150'></a> 150     <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151 
+<a id='L152' name='L152'></a> 152     <strong class='reserved'>public</strong> <a href='../S/394.html#L40' title='Defined at 40 in src/org/omg/CORBA/DomainManager.java.'>DomainManager</a>[] <a href='../S/7571.html#L154' title='Referred from 154 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_get_domain_managers</a>()
+<a id='L153' name='L153'></a> 153     <em class='brace'>{</em>
+<a id='L154' name='L154'></a> 154         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10439.html' title='Multiple defined in 4 places.'>_get_domain_managers</a>() ;
+<a id='L155' name='L155'></a> 155     <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157     <strong class='reserved'>public</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7571.html#L160' title='Referred from 160 in src/com/sun/corba/se/spi/presentation/rmi/StubWrapper.java.'>_set_policy_override</a>( <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a>[] policies,
+<a id='L158' name='L158'></a> 158         <a href='../S/256.html#L50' title='Defined at 50 in src/org/omg/CORBA/SetOverrideType.java.'>SetOverrideType</a> set_add)
+<a id='L159' name='L159'></a> 159     <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160         <strong class='reserved'>return</strong> <a href='../D/28389.html' title='Multiple defined in 8 places.'>object</a>.<a href='../D/10503.html' title='Multiple defined in 4 places.'>_set_policy_override</a>( policies, set_add ) ;
+<a id='L161' name='L161'></a> 161     <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L59'>[^]</a><a href='#L157'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

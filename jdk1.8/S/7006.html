@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/encoding/ByteBufferWithInfo.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7739.html'>encoding</a>/ByteBufferWithInfo.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L144'>[^]</a><a href='#L253'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L144' title='Defined at 144.'>getSize</a></li>
+<li><a href='#L150' title='Defined at 150.'>getLength</a></li>
+<li><a href='#L156' title='Defined at 156.'>position</a></li>
+<li><a href='#L170' title='Defined at 170.'>position</a></li>
+<li><a href='#L181' title='Defined at 181.'>setLength</a></li>
+<li><a href='#L188' title='Defined at 188.'>growBuffer</a></li>
+<li><a href='#L238' title='Defined at 238.'>toString</a></li>
+<li><a href='#L253' title='Defined at 253.'>dprint</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.<a href='../S/1437.html#L371' title='Defined at 371 in src/java/io/Console.java.'>encoding</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.nio.ByteBuffer;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.BufferManagerWrite;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.ByteBufferPool;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 
+<a id='L37' name='L37'></a>  37 <em class='comment'>// Notes about the class.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'>// Assumptions, the ByteBuffer's position is set by the constructor's</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'>// index variable and the ByteBuffer's limit points to the end of the</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'>// data. Also, since the index variable tracks the current empty</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'>// position in the buffer, the ByteBuffer's position is updated</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'>// any time there's a call to this class's position().</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'>// Although, a ByteBuffer's length is it's capacity(), the context in</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'>// which length is used in this object, this.buflen is actually the</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'>// ByteBuffer limit().</em>
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/983.html' title='Multiple referred from 66 places.'>ByteBufferWithInfo</a>
+<a id='L48' name='L48'></a>  48 <em class='brace'>{</em>
+<a id='L49' name='L49'></a>  49     <strong class='reserved'>private</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>;
+<a id='L51' name='L51'></a>  51     <em class='comment'>// REVISIT - index should eventually be replaced with byteBuffer.position()</em>
+<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong>     <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;     <em class='comment'>// Current empty position in buffer.</em>
+<a id='L53' name='L53'></a>  53     <em class='comment'>// REVISIT - CHANGE THESE TO PRIVATE</em>
+<a id='L54' name='L54'></a>  54     <strong class='reserved'>public</strong> <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a> byteBuffer;<em class='comment'>// Marshal buffer.</em>
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong>     buflen;     <em class='comment'>// Total length of buffer. // Unnecessary...</em>
+<a id='L56' name='L56'></a>  56     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong>     needed;     <em class='comment'>// How many more bytes are needed on overflow.</em>
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> fragmented; <em class='comment'>// Did the overflow operation fragment?</em>
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>public</strong> ByteBufferWithInfo(org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L60' name='L60'></a>  60                               <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a> byteBuffer,
+<a id='L61' name='L61'></a>  61                               <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>)
+<a id='L62' name='L62'></a>  62     <em class='brace'>{</em>
+<a id='L63' name='L63'></a>  63         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = (com.sun.corba.se.spi.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L64' name='L64'></a>  64         <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag;
+<a id='L65' name='L65'></a>  65         <strong class='reserved'>this</strong>.byteBuffer = byteBuffer;
+<a id='L66' name='L66'></a>  66         <strong class='reserved'>if</strong> (byteBuffer != <strong class='reserved'>null</strong>)
+<a id='L67' name='L67'></a>  67         <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68             <strong class='reserved'>this</strong>.buflen = byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>();
+<a id='L69' name='L69'></a>  69         <em class='brace'>}</em>
+<a id='L70' name='L70'></a>  70         <a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L71' name='L71'></a>  71         <strong class='reserved'>this</strong>.needed = 0;
+<a id='L72' name='L72'></a>  72         <strong class='reserved'>this</strong>.fragmented = <strong class='reserved'>false</strong>;
+<a id='L73' name='L73'></a>  73     <em class='brace'>}</em>
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75     <strong class='reserved'>public</strong> ByteBufferWithInfo(org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a> byteBuffer)
+<a id='L76' name='L76'></a>  76     <em class='brace'>{</em>
+<a id='L77' name='L77'></a>  77         <strong class='reserved'>this</strong>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, byteBuffer, 0);
+<a id='L78' name='L78'></a>  78     <em class='brace'>}</em>
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80     <strong class='reserved'>public</strong> ByteBufferWithInfo(org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L81' name='L81'></a>  81                               <a href='../S/7018.html#L44' title='Defined at 44 in src/com/sun/corba/se/impl/encoding/BufferManagerWrite.java.'>BufferManagerWrite</a> bufferManager)
+<a id='L82' name='L82'></a>  82     <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83         <strong class='reserved'>this</strong>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, bufferManager, <strong class='reserved'>true</strong>);
+<a id='L84' name='L84'></a>  84     <em class='brace'>}</em>
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86     <em class='comment'>// Right now, EncapsOutputStream's do not use pooled byte buffers.</em>
+<a id='L87' name='L87'></a>  87     <em class='comment'>// EncapsOutputStream's is the only one that does not use pooled</em>
+<a id='L88' name='L88'></a>  88     <em class='comment'>// byte buffers. Hence, the reason for the boolean 'usePooledByteBuffers'.</em>
+<a id='L89' name='L89'></a>  89     <em class='comment'>// See EncapsOutputStream for additional information.</em>
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>public</strong> ByteBufferWithInfo(org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L92' name='L92'></a>  92                               <a href='../S/7018.html#L44' title='Defined at 44 in src/com/sun/corba/se/impl/encoding/BufferManagerWrite.java.'>BufferManagerWrite</a> bufferManager,
+<a id='L93' name='L93'></a>  93                               <strong class='reserved'>boolean</strong> usePooledByteBuffers)
+<a id='L94' name='L94'></a>  94     <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = (com.sun.corba.se.spi.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L96' name='L96'></a>  96         <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.transportDebugFlag;
+<a id='L97' name='L97'></a>  97 
+<a id='L98' name='L98'></a>  98         <strong class='reserved'>int</strong> bufferSize = bufferManager.<a href='../D/17362.html' title='Multiple defined in 9 places.'>getBufferSize</a>();
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100         <strong class='reserved'>if</strong> (usePooledByteBuffers)
+<a id='L101' name='L101'></a> 101         <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102             <a href='../S/7282.html#L33' title='Defined at 33 in src/com/sun/corba/se/pept/transport/ByteBufferPool.java.'>ByteBufferPool</a> byteBufferPool = <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/17402.html' title='Multiple defined in 4 places.'>getByteBufferPool</a>();
+<a id='L103' name='L103'></a> 103             <strong class='reserved'>this</strong>.byteBuffer = byteBufferPool.<a href='../D/17401.html' title='Multiple defined in 12 places.'>getByteBuffer</a>(bufferSize);
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L106' name='L106'></a> 106             <em class='brace'>{</em>
+<a id='L107' name='L107'></a> 107                 <em class='comment'>// print address of ByteBuffer gotten from pool</em>
+<a id='L108' name='L108'></a> 108                 <strong class='reserved'>int</strong> bbAddress = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L508' title='Defined at 508 in src/java/lang/System.java.'>identityHashCode</a>(byteBuffer);
+<a id='L109' name='L109'></a> 109                 <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> sb = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>(80);
+<a id='L110' name='L110'></a> 110                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("constructor (ORB, BufferManagerWrite) - got ")
+<a id='L111' name='L111'></a> 111                   .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("ByteBuffer id (").<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(bbAddress)
+<a id='L112' name='L112'></a> 112                   .<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(") from ByteBufferPool.");
+<a id='L113' name='L113'></a> 113                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> msgStr = sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L114' name='L114'></a> 114                 <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(msgStr);
+<a id='L115' name='L115'></a> 115             <em class='brace'>}</em>
+<a id='L116' name='L116'></a> 116         <em class='brace'>}</em>
+<a id='L117' name='L117'></a> 117         <strong class='reserved'>else</strong>
+<a id='L118' name='L118'></a> 118         <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119              <em class='comment'>// don't allocate from pool, allocate non-direct ByteBuffer</em>
+<a id='L120' name='L120'></a> 120              <strong class='reserved'>this</strong>.byteBuffer = <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a>.<a href='../D/11296.html' title='Multiple defined in 10 places.'>allocate</a>(bufferSize);
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123         <a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(0);
+<a id='L124' name='L124'></a> 124         <strong class='reserved'>this</strong>.buflen = bufferSize;
+<a id='L125' name='L125'></a> 125         <strong class='reserved'>this</strong>.byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>(<strong class='reserved'>this</strong>.buflen);
+<a id='L126' name='L126'></a> 126         <strong class='reserved'>this</strong>.needed = 0;
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>this</strong>.fragmented = <strong class='reserved'>false</strong>;
+<a id='L128' name='L128'></a> 128     <em class='brace'>}</em>
+<a id='L129' name='L129'></a> 129 
+<a id='L130' name='L130'></a> 130     <em class='comment'>// Shallow copy constructor</em>
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>public</strong> <a href='../S/7006.html#L47' title='Defined at 47 in src/com/sun/corba/se/impl/encoding/ByteBufferWithInfo.java.'>ByteBufferWithInfo</a> (ByteBufferWithInfo bbwi)
+<a id='L132' name='L132'></a> 132     <em class='brace'>{</em>
+<a id='L133' name='L133'></a> 133         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = bbwi.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>this</strong>.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = bbwi.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>;
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>this</strong>.byteBuffer = bbwi.byteBuffer;
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>this</strong>.buflen = bbwi.buflen;
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>this</strong>.byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>(<strong class='reserved'>this</strong>.buflen);
+<a id='L138' name='L138'></a> 138         <a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(bbwi.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>());
+<a id='L139' name='L139'></a> 139         <strong class='reserved'>this</strong>.needed = bbwi.needed;
+<a id='L140' name='L140'></a> 140         <strong class='reserved'>this</strong>.fragmented = bbwi.fragmented;
+<a id='L141' name='L141'></a> 141     <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142 
+<a id='L143' name='L143'></a> 143     <em class='comment'>// So IIOPOutputStream seems more intuitive</em>
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/19054.html' title='Multiple referred from 291 places.'>getSize</a>()
+<a id='L145' name='L145'></a> 145     <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>return</strong> <a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>();
+<a id='L147' name='L147'></a> 147     <em class='brace'>}</em>
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149     <em class='comment'>// accessor to buflen</em>
+<a id='L150' name='L150'></a> 150     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/17335.html' title='Multiple referred from 644 places.'>getLength</a>()
+<a id='L151' name='L151'></a> 151     <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152          <strong class='reserved'>return</strong> buflen;
+<a id='L153' name='L153'></a> 153     <em class='brace'>}</em>
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155     <em class='comment'>// get position in this buffer</em>
+<a id='L156' name='L156'></a> 156     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/24840.html' title='Multiple referred from 1781 places.'>position</a>()
+<a id='L157' name='L157'></a> 157     <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158         <em class='comment'>// REVISIT - This should be changed to return the</em>
+<a id='L159' name='L159'></a> 159         <em class='comment'>//           value of byteBuffer.position() rather</em>
+<a id='L160' name='L160'></a> 160         <em class='comment'>//           than this.index. But, byteBuffer.position</em>
+<a id='L161' name='L161'></a> 161         <em class='comment'>//           is manipulated via ByteBuffer writes, reads,</em>
+<a id='L162' name='L162'></a> 162         <em class='comment'>//           gets and puts. These locations need to be</em>
+<a id='L163' name='L163'></a> 163         <em class='comment'>//           investigated and updated before</em>
+<a id='L164' name='L164'></a> 164         <em class='comment'>//           byteBuffer.position() can be returned here.</em>
+<a id='L165' name='L165'></a> 165         <em class='comment'>// return byteBuffer.position();</em>
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>return</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;
+<a id='L167' name='L167'></a> 167     <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168 
+<a id='L169' name='L169'></a> 169     <em class='comment'>// set position in this buffer</em>
+<a id='L170' name='L170'></a> 170     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24840.html' title='Multiple referred from 1781 places.'>position</a>(<strong class='reserved'>int</strong> newPosition)
+<a id='L171' name='L171'></a> 171     <em class='brace'>{</em>
+<a id='L172' name='L172'></a> 172         <em class='comment'>// REVISIT - This should be changed to set only the</em>
+<a id='L173' name='L173'></a> 173         <em class='comment'>//           value of byteBuffer.position rather</em>
+<a id='L174' name='L174'></a> 174         <em class='comment'>//           than this.index. This change should be made</em>
+<a id='L175' name='L175'></a> 175         <em class='comment'>//           in conjunction with the change to this.position().</em>
+<a id='L176' name='L176'></a> 176         byteBuffer.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(newPosition);
+<a id='L177' name='L177'></a> 177         <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = newPosition;
+<a id='L178' name='L178'></a> 178     <em class='brace'>}</em>
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180     <em class='comment'>// mutator to buflen</em>
+<a id='L181' name='L181'></a> 181     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27657.html' title='Multiple referred from 89 places.'>setLength</a>(<strong class='reserved'>int</strong> theLength)
+<a id='L182' name='L182'></a> 182     <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183         buflen = theLength;
+<a id='L184' name='L184'></a> 184         byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>(buflen);
+<a id='L185' name='L185'></a> 185     <em class='brace'>}</em>
+<a id='L186' name='L186'></a> 186 
+<a id='L187' name='L187'></a> 187     <em class='comment'>// Grow byteBuffer to a size larger than position() + needed</em>
+<a id='L188' name='L188'></a> 188     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7017.html#L60' title='Referred from 60 in src/com/sun/corba/se/impl/encoding/BufferManagerWriteGrow.java.'>growBuffer</a>(com.sun.corba.se.spi.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L189' name='L189'></a> 189     <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190         <em class='comment'>// This code used to live directly in CDROutputStream.grow.</em>
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192         <em class='comment'>// Recall that the byteBuffer size is 'really' the limit or</em>
+<a id='L193' name='L193'></a> 193         <em class='comment'>// buflen.</em>
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195         <strong class='reserved'>int</strong> newLength = byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>() * 2;
+<a id='L196' name='L196'></a> 196 
+<a id='L197' name='L197'></a> 197         <strong class='reserved'>while</strong> (<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>() + needed &gt;= newLength)
+<a id='L198' name='L198'></a> 198             newLength = newLength * 2;
+<a id='L199' name='L199'></a> 199 
+<a id='L200' name='L200'></a> 200         <a href='../S/7282.html#L33' title='Defined at 33 in src/com/sun/corba/se/pept/transport/ByteBufferPool.java.'>ByteBufferPool</a> byteBufferPool = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/17402.html' title='Multiple defined in 4 places.'>getByteBufferPool</a>();
+<a id='L201' name='L201'></a> 201         <a href='../D/1042.html' title='Multiple defined in 2 places.'>ByteBuffer</a> newBB = byteBufferPool.<a href='../D/17401.html' title='Multiple defined in 12 places.'>getByteBuffer</a>(newLength);
+<a id='L202' name='L202'></a> 202 
+<a id='L203' name='L203'></a> 203         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L204' name='L204'></a> 204         <em class='brace'>{</em>
+<a id='L205' name='L205'></a> 205             <em class='comment'>// print address of ByteBuffer just gotten</em>
+<a id='L206' name='L206'></a> 206             <strong class='reserved'>int</strong> newbbAddress = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L508' title='Defined at 508 in src/java/lang/System.java.'>identityHashCode</a>(newBB);
+<a id='L207' name='L207'></a> 207             <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> sb = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>(80);
+<a id='L208' name='L208'></a> 208             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("growBuffer() - got ByteBuffer id (");
+<a id='L209' name='L209'></a> 209             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(newbbAddress).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(") from ByteBufferPool.");
+<a id='L210' name='L210'></a> 210             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> msgStr = sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L211' name='L211'></a> 211             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(msgStr);
+<a id='L212' name='L212'></a> 212         <em class='brace'>}</em>
+<a id='L213' name='L213'></a> 213 
+<a id='L214' name='L214'></a> 214         byteBuffer.<a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>(0);
+<a id='L215' name='L215'></a> 215         newBB.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(byteBuffer);
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217         <em class='comment'>// return 'old' byteBuffer reference to the ByteBuffer pool</em>
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L219' name='L219'></a> 219         <em class='brace'>{</em>
+<a id='L220' name='L220'></a> 220             <em class='comment'>// print address of ByteBuffer being released</em>
+<a id='L221' name='L221'></a> 221             <strong class='reserved'>int</strong> bbAddress = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L508' title='Defined at 508 in src/java/lang/System.java.'>identityHashCode</a>(byteBuffer);
+<a id='L222' name='L222'></a> 222             <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> sb = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>(80);
+<a id='L223' name='L223'></a> 223             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("growBuffer() - releasing ByteBuffer id (");
+<a id='L224' name='L224'></a> 224             sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(bbAddress).<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(") to ByteBufferPool.");
+<a id='L225' name='L225'></a> 225             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> msgStr2 = sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L226' name='L226'></a> 226             <a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>(msgStr2);
+<a id='L227' name='L227'></a> 227         <em class='brace'>}</em>
+<a id='L228' name='L228'></a> 228         byteBufferPool.<a href='../D/30635.html' title='Multiple defined in 2 places.'>releaseByteBuffer</a>(byteBuffer);
+<a id='L229' name='L229'></a> 229 
+<a id='L230' name='L230'></a> 230         <em class='comment'>// update the byteBuffer with a larger ByteBuffer</em>
+<a id='L231' name='L231'></a> 231         byteBuffer = newBB;
+<a id='L232' name='L232'></a> 232 
+<a id='L233' name='L233'></a> 233         <em class='comment'>// limit and buflen must be set to newLength.</em>
+<a id='L234' name='L234'></a> 234         buflen = newLength;
+<a id='L235' name='L235'></a> 235         byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>(buflen);
+<a id='L236' name='L236'></a> 236     <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>()
+<a id='L239' name='L239'></a> 239     <em class='brace'>{</em>
+<a id='L240' name='L240'></a> 240         <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>("ByteBufferWithInfo:");
+<a id='L241' name='L241'></a> 241 
+<a id='L242' name='L242'></a> 242         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" buflen = " + buflen);
+<a id='L243' name='L243'></a> 243         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" byteBuffer.limit = " + byteBuffer.<a href='../D/26840.html' title='Multiple defined in 12 places.'>limit</a>());
+<a id='L244' name='L244'></a> 244         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" index = " + <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L245' name='L245'></a> 245         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" position = " + <a href='../D/29463.html' title='Multiple defined in 19 places.'>position</a>());
+<a id='L246' name='L246'></a> 246         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" needed = " + needed);
+<a id='L247' name='L247'></a> 247         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" byteBuffer = " + (byteBuffer == <strong class='reserved'>null</strong> ? "null" : "not null"));
+<a id='L248' name='L248'></a> 248         <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(" fragmented = " + fragmented);
+<a id='L249' name='L249'></a> 249 
+<a id='L250' name='L250'></a> 250         <strong class='reserved'>return</strong> <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L251' name='L251'></a> 251     <em class='brace'>}</em>
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13496.html' title='Multiple referred from 536 places.'>dprint</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>)
+<a id='L254' name='L254'></a> 254     <em class='brace'>{</em>
+<a id='L255' name='L255'></a> 255         <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/15139.html' title='Multiple defined in 48 places.'>dprint</a>("ByteBufferWithInfo", <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L256' name='L256'></a> 256     <em class='brace'>}</em>
+<a id='L257' name='L257'></a> 257 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L144'>[^]</a><a href='#L253'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

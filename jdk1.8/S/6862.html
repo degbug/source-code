@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/interceptors/IORInfoImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7740.html'>interceptors</a>/IORInfoImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L128'>[^]</a><a href='#L312'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L128' title='Defined at 128.'>get_effective_policy</a></li>
+<li><a href='#L144' title='Defined at 144.'>add_ior_component</a></li>
+<li><a href='#L168' title='Defined at 168.'>add_ior_component_to_profile</a></li>
+<li><a href='#L185' title='Defined at 185.'>getServerPort</a></li>
+<li><a href='#L199' title='Defined at 199.'>getObjectAdapter</a></li>
+<li><a href='#L204' title='Defined at 204.'>manager_id</a></li>
+<li><a href='#L211' title='Defined at 211.'>state</a></li>
+<li><a href='#L218' title='Defined at 218.'>adapter_template</a></li>
+<li><a href='#L237' title='Defined at 237.'>current_factory</a></li>
+<li><a href='#L244' title='Defined at 244.'>current_factory</a></li>
+<li><a href='#L255' title='Defined at 255.'>addIORComponentToProfileInternal</a></li>
+<li><a href='#L285' title='Defined at 285.'>nullParam</a></li>
+<li><a href='#L292' title='Defined at 292.'>checkState</a></li>
+<li><a href='#L298' title='Defined at 298.'>checkState</a></li>
+<li><a href='#L305' title='Defined at 305.'>makeStateEstablished</a></li>
+<li><a href='#L312' title='Defined at 312.'>makeStateDone</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.interceptors;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Iterator ;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.IOP.TaggedComponent;
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_INV_ORDER;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_PARAM;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.omg.CORBA.INTERNAL;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.omg.CORBA.CompletionStatus;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.omg.CORBA.INV_POLICY;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.CORBA.NO_IMPLEMENT;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> org.omg.CORBA.Policy;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.omg.CORBA.LocalObject;
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.IORInfo;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ObjectReferenceTemplate;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ObjectReferenceFactory;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB ;
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.corba.se.spi.oa.ObjectAdapter;
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> com.sun.corba.se.spi.legacy.interceptor.IORInfoExt;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> com.sun.corba.se.spi.legacy.interceptor.UnknownType;
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORTemplate;
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.TaggedProfileTemplate;
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.TaggedComponentFactoryFinder ;
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains ;
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.InterceptorsSystemException ;
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.OMGSystemException ;
+<a id='L60' name='L60'></a>  60 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException ;
+<a id='L61' name='L61'></a>  61 
+<a id='L62' name='L62'></a>  62 <em class='comment'>/**</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> * IORInfoImpl is the implementation of the IORInfo class, as described</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> * in orbos/99-12-02, section 7.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> */</em>
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../S/6860.html#L112' title='Referred from 112 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>IORInfoImpl</a>
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>extends</strong> <a href='../S/287.html#L57' title='Defined at 57 in src/org/omg/CORBA/LocalObject.java.'>LocalObject</a>
+<a id='L68' name='L68'></a>  68     <strong class='reserved'>implements</strong> <a href='../S/508.html#L20' title='Defined at 20 in src/org/omg/PortableInterceptor/IORInfo.java.'>IORInfo</a>, <a href='../S/7471.html#L30' title='Defined at 30 in src/com/sun/corba/se/spi/legacy/interceptor/IORInfoExt.java.'>IORInfoExt</a>
+<a id='L69' name='L69'></a>  69 <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70     <em class='comment'>// State values that determine which methods are allowed.</em>
+<a id='L71' name='L71'></a>  71     <em class='comment'>// get_effective_policy, manager_id, and adapter_state are valid unless STATE_DONE</em>
+<a id='L72' name='L72'></a>  72 
+<a id='L73' name='L73'></a>  73     <em class='comment'>// add_component, and add_component_to_profile are valid.</em>
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> STATE_INITIAL = 0 ;
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>// adapter_template, and R/W to current_factory are valid</em>
+<a id='L77' name='L77'></a>  77     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> STATE_ESTABLISHED = 1 ;
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <em class='comment'>// No methods are valid in this state</em>
+<a id='L80' name='L80'></a>  80     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> STATE_DONE = 2 ;
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <em class='comment'>// The current state of this object</em>
+<a id='L83' name='L83'></a>  83     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> = STATE_INITIAL ;
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85     <em class='comment'>// The ObjectAdapter associated with this IORInfo object.</em>
+<a id='L86' name='L86'></a>  86     <strong class='reserved'>private</strong> <a href='../S/7536.html#L161' title='Defined at 161 in src/com/sun/corba/se/spi/oa/ObjectAdapter.java.'>ObjectAdapter</a> adapter;
+<a id='L87' name='L87'></a>  87 
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>private</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ;
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90     <strong class='reserved'>private</strong> <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> orbutilWrapper ;
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>private</strong> <a href='../S/7266.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/InterceptorsSystemException.java.'>InterceptorsSystemException</a> wrapper ;
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>private</strong> <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a> omgWrapper ;
+<a id='L93' name='L93'></a>  93 
+<a id='L94' name='L94'></a>  94     <em class='comment'>/**</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * Creates a new IORInfo implementation.  This info object will establish</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * tagged components with the template for the provided IOR Template.</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     */</em>
+<a id='L98' name='L98'></a>  98     IORInfoImpl( <a href='../S/7536.html#L161' title='Defined at 161 in src/com/sun/corba/se/spi/oa/ObjectAdapter.java.'>ObjectAdapter</a> adapter ) <em class='brace'>{</em>
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = adapter.<a href='../D/21103.html' title='Multiple defined in 14 places.'>getORB</a>() ;
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101         orbutilWrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L102' name='L102'></a> 102             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PROTOCOL ) ;
+<a id='L103' name='L103'></a> 103         wrapper = <a href='../S/7266.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/InterceptorsSystemException.java.'>InterceptorsSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L104' name='L104'></a> 104             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PROTOCOL ) ;
+<a id='L105' name='L105'></a> 105         omgWrapper = <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L106' name='L106'></a> 106             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PROTOCOL ) ;
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108         <strong class='reserved'>this</strong>.adapter = adapter;
+<a id='L109' name='L109'></a> 109     <em class='brace'>}</em>
+<a id='L110' name='L110'></a> 110 
+<a id='L111' name='L111'></a> 111     <em class='comment'>/**</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * An ORB service implementation may determine what server side policy</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * of a particular type is in effect for an IOR being constructed by</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * calling the get_effective_policy operation.  When the IOR being</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     * constructed is for an object implemented using a POA, all Policy</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * objects passed to the PortableServer::POA::create_POA call that</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * created that POA are accessible via get_effective_policy.</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * If a policy for the given type is not known to the ORB, then this</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     * operation will raise INV_POLICY with a standard minor code of 2.</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     * @param type The CORBA::PolicyType specifying the type of policy to</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     *   return.</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * @return The effective CORBA::Policy object of the requested type.</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     *   If the given policy type is known, but no policy of that tpye is</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     *   in effect, then this operation will return a nil object reference.</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     */</em>
+<a id='L128' name='L128'></a> 128     <strong class='reserved'>public</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> <a href='../R/19978.html' title='Multiple referred from 2 places.'>get_effective_policy</a> (<strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>) <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL, STATE_ESTABLISHED ) ;
+<a id='L130' name='L130'></a> 130 
+<a id='L131' name='L131'></a> 131         <strong class='reserved'>return</strong> adapter.<a href='../D/18656.html' title='Multiple defined in 4 places.'>getEffectivePolicy</a>( <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> );
+<a id='L132' name='L132'></a> 132     <em class='brace'>}</em>
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134     <em class='comment'>/**</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     * A portable ORB service implementation calls this method from its</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * implementation of establish_components to add a tagged component to</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * the set which will be included when constructing IORs.  The</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * components in this set will be included in all profiles.</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * Any number of components may exist with the same component ID.</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     *</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @param tagged_component The IOP::TaggedComponent to add</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     */</em>
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> add_ior_component (<a href='../D/8828.html' title='Multiple defined in 2 places.'>TaggedComponent</a> tagged_component) <em class='brace'>{</em>
+<a id='L145' name='L145'></a> 145         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL ) ;
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147         <strong class='reserved'>if</strong>( tagged_component == <strong class='reserved'>null</strong> ) <a href='../D/28353.html' title='Multiple defined in 8 places.'>nullParam</a>();
+<a id='L148' name='L148'></a> 148         <a href='../S/6862.html#L255' title='Defined at 255 in src/com/sun/corba/se/impl/interceptors/IORInfoImpl.java.'>addIORComponentToProfileInternal</a>( tagged_component,
+<a id='L149' name='L149'></a> 149                                           adapter.<a href='../D/19536.html' title='Multiple defined in 2 places.'>getIORTemplate</a>().<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>());
+<a id='L150' name='L150'></a> 150     <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151 
+<a id='L152' name='L152'></a> 152     <em class='comment'>/**</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * A portable ORB service implementation calls this method from its</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * implementation of establish_components to add a tagged component to</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * the set which will be included when constructing IORs.  The</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * components in this set will be included in the specified profile.</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     * Any number of components may exist with the same component ID.</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * &lt;p&gt;</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * If the given profile ID does not define a known profile or it is</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * impossible to add components to thgat profile, BAD_PARAM is raised</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * with a minor code of TBD_BP + 3.</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     *</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * @param tagged_component The IOP::TaggedComponent to add.</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * @param profile_id The IOP::ProfileId tof the profile to which this</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     *     component will be added.</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     */</em>
+<a id='L168' name='L168'></a> 168     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> add_ior_component_to_profile (
+<a id='L169' name='L169'></a> 169         <a href='../D/8828.html' title='Multiple defined in 2 places.'>TaggedComponent</a> tagged_component, <strong class='reserved'>int</strong> profile_id )
+<a id='L170' name='L170'></a> 170     <em class='brace'>{</em>
+<a id='L171' name='L171'></a> 171         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL ) ;
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173         <strong class='reserved'>if</strong>( tagged_component == <strong class='reserved'>null</strong> ) <a href='../D/28353.html' title='Multiple defined in 8 places.'>nullParam</a>();
+<a id='L174' name='L174'></a> 174         <a href='../S/6862.html#L255' title='Defined at 255 in src/com/sun/corba/se/impl/interceptors/IORInfoImpl.java.'>addIORComponentToProfileInternal</a>(
+<a id='L175' name='L175'></a> 175             tagged_component, adapter.<a href='../D/19536.html' title='Multiple defined in 2 places.'>getIORTemplate</a>().<a href='../D/26594.html' title='Multiple defined in 4 places.'>iteratorById</a>(
+<a id='L176' name='L176'></a> 176             profile_id ) );
+<a id='L177' name='L177'></a> 177     <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179     <em class='comment'>/**</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * @param type The type of the server port</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     *     (see connection.ORBSocketFactory for discussion).</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * @return The listen port number for that type.</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * @throws UnknownType if no port of the given type is found.</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     */</em>
+<a id='L185' name='L185'></a> 185     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> getServerPort(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>)
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>throws</strong> <a href='../S/7469.html#L28' title='Defined at 28 in src/com/sun/corba/se/spi/legacy/interceptor/UnknownType.java.'>UnknownType</a>
+<a id='L187' name='L187'></a> 187     <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL, STATE_ESTABLISHED ) ;
+<a id='L189' name='L189'></a> 189 
+<a id='L190' name='L190'></a> 190         <strong class='reserved'>int</strong> port =
+<a id='L191' name='L191'></a> 191             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20072.html' title='Multiple defined in 3 places.'>getLegacyServerSocketManager</a>()
+<a id='L192' name='L192'></a> 192                 .<a href='../D/26807.html' title='Multiple defined in 2 places.'>legacyGetTransientOrPersistentServerPort</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>);
+<a id='L193' name='L193'></a> 193         <strong class='reserved'>if</strong> (port == -1) <em class='brace'>{</em>
+<a id='L194' name='L194'></a> 194             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/7469.html#L28' title='Defined at 28 in src/com/sun/corba/se/spi/legacy/interceptor/UnknownType.java.'>UnknownType</a>();
+<a id='L195' name='L195'></a> 195         <em class='brace'>}</em>
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>return</strong> port;
+<a id='L197' name='L197'></a> 197     <em class='brace'>}</em>
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199     <strong class='reserved'>public</strong> <a href='../S/7536.html#L161' title='Defined at 161 in src/com/sun/corba/se/spi/oa/ObjectAdapter.java.'>ObjectAdapter</a> getObjectAdapter()
+<a id='L200' name='L200'></a> 200     <em class='brace'>{</em>
+<a id='L201' name='L201'></a> 201         <strong class='reserved'>return</strong> adapter;
+<a id='L202' name='L202'></a> 202     <em class='brace'>}</em>
+<a id='L203' name='L203'></a> 203 
+<a id='L204' name='L204'></a> 204     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> manager_id()
+<a id='L205' name='L205'></a> 205     <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL, STATE_ESTABLISHED) ;
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208         <strong class='reserved'>return</strong> adapter.<a href='../D/20361.html' title='Multiple defined in 5 places.'>getManagerId</a>() ;
+<a id='L209' name='L209'></a> 209     <em class='brace'>}</em>
+<a id='L210' name='L210'></a> 210 
+<a id='L211' name='L211'></a> 211     <strong class='reserved'>public</strong> <strong class='reserved'>short</strong> <a href='../R/28873.html' title='Multiple referred from 2384 places.'>state</a>()
+<a id='L212' name='L212'></a> 212     <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL, STATE_ESTABLISHED) ;
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215         <strong class='reserved'>return</strong> adapter.<a href='../D/22724.html' title='Multiple defined in 28 places.'>getState</a>() ;
+<a id='L216' name='L216'></a> 216     <em class='brace'>}</em>
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218     <strong class='reserved'>public</strong> <a href='../S/458.html#L19' title='Defined at 19 in src/org/omg/PortableInterceptor/ObjectReferenceTemplate.java.'>ObjectReferenceTemplate</a> adapter_template()
+<a id='L219' name='L219'></a> 219     <em class='brace'>{</em>
+<a id='L220' name='L220'></a> 220         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_ESTABLISHED) ;
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222         <em class='comment'>// At this point, the iortemp must contain only a single</em>
+<a id='L223' name='L223'></a> 223         <em class='comment'>// IIOPProfileTemplate.  This is a restriction of our</em>
+<a id='L224' name='L224'></a> 224         <em class='comment'>// implementation.  Also, note the the ObjectReferenceTemplate</em>
+<a id='L225' name='L225'></a> 225         <em class='comment'>// is called when a certain POA is created in a certain ORB</em>
+<a id='L226' name='L226'></a> 226         <em class='comment'>// in a certain server, so the server_id, orb_id, and</em>
+<a id='L227' name='L227'></a> 227         <em class='comment'>// poa_id operations must be well-defined no matter what</em>
+<a id='L228' name='L228'></a> 228         <em class='comment'>// kind of implementation is used: e.g., if a POA creates</em>
+<a id='L229' name='L229'></a> 229         <em class='comment'>// IORs with multiple profiles, they must still all agree</em>
+<a id='L230' name='L230'></a> 230         <em class='comment'>// about this information.  Thus, we are justified in</em>
+<a id='L231' name='L231'></a> 231         <em class='comment'>// extracting the single IIOPProfileTemplate to create</em>
+<a id='L232' name='L232'></a> 232         <em class='comment'>// an ObjectReferenceTemplate here.</em>
+<a id='L233' name='L233'></a> 233 
+<a id='L234' name='L234'></a> 234         <strong class='reserved'>return</strong> adapter.<a href='../D/16820.html' title='Multiple defined in 2 places.'>getAdapterTemplate</a>() ;
+<a id='L235' name='L235'></a> 235     <em class='brace'>}</em>
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237     <strong class='reserved'>public</strong> <a href='../S/506.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/ObjectReferenceFactory.java.'>ObjectReferenceFactory</a> current_factory()
+<a id='L238' name='L238'></a> 238     <em class='brace'>{</em>
+<a id='L239' name='L239'></a> 239         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_ESTABLISHED) ;
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241         <strong class='reserved'>return</strong> adapter.<a href='../D/18102.html' title='Multiple defined in 2 places.'>getCurrentFactory</a>() ;
+<a id='L242' name='L242'></a> 242     <em class='brace'>}</em>
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> current_factory( <a href='../S/506.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/ObjectReferenceFactory.java.'>ObjectReferenceFactory</a> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> )
+<a id='L245' name='L245'></a> 245     <em class='brace'>{</em>
+<a id='L246' name='L246'></a> 246         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_ESTABLISHED) ;
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248         adapter.<a href='../D/32307.html' title='Multiple defined in 2 places.'>setCurrentFactory</a>( <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> ) ;
+<a id='L249' name='L249'></a> 249     <em class='brace'>}</em>
+<a id='L250' name='L250'></a> 250 
+<a id='L251' name='L251'></a> 251     <em class='comment'>/**</em>
+<a id='L252' name='L252'></a> 252 <em class='comment'>     * Internal utility method to add an IOR component to the set of profiles</em>
+<a id='L253' name='L253'></a> 253 <em class='comment'>     * present in the iterator.</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>     */</em>
+<a id='L255' name='L255'></a> 255     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/9778.html' title='Multiple referred from 2 places.'>addIORComponentToProfileInternal</a>(
+<a id='L256' name='L256'></a> 256         <a href='../D/8828.html' title='Multiple defined in 2 places.'>TaggedComponent</a> tagged_component, <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a> )
+<a id='L257' name='L257'></a> 257     <em class='brace'>{</em>
+<a id='L258' name='L258'></a> 258         <em class='comment'>// Convert the given IOP::TaggedComponent into the appropriate</em>
+<a id='L259' name='L259'></a> 259         <em class='comment'>// type for the TaggedProfileTemplate</em>
+<a id='L260' name='L260'></a> 260         <a href='../S/7505.html#L28' title='Defined at 28 in src/com/sun/corba/se/spi/ior/TaggedComponentFactoryFinder.java.'>TaggedComponentFactoryFinder</a> finder =
+<a id='L261' name='L261'></a> 261             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/22990.html' title='Multiple defined in 3 places.'>getTaggedComponentFactoryFinder</a>();
+<a id='L262' name='L262'></a> 262         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> newTaggedComponent = finder.<a href='../D/13587.html' title='Multiple defined in 90 places.'>create</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, tagged_component );
+<a id='L263' name='L263'></a> 263 
+<a id='L264' name='L264'></a> 264         <em class='comment'>// Iterate through TaggedProfileTemplates and add the given tagged</em>
+<a id='L265' name='L265'></a> 265         <em class='comment'>// component to the appropriate one(s).</em>
+<a id='L266' name='L266'></a> 266         <strong class='reserved'>boolean</strong> found = <strong class='reserved'>false</strong>;
+<a id='L267' name='L267'></a> 267         <strong class='reserved'>while</strong>( <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>() ) <em class='brace'>{</em>
+<a id='L268' name='L268'></a> 268             found = <strong class='reserved'>true</strong>;
+<a id='L269' name='L269'></a> 269             <a href='../S/7493.html#L46' title='Defined at 46 in src/com/sun/corba/se/spi/ior/TaggedProfileTemplate.java.'>TaggedProfileTemplate</a> taggedProfileTemplate =
+<a id='L270' name='L270'></a> 270                 (<a href='../S/7493.html#L46' title='Defined at 46 in src/com/sun/corba/se/spi/ior/TaggedProfileTemplate.java.'>TaggedProfileTemplate</a>)<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L271' name='L271'></a> 271             taggedProfileTemplate.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>( newTaggedComponent );
+<a id='L272' name='L272'></a> 272         <em class='brace'>}</em>
+<a id='L273' name='L273'></a> 273 
+<a id='L274' name='L274'></a> 274         <em class='comment'>// If no profile was found with the given id, throw a BAD_PARAM:</em>
+<a id='L275' name='L275'></a> 275         <em class='comment'>// (See orbos/00-08-06, section 21.5.3.3.)</em>
+<a id='L276' name='L276'></a> 276         <strong class='reserved'>if</strong>( !found ) <em class='brace'>{</em>
+<a id='L277' name='L277'></a> 277             <strong class='reserved'>throw</strong> omgWrapper.<a href='../D/25011.html' title='Multiple defined in 4 places.'>invalidProfileId</a>() ;
+<a id='L278' name='L278'></a> 278         <em class='brace'>}</em>
+<a id='L279' name='L279'></a> 279     <em class='brace'>}</em>
+<a id='L280' name='L280'></a> 280 
+<a id='L281' name='L281'></a> 281     <em class='comment'>/**</em>
+<a id='L282' name='L282'></a> 282 <em class='comment'>     * Called when an invalid null parameter was passed.  Throws a</em>
+<a id='L283' name='L283'></a> 283 <em class='comment'>     * BAD_PARAM with a minor code of 1</em>
+<a id='L284' name='L284'></a> 284 <em class='comment'>     */</em>
+<a id='L285' name='L285'></a> 285     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/23843.html' title='Multiple referred from 47 places.'>nullParam</a>()
+<a id='L286' name='L286'></a> 286     <em class='brace'>{</em>
+<a id='L287' name='L287'></a> 287         <strong class='reserved'>throw</strong> orbutilWrapper.<a href='../D/28353.html' title='Multiple defined in 8 places.'>nullParam</a>() ;
+<a id='L288' name='L288'></a> 288     <em class='brace'>}</em>
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290     <em class='comment'>// REVISIT: add minor codes!</em>
+<a id='L291' name='L291'></a> 291 
+<a id='L292' name='L292'></a> 292     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/11370.html' title='Multiple referred from 32 places.'>checkState</a>( <strong class='reserved'>int</strong> expectedState )
+<a id='L293' name='L293'></a> 293     <em class='brace'>{</em>
+<a id='L294' name='L294'></a> 294         <strong class='reserved'>if</strong> (expectedState != <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>)
+<a id='L295' name='L295'></a> 295             <strong class='reserved'>throw</strong> wrapper.<a href='../D/11759.html' title='Multiple defined in 4 places.'>badState1</a>( <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(expectedState), <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) ) ;
+<a id='L296' name='L296'></a> 296     <em class='brace'>}</em>
+<a id='L297' name='L297'></a> 297 
+<a id='L298' name='L298'></a> 298     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/11370.html' title='Multiple referred from 32 places.'>checkState</a>( <strong class='reserved'>int</strong> expectedState1, <strong class='reserved'>int</strong> expectedState2 )
+<a id='L299' name='L299'></a> 299     <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300         <strong class='reserved'>if</strong> ((expectedState1 != <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) &amp;&amp; (expectedState2 != <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>))
+<a id='L301' name='L301'></a> 301             <strong class='reserved'>throw</strong> wrapper.<a href='../D/11760.html' title='Multiple defined in 4 places.'>badState2</a>( <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(expectedState1),
+<a id='L302' name='L302'></a> 302                 <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(expectedState2), <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) ) ;
+<a id='L303' name='L303'></a> 303     <em class='brace'>}</em>
+<a id='L304' name='L304'></a> 304 
+<a id='L305' name='L305'></a> 305     <strong class='reserved'>void</strong> <a href='../S/6860.html#L139' title='Referred from 139 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>makeStateEstablished</a>()
+<a id='L306' name='L306'></a> 306     <em class='brace'>{</em>
+<a id='L307' name='L307'></a> 307         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_INITIAL ) ;
+<a id='L308' name='L308'></a> 308 
+<a id='L309' name='L309'></a> 309         <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> = STATE_ESTABLISHED ;
+<a id='L310' name='L310'></a> 310     <em class='brace'>}</em>
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312     <strong class='reserved'>void</strong> <a href='../S/6860.html#L155' title='Referred from 155 in src/com/sun/corba/se/impl/interceptors/InterceptorInvoker.java.'>makeStateDone</a>()
+<a id='L313' name='L313'></a> 313     <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>( STATE_ESTABLISHED ) ;
+<a id='L315' name='L315'></a> 315 
+<a id='L316' name='L316'></a> 316         <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> = STATE_DONE ;
+<a id='L317' name='L317'></a> 317     <em class='brace'>}</em>
+<a id='L318' name='L318'></a> 318 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L128'>[^]</a><a href='#L312'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

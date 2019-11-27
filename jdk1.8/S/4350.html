@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/accessibility/AccessibleText.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8051.html'>accessibility</a>/AccessibleText.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L100'>[^]</a><a href='#L187'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L100' title='Defined at 100.'>getIndexAtPoint</a></li>
+<li><a href='#L111' title='Defined at 111.'>getCharacterBounds</a></li>
+<li><a href='#L118' title='Defined at 118.'>getCharCount</a></li>
+<li><a href='#L127' title='Defined at 127.'>getCaretPosition</a></li>
+<li><a href='#L136' title='Defined at 136.'>getAtIndex</a></li>
+<li><a href='#L145' title='Defined at 145.'>getAfterIndex</a></li>
+<li><a href='#L154' title='Defined at 154.'>getBeforeIndex</a></li>
+<li><a href='#L162' title='Defined at 162.'>getCharacterAttribute</a></li>
+<li><a href='#L171' title='Defined at 171.'>getSelectionStart</a></li>
+<li><a href='#L180' title='Defined at 180.'>getSelectionEnd</a></li>
+<li><a href='#L187' title='Defined at 187.'>getSelectedText</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.accessibility;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.*;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.awt.*;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> javax.swing.text.*;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <em class='comment'>/**</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * &lt;P&gt;The AccessibleText interface should be implemented by all</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * classes that present textual information on the display.  This interface</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * provides the standard mechanism for an assistive technology to access</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> * that text via its content, attributes, and spatial location.</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * Applications can determine if an object supports the AccessibleText</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * interface by first obtaining its AccessibleContext (see {@link Accessible})</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * and then calling the {@link AccessibleContext#getAccessibleText} method of</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * AccessibleContext.  If the return value is not null, the object supports this</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * interface.</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * @see Accessible</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * @see Accessible#getAccessibleContext</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * @see AccessibleContext</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * @see AccessibleContext#getAccessibleText</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> *</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * @author      Peter Korn</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> */</em>
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/261.html' title='Multiple referred from 96 places.'>AccessibleText</a> <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54     <em class='comment'>/**</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     * Constant used to indicate that the part of the text that should be</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     * retrieved is a character.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     *</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * @see #getAtIndex</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     * @see #getAfterIndex</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     * @see #getBeforeIndex</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     */</em>
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> CHARACTER = 1;
+<a id='L63' name='L63'></a>  63 
+<a id='L64' name='L64'></a>  64     <em class='comment'>/**</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * Constant used to indicate that the part of the text that should be</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * retrieved is a word.</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     *</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * @see #getAtIndex</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     * @see #getAfterIndex</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * @see #getBeforeIndex</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     */</em>
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> WORD = 2;
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <em class='comment'>/**</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * Constant used to indicate that the part of the text that should be</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     * retrieved is a sentence.</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     *</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * A sentence is a string of words which expresses an assertion,</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * a question, a command, a wish, an exclamation, or the performance</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * of an action. In English locales, the string usually begins with</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * a capital letter and concludes with appropriate end punctuation;</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * such as a period, question or exclamation mark. Other locales may</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * use different capitalization and/or punctuation.</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     *</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * @see #getAtIndex</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * @see #getAfterIndex</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * @see #getBeforeIndex</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     */</em>
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> SENTENCE = 3;
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91     <em class='comment'>/**</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * Given a point in local coordinates, return the zero-based index</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * of the character under that Point.  If the point is invalid,</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * this method returns -1.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     *</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * @param p the Point in local coordinates</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     * @return the zero-based index of the character under Point p; if</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     * Point is invalid return -1.</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     */</em>
+<a id='L100' name='L100'></a> 100     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/17038.html' title='Multiple referred from 2 places.'>getIndexAtPoint</a>(<a href='../S/2123.html#L38' title='Defined at 38 in src/java/awt/Point.java.'>Point</a> p);
+<a id='L101' name='L101'></a> 101 
+<a id='L102' name='L102'></a> 102     <em class='comment'>/**</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * Determines the bounding box of the character at the given</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * index into the string.  The bounds are returned in local</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * coordinates.  If the index is invalid an empty rectangle is returned.</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     *</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * @param i the index into the String</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * @return the screen coordinates of the character's bounding box,</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * if index is invalid return an empty rectangle.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     */</em>
+<a id='L111' name='L111'></a> 111     <strong class='reserved'>public</strong> <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> <a href='../R/15522.html' title='Multiple referred from 2 places.'>getCharacterBounds</a>(<strong class='reserved'>int</strong> i);
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113     <em class='comment'>/**</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     * Returns the number of characters (valid indicies)</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>     *</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>     * @return the number of characters</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     */</em>
+<a id='L118' name='L118'></a> 118     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/15506.html' title='Multiple referred from 22 places.'>getCharCount</a>();
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120     <em class='comment'>/**</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     * Returns the zero-based offset of the caret.</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>     *</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>     * Note: That to the right of the caret will have the same index</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * value as the offset (the caret is between two characters).</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * @return the zero-based offset of the caret.</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     */</em>
+<a id='L127' name='L127'></a> 127     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/15451.html' title='Multiple referred from 31 places.'>getCaretPosition</a>();
+<a id='L128' name='L128'></a> 128 
+<a id='L129' name='L129'></a> 129     <em class='comment'>/**</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * Returns the String at a given index.</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     * @param part the CHARACTER, WORD, or SENTENCE to retrieve</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * @param index an index within the text</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * @return the letter, word, or sentence</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     */</em>
+<a id='L136' name='L136'></a> 136     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/15131.html' title='Multiple referred from 9 places.'>getAtIndex</a>(<strong class='reserved'>int</strong> part, <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L137' name='L137'></a> 137 
+<a id='L138' name='L138'></a> 138     <em class='comment'>/**</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * Returns the String after a given index.</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     *</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * @param part the CHARACTER, WORD, or SENTENCE to retrieve</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @param index an index within the text</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * @return the letter, word, or sentence</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     */</em>
+<a id='L145' name='L145'></a> 145     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/14997.html' title='Multiple referred from 3 places.'>getAfterIndex</a>(<strong class='reserved'>int</strong> part, <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147     <em class='comment'>/**</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * Returns the String before a given index.</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     *</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * @param part the CHARACTER, WORD, or SENTENCE to retrieve</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * @param index an index within the text</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * @return the letter, word, or sentence</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     */</em>
+<a id='L154' name='L154'></a> 154     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/15257.html' title='Multiple referred from 3 places.'>getBeforeIndex</a>(<strong class='reserved'>int</strong> part, <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156     <em class='comment'>/**</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * Returns the AttributeSet for a given character at a given index</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     *</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * @param i the zero-based index into the text</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     * @return the AttributeSet of the character</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     */</em>
+<a id='L162' name='L162'></a> 162     <strong class='reserved'>public</strong> <a href='../D/585.html' title='Multiple defined in 3 places.'>AttributeSet</a> <a href='../R/15521.html' title='Multiple referred from 2 places.'>getCharacterAttribute</a>(<strong class='reserved'>int</strong> i);
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164     <em class='comment'>/**</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * Returns the start offset within the selected text.</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * If there is no selection, but there is</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * a caret, the start and end offsets will be the same.</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     *</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>     * @return the index into the text of the start of the selection</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     */</em>
+<a id='L171' name='L171'></a> 171     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/18946.html' title='Multiple referred from 34 places.'>getSelectionStart</a>();
+<a id='L172' name='L172'></a> 172 
+<a id='L173' name='L173'></a> 173     <em class='comment'>/**</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     * Returns the end offset within the selected text.</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * If there is no selection, but there is</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * a caret, the start and end offsets will be the same.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     *</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * @return the index into the text of the end of the selection</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     */</em>
+<a id='L180' name='L180'></a> 180     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/18937.html' title='Multiple referred from 24 places.'>getSelectionEnd</a>();
+<a id='L181' name='L181'></a> 181 
+<a id='L182' name='L182'></a> 182     <em class='comment'>/**</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     * Returns the portion of the text that is selected.</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     *</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * @return the String portion of the text that is selected</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     */</em>
+<a id='L187' name='L187'></a> 187     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18928.html' title='Multiple referred from 11 places.'>getSelectedText</a>();
+<a id='L188' name='L188'></a> 188 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L100'>[^]</a><a href='#L187'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

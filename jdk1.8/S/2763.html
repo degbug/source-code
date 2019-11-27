@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/swing/TimerQueue.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8107.html'>swing</a>/TimerQueue.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L79'>[^]</a><a href='#L279'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L79' title='Defined at 79.'>sharedInstance</a></li>
+<li><a href='#L93' title='Defined at 93.'>startIfNeeded</a></li>
+<li><a href='#L117' title='Defined at 117.'>addTimer</a></li>
+<li><a href='#L131' title='Defined at 131.'>addTimer</a></li>
+<li><a href='#L144' title='Defined at 144.'>removeTimer</a></li>
+<li><a href='#L156' title='Defined at 156.'>containsTimer</a></li>
+<li><a href='#L166' title='Defined at 166.'>run</a></li>
+<li><a href='#L219' title='Defined at 219.'>toString</a></li>
+<li><a href='#L237' title='Defined at 237.'>now</a></li>
+<li><a href='#L267' title='Defined at 267.'>getDelay</a></li>
+<li><a href='#L271' title='Defined at 271.'>setTime</a></li>
+<li><a href='#L275' title='Defined at 275.'>getTimer</a></li>
+<li><a href='#L279' title='Defined at 279.'>compareTo</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.swing;
+<a id='L29' name='L29'></a>  29 
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.util.*;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.util.concurrent.*;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.util.concurrent.locks.*;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.util.concurrent.atomic.AtomicLong;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> sun.awt.AppContext;
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <em class='comment'>/**</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * Internal class to manage all Timers using one thread.</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * TimerQueue manages a queue of Timers. The Timers are chained</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * together in a linked list sorted by the order in which they will expire.</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> *</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * @author Dave Moore</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * @author Igor Kushnirskiy</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> */</em>
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>class</strong> <a href='../R/8173.html' title='Multiple referred from 8 places.'>TimerQueue</a> <strong class='reserved'>implements</strong> <a href='../S/1758.html#L56' title='Defined at 56 in src/java/lang/Runnable.java.'>Runnable</a>
+<a id='L49' name='L49'></a>  49 <em class='brace'>{</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> sharedInstanceKey =
+<a id='L51' name='L51'></a>  51         <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>("TimerQueue.sharedInstanceKey");
+<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> expiredTimersKey =
+<a id='L53' name='L53'></a>  53         <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>("TimerQueue.expiredTimersKey");
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1096.html#L70' title='Defined at 70 in src/java/util/concurrent/DelayQueue.java.'>DelayQueue</a>&lt;<a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a>&gt; queue;
+<a id='L56' name='L56'></a>  56     <strong class='reserved'>private</strong> <strong class='reserved'>volatile</strong> <strong class='reserved'>boolean</strong> running;
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/5200.html' title='Multiple defined in 4 places.'>Lock</a> runningLock;
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59     <em class='comment'>/* Lock object used in place of class object for synchronization.</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     * (4187686)</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     */</em>
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> classLock = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>();
+<a id='L63' name='L63'></a>  63 
+<a id='L64' name='L64'></a>  64     <em class='comment'>/** Base of nanosecond timings, to avoid wrapping */</em>
+<a id='L65' name='L65'></a>  65     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> NANO_ORIGIN = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L399' title='Defined at 399 in src/java/lang/System.java.'>nanoTime</a>();
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67     <em class='comment'>/**</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * Constructor for TimerQueue.</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     */</em>
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>public</strong> TimerQueue() <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71         <strong class='reserved'>super</strong>();
+<a id='L72' name='L72'></a>  72         queue = <strong class='reserved'>new</strong> <a href='../S/1096.html#L70' title='Defined at 70 in src/java/util/concurrent/DelayQueue.java.'>DelayQueue</a>&lt;<a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a>&gt;();
+<a id='L73' name='L73'></a>  73         <em class='comment'>// Now start the TimerQueue thread.</em>
+<a id='L74' name='L74'></a>  74         runningLock = <strong class='reserved'>new</strong> <a href='../S/1047.html#L106' title='Defined at 106 in src/java/util/concurrent/locks/ReentrantLock.java.'>ReentrantLock</a>();
+<a id='L75' name='L75'></a>  75         <a href='../S/2763.html#L93' title='Defined at 93 in src/javax/swing/TimerQueue.java.'>startIfNeeded</a>();
+<a id='L76' name='L76'></a>  76     <em class='brace'>}</em>
+<a id='L77' name='L77'></a>  77 
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../S/2763.html#L48' title='Defined at 48 in src/javax/swing/TimerQueue.java.'>TimerQueue</a> <a href='../R/28498.html' title='Multiple referred from 27 places.'>sharedInstance</a>() <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80         <strong class='reserved'>synchronized</strong> (classLock) <em class='brace'>{</em>
+<a id='L81' name='L81'></a>  81             <a href='../S/2763.html#L48' title='Defined at 48 in src/javax/swing/TimerQueue.java.'>TimerQueue</a> sharedInst = (<a href='../S/2763.html#L48' title='Defined at 48 in src/javax/swing/TimerQueue.java.'>TimerQueue</a>)
+<a id='L82' name='L82'></a>  82                                     <a href='../S/3164.html#L53' title='Defined at 53 in src/javax/swing/SwingUtilities.java.'>SwingUtilities</a>.<a href='../S/3164.html#L1859' title='Defined at 1859 in src/javax/swing/SwingUtilities.java.'>appContextGet</a>(
+<a id='L83' name='L83'></a>  83                                                         sharedInstanceKey);
+<a id='L84' name='L84'></a>  84             <strong class='reserved'>if</strong> (sharedInst == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L85' name='L85'></a>  85                 sharedInst = <strong class='reserved'>new</strong> <a href='../S/2763.html#L48' title='Defined at 48 in src/javax/swing/TimerQueue.java.'>TimerQueue</a>();
+<a id='L86' name='L86'></a>  86                 <a href='../S/3164.html#L53' title='Defined at 53 in src/javax/swing/SwingUtilities.java.'>SwingUtilities</a>.<a href='../S/3164.html#L1863' title='Defined at 1863 in src/javax/swing/SwingUtilities.java.'>appContextPut</a>(sharedInstanceKey, sharedInst);
+<a id='L87' name='L87'></a>  87             <em class='brace'>}</em>
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>return</strong> sharedInst;
+<a id='L89' name='L89'></a>  89         <em class='brace'>}</em>
+<a id='L90' name='L90'></a>  90     <em class='brace'>}</em>
+<a id='L91' name='L91'></a>  91 
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93     <strong class='reserved'>void</strong> <a href='../R/28823.html' title='Multiple referred from 2 places.'>startIfNeeded</a>() <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94         <strong class='reserved'>if</strong> (! running) <em class='brace'>{</em>
+<a id='L95' name='L95'></a>  95             runningLock.<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L96' name='L96'></a>  96             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97                 <strong class='reserved'>final</strong> <a href='../S/1756.html#L57' title='Defined at 57 in src/java/lang/ThreadGroup.java.'>ThreadGroup</a> threadGroup =
+<a id='L98' name='L98'></a>  98                     AppContext.getAppContext().<a href='../D/23094.html' title='Multiple defined in 4 places.'>getThreadGroup</a>();
+<a id='L99' name='L99'></a>  99                 <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
+<a id='L100' name='L100'></a> 100                     <strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>&gt;() <em class='brace'>{</em>
+<a id='L101' name='L101'></a> 101                     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102                         <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a> timerThread = <strong class='reserved'>new</strong> <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>(threadGroup, <a href='../S/2763.html#L48' title='Defined at 48 in src/javax/swing/TimerQueue.java.'>TimerQueue</a>.<strong class='reserved'>this</strong>,
+<a id='L103' name='L103'></a> 103                                                         "TimerQueue");
+<a id='L104' name='L104'></a> 104                         timerThread.<a href='../D/32347.html' title='Multiple defined in 2 places.'>setDaemon</a>(<strong class='reserved'>true</strong>);
+<a id='L105' name='L105'></a> 105                         timerThread.<a href='../D/33607.html' title='Multiple defined in 2 places.'>setPriority</a>(<a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.NORM_PRIORITY);
+<a id='L106' name='L106'></a> 106                         timerThread.<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>();
+<a id='L107' name='L107'></a> 107                         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L108' name='L108'></a> 108                     <em class='brace'>}</em>
+<a id='L109' name='L109'></a> 109                 <em class='brace'>}</em>);
+<a id='L110' name='L110'></a> 110                 running = <strong class='reserved'>true</strong>;
+<a id='L111' name='L111'></a> 111             <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L112' name='L112'></a> 112                 runningLock.<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L113' name='L113'></a> 113             <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114         <em class='brace'>}</em>
+<a id='L115' name='L115'></a> 115     <em class='brace'>}</em>
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117     <strong class='reserved'>void</strong> <a href='../R/9992.html' title='Multiple referred from 3 places.'>addTimer</a>(<a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer, <strong class='reserved'>long</strong> delayMillis) <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118         timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L119' name='L119'></a> 119         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L120' name='L120'></a> 120             <em class='comment'>// If the Timer is already in the queue, then ignore the add.</em>
+<a id='L121' name='L121'></a> 121             <strong class='reserved'>if</strong> (! <a href='../S/2763.html#L156' title='Defined at 156 in src/javax/swing/TimerQueue.java.'>containsTimer</a>(timer)) <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122                 <a href='../D/11115.html' title='Multiple defined in 2 places.'>addTimer</a>(<strong class='reserved'>new</strong> <a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a>(timer,
+<a id='L123' name='L123'></a> 123                                       <a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a>.MILLISECONDS.<a href='../D/35449.html' title='Multiple defined in 2 places.'>toNanos</a>(delayMillis)
+<a id='L124' name='L124'></a> 124                                       + <a href='../D/28344.html' title='Multiple defined in 43 places.'>now</a>()));
+<a id='L125' name='L125'></a> 125             <em class='brace'>}</em>
+<a id='L126' name='L126'></a> 126         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127             timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L128' name='L128'></a> 128         <em class='brace'>}</em>
+<a id='L129' name='L129'></a> 129     <em class='brace'>}</em>
+<a id='L130' name='L130'></a> 130 
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/9992.html' title='Multiple referred from 3 places.'>addTimer</a>(<a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a> delayedTimer) <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132         <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> delayedTimer != <strong class='reserved'>null</strong> &amp;&amp; ! <a href='../S/2763.html#L156' title='Defined at 156 in src/javax/swing/TimerQueue.java.'>containsTimer</a>(delayedTimer.<a href='../D/23157.html' title='Multiple defined in 2 places.'>getTimer</a>());
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134         <a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer = delayedTimer.<a href='../D/23157.html' title='Multiple defined in 2 places.'>getTimer</a>();
+<a id='L135' name='L135'></a> 135         timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137             timer.delayedTimer = delayedTimer;
+<a id='L138' name='L138'></a> 138             queue.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(delayedTimer);
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140             timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L141' name='L141'></a> 141         <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142     <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143 
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>void</strong> <a href='../S/3155.html#L577' title='Referred from 577 in src/javax/swing/Timer.java.'>removeTimer</a>(<a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer) <em class='brace'>{</em>
+<a id='L145' name='L145'></a> 145         timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>if</strong> (timer.delayedTimer != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148                 queue.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(timer.delayedTimer);
+<a id='L149' name='L149'></a> 149                 timer.delayedTimer = <strong class='reserved'>null</strong>;
+<a id='L150' name='L150'></a> 150             <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152             timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L153' name='L153'></a> 153         <em class='brace'>}</em>
+<a id='L154' name='L154'></a> 154     <em class='brace'>}</em>
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156     <strong class='reserved'>boolean</strong> <a href='../R/11977.html' title='Multiple referred from 3 places.'>containsTimer</a>(<a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer) <em class='brace'>{</em>
+<a id='L157' name='L157'></a> 157         timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159             <strong class='reserved'>return</strong> timer.delayedTimer != <strong class='reserved'>null</strong>;
+<a id='L160' name='L160'></a> 160         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161             timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L162' name='L162'></a> 162         <em class='brace'>}</em>
+<a id='L163' name='L163'></a> 163     <em class='brace'>}</em>
+<a id='L164' name='L164'></a> 164 
+<a id='L165' name='L165'></a> 165 
+<a id='L166' name='L166'></a> 166     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26539.html' title='Multiple referred from 715 places.'>run</a>() <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167         runningLock.<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L168' name='L168'></a> 168         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L169' name='L169'></a> 169             <strong class='reserved'>while</strong> (running) <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L171' name='L171'></a> 171                     <a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer = queue.<a href='../D/35207.html' title='Multiple defined in 13 places.'>take</a>().<a href='../D/23157.html' title='Multiple defined in 2 places.'>getTimer</a>();
+<a id='L172' name='L172'></a> 172                     timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/27034.html' title='Multiple defined in 25 places.'>lock</a>();
+<a id='L173' name='L173'></a> 173                     <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174                         <a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a> delayedTimer = timer.delayedTimer;
+<a id='L175' name='L175'></a> 175                         <strong class='reserved'>if</strong> (delayedTimer != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L176' name='L176'></a> 176                             <em class='comment'>/*</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>                             * Timer is not removed after we get it from</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>                             * the queue and before the lock on the timer is</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>                             * acquired</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>                             */</em>
+<a id='L181' name='L181'></a> 181                             timer.<a href='../S/3155.html#L610' title='Defined at 610 in src/javax/swing/Timer.java.'>post</a>(); <em class='comment'>// have timer post an event</em>
+<a id='L182' name='L182'></a> 182                             timer.delayedTimer = <strong class='reserved'>null</strong>;
+<a id='L183' name='L183'></a> 183                             <strong class='reserved'>if</strong> (timer.<a href='../S/3155.html#L474' title='Defined at 474 in src/javax/swing/Timer.java.'>isRepeats</a>()) <em class='brace'>{</em>
+<a id='L184' name='L184'></a> 184                                 delayedTimer.<a href='../D/34137.html' title='Multiple defined in 25 places.'>setTime</a>(<a href='../D/28344.html' title='Multiple defined in 43 places.'>now</a>()
+<a id='L185' name='L185'></a> 185                                     + <a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a>.MILLISECONDS.<a href='../D/35449.html' title='Multiple defined in 2 places.'>toNanos</a>(
+<a id='L186' name='L186'></a> 186                                           timer.<a href='../D/18399.html' title='Multiple defined in 5 places.'>getDelay</a>()));
+<a id='L187' name='L187'></a> 187                                 <a href='../D/11115.html' title='Multiple defined in 2 places.'>addTimer</a>(delayedTimer);
+<a id='L188' name='L188'></a> 188                             <em class='brace'>}</em>
+<a id='L189' name='L189'></a> 189                         <em class='brace'>}</em>
+<a id='L190' name='L190'></a> 190 
+<a id='L191' name='L191'></a> 191                         <em class='comment'>// Allow run other threads on systems without kernel threads</em>
+<a id='L192' name='L192'></a> 192                         timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/27977.html' title='Multiple defined in 8 places.'>newCondition</a>().<a href='../D/11677.html' title='Multiple defined in 3 places.'>awaitNanos</a>(1);
+<a id='L193' name='L193'></a> 193                     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a> <a href='../D/24317.html' title='Multiple defined in 3 places.'>ignore</a>) <em class='brace'>{</em>
+<a id='L194' name='L194'></a> 194                     <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L195' name='L195'></a> 195                         timer.<a href='../S/3155.html#L621' title='Defined at 621 in src/javax/swing/Timer.java.'>getLock</a>().<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L196' name='L196'></a> 196                     <em class='brace'>}</em>
+<a id='L197' name='L197'></a> 197                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a> ie) <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198                     <em class='comment'>// Shouldn't ignore InterruptedExceptions here, so AppContext</em>
+<a id='L199' name='L199'></a> 199                     <em class='comment'>// is disposed gracefully, see 6799345 for details</em>
+<a id='L200' name='L200'></a> 200                     <strong class='reserved'>if</strong> (AppContext.getAppContext().<a href='../D/25453.html' title='Multiple defined in 2 places.'>isDisposed</a>()) <em class='brace'>{</em>
+<a id='L201' name='L201'></a> 201                         <strong class='reserved'>break</strong>;
+<a id='L202' name='L202'></a> 202                     <em class='brace'>}</em>
+<a id='L203' name='L203'></a> 203                 <em class='brace'>}</em>
+<a id='L204' name='L204'></a> 204             <em class='brace'>}</em>
+<a id='L205' name='L205'></a> 205         <em class='brace'>}</em>
+<a id='L206' name='L206'></a> 206         <strong class='reserved'>catch</strong> (<a href='../S/1576.html#L49' title='Defined at 49 in src/java/lang/ThreadDeath.java.'>ThreadDeath</a> td) <em class='brace'>{</em>
+<a id='L207' name='L207'></a> 207             <em class='comment'>// Mark all the timers we contain as not being queued.</em>
+<a id='L208' name='L208'></a> 208             <strong class='reserved'>for</strong> (<a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a> delayedTimer : queue) <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209                 delayedTimer.<a href='../D/23157.html' title='Multiple defined in 2 places.'>getTimer</a>().<a href='../S/3155.html#L605' title='Defined at 605 in src/javax/swing/Timer.java.'>cancelEvent</a>();
+<a id='L210' name='L210'></a> 210             <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211             <strong class='reserved'>throw</strong> td;
+<a id='L212' name='L212'></a> 212         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213             running = <strong class='reserved'>false</strong>;
+<a id='L214' name='L214'></a> 214             runningLock.<a href='../D/35916.html' title='Multiple defined in 13 places.'>unlock</a>();
+<a id='L215' name='L215'></a> 215         <em class='brace'>}</em>
+<a id='L216' name='L216'></a> 216     <em class='brace'>}</em>
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218 
+<a id='L219' name='L219'></a> 219     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
+<a id='L220' name='L220'></a> 220         <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a> <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a> = <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>();
+<a id='L221' name='L221'></a> 221         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>("TimerQueue (");
+<a id='L222' name='L222'></a> 222         <strong class='reserved'>boolean</strong> <a href='../S/2602.html#L1082' title='Defined at 1082 in src/java/sql/ResultSet.java.'>isFirst</a> = <strong class='reserved'>true</strong>;
+<a id='L223' name='L223'></a> 223         <strong class='reserved'>for</strong> (<a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a> delayedTimer : queue) <em class='brace'>{</em>
+<a id='L224' name='L224'></a> 224             <strong class='reserved'>if</strong> (! <a href='../S/2602.html#L1082' title='Defined at 1082 in src/java/sql/ResultSet.java.'>isFirst</a>) <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225                 <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(", ");
+<a id='L226' name='L226'></a> 226             <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227             <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(delayedTimer.<a href='../D/23157.html' title='Multiple defined in 2 places.'>getTimer</a>().<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L228' name='L228'></a> 228             <a href='../S/2602.html#L1082' title='Defined at 1082 in src/java/sql/ResultSet.java.'>isFirst</a> = <strong class='reserved'>false</strong>;
+<a id='L229' name='L229'></a> 229         <em class='brace'>}</em>
+<a id='L230' name='L230'></a> 230         <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>(")");
+<a id='L231' name='L231'></a> 231         <strong class='reserved'>return</strong> <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L232' name='L232'></a> 232     <em class='brace'>}</em>
+<a id='L233' name='L233'></a> 233 
+<a id='L234' name='L234'></a> 234     <em class='comment'>/**</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * Returns nanosecond time offset by origin</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     */</em>
+<a id='L237' name='L237'></a> 237     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>long</strong> <a href='../R/23834.html' title='Multiple referred from 91 places.'>now</a>() <em class='brace'>{</em>
+<a id='L238' name='L238'></a> 238         <strong class='reserved'>return</strong> <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L399' title='Defined at 399 in src/java/lang/System.java.'>nanoTime</a>() - NANO_ORIGIN;
+<a id='L239' name='L239'></a> 239     <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241     <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/2174.html' title='Multiple referred from 10 places.'>DelayedTimer</a> <strong class='reserved'>implements</strong> <a href='../S/1053.html#L49' title='Defined at 49 in src/java/util/concurrent/Delayed.java.'>Delayed</a> <em class='brace'>{</em>
+<a id='L242' name='L242'></a> 242         <em class='comment'>// most of it copied from</em>
+<a id='L243' name='L243'></a> 243         <em class='comment'>// java.util.concurrent.ScheduledThreadPoolExecutor</em>
+<a id='L244' name='L244'></a> 244 
+<a id='L245' name='L245'></a> 245         <em class='comment'>/**</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>         * Sequence number to break scheduling ties, and in turn to</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>         * guarantee FIFO order among tied entries.</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>         */</em>
+<a id='L249' name='L249'></a> 249         <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1088.html#L54' title='Defined at 54 in src/java/util/concurrent/atomic/AtomicLong.java.'>AtomicLong</a> sequencer = <strong class='reserved'>new</strong> <a href='../S/1088.html#L54' title='Defined at 54 in src/java/util/concurrent/atomic/AtomicLong.java.'>AtomicLong</a>(0);
+<a id='L250' name='L250'></a> 250 
+<a id='L251' name='L251'></a> 251         <em class='comment'>/** Sequence number to break ties FIFO */</em>
+<a id='L252' name='L252'></a> 252         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> sequenceNumber;
+<a id='L253' name='L253'></a> 253 
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255         <em class='comment'>/** The time the task is enabled to execute in nanoTime units */</em>
+<a id='L256' name='L256'></a> 256         <strong class='reserved'>private</strong> <strong class='reserved'>volatile</strong> <strong class='reserved'>long</strong> <a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a>;
+<a id='L257' name='L257'></a> 257 
+<a id='L258' name='L258'></a> 258         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer;
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260         DelayedTimer(<a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer, <strong class='reserved'>long</strong> nanos) <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261             <strong class='reserved'>this</strong>.timer = timer;
+<a id='L262' name='L262'></a> 262             <a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a> = nanos;
+<a id='L263' name='L263'></a> 263             sequenceNumber = sequencer.<a href='../D/16942.html' title='Multiple defined in 8 places.'>getAndIncrement</a>();
+<a id='L264' name='L264'></a> 264         <em class='brace'>}</em>
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266 
+<a id='L267' name='L267'></a> 267         <strong class='reserved'>final</strong> <strong class='reserved'>public</strong> <strong class='reserved'>long</strong> <a href='../R/16098.html' title='Multiple referred from 19 places.'>getDelay</a>(<a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a> unit) <em class='brace'>{</em>
+<a id='L268' name='L268'></a> 268             <strong class='reserved'>return</strong>  unit.<a href='../D/13388.html' title='Multiple defined in 7 places.'>convert</a>(<a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a> - <a href='../D/28344.html' title='Multiple defined in 43 places.'>now</a>(), <a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a>.NANOSECONDS);
+<a id='L269' name='L269'></a> 269         <em class='brace'>}</em>
+<a id='L270' name='L270'></a> 270 
+<a id='L271' name='L271'></a> 271         <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/28293.html' title='Multiple referred from 32 places.'>setTime</a>(<strong class='reserved'>long</strong> nanos) <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272             <a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a> = nanos;
+<a id='L273' name='L273'></a> 273         <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274 
+<a id='L275' name='L275'></a> 275         <strong class='reserved'>final</strong> <a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> <a href='../R/19502.html' title='Multiple referred from 5 places.'>getTimer</a>() <em class='brace'>{</em>
+<a id='L276' name='L276'></a> 276             <strong class='reserved'>return</strong> timer;
+<a id='L277' name='L277'></a> 277         <em class='brace'>}</em>
+<a id='L278' name='L278'></a> 278 
+<a id='L279' name='L279'></a> 279         <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/11724.html' title='Multiple referred from 291 places.'>compareTo</a>(<a href='../S/1053.html#L49' title='Defined at 49 in src/java/util/concurrent/Delayed.java.'>Delayed</a> other) <em class='brace'>{</em>
+<a id='L280' name='L280'></a> 280             <strong class='reserved'>if</strong> (other == <strong class='reserved'>this</strong>) <em class='brace'>{</em> <em class='comment'>// compare zero ONLY if same object</em>
+<a id='L281' name='L281'></a> 281                 <strong class='reserved'>return</strong> 0;
+<a id='L282' name='L282'></a> 282             <em class='brace'>}</em>
+<a id='L283' name='L283'></a> 283             <strong class='reserved'>if</strong> (other <strong class='reserved'>instanceof</strong> <a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a>) <em class='brace'>{</em>
+<a id='L284' name='L284'></a> 284                 <a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = (<a href='../S/2763.html#L241' title='Defined at 241 in src/javax/swing/TimerQueue.java.'>DelayedTimer</a>)other;
+<a id='L285' name='L285'></a> 285                 <strong class='reserved'>long</strong> diff = <a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a> - <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.<a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a>;
+<a id='L286' name='L286'></a> 286                 <strong class='reserved'>if</strong> (diff &lt; 0) <em class='brace'>{</em>
+<a id='L287' name='L287'></a> 287                     <strong class='reserved'>return</strong> -1;
+<a id='L288' name='L288'></a> 288                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (diff &gt; 0) <em class='brace'>{</em>
+<a id='L289' name='L289'></a> 289                     <strong class='reserved'>return</strong> 1;
+<a id='L290' name='L290'></a> 290                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (sequenceNumber &lt; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.sequenceNumber) <em class='brace'>{</em>
+<a id='L291' name='L291'></a> 291                     <strong class='reserved'>return</strong> -1;
+<a id='L292' name='L292'></a> 292                 <em class='brace'>}</em>  <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293                     <strong class='reserved'>return</strong> 1;
+<a id='L294' name='L294'></a> 294                 <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295             <em class='brace'>}</em>
+<a id='L296' name='L296'></a> 296             <strong class='reserved'>long</strong> d = (<a href='../D/18399.html' title='Multiple defined in 5 places.'>getDelay</a>(<a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a>.NANOSECONDS) -
+<a id='L297' name='L297'></a> 297                       other.<a href='../D/18399.html' title='Multiple defined in 5 places.'>getDelay</a>(<a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a>.NANOSECONDS));
+<a id='L298' name='L298'></a> 298             <strong class='reserved'>return</strong> (d == 0) ? 0 : ((d &lt; 0) ? -1 : 1);
+<a id='L299' name='L299'></a> 299         <em class='brace'>}</em>
+<a id='L300' name='L300'></a> 300     <em class='brace'>}</em>
+<a id='L301' name='L301'></a> 301 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L79'>[^]</a><a href='#L279'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

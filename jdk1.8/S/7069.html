@@ -1,0 +1,373 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/dynamicany/DynAnyUtil.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7738.html'>dynamicany</a>/DynAnyUtil.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L48'>[^]</a><a href='#L326'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L48' title='Defined at 48.'>isConsistentType</a></li>
+<li><a href='#L55' title='Defined at 55.'>isConstructedDynAny</a></li>
+<li><a href='#L69' title='Defined at 69.'>createMostDerivedDynAny</a></li>
+<li><a href='#L97' title='Defined at 97.'>createMostDerivedDynAny</a></li>
+<li><a href='#L138' title='Defined at 138.'>extractAnyFromStream</a></li>
+<li><a href='#L143' title='Defined at 143.'>createDefaultAnyOfType</a></li>
+<li><a href='#L280' title='Defined at 280.'>copy</a></li>
+<li><a href='#L296' title='Defined at 296.'>convertToNative</a></li>
+<li><a href='#L310' title='Defined at 310.'>isInitialized</a></li>
+<li><a href='#L326' title='Defined at 326.'>set_current_component</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.dynamicany;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> org.omg.CORBA.Any;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> org.omg.CORBA.TypeCode;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.CORBA.TCKind;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> org.omg.CORBA.portable.OutputStream;
+<a id='L32' name='L32'></a>  32 <em class='comment'>//import org.omg.CORBA.ORBPackage.*;</em>
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.omg.CORBA.TypeCodePackage.BadKind;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.omg.CORBA.TypeCodePackage.Bounds;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.omg.CORBA.portable.InputStream;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.omg.DynamicAny.*;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.DynamicAny.DynAnyPackage.TypeMismatch;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> org.omg.DynamicAny.DynAnyFactoryPackage.InconsistentTypeCode;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.math.BigDecimal;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.corba.se.impl.corba.AnyImpl;
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB ;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains ;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException ;
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/2479.html' title='Multiple referred from 75 places.'>DynAnyUtil</a>
+<a id='L47' name='L47'></a>  47 <em class='brace'>{</em>
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21288.html' title='Multiple referred from 2 places.'>isConsistentType</a>(<a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> typeCode) <em class='brace'>{</em>
+<a id='L49' name='L49'></a>  49         <strong class='reserved'>int</strong> <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> = typeCode.<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>();
+<a id='L50' name='L50'></a>  50         <strong class='reserved'>return</strong> (<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> != <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_Principal &amp;&amp;
+<a id='L51' name='L51'></a>  51                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> != <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_native &amp;&amp;
+<a id='L52' name='L52'></a>  52                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> != <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_abstract_interface);
+<a id='L53' name='L53'></a>  53     <em class='brace'>}</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21292.html' title='Multiple referred from 38 places.'>isConstructedDynAny</a>(<a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> dynAny) <em class='brace'>{</em>
+<a id='L56' name='L56'></a>  56         <em class='comment'>// DynFixed is constructed but not a subclass of DynAnyConstructedImpl</em>
+<a id='L57' name='L57'></a>  57         <em class='comment'>//return (dynAny instanceof DynAnyConstructedImpl);</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>int</strong> <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> = dynAny.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>().<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>();
+<a id='L59' name='L59'></a>  59         <strong class='reserved'>return</strong> (<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_sequence ||
+<a id='L60' name='L60'></a>  60                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_struct ||
+<a id='L61' name='L61'></a>  61                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_array ||
+<a id='L62' name='L62'></a>  62                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_union ||
+<a id='L63' name='L63'></a>  63                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_enum ||
+<a id='L64' name='L64'></a>  64                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_fixed ||
+<a id='L65' name='L65'></a>  65                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value ||
+<a id='L66' name='L66'></a>  66                 <a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a> == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value_box);
+<a id='L67' name='L67'></a>  67     <em class='brace'>}</em>
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <strong class='reserved'>static</strong> <a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> <a href='../R/12575.html' title='Multiple referred from 22 places.'>createMostDerivedDynAny</a>(<a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <strong class='reserved'>boolean</strong> <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>)
+<a id='L70' name='L70'></a>  70         <strong class='reserved'>throws</strong> org.omg.DynamicAny.DynAnyFactoryPackage.<a href='../D/4141.html' title='Multiple defined in 2 places.'>InconsistentTypeCode</a>
+<a id='L71' name='L71'></a>  71     <em class='brace'>{</em>
+<a id='L72' name='L72'></a>  72         <strong class='reserved'>if</strong> (<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a> == <strong class='reserved'>null</strong> || ! <a href='../S/7069.html#L46' title='Defined at 46 in src/com/sun/corba/se/impl/dynamicany/DynAnyUtil.java.'>DynAnyUtil</a>.<a href='../S/7069.html#L48' title='Defined at 48 in src/com/sun/corba/se/impl/dynamicany/DynAnyUtil.java.'>isConsistentType</a>(<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>()))
+<a id='L73' name='L73'></a>  73             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> org.omg.DynamicAny.DynAnyFactoryPackage.<a href='../D/4141.html' title='Multiple defined in 2 places.'>InconsistentTypeCode</a>();
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75         <strong class='reserved'>switch</strong> (<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>().<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>()) <em class='brace'>{</em>
+<a id='L76' name='L76'></a>  76             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_sequence:
+<a id='L77' name='L77'></a>  77                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7067.html#L47' title='Defined at 47 in src/com/sun/corba/se/impl/dynamicany/DynSequenceImpl.java.'>DynSequenceImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L78' name='L78'></a>  78             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_struct:
+<a id='L79' name='L79'></a>  79                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7072.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynStructImpl.java.'>DynStructImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L80' name='L80'></a>  80             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_array:
+<a id='L81' name='L81'></a>  81                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7073.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/dynamicany/DynArrayImpl.java.'>DynArrayImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L82' name='L82'></a>  82             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_union:
+<a id='L83' name='L83'></a>  83                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7076.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/dynamicany/DynUnionImpl.java.'>DynUnionImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L84' name='L84'></a>  84             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_enum:
+<a id='L85' name='L85'></a>  85                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7066.html#L41' title='Defined at 41 in src/com/sun/corba/se/impl/dynamicany/DynEnumImpl.java.'>DynEnumImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L86' name='L86'></a>  86             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_fixed:
+<a id='L87' name='L87'></a>  87                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7068.html#L41' title='Defined at 41 in src/com/sun/corba/se/impl/dynamicany/DynFixedImpl.java.'>DynFixedImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L88' name='L88'></a>  88             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value:
+<a id='L89' name='L89'></a>  89                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7075.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynValueImpl.java.'>DynValueImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L90' name='L90'></a>  90             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value_box:
+<a id='L91' name='L91'></a>  91                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7062.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynValueBoxImpl.java.'>DynValueBoxImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L92' name='L92'></a>  92             <strong class='reserved'>default</strong>:
+<a id='L93' name='L93'></a>  93                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7065.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynAnyBasicImpl.java.'>DynAnyBasicImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/13531.html' title='Multiple defined in 3 places.'>copyValue</a>);
+<a id='L94' name='L94'></a>  94         <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95     <em class='brace'>}</em>
+<a id='L96' name='L96'></a>  96 
+<a id='L97' name='L97'></a>  97     <strong class='reserved'>static</strong> <a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> <a href='../R/12575.html' title='Multiple referred from 22 places.'>createMostDerivedDynAny</a>(<a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> typeCode, <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L98' name='L98'></a>  98         <strong class='reserved'>throws</strong> org.omg.DynamicAny.DynAnyFactoryPackage.<a href='../D/4141.html' title='Multiple defined in 2 places.'>InconsistentTypeCode</a>
+<a id='L99' name='L99'></a>  99     <em class='brace'>{</em>
+<a id='L100' name='L100'></a> 100         <strong class='reserved'>if</strong> (typeCode == <strong class='reserved'>null</strong> || ! <a href='../S/7069.html#L46' title='Defined at 46 in src/com/sun/corba/se/impl/dynamicany/DynAnyUtil.java.'>DynAnyUtil</a>.<a href='../S/7069.html#L48' title='Defined at 48 in src/com/sun/corba/se/impl/dynamicany/DynAnyUtil.java.'>isConsistentType</a>(typeCode))
+<a id='L101' name='L101'></a> 101             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> org.omg.DynamicAny.DynAnyFactoryPackage.<a href='../D/4141.html' title='Multiple defined in 2 places.'>InconsistentTypeCode</a>();
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103         <strong class='reserved'>switch</strong> (typeCode.<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>()) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_sequence:
+<a id='L105' name='L105'></a> 105                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7067.html#L47' title='Defined at 47 in src/com/sun/corba/se/impl/dynamicany/DynSequenceImpl.java.'>DynSequenceImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L106' name='L106'></a> 106             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_struct:
+<a id='L107' name='L107'></a> 107                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7072.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynStructImpl.java.'>DynStructImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L108' name='L108'></a> 108             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_array:
+<a id='L109' name='L109'></a> 109                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7073.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/dynamicany/DynArrayImpl.java.'>DynArrayImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L110' name='L110'></a> 110             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_union:
+<a id='L111' name='L111'></a> 111                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7076.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/dynamicany/DynUnionImpl.java.'>DynUnionImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L112' name='L112'></a> 112             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_enum:
+<a id='L113' name='L113'></a> 113                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7066.html#L41' title='Defined at 41 in src/com/sun/corba/se/impl/dynamicany/DynEnumImpl.java.'>DynEnumImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L114' name='L114'></a> 114             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_fixed:
+<a id='L115' name='L115'></a> 115                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7068.html#L41' title='Defined at 41 in src/com/sun/corba/se/impl/dynamicany/DynFixedImpl.java.'>DynFixedImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L116' name='L116'></a> 116             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value:
+<a id='L117' name='L117'></a> 117                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7075.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynValueImpl.java.'>DynValueImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L118' name='L118'></a> 118             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value_box:
+<a id='L119' name='L119'></a> 119                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7062.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynValueBoxImpl.java.'>DynValueBoxImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L120' name='L120'></a> 120             <strong class='reserved'>default</strong>:
+<a id='L121' name='L121'></a> 121                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7065.html#L42' title='Defined at 42 in src/com/sun/corba/se/impl/dynamicany/DynAnyBasicImpl.java.'>DynAnyBasicImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, typeCode);
+<a id='L122' name='L122'></a> 122         <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <em class='comment'>// Extracts a member value according to the given TypeCode from the given complex Any</em>
+<a id='L126' name='L126'></a> 126     <em class='comment'>// (at the Anys current internal stream position, consuming the anys stream on the way)</em>
+<a id='L127' name='L127'></a> 127     <em class='comment'>// and returns it wrapped into a new Any</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>/*</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>    static Any extractAnyFromAny(TypeCode memberType, Any any, ORB orb) {</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>        // Moved this functionality into AnyImpl because it is needed for Any.equal()</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>        return ((AnyImpl)any).extractAny(memberType, orb);</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>    }</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>*/</em>
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135     <em class='comment'>// Extracts a member value according to the given TypeCode from the given complex Any</em>
+<a id='L136' name='L136'></a> 136     <em class='comment'>// (at the Anys current internal stream position, consuming the anys stream on the way)</em>
+<a id='L137' name='L137'></a> 137     <em class='comment'>// and returns it wrapped into a new Any</em>
+<a id='L138' name='L138'></a> 138     <strong class='reserved'>static</strong> <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../R/14196.html' title='Multiple referred from 6 places.'>extractAnyFromStream</a>(<a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> <a href='../S/7076.html#L136' title='Defined at 136 in src/com/sun/corba/se/impl/dynamicany/DynUnionImpl.java.'>memberType</a>, <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>, <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>) <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139         <strong class='reserved'>return</strong> <a href='../S/7143.html#L68' title='Defined at 68 in src/com/sun/corba/se/impl/corba/AnyImpl.java.'>AnyImpl</a>.<a href='../D/15922.html' title='Multiple defined in 2 places.'>extractAnyFromStream</a>(<a href='../S/7076.html#L136' title='Defined at 136 in src/com/sun/corba/se/impl/dynamicany/DynUnionImpl.java.'>memberType</a>, <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>, <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>);
+<a id='L140' name='L140'></a> 140     <em class='brace'>}</em>
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142     <em class='comment'>// Creates a default Any of the given type.</em>
+<a id='L143' name='L143'></a> 143     <strong class='reserved'>static</strong> <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../R/12328.html' title='Multiple referred from 2 places.'>createDefaultAnyOfType</a>(<a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> typeCode, <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>) <em class='brace'>{</em>
+<a id='L144' name='L144'></a> 144         <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> wrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L145' name='L145'></a> 145             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PRESENTATION ) ;
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147         <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> returnValue = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/14356.html' title='Multiple defined in 3 places.'>create_any</a>();
+<a id='L148' name='L148'></a> 148         <em class='comment'>// The spec for DynAny differs from Any on initialization via type code:</em>
+<a id='L149' name='L149'></a> 149         <em class='comment'>// - false for boolean</em>
+<a id='L150' name='L150'></a> 150         <em class='comment'>// - zero for numeric types</em>
+<a id='L151' name='L151'></a> 151         <em class='comment'>// - zero for types octet, char, and wchar</em>
+<a id='L152' name='L152'></a> 152         <em class='comment'>// - the empty string for string and wstring</em>
+<a id='L153' name='L153'></a> 153         <em class='comment'>// - nil for object references</em>
+<a id='L154' name='L154'></a> 154         <em class='comment'>// - a type code with a TCKind value of tk_null for type codes</em>
+<a id='L155' name='L155'></a> 155         <em class='comment'>// - for Any values, an Any containing a type code with a TCKind value of tk_null</em>
+<a id='L156' name='L156'></a> 156         <em class='comment'>//   type and no value</em>
+<a id='L157' name='L157'></a> 157         <strong class='reserved'>switch</strong> (typeCode.<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>()) <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_boolean:
+<a id='L159' name='L159'></a> 159                 <em class='comment'>// false for boolean</em>
+<a id='L160' name='L160'></a> 160                 returnValue.<a href='../D/24789.html' title='Multiple defined in 14 places.'>insert_boolean</a>(<strong class='reserved'>false</strong>);
+<a id='L161' name='L161'></a> 161                 <strong class='reserved'>break</strong>;
+<a id='L162' name='L162'></a> 162             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_short:
+<a id='L163' name='L163'></a> 163                 <em class='comment'>// zero for numeric types</em>
+<a id='L164' name='L164'></a> 164                 returnValue.<a href='../D/24799.html' title='Multiple defined in 14 places.'>insert_short</a>((<strong class='reserved'>short</strong>)0);
+<a id='L165' name='L165'></a> 165                 <strong class='reserved'>break</strong>;
+<a id='L166' name='L166'></a> 166             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_ushort:
+<a id='L167' name='L167'></a> 167                 <em class='comment'>// zero for numeric types</em>
+<a id='L168' name='L168'></a> 168                 returnValue.<a href='../D/24804.html' title='Multiple defined in 14 places.'>insert_ushort</a>((<strong class='reserved'>short</strong>)0);
+<a id='L169' name='L169'></a> 169                 <strong class='reserved'>break</strong>;
+<a id='L170' name='L170'></a> 170             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_long:
+<a id='L171' name='L171'></a> 171                 <em class='comment'>// zero for numeric types</em>
+<a id='L172' name='L172'></a> 172                 returnValue.<a href='../D/24795.html' title='Multiple defined in 14 places.'>insert_long</a>(0);
+<a id='L173' name='L173'></a> 173                 <strong class='reserved'>break</strong>;
+<a id='L174' name='L174'></a> 174             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_ulong:
+<a id='L175' name='L175'></a> 175                 <em class='comment'>// zero for numeric types</em>
+<a id='L176' name='L176'></a> 176                 returnValue.<a href='../D/24802.html' title='Multiple defined in 14 places.'>insert_ulong</a>(0);
+<a id='L177' name='L177'></a> 177                 <strong class='reserved'>break</strong>;
+<a id='L178' name='L178'></a> 178             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_longlong:
+<a id='L179' name='L179'></a> 179                 <em class='comment'>// zero for numeric types</em>
+<a id='L180' name='L180'></a> 180                 returnValue.<a href='../D/24796.html' title='Multiple defined in 14 places.'>insert_longlong</a>((<strong class='reserved'>long</strong>)0);
+<a id='L181' name='L181'></a> 181                 <strong class='reserved'>break</strong>;
+<a id='L182' name='L182'></a> 182             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_ulonglong:
+<a id='L183' name='L183'></a> 183                 <em class='comment'>// zero for numeric types</em>
+<a id='L184' name='L184'></a> 184                 returnValue.<a href='../D/24803.html' title='Multiple defined in 14 places.'>insert_ulonglong</a>((<strong class='reserved'>long</strong>)0);
+<a id='L185' name='L185'></a> 185                 <strong class='reserved'>break</strong>;
+<a id='L186' name='L186'></a> 186             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_float:
+<a id='L187' name='L187'></a> 187                 <em class='comment'>// zero for numeric types</em>
+<a id='L188' name='L188'></a> 188                 returnValue.<a href='../D/24794.html' title='Multiple defined in 14 places.'>insert_float</a>((<strong class='reserved'>float</strong>)0.0);
+<a id='L189' name='L189'></a> 189                 <strong class='reserved'>break</strong>;
+<a id='L190' name='L190'></a> 190             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_double:
+<a id='L191' name='L191'></a> 191                 <em class='comment'>// zero for numeric types</em>
+<a id='L192' name='L192'></a> 192                 returnValue.<a href='../D/24791.html' title='Multiple defined in 14 places.'>insert_double</a>((<strong class='reserved'>double</strong>)0.0);
+<a id='L193' name='L193'></a> 193                 <strong class='reserved'>break</strong>;
+<a id='L194' name='L194'></a> 194             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_octet:
+<a id='L195' name='L195'></a> 195                 <em class='comment'>// zero for types octet, char, and wchar</em>
+<a id='L196' name='L196'></a> 196                 returnValue.<a href='../D/24797.html' title='Multiple defined in 14 places.'>insert_octet</a>((<strong class='reserved'>byte</strong>)0);
+<a id='L197' name='L197'></a> 197                 <strong class='reserved'>break</strong>;
+<a id='L198' name='L198'></a> 198             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_char:
+<a id='L199' name='L199'></a> 199                 <em class='comment'>// zero for types octet, char, and wchar</em>
+<a id='L200' name='L200'></a> 200                 returnValue.<a href='../D/24790.html' title='Multiple defined in 14 places.'>insert_char</a>((<strong class='reserved'>char</strong>)0);
+<a id='L201' name='L201'></a> 201                 <strong class='reserved'>break</strong>;
+<a id='L202' name='L202'></a> 202             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_wchar:
+<a id='L203' name='L203'></a> 203                 <em class='comment'>// zero for types octet, char, and wchar</em>
+<a id='L204' name='L204'></a> 204                 returnValue.<a href='../D/24806.html' title='Multiple defined in 14 places.'>insert_wchar</a>((<strong class='reserved'>char</strong>)0);
+<a id='L205' name='L205'></a> 205                 <strong class='reserved'>break</strong>;
+<a id='L206' name='L206'></a> 206             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_string:
+<a id='L207' name='L207'></a> 207                 <em class='comment'>// the empty string for string and wstring</em>
+<a id='L208' name='L208'></a> 208                 <em class='comment'>// Make sure that type code for bounded strings gets respected</em>
+<a id='L209' name='L209'></a> 209                 returnValue.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>(typeCode);
+<a id='L210' name='L210'></a> 210                 <em class='comment'>// Doesn't erase the type of bounded string</em>
+<a id='L211' name='L211'></a> 211                 returnValue.<a href='../D/24800.html' title='Multiple defined in 14 places.'>insert_string</a>("");
+<a id='L212' name='L212'></a> 212                 <strong class='reserved'>break</strong>;
+<a id='L213' name='L213'></a> 213             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_wstring:
+<a id='L214' name='L214'></a> 214                 <em class='comment'>// the empty string for string and wstring</em>
+<a id='L215' name='L215'></a> 215                 <em class='comment'>// Make sure that type code for bounded strings gets respected</em>
+<a id='L216' name='L216'></a> 216                 returnValue.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>(typeCode);
+<a id='L217' name='L217'></a> 217                 <em class='comment'>// Doesn't erase the type of bounded string</em>
+<a id='L218' name='L218'></a> 218                 returnValue.<a href='../D/24807.html' title='Multiple defined in 14 places.'>insert_wstring</a>("");
+<a id='L219' name='L219'></a> 219                 <strong class='reserved'>break</strong>;
+<a id='L220' name='L220'></a> 220             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_objref:
+<a id='L221' name='L221'></a> 221                 <em class='comment'>// nil for object references</em>
+<a id='L222' name='L222'></a> 222                 returnValue.<a href='../D/24783.html' title='Multiple defined in 4 places.'>insert_Object</a>(<strong class='reserved'>null</strong>);
+<a id='L223' name='L223'></a> 223                 <strong class='reserved'>break</strong>;
+<a id='L224' name='L224'></a> 224             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_TypeCode:
+<a id='L225' name='L225'></a> 225                 <em class='comment'>// a type code with a TCKind value of tk_null for type codes</em>
+<a id='L226' name='L226'></a> 226                 <em class='comment'>// We can reuse the type code that's already in the any.</em>
+<a id='L227' name='L227'></a> 227                 returnValue.<a href='../D/24786.html' title='Multiple defined in 2 places.'>insert_TypeCode</a>(returnValue.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>());
+<a id='L228' name='L228'></a> 228                 <strong class='reserved'>break</strong>;
+<a id='L229' name='L229'></a> 229             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_any:
+<a id='L230' name='L230'></a> 230                 <em class='comment'>// for Any values, an Any containing a type code with a TCKind value</em>
+<a id='L231' name='L231'></a> 231                 <em class='comment'>// of tk_null type and no value.</em>
+<a id='L232' name='L232'></a> 232                 <em class='comment'>// This is exactly what the default AnyImpl constructor provides.</em>
+<a id='L233' name='L233'></a> 233                 <em class='comment'>// _REVISIT_ Note that this inner Any is considered uninitialized.</em>
+<a id='L234' name='L234'></a> 234                 returnValue.<a href='../D/24788.html' title='Multiple defined in 14 places.'>insert_any</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/14356.html' title='Multiple defined in 3 places.'>create_any</a>());
+<a id='L235' name='L235'></a> 235                 <strong class='reserved'>break</strong>;
+<a id='L236' name='L236'></a> 236             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_struct:
+<a id='L237' name='L237'></a> 237             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_union:
+<a id='L238' name='L238'></a> 238             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_enum:
+<a id='L239' name='L239'></a> 239             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_sequence:
+<a id='L240' name='L240'></a> 240             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_array:
+<a id='L241' name='L241'></a> 241             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_except:
+<a id='L242' name='L242'></a> 242             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value:
+<a id='L243' name='L243'></a> 243             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_value_box:
+<a id='L244' name='L244'></a> 244                 <em class='comment'>// There are no default value for complex types since there is no</em>
+<a id='L245' name='L245'></a> 245                 <em class='comment'>// concept of a hierarchy of Anys. Only DynAnys can be arrange in</em>
+<a id='L246' name='L246'></a> 246                 <em class='comment'>// a hierarchy to mirror the TypeCode hierarchy.</em>
+<a id='L247' name='L247'></a> 247                 <em class='comment'>// See DynAnyConstructedImpl.initializeComponentsFromTypeCode()</em>
+<a id='L248' name='L248'></a> 248                 <em class='comment'>// on how this DynAny hierarchy is created from TypeCodes.</em>
+<a id='L249' name='L249'></a> 249                 returnValue.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>(typeCode);
+<a id='L250' name='L250'></a> 250                 <strong class='reserved'>break</strong>;
+<a id='L251' name='L251'></a> 251             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_fixed:
+<a id='L252' name='L252'></a> 252                 returnValue.<a href='../D/24793.html' title='Multiple defined in 4 places.'>insert_fixed</a>(<strong class='reserved'>new</strong> <a href='../S/1464.html#L220' title='Defined at 220 in src/java/math/BigDecimal.java.'>BigDecimal</a>("0.0"), typeCode);
+<a id='L253' name='L253'></a> 253                 <strong class='reserved'>break</strong>;
+<a id='L254' name='L254'></a> 254             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_native:
+<a id='L255' name='L255'></a> 255             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_alias:
+<a id='L256' name='L256'></a> 256             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_void:
+<a id='L257' name='L257'></a> 257             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_Principal:
+<a id='L258' name='L258'></a> 258             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_abstract_interface:
+<a id='L259' name='L259'></a> 259                 returnValue.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>(typeCode);
+<a id='L260' name='L260'></a> 260                 <strong class='reserved'>break</strong>;
+<a id='L261' name='L261'></a> 261             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_null:
+<a id='L262' name='L262'></a> 262                 <em class='comment'>// Any is already initialized to null</em>
+<a id='L263' name='L263'></a> 263                 <strong class='reserved'>break</strong>;
+<a id='L264' name='L264'></a> 264             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_longdouble:
+<a id='L265' name='L265'></a> 265                 <em class='comment'>// Unspecified for Java</em>
+<a id='L266' name='L266'></a> 266                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/35340.html' title='Multiple defined in 4 places.'>tkLongDoubleNotSupported</a>() ;
+<a id='L267' name='L267'></a> 267             <strong class='reserved'>default</strong>:
+<a id='L268' name='L268'></a> 268                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/35780.html' title='Multiple defined in 4 places.'>typecodeNotSupported</a>() ;
+<a id='L269' name='L269'></a> 269         <em class='brace'>}</em>
+<a id='L270' name='L270'></a> 270         <strong class='reserved'>return</strong> returnValue;
+<a id='L271' name='L271'></a> 271     <em class='brace'>}</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>/*</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>    static Any setTypeOfAny(TypeCode typeCode, Any value) {</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>        if (value != null) {</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>            value.read_value(value.create_input_stream(), typeCode);</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>        }</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>        return value;</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>    }</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>*/</em>
+<a id='L280' name='L280'></a> 280     <strong class='reserved'>static</strong> <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../R/12088.html' title='Multiple referred from 272 places.'>copy</a>(<a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> inAny, <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>) <em class='brace'>{</em>
+<a id='L281' name='L281'></a> 281         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7143.html#L68' title='Defined at 68 in src/com/sun/corba/se/impl/corba/AnyImpl.java.'>AnyImpl</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, inAny);
+<a id='L282' name='L282'></a> 282     <em class='brace'>}</em>
+<a id='L283' name='L283'></a> 283 
+<a id='L284' name='L284'></a> 284 <em class='comment'>/*</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>    static Any copy(Any inAny, ORB orb) {</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>        Any outAny = null;</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>        if (inAny != null &amp;&amp; orb != null) {</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>            outAny = orb.create_any();</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>            outAny.read_value(inAny.create_input_stream(), inAny.type());</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>            // isInitialized is set to true</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>        }</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>        return outAny;</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>    }</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>*/</em>
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296     <strong class='reserved'>static</strong> <a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> <a href='../R/12074.html' title='Multiple referred from 24 places.'>convertToNative</a>(<a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> dynAny, <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>) <em class='brace'>{</em>
+<a id='L297' name='L297'></a> 297         <strong class='reserved'>if</strong> (dynAny <strong class='reserved'>instanceof</strong> <a href='../S/7063.html#L45' title='Defined at 45 in src/com/sun/corba/se/impl/dynamicany/DynAnyImpl.java.'>DynAnyImpl</a>) <em class='brace'>{</em>
+<a id='L298' name='L298'></a> 298             <strong class='reserved'>return</strong> dynAny;
+<a id='L299' name='L299'></a> 299         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300             <em class='comment'>// if copy flag wasn't true we would be using our DynAny with</em>
+<a id='L301' name='L301'></a> 301             <em class='comment'>// a foreign Any in it.</em>
+<a id='L302' name='L302'></a> 302             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L303' name='L303'></a> 303                 <strong class='reserved'>return</strong> <a href='../D/14056.html' title='Multiple defined in 2 places.'>createMostDerivedDynAny</a>(dynAny.<a href='../D/35533.html' title='Multiple defined in 13 places.'>to_any</a>(), <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <strong class='reserved'>true</strong>);
+<a id='L304' name='L304'></a> 304             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/4141.html' title='Multiple defined in 2 places.'>InconsistentTypeCode</a> ictc) <em class='brace'>{</em>
+<a id='L305' name='L305'></a> 305                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L306' name='L306'></a> 306             <em class='brace'>}</em>
+<a id='L307' name='L307'></a> 307         <em class='brace'>}</em>
+<a id='L308' name='L308'></a> 308     <em class='brace'>}</em>
+<a id='L309' name='L309'></a> 309 
+<a id='L310' name='L310'></a> 310     <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21588.html' title='Multiple referred from 43 places.'>isInitialized</a>(<a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>) <em class='brace'>{</em>
+<a id='L311' name='L311'></a> 311         <em class='comment'>// Returning simply the value of Any.isInitialized() is not enough.</em>
+<a id='L312' name='L312'></a> 312         <em class='comment'>// The DynAny spec says that Anys containing null strings do not contain</em>
+<a id='L313' name='L313'></a> 313         <em class='comment'>// a "legal value" (see ptc 99-10-07, 9.2.3.3)</em>
+<a id='L314' name='L314'></a> 314         <strong class='reserved'>boolean</strong> <a href='../D/25720.html' title='Multiple defined in 5 places.'>isInitialized</a> = ((<a href='../S/7143.html#L68' title='Defined at 68 in src/com/sun/corba/se/impl/corba/AnyImpl.java.'>AnyImpl</a>)<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>).<a href='../D/25720.html' title='Multiple defined in 5 places.'>isInitialized</a>();
+<a id='L315' name='L315'></a> 315         <strong class='reserved'>switch</strong> (<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>().<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>()) <em class='brace'>{</em>
+<a id='L316' name='L316'></a> 316             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_string:
+<a id='L317' name='L317'></a> 317                 <strong class='reserved'>return</strong> (<a href='../D/25720.html' title='Multiple defined in 5 places.'>isInitialized</a> &amp;&amp; (<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/15955.html' title='Multiple defined in 2 places.'>extract_string</a>() != <strong class='reserved'>null</strong>));
+<a id='L318' name='L318'></a> 318             <strong class='reserved'>case</strong> <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_wstring:
+<a id='L319' name='L319'></a> 319                 <strong class='reserved'>return</strong> (<a href='../D/25720.html' title='Multiple defined in 5 places.'>isInitialized</a> &amp;&amp; (<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/15960.html' title='Multiple defined in 2 places.'>extract_wstring</a>() != <strong class='reserved'>null</strong>));
+<a id='L320' name='L320'></a> 320         <em class='brace'>}</em>
+<a id='L321' name='L321'></a> 321         <strong class='reserved'>return</strong> <a href='../D/25720.html' title='Multiple defined in 5 places.'>isInitialized</a>;
+<a id='L322' name='L322'></a> 322     <em class='brace'>}</em>
+<a id='L323' name='L323'></a> 323 
+<a id='L324' name='L324'></a> 324     <em class='comment'>// This is a convenient method to reset the current component to where it was</em>
+<a id='L325' name='L325'></a> 325     <em class='comment'>// before we changed it. See DynAnyConstructedImpl.equal for use.</em>
+<a id='L326' name='L326'></a> 326     <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../S/7077.html#L334' title='Referred from 334 in src/com/sun/corba/se/impl/dynamicany/DynAnyConstructedImpl.java.'>set_current_component</a>(<a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> dynAny, <a href='../D/2674.html' title='Multiple defined in 2 places.'>DynAny</a> currentComponent) <em class='brace'>{</em>
+<a id='L327' name='L327'></a> 327         <strong class='reserved'>if</strong> (currentComponent != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L328' name='L328'></a> 328             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L329' name='L329'></a> 329                 dynAny.<a href='../D/31420.html' title='Multiple defined in 17 places.'>rewind</a>();
+<a id='L330' name='L330'></a> 330                 <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L331' name='L331'></a> 331                     <strong class='reserved'>if</strong> (dynAny.<a href='../D/14436.html' title='Multiple defined in 13 places.'>current_component</a>() == currentComponent)
+<a id='L332' name='L332'></a> 332                         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L333' name='L333'></a> 333                 <em class='brace'>}</em> <strong class='reserved'>while</strong> (dynAny.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>());
+<a id='L334' name='L334'></a> 334             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/9202.html' title='Multiple defined in 3 places.'>TypeMismatch</a> tm) <em class='brace'>{</em> <em class='comment'>/* impossible */</em> <em class='brace'>}</em>
+<a id='L335' name='L335'></a> 335         <em class='brace'>}</em>
+<a id='L336' name='L336'></a> 336         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L337' name='L337'></a> 337     <em class='brace'>}</em>
+<a id='L338' name='L338'></a> 338 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L48'>[^]</a><a href='#L326'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

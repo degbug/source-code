@@ -1,0 +1,471 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/java/swing/plaf/windows/AnimationController.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7827.html'>java</a>/<a href='../files/7828.html'>swing</a>/<a href='../files/7829.html'>plaf</a>/<a href='../files/7834.html'>windows</a>/AnimationController.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L427'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L87' title='Defined at 87.'>getAnimationController</a></li>
+<li><a href='#L104' title='Defined at 104.'>triggerAnimation</a></li>
+<li><a href='#L150' title='Defined at 150.'>normalizeState</a></li>
+<li><a href='#L192' title='Defined at 192.'>getState</a></li>
+<li><a href='#L202' title='Defined at 202.'>putState</a></li>
+<li><a href='#L208' title='Defined at 208.'>startAnimation</a></li>
+<li><a href='#L238' title='Defined at 238.'>paintSkin</a></li>
+<li><a href='#L261' title='Defined at 261.'>propertyChange</a></li>
+<li><a href='#L268' title='Defined at 268.'>actionPerformed</a></li>
+<li><a href='#L318' title='Defined at 318.'>dispose</a></li>
+<li><a href='#L360' title='Defined at 360.'>updateProgress</a></li>
+<li><a href='#L380' title='Defined at 380.'>paintSkin</a></li>
+<li><a href='#L401' title='Defined at 401.'>isDone</a></li>
+<li><a href='#L414' title='Defined at 414.'>getKey</a></li>
+<li><a href='#L427' title='Defined at 427.'>toString</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.swing.plaf.<a href='../S/6727.html#L5' title='Defined at 5 in src/com/sun/java/swing/plaf/windows/resources/windows.java.'>windows</a>;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.security.AccessController;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> sun.security.action.GetBooleanAction;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.*;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.beans.PropertyChangeListener;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.beans.PropertyChangeEvent;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.awt.*;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.awt.event.*;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> javax.swing.*;
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> sun.swing.UIClientPropertyKey;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.java.swing.plaf.windows.TMSchema.State;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> static com.sun.java.swing.plaf.windows.TMSchema.State.*;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.java.swing.plaf.windows.TMSchema.Part;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.java.swing.plaf.windows.TMSchema.Prop;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.java.swing.plaf.windows.XPStyle.Skin;
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> sun.awt.AppContext;
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49 <em class='comment'>/**</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * A class to help mimic Vista theme animations.  The only kind of</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * animation it handles for now is 'transition' animation (this seems</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * to be the only animation which Vista theme can do). This is when</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * one picture fadein over another one in some period of time.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> * According to</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * https://connect.microsoft.com/feedback/ViewFeedback.aspx?FeedbackID=86852&amp;SiteID=4</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * The animations are all linear.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> *</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> * This class has a number of responsibilities.</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * &lt;ul&gt;</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> *   &lt;li&gt; It trigger rapaint for the UI components involved in the animation</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> *   &lt;li&gt; It tracks the animation state for every UI component involved in the</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> *        animation and paints {@code Skin} in new {@code State} over the</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'> *        {@code Skin} in last {@code State} using</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'> *        {@code AlphaComposite.SrcOver.derive(alpha)} where {code alpha}</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'> *        depends on the state of animation</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'> * &lt;/ul&gt;</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'> *</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'> * @author Igor Kushnirskiy</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> */</em>
+<a id='L70' name='L70'></a>  70 <strong class='reserved'>class</strong> <a href='../R/380.html' title='Multiple referred from 8 places.'>AnimationController</a> <strong class='reserved'>implements</strong> <a href='../S/2397.html#L45' title='Defined at 45 in src/java/awt/event/ActionListener.java.'>ActionListener</a>, <a href='../S/1801.html#L34' title='Defined at 34 in src/java/beans/PropertyChangeListener.java.'>PropertyChangeListener</a> <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> VISTA_ANIMATION_DISABLED =
+<a id='L73' name='L73'></a>  73         <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> GetBooleanAction("swing.disablevistaanimation"));
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> ANIMATION_CONTROLLER_KEY =
+<a id='L77' name='L77'></a>  77         <strong class='reserved'>new</strong> <a href='../S/1560.html#L76' title='Defined at 76 in src/java/lang/StringBuilder.java.'>StringBuilder</a>("ANIMATION_CONTROLLER_KEY");
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a>, <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>&gt;&gt; animationStateMap =
+<a id='L80' name='L80'></a>  80             <strong class='reserved'>new</strong> <a href='../S/934.html#L136' title='Defined at 136 in src/java/util/WeakHashMap.java.'>WeakHashMap</a>&lt;<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a>, <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>&gt;&gt;();
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82     <em class='comment'>//this timer is used to cause repaint on animated components</em>
+<a id='L83' name='L83'></a>  83     <em class='comment'>//30 repaints per second should give smooth animation affect</em>
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.swing.<a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a> timer =
+<a id='L85' name='L85'></a>  85         <strong class='reserved'>new</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.swing.<a href='../D/8987.html' title='Multiple defined in 3 places.'>Timer</a>(1000/30, <strong class='reserved'>this</strong>);
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>synchronized</strong> <a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a> <a href='../R/15067.html' title='Multiple referred from 2 places.'>getAnimationController</a>() <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88         AppContext appContext = AppContext.getAppContext();
+<a id='L89' name='L89'></a>  89         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj = appContext.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(ANIMATION_CONTROLLER_KEY);
+<a id='L90' name='L90'></a>  90         <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91             obj = <strong class='reserved'>new</strong> <a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a>();
+<a id='L92' name='L92'></a>  92             appContext.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(ANIMATION_CONTROLLER_KEY, obj);
+<a id='L93' name='L93'></a>  93         <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94         <strong class='reserved'>return</strong> (<a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a>) obj;
+<a id='L95' name='L95'></a>  95     <em class='brace'>}</em>
+<a id='L96' name='L96'></a>  96 
+<a id='L97' name='L97'></a>  97     <strong class='reserved'>private</strong> AnimationController() <em class='brace'>{</em>
+<a id='L98' name='L98'></a>  98         timer.<a href='../S/3155.html#L461' title='Defined at 461 in src/javax/swing/Timer.java.'>setRepeats</a>(<strong class='reserved'>true</strong>);
+<a id='L99' name='L99'></a>  99         timer.<a href='../S/3155.html#L495' title='Defined at 495 in src/javax/swing/Timer.java.'>setCoalesce</a>(<strong class='reserved'>true</strong>);
+<a id='L100' name='L100'></a> 100         <em class='comment'>//we need to dispose the controller on l&amp;f change</em>
+<a id='L101' name='L101'></a> 101         <a href='../S/3125.html#L177' title='Defined at 177 in src/javax/swing/UIManager.java.'>UIManager</a>.<a href='../D/11015.html' title='Multiple defined in 48 places.'>addPropertyChangeListener</a>(<strong class='reserved'>this</strong>);
+<a id='L102' name='L102'></a> 102     <em class='brace'>}</em>
+<a id='L103' name='L103'></a> 103 
+<a id='L104' name='L104'></a> 104     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../S/6709.html#L244' title='Referred from 244 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>triggerAnimation</a>(<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>,
+<a id='L105' name='L105'></a> 105                            <a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part, <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> newState) <em class='brace'>{</em>
+<a id='L106' name='L106'></a> 106         <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> <strong class='reserved'>instanceof</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.swing.<a href='../S/3175.html#L109' title='Defined at 109 in src/javax/swing/JTabbedPane.java.'>JTabbedPane</a>
+<a id='L107' name='L107'></a> 107             || part == <a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>.<a href='../S/6754.html#L156' title='Defined at 156 in src/com/sun/java/swing/plaf/windows/TMSchema.java.'>TP_BUTTON</a>) <em class='brace'>{</em>
+<a id='L108' name='L108'></a> 108             <em class='comment'>//idk: we can not handle tabs animation because</em>
+<a id='L109' name='L109'></a> 109             <em class='comment'>//the same (component,part) is used to handle all the tabs</em>
+<a id='L110' name='L110'></a> 110             <em class='comment'>//and we can not track the states</em>
+<a id='L111' name='L111'></a> 111             <em class='comment'>//Vista theme might have transition duration for toolbar buttons</em>
+<a id='L112' name='L112'></a> 112             <em class='comment'>//but native application does not seem to animate them</em>
+<a id='L113' name='L113'></a> 113             <strong class='reserved'>return</strong>;
+<a id='L114' name='L114'></a> 114         <em class='brace'>}</em>
+<a id='L115' name='L115'></a> 115         <a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a> controller =
+<a id='L116' name='L116'></a> 116             <a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a>.<a href='../S/6709.html#L87' title='Defined at 87 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>getAnimationController</a>();
+<a id='L117' name='L117'></a> 117         <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> oldState = controller.<a href='../D/22724.html' title='Multiple defined in 28 places.'>getState</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, part);
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>if</strong> (oldState != newState) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119             controller.<a href='../S/6709.html#L202' title='Defined at 202 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>putState</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, part, newState);
+<a id='L120' name='L120'></a> 120             <strong class='reserved'>if</strong> (newState == <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a>.DEFAULTED) <em class='brace'>{</em>
+<a id='L121' name='L121'></a> 121                 <em class='comment'>// it seems for DEFAULTED button state Vista does animation from</em>
+<a id='L122' name='L122'></a> 122                 <em class='comment'>// HOT</em>
+<a id='L123' name='L123'></a> 123                 oldState = <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a>.HOT;
+<a id='L124' name='L124'></a> 124             <em class='brace'>}</em>
+<a id='L125' name='L125'></a> 125             <strong class='reserved'>if</strong> (oldState != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L126' name='L126'></a> 126                 <strong class='reserved'>long</strong> duration;
+<a id='L127' name='L127'></a> 127                 <strong class='reserved'>if</strong> (newState == <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a>.DEFAULTED) <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128                     <em class='comment'>//Only button might have DEFAULTED state</em>
+<a id='L129' name='L129'></a> 129                     <em class='comment'>//idk: do not know how to get the value from Vista</em>
+<a id='L130' name='L130'></a> 130                     <em class='comment'>//one second seems plausible value</em>
+<a id='L131' name='L131'></a> 131                     duration = 1000;
+<a id='L132' name='L132'></a> 132                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L133' name='L133'></a> 133                     <a href='../S/6758.html#L66' title='Defined at 66 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>XPStyle</a> xp = <a href='../S/6758.html#L66' title='Defined at 66 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>XPStyle</a>.<a href='../S/6758.html#L98' title='Defined at 98 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>getXP</a>();
+<a id='L134' name='L134'></a> 134                     duration = (xp != <strong class='reserved'>null</strong>)
+<a id='L135' name='L135'></a> 135                                ? xp.<a href='../S/6758.html#L457' title='Defined at 457 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>getThemeTransitionDuration</a>(
+<a id='L136' name='L136'></a> 136                                        <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, part,
+<a id='L137' name='L137'></a> 137                                        <a href='../S/6709.html#L150' title='Defined at 150 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>normalizeState</a>(oldState),
+<a id='L138' name='L138'></a> 138                                        <a href='../S/6709.html#L150' title='Defined at 150 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>normalizeState</a>(newState),
+<a id='L139' name='L139'></a> 139                                        <a href='../S/6754.html#L472' title='Defined at 472 in src/com/sun/java/swing/plaf/windows/TMSchema.java.'>Prop</a>.<a href='../S/6754.html#L505' title='Defined at 505 in src/com/sun/java/swing/plaf/windows/TMSchema.java.'>TRANSITIONDURATIONS</a>)
+<a id='L140' name='L140'></a> 140                                : 1000;
+<a id='L141' name='L141'></a> 141                 <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142                 controller.<a href='../S/6709.html#L208' title='Defined at 208 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>startAnimation</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>, part, oldState, newState, duration);
+<a id='L143' name='L143'></a> 143             <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144         <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147     <em class='comment'>// for scrollbar up, down, left and right button pictures are</em>
+<a id='L148' name='L148'></a> 148     <em class='comment'>// defined by states.  It seems that theme has duration defined</em>
+<a id='L149' name='L149'></a> 149     <em class='comment'>// only for up button states thus we doing this translation here.</em>
+<a id='L150' name='L150'></a> 150     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../R/23792.html' title='Multiple referred from 2 places.'>normalizeState</a>(<a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151         <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> rv;
+<a id='L152' name='L152'></a> 152         <strong class='reserved'>switch</strong> (<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) <em class='brace'>{</em>
+<a id='L153' name='L153'></a> 153         <strong class='reserved'>case</strong> DOWNPRESSED:
+<a id='L154' name='L154'></a> 154             <em class='comment'>/* falls through */</em>
+<a id='L155' name='L155'></a> 155         <strong class='reserved'>case</strong> LEFTPRESSED:
+<a id='L156' name='L156'></a> 156             <em class='comment'>/* falls through */</em>
+<a id='L157' name='L157'></a> 157         <strong class='reserved'>case</strong> RIGHTPRESSED:
+<a id='L158' name='L158'></a> 158             rv = UPPRESSED;
+<a id='L159' name='L159'></a> 159             <strong class='reserved'>break</strong>;
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>case</strong> DOWNDISABLED:
+<a id='L162' name='L162'></a> 162             <em class='comment'>/* falls through */</em>
+<a id='L163' name='L163'></a> 163         <strong class='reserved'>case</strong> LEFTDISABLED:
+<a id='L164' name='L164'></a> 164             <em class='comment'>/* falls through */</em>
+<a id='L165' name='L165'></a> 165         <strong class='reserved'>case</strong> RIGHTDISABLED:
+<a id='L166' name='L166'></a> 166             rv = UPDISABLED;
+<a id='L167' name='L167'></a> 167             <strong class='reserved'>break</strong>;
+<a id='L168' name='L168'></a> 168 
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>case</strong> DOWNHOT:
+<a id='L170' name='L170'></a> 170             <em class='comment'>/* falls through */</em>
+<a id='L171' name='L171'></a> 171         <strong class='reserved'>case</strong> LEFTHOT:
+<a id='L172' name='L172'></a> 172             <em class='comment'>/* falls through */</em>
+<a id='L173' name='L173'></a> 173         <strong class='reserved'>case</strong> RIGHTHOT:
+<a id='L174' name='L174'></a> 174             rv = UPHOT;
+<a id='L175' name='L175'></a> 175             <strong class='reserved'>break</strong>;
+<a id='L176' name='L176'></a> 176 
+<a id='L177' name='L177'></a> 177         <strong class='reserved'>case</strong> DOWNNORMAL:
+<a id='L178' name='L178'></a> 178             <em class='comment'>/* falls through */</em>
+<a id='L179' name='L179'></a> 179         <strong class='reserved'>case</strong> LEFTNORMAL:
+<a id='L180' name='L180'></a> 180             <em class='comment'>/* falls through */</em>
+<a id='L181' name='L181'></a> 181         <strong class='reserved'>case</strong> RIGHTNORMAL:
+<a id='L182' name='L182'></a> 182             rv = UPNORMAL;
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>break</strong>;
+<a id='L184' name='L184'></a> 184 
+<a id='L185' name='L185'></a> 185         <strong class='reserved'>default</strong> :
+<a id='L186' name='L186'></a> 186             rv = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L187' name='L187'></a> 187             <strong class='reserved'>break</strong>;
+<a id='L188' name='L188'></a> 188         <em class='brace'>}</em>
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>return</strong> rv;
+<a id='L190' name='L190'></a> 190     <em class='brace'>}</em>
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192     <strong class='reserved'>private</strong> <strong class='reserved'>synchronized</strong> <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../R/19176.html' title='Multiple referred from 92 places.'>getState</a>(<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>, <a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part) <em class='brace'>{</em>
+<a id='L193' name='L193'></a> 193         <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> rv = <strong class='reserved'>null</strong>;
+<a id='L194' name='L194'></a> 194         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> tmpObject =
+<a id='L195' name='L195'></a> 195             <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>.<a href='../S/3152.html#L4020' title='Defined at 4020 in src/javax/swing/JComponent.java.'>getClientProperty</a>(<a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a>.<a href='../D/19919.html' title='Multiple defined in 41 places.'>getKey</a>(part));
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>if</strong> (tmpObject <strong class='reserved'>instanceof</strong> <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a>) <em class='brace'>{</em>
+<a id='L197' name='L197'></a> 197             rv = (<a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a>) tmpObject;
+<a id='L198' name='L198'></a> 198         <em class='brace'>}</em>
+<a id='L199' name='L199'></a> 199         <strong class='reserved'>return</strong> rv;
+<a id='L200' name='L200'></a> 200     <em class='brace'>}</em>
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202     <strong class='reserved'>private</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../S/6709.html#L119' title='Referred from 119 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>putState</a>(<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>, <a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part,
+<a id='L203' name='L203'></a> 203                                        <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204         <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>.<a href='../S/3152.html#L4063' title='Defined at 4063 in src/javax/swing/JComponent.java.'>putClientProperty</a>(<a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a>.<a href='../D/19919.html' title='Multiple defined in 41 places.'>getKey</a>(part),
+<a id='L205' name='L205'></a> 205                                     <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L206' name='L206'></a> 206     <em class='brace'>}</em>
+<a id='L207' name='L207'></a> 207 
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>private</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../S/6709.html#L142' title='Referred from 142 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>startAnimation</a>(<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>,
+<a id='L209' name='L209'></a> 209                                      <a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part,
+<a id='L210' name='L210'></a> 210                                      <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a>,
+<a id='L211' name='L211'></a> 211                                      <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../S/2932.html#L500' title='Defined at 500 in src/javax/swing/plaf/synth/SynthParser.java.'>endState</a>,
+<a id='L212' name='L212'></a> 212                                      <strong class='reserved'>long</strong> <a href='../D/27696.html' title='Multiple defined in 5 places.'>millis</a>) <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213         <strong class='reserved'>boolean</strong> isForwardAndReverse = <strong class='reserved'>false</strong>;
+<a id='L214' name='L214'></a> 214         <strong class='reserved'>if</strong> (<a href='../S/2932.html#L500' title='Defined at 500 in src/javax/swing/plaf/synth/SynthParser.java.'>endState</a> == <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a>.DEFAULTED) <em class='brace'>{</em>
+<a id='L215' name='L215'></a> 215             isForwardAndReverse = <strong class='reserved'>true</strong>;
+<a id='L216' name='L216'></a> 216         <em class='brace'>}</em>
+<a id='L217' name='L217'></a> 217         <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>&gt; <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> = animationStateMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>if</strong> (<a href='../D/27696.html' title='Multiple defined in 5 places.'>millis</a> &lt;= 0) <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219             <strong class='reserved'>if</strong> (<a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L220' name='L220'></a> 220                 <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(part);
+<a id='L221' name='L221'></a> 221                 <strong class='reserved'>if</strong> (<a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() == 0) <em class='brace'>{</em>
+<a id='L222' name='L222'></a> 222                     animationStateMap.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L223' name='L223'></a> 223                 <em class='brace'>}</em>
+<a id='L224' name='L224'></a> 224             <em class='brace'>}</em>
+<a id='L225' name='L225'></a> 225             <strong class='reserved'>return</strong>;
+<a id='L226' name='L226'></a> 226         <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227         <strong class='reserved'>if</strong> (<a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228             <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> = <strong class='reserved'>new</strong> <a href='../S/858.html#L79' title='Defined at 79 in src/java/util/EnumMap.java.'>EnumMap</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>&gt;(<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>.<strong class='reserved'>class</strong>);
+<a id='L229' name='L229'></a> 229             animationStateMap.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>, <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>);
+<a id='L230' name='L230'></a> 230         <em class='brace'>}</em>
+<a id='L231' name='L231'></a> 231         <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(part,
+<a id='L232' name='L232'></a> 232                 <strong class='reserved'>new</strong> <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>(<a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a>, <a href='../D/27696.html' title='Multiple defined in 5 places.'>millis</a>, isForwardAndReverse));
+<a id='L233' name='L233'></a> 233         <strong class='reserved'>if</strong> (! timer.<a href='../D/26198.html' title='Multiple defined in 5 places.'>isRunning</a>()) <em class='brace'>{</em>
+<a id='L234' name='L234'></a> 234             timer.<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>();
+<a id='L235' name='L235'></a> 235         <em class='brace'>}</em>
+<a id='L236' name='L236'></a> 236     <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238     <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/24336.html' title='Multiple referred from 50 places.'>paintSkin</a>(<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>, <a href='../S/6758.html#L471' title='Defined at 471 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>Skin</a> skin,
+<a id='L239' name='L239'></a> 239                       <a href='../S/2313.html#L104' title='Defined at 104 in src/java/awt/Graphics.java.'>Graphics</a> g, <strong class='reserved'>int</strong> dx, <strong class='reserved'>int</strong> dy, <strong class='reserved'>int</strong> dw, <strong class='reserved'>int</strong> dh, <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) <em class='brace'>{</em>
+<a id='L240' name='L240'></a> 240         <strong class='reserved'>if</strong> (VISTA_ANIMATION_DISABLED) <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241             skin.<a href='../S/6758.html#L611' title='Defined at 611 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>paintSkinRaw</a>(g, dx, dy, dw, dh, <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L242' name='L242'></a> 242             <strong class='reserved'>return</strong>;
+<a id='L243' name='L243'></a> 243         <em class='brace'>}</em>
+<a id='L244' name='L244'></a> 244         <a href='../S/6709.html#L104' title='Defined at 104 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>triggerAnimation</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>, skin.part, <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L245' name='L245'></a> 245         <a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a> controller = <a href='../S/6709.html#L87' title='Defined at 87 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>getAnimationController</a>();
+<a id='L246' name='L246'></a> 246         <strong class='reserved'>synchronized</strong> (controller) <em class='brace'>{</em>
+<a id='L247' name='L247'></a> 247             <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a> animationState = <strong class='reserved'>null</strong>;
+<a id='L248' name='L248'></a> 248             <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>&gt; <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> =
+<a id='L249' name='L249'></a> 249                 controller.animationStateMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L250' name='L250'></a> 250             <strong class='reserved'>if</strong> (<a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251                 animationState = <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(skin.part);
+<a id='L252' name='L252'></a> 252             <em class='brace'>}</em>
+<a id='L253' name='L253'></a> 253             <strong class='reserved'>if</strong> (animationState != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L254' name='L254'></a> 254                 animationState.<a href='../D/28908.html' title='Multiple defined in 6 places.'>paintSkin</a>(skin, g, dx, dy, dw, dh, <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L255' name='L255'></a> 255             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L256' name='L256'></a> 256                 skin.<a href='../S/6758.html#L611' title='Defined at 611 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>paintSkinRaw</a>(g, dx, dy, dw, dh, <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L257' name='L257'></a> 257             <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258         <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/25223.html' title='Multiple referred from 58 places.'>propertyChange</a>(<a href='../S/1790.html#L47' title='Defined at 47 in src/java/beans/PropertyChangeEvent.java.'>PropertyChangeEvent</a> e) <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262         <strong class='reserved'>if</strong> ("lookAndFeel" == e.<a href='../D/21736.html' title='Multiple defined in 8 places.'>getPropertyName</a>()
+<a id='L263' name='L263'></a> 263             &amp;&amp; ! (e.<a href='../D/20884.html' title='Multiple defined in 5 places.'>getNewValue</a>() <strong class='reserved'>instanceof</strong> <a href='../S/6763.html#L93' title='Defined at 93 in src/com/sun/java/swing/plaf/windows/WindowsLookAndFeel.java.'>WindowsLookAndFeel</a>) ) <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264             <a href='../D/14970.html' title='Multiple defined in 65 places.'>dispose</a>();
+<a id='L265' name='L265'></a> 265         <em class='brace'>}</em>
+<a id='L266' name='L266'></a> 266     <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/9558.html' title='Multiple referred from 49 places.'>actionPerformed</a>(<a href='../S/2432.html#L60' title='Defined at 60 in src/java/awt/event/ActionEvent.java.'>ActionEvent</a> e) <em class='brace'>{</em>
+<a id='L269' name='L269'></a> 269         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>&lt;<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a>&gt; componentsToRemove = <strong class='reserved'>null</strong>;
+<a id='L270' name='L270'></a> 270         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>&gt; partsToRemove = <strong class='reserved'>null</strong>;
+<a id='L271' name='L271'></a> 271         <strong class='reserved'>for</strong> (<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a> : animationStateMap.<a href='../D/26719.html' title='Multiple defined in 33 places.'>keySet</a>()) <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272             <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>.<a href='../D/31014.html' title='Multiple defined in 22 places.'>repaint</a>();
+<a id='L273' name='L273'></a> 273             <strong class='reserved'>if</strong> (partsToRemove != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L274' name='L274'></a> 274                 partsToRemove.<a href='../D/12817.html' title='Multiple defined in 199 places.'>clear</a>();
+<a id='L275' name='L275'></a> 275             <em class='brace'>}</em>
+<a id='L276' name='L276'></a> 276             <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L327' title='Defined at 327 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationState</a>&gt; <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> = animationStateMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L277' name='L277'></a> 277             <strong class='reserved'>if</strong> (! <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>.<a href='../D/26239.html' title='Multiple defined in 14 places.'>isShowing</a>()
+<a id='L278' name='L278'></a> 278                   || <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> == <strong class='reserved'>null</strong>
+<a id='L279' name='L279'></a> 279                   || <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() == 0) <em class='brace'>{</em>
+<a id='L280' name='L280'></a> 280                 <strong class='reserved'>if</strong> (componentsToRemove == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L281' name='L281'></a> 281                     componentsToRemove = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a>&gt;();
+<a id='L282' name='L282'></a> 282                 <em class='brace'>}</em>
+<a id='L283' name='L283'></a> 283                 componentsToRemove.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L284' name='L284'></a> 284                 <strong class='reserved'>continue</strong>;
+<a id='L285' name='L285'></a> 285             <em class='brace'>}</em>
+<a id='L286' name='L286'></a> 286             <strong class='reserved'>for</strong> (<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part : <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/26719.html' title='Multiple defined in 33 places.'>keySet</a>()) <em class='brace'>{</em>
+<a id='L287' name='L287'></a> 287                 <strong class='reserved'>if</strong> (<a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(part).<a href='../D/25461.html' title='Multiple defined in 19 places.'>isDone</a>()) <em class='brace'>{</em>
+<a id='L288' name='L288'></a> 288                     <strong class='reserved'>if</strong> (partsToRemove == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L289' name='L289'></a> 289                         partsToRemove = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>&gt;();
+<a id='L290' name='L290'></a> 290                     <em class='brace'>}</em>
+<a id='L291' name='L291'></a> 291                     partsToRemove.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(part);
+<a id='L292' name='L292'></a> 292                 <em class='brace'>}</em>
+<a id='L293' name='L293'></a> 293             <em class='brace'>}</em>
+<a id='L294' name='L294'></a> 294             <strong class='reserved'>if</strong> (partsToRemove != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295                 <strong class='reserved'>if</strong> (partsToRemove.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() == <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()) <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296                     <em class='comment'>//animation is done for the component</em>
+<a id='L297' name='L297'></a> 297                     <strong class='reserved'>if</strong> (componentsToRemove == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L298' name='L298'></a> 298                         componentsToRemove = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a>&gt;();
+<a id='L299' name='L299'></a> 299                     <em class='brace'>}</em>
+<a id='L300' name='L300'></a> 300                     componentsToRemove.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L301' name='L301'></a> 301                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302                     <strong class='reserved'>for</strong> (<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part : partsToRemove) <em class='brace'>{</em>
+<a id='L303' name='L303'></a> 303                         <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(part);
+<a id='L304' name='L304'></a> 304                     <em class='brace'>}</em>
+<a id='L305' name='L305'></a> 305                 <em class='brace'>}</em>
+<a id='L306' name='L306'></a> 306             <em class='brace'>}</em>
+<a id='L307' name='L307'></a> 307         <em class='brace'>}</em>
+<a id='L308' name='L308'></a> 308         <strong class='reserved'>if</strong> (componentsToRemove != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309             <strong class='reserved'>for</strong> (<a href='../S/3152.html#L184' title='Defined at 184 in src/javax/swing/JComponent.java.'>JComponent</a> <a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a> : componentsToRemove) <em class='brace'>{</em>
+<a id='L310' name='L310'></a> 310                 animationStateMap.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../S/6658.html#L277' title='Defined at 277 in src/com/sun/java/swing/plaf/motif/MotifBorders.java.'>component</a>);
+<a id='L311' name='L311'></a> 311             <em class='brace'>}</em>
+<a id='L312' name='L312'></a> 312         <em class='brace'>}</em>
+<a id='L313' name='L313'></a> 313         <strong class='reserved'>if</strong> (animationStateMap.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() == 0) <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314             timer.<a href='../D/34877.html' title='Multiple defined in 25 places.'>stop</a>();
+<a id='L315' name='L315'></a> 315         <em class='brace'>}</em>
+<a id='L316' name='L316'></a> 316     <em class='brace'>}</em>
+<a id='L317' name='L317'></a> 317 
+<a id='L318' name='L318'></a> 318     <strong class='reserved'>private</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/13337.html' title='Multiple referred from 363 places.'>dispose</a>() <em class='brace'>{</em>
+<a id='L319' name='L319'></a> 319         timer.<a href='../D/34877.html' title='Multiple defined in 25 places.'>stop</a>();
+<a id='L320' name='L320'></a> 320         <a href='../S/3125.html#L177' title='Defined at 177 in src/javax/swing/UIManager.java.'>UIManager</a>.<a href='../D/30926.html' title='Multiple defined in 44 places.'>removePropertyChangeListener</a>(<strong class='reserved'>this</strong>);
+<a id='L321' name='L321'></a> 321         <strong class='reserved'>synchronized</strong> (<a href='../S/6709.html#L70' title='Defined at 70 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>AnimationController</a>.<strong class='reserved'>class</strong>) <em class='brace'>{</em>
+<a id='L322' name='L322'></a> 322             AppContext.getAppContext()
+<a id='L323' name='L323'></a> 323                 .<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(ANIMATION_CONTROLLER_KEY, <strong class='reserved'>null</strong>);
+<a id='L324' name='L324'></a> 324         <em class='brace'>}</em>
+<a id='L325' name='L325'></a> 325     <em class='brace'>}</em>
+<a id='L326' name='L326'></a> 326 
+<a id='L327' name='L327'></a> 327     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/381.html' title='Multiple referred from 8 places.'>AnimationState</a> <em class='brace'>{</em>
+<a id='L328' name='L328'></a> 328         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a>;
+<a id='L329' name='L329'></a> 329 
+<a id='L330' name='L330'></a> 330         <em class='comment'>//animation duration in nanoseconds</em>
+<a id='L331' name='L331'></a> 331         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> duration;
+<a id='L332' name='L332'></a> 332 
+<a id='L333' name='L333'></a> 333         <em class='comment'>//animatin start time in nanoseconds</em>
+<a id='L334' name='L334'></a> 334         <strong class='reserved'>private</strong> <strong class='reserved'>long</strong> startTime;
+<a id='L335' name='L335'></a> 335 
+<a id='L336' name='L336'></a> 336         <em class='comment'>//direction the alpha value is changing</em>
+<a id='L337' name='L337'></a> 337         <em class='comment'>//forward  - from 0 to 1</em>
+<a id='L338' name='L338'></a> 338         <em class='comment'>//!forward - from 1 to 0</em>
+<a id='L339' name='L339'></a> 339         <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> isForward = <strong class='reserved'>true</strong>;
+<a id='L340' name='L340'></a> 340 
+<a id='L341' name='L341'></a> 341         <em class='comment'>//if isForwardAndReverse the animation continually goes</em>
+<a id='L342' name='L342'></a> 342         <em class='comment'>//forward and reverse. alpha value is changing from 0 to 1 then</em>
+<a id='L343' name='L343'></a> 343         <em class='comment'>//from 1 to 0 and so forth</em>
+<a id='L344' name='L344'></a> 344         <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> isForwardAndReverse;
+<a id='L345' name='L345'></a> 345 
+<a id='L346' name='L346'></a> 346         <strong class='reserved'>private</strong> <strong class='reserved'>float</strong> progress;
+<a id='L347' name='L347'></a> 347 
+<a id='L348' name='L348'></a> 348         AnimationState(<strong class='reserved'>final</strong> <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a>,
+<a id='L349' name='L349'></a> 349                        <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> milliseconds,
+<a id='L350' name='L350'></a> 350                        <strong class='reserved'>boolean</strong> isForwardAndReverse) <em class='brace'>{</em>
+<a id='L351' name='L351'></a> 351             <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> <a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a> != <strong class='reserved'>null</strong> &amp;&amp; milliseconds &gt; 0;
+<a id='L352' name='L352'></a> 352             <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> <a href='../S/3164.html#L53' title='Defined at 53 in src/javax/swing/SwingUtilities.java.'>SwingUtilities</a>.<a href='../S/3164.html#L1359' title='Defined at 1359 in src/javax/swing/SwingUtilities.java.'>isEventDispatchThread</a>();
+<a id='L353' name='L353'></a> 353 
+<a id='L354' name='L354'></a> 354             <strong class='reserved'>this</strong>.<a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a> = <a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a>;
+<a id='L355' name='L355'></a> 355             <strong class='reserved'>this</strong>.duration = milliseconds * 1000000;
+<a id='L356' name='L356'></a> 356             <strong class='reserved'>this</strong>.startTime = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L399' title='Defined at 399 in src/java/lang/System.java.'>nanoTime</a>();
+<a id='L357' name='L357'></a> 357             <strong class='reserved'>this</strong>.isForwardAndReverse = isForwardAndReverse;
+<a id='L358' name='L358'></a> 358             progress = 0f;
+<a id='L359' name='L359'></a> 359         <em class='brace'>}</em>
+<a id='L360' name='L360'></a> 360         <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6709.html#L384' title='Referred from 384 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>updateProgress</a>() <em class='brace'>{</em>
+<a id='L361' name='L361'></a> 361             <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> <a href='../S/3164.html#L53' title='Defined at 53 in src/javax/swing/SwingUtilities.java.'>SwingUtilities</a>.<a href='../S/3164.html#L1359' title='Defined at 1359 in src/javax/swing/SwingUtilities.java.'>isEventDispatchThread</a>();
+<a id='L362' name='L362'></a> 362 
+<a id='L363' name='L363'></a> 363             <strong class='reserved'>if</strong> (<a href='../D/25461.html' title='Multiple defined in 19 places.'>isDone</a>()) <em class='brace'>{</em>
+<a id='L364' name='L364'></a> 364                 <strong class='reserved'>return</strong>;
+<a id='L365' name='L365'></a> 365             <em class='brace'>}</em>
+<a id='L366' name='L366'></a> 366             <strong class='reserved'>long</strong> currentTime = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L399' title='Defined at 399 in src/java/lang/System.java.'>nanoTime</a>();
+<a id='L367' name='L367'></a> 367 
+<a id='L368' name='L368'></a> 368             progress = ((<strong class='reserved'>float</strong>) (currentTime - startTime))
+<a id='L369' name='L369'></a> 369                 / duration;
+<a id='L370' name='L370'></a> 370             progress = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(progress, 0); <em class='comment'>//in case time was reset</em>
+<a id='L371' name='L371'></a> 371             <strong class='reserved'>if</strong> (progress &gt;= 1) <em class='brace'>{</em>
+<a id='L372' name='L372'></a> 372                 progress = 1;
+<a id='L373' name='L373'></a> 373                 <strong class='reserved'>if</strong> (isForwardAndReverse) <em class='brace'>{</em>
+<a id='L374' name='L374'></a> 374                     startTime = currentTime;
+<a id='L375' name='L375'></a> 375                     progress = 0;
+<a id='L376' name='L376'></a> 376                     isForward = ! isForward;
+<a id='L377' name='L377'></a> 377                 <em class='brace'>}</em>
+<a id='L378' name='L378'></a> 378             <em class='brace'>}</em>
+<a id='L379' name='L379'></a> 379         <em class='brace'>}</em>
+<a id='L380' name='L380'></a> 380         <strong class='reserved'>void</strong> <a href='../R/24336.html' title='Multiple referred from 50 places.'>paintSkin</a>(<a href='../S/6758.html#L471' title='Defined at 471 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>Skin</a> skin, <a href='../S/2313.html#L104' title='Defined at 104 in src/java/awt/Graphics.java.'>Graphics</a> _g,
+<a id='L381' name='L381'></a> 381                        <strong class='reserved'>int</strong> dx, <strong class='reserved'>int</strong> dy, <strong class='reserved'>int</strong> dw, <strong class='reserved'>int</strong> dh, <a href='../D/8356.html' title='Multiple defined in 12 places.'>State</a> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>) <em class='brace'>{</em>
+<a id='L382' name='L382'></a> 382             <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> <a href='../S/3164.html#L53' title='Defined at 53 in src/javax/swing/SwingUtilities.java.'>SwingUtilities</a>.<a href='../S/3164.html#L1359' title='Defined at 1359 in src/javax/swing/SwingUtilities.java.'>isEventDispatchThread</a>();
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384             <a href='../S/6709.html#L360' title='Defined at 360 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>updateProgress</a>();
+<a id='L385' name='L385'></a> 385             <strong class='reserved'>if</strong> (! <a href='../D/25461.html' title='Multiple defined in 19 places.'>isDone</a>()) <em class='brace'>{</em>
+<a id='L386' name='L386'></a> 386                 <a href='../S/2098.html#L407' title='Defined at 407 in src/java/awt/Graphics2D.java.'>Graphics2D</a> g = (<a href='../S/2098.html#L407' title='Defined at 407 in src/java/awt/Graphics2D.java.'>Graphics2D</a>) _g.<a href='../D/13587.html' title='Multiple defined in 90 places.'>create</a>();
+<a id='L387' name='L387'></a> 387                 skin.<a href='../S/6758.html#L611' title='Defined at 611 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>paintSkinRaw</a>(g, dx, dy, dw, dh, <a href='../S/2932.html#L439' title='Defined at 439 in src/javax/swing/plaf/synth/SynthParser.java.'>startState</a>);
+<a id='L388' name='L388'></a> 388                 <strong class='reserved'>float</strong> alpha;
+<a id='L389' name='L389'></a> 389                 <strong class='reserved'>if</strong> (isForward) <em class='brace'>{</em>
+<a id='L390' name='L390'></a> 390                     alpha = progress;
+<a id='L391' name='L391'></a> 391                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L392' name='L392'></a> 392                     alpha = 1 - progress;
+<a id='L393' name='L393'></a> 393                 <em class='brace'>}</em>
+<a id='L394' name='L394'></a> 394                 g.<a href='../S/2098.html#L859' title='Defined at 859 in src/java/awt/Graphics2D.java.'>setComposite</a>(<a href='../S/2356.html#L346' title='Defined at 346 in src/java/awt/AlphaComposite.java.'>AlphaComposite</a>.SrcOver.<a href='../D/14847.html' title='Multiple defined in 2 places.'>derive</a>(alpha));
+<a id='L395' name='L395'></a> 395                 skin.<a href='../S/6758.html#L611' title='Defined at 611 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>paintSkinRaw</a>(g, dx, dy, dw, dh, <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L396' name='L396'></a> 396                 g.<a href='../D/14970.html' title='Multiple defined in 65 places.'>dispose</a>();
+<a id='L397' name='L397'></a> 397             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L398' name='L398'></a> 398                 skin.<a href='../S/6758.html#L611' title='Defined at 611 in src/com/sun/java/swing/plaf/windows/XPStyle.java.'>paintSkinRaw</a>(_g, dx, dy, dw, dh, <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>);
+<a id='L399' name='L399'></a> 399             <em class='brace'>}</em>
+<a id='L400' name='L400'></a> 400         <em class='brace'>}</em>
+<a id='L401' name='L401'></a> 401         <strong class='reserved'>boolean</strong> <a href='../R/21378.html' title='Multiple referred from 29 places.'>isDone</a>() <em class='brace'>{</em>
+<a id='L402' name='L402'></a> 402             <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> <a href='../S/3164.html#L53' title='Defined at 53 in src/javax/swing/SwingUtilities.java.'>SwingUtilities</a>.<a href='../S/3164.html#L1359' title='Defined at 1359 in src/javax/swing/SwingUtilities.java.'>isEventDispatchThread</a>();
+<a id='L403' name='L403'></a> 403 
+<a id='L404' name='L404'></a> 404             <strong class='reserved'>return</strong>  progress &gt;= 1;
+<a id='L405' name='L405'></a> 405         <em class='brace'>}</em>
+<a id='L406' name='L406'></a> 406     <em class='brace'>}</em>
+<a id='L407' name='L407'></a> 407 
+<a id='L408' name='L408'></a> 408     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/6057.html' title='Multiple referred from 7 places.'>PartUIClientPropertyKey</a>
+<a id='L409' name='L409'></a> 409           <strong class='reserved'>implements</strong> UIClientPropertyKey <em class='brace'>{</em>
+<a id='L410' name='L410'></a> 410 
+<a id='L411' name='L411'></a> 411         <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a>&gt; <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> =
+<a id='L412' name='L412'></a> 412             <strong class='reserved'>new</strong> <a href='../S/858.html#L79' title='Defined at 79 in src/java/util/EnumMap.java.'>EnumMap</a>&lt;<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>, <a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a>&gt;(<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a>.<strong class='reserved'>class</strong>);
+<a id='L413' name='L413'></a> 413 
+<a id='L414' name='L414'></a> 414         <strong class='reserved'>static</strong> <strong class='reserved'>synchronized</strong> <a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a> <a href='../R/17222.html' title='Multiple referred from 269 places.'>getKey</a>(<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part) <em class='brace'>{</em>
+<a id='L415' name='L415'></a> 415             <a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a> rv = <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(part);
+<a id='L416' name='L416'></a> 416             <strong class='reserved'>if</strong> (rv == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L417' name='L417'></a> 417                 rv = <strong class='reserved'>new</strong> <a href='../S/6709.html#L408' title='Defined at 408 in src/com/sun/java/swing/plaf/windows/AnimationController.java.'>PartUIClientPropertyKey</a>(part);
+<a id='L418' name='L418'></a> 418                 <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(part, rv);
+<a id='L419' name='L419'></a> 419             <em class='brace'>}</em>
+<a id='L420' name='L420'></a> 420             <strong class='reserved'>return</strong> rv;
+<a id='L421' name='L421'></a> 421         <em class='brace'>}</em>
+<a id='L422' name='L422'></a> 422 
+<a id='L423' name='L423'></a> 423         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part;
+<a id='L424' name='L424'></a> 424         <strong class='reserved'>private</strong> PartUIClientPropertyKey(<a href='../D/6649.html' title='Multiple defined in 2 places.'>Part</a> part) <em class='brace'>{</em>
+<a id='L425' name='L425'></a> 425             <strong class='reserved'>this</strong>.part  = part;
+<a id='L426' name='L426'></a> 426         <em class='brace'>}</em>
+<a id='L427' name='L427'></a> 427         <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
+<a id='L428' name='L428'></a> 428             <strong class='reserved'>return</strong> part.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L429' name='L429'></a> 429         <em class='brace'>}</em>
+<a id='L430' name='L430'></a> 430     <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L427'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

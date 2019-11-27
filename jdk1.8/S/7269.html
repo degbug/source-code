@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/resolver/BootstrapResolverImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7769.html'>resolver</a>/BootstrapResolverImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L82'>[^]</a><a href='#L145'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L82' title='Defined at 82.'>invoke</a></li>
+<li><a href='#L126' title='Defined at 126.'>resolve</a></li>
+<li><a href='#L145' title='Defined at 145.'>list</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.resolver ;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> org.omg.CORBA.portable.InputStream ;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> org.omg.CORBA.portable.OutputStream ;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.CORBA.portable.ApplicationException ;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> org.omg.CORBA.portable.RemarshalException ;
+<a id='L32' name='L32'></a>  32 
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IOR ;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORFactories ;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORTemplate ;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKey ;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKeyFactory ;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPAddress ;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPProfileTemplate ;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPFactories ;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.GIOPVersion ;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains ;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB ;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.corba.se.spi.resolver.Resolver ;
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException ;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility ;
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/869.html' title='Multiple referred from 2 places.'>BootstrapResolverImpl</a> <strong class='reserved'>implements</strong> <a href='../D/7320.html' title='Multiple defined in 4 places.'>Resolver</a> <em class='brace'>{</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>private</strong> org.omg.CORBA.portable.<a href='../D/2367.html' title='Multiple defined in 7 places.'>Delegate</a> bootstrapDelegate ;
+<a id='L51' name='L51'></a>  51     <strong class='reserved'>private</strong> <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> wrapper ;
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>public</strong> BootstrapResolverImpl(<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> host, <strong class='reserved'>int</strong> port) <em class='brace'>{</em>
+<a id='L54' name='L54'></a>  54         wrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L55' name='L55'></a>  55             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.ORB_RESOLVER ) ;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57         <em class='comment'>// Create a new IOR with the magic of INIT</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>byte</strong>[] initialKey = "INIT".<a href='../D/17415.html' title='Multiple defined in 35 places.'>getBytes</a>() ;
+<a id='L59' name='L59'></a>  59         <a href='../S/7502.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/ior/ObjectKey.java.'>ObjectKey</a> okey = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21145.html' title='Multiple defined in 3 places.'>getObjectKeyFactory</a>().<a href='../D/13587.html' title='Multiple defined in 90 places.'>create</a>(initialKey) ;
+<a id='L60' name='L60'></a>  60 
+<a id='L61' name='L61'></a>  61         <a href='../S/7482.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/ior/iiop/IIOPAddress.java.'>IIOPAddress</a> addr = <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../D/27290.html' title='Multiple defined in 2 places.'>makeIIOPAddress</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, host, port ) ;
+<a id='L62' name='L62'></a>  62         <a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a> ptemp = <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L226' title='Defined at 226 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeIIOPProfileTemplate</a>(
+<a id='L63' name='L63'></a>  63             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>.V1_0, addr);
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65         <a href='../S/7475.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/ior/IORTemplate.java.'>IORTemplate</a> iortemp = <a href='../S/7476.html#L62' title='Defined at 62 in src/com/sun/corba/se/spi/ior/IORFactories.java.'>IORFactories</a>.<a href='../D/27299.html' title='Multiple defined in 2 places.'>makeIORTemplate</a>( okey.<a href='../D/23029.html' title='Multiple defined in 5 places.'>getTemplate</a>() ) ;
+<a id='L66' name='L66'></a>  66         iortemp.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>( ptemp ) ;
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68         <a href='../D/3967.html' title='Multiple defined in 3 places.'>IOR</a> initialIOR = iortemp.<a href='../D/27298.html' title='Multiple defined in 6 places.'>makeIOR</a>( (com.sun.corba.se.spi.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L69' name='L69'></a>  69             "", okey.<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() ) ;
+<a id='L70' name='L70'></a>  70 
+<a id='L71' name='L71'></a>  71         bootstrapDelegate = <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../S/6919.html#L675' title='Defined at 675 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>makeClientDelegate</a>( initialIOR ) ;
+<a id='L72' name='L72'></a>  72     <em class='brace'>}</em>
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <em class='comment'>/**</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * For the BootStrap operation we do not expect to have more than one</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     * parameter. We do not want to extend BootStrap protocol any further,</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * as INS handles most of what BootStrap can handle in a portable way.</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     *</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * @return InputStream which contains the response from the</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * BootStrapOperation.</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     */</em>
+<a id='L82' name='L82'></a>  82     <strong class='reserved'>private</strong> <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../R/21052.html' title='Multiple referred from 440 places.'>invoke</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> operationName, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1626.html#L504' title='Defined at 504 in src/java/lang/invoke/LambdaForm.java.'>parameter</a> )
+<a id='L83' name='L83'></a>  83     <em class='brace'>{</em>
+<a id='L84' name='L84'></a>  84         <strong class='reserved'>boolean</strong> remarshal = <strong class='reserved'>true</strong>;
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86         <em class='comment'>// Invoke.</em>
+<a id='L87' name='L87'></a>  87 
+<a id='L88' name='L88'></a>  88         <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> inStream = <strong class='reserved'>null</strong>;
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90         <em class='comment'>// If there is a location forward then you will need</em>
+<a id='L91' name='L91'></a>  91         <em class='comment'>// to invoke again on the updated information.</em>
+<a id='L92' name='L92'></a>  92         <em class='comment'>// Just calling this same routine with the same host/port</em>
+<a id='L93' name='L93'></a>  93         <em class='comment'>// does not take the location forward info into account.</em>
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>while</strong> (remarshal) <em class='brace'>{</em>
+<a id='L96' name='L96'></a>  96             org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> objref = <strong class='reserved'>null</strong> ;
+<a id='L97' name='L97'></a>  97             remarshal = <strong class='reserved'>false</strong>;
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99             <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> os = (<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a>) bootstrapDelegate.<a href='../D/31115.html' title='Multiple defined in 8 places.'>request</a>( objref,
+<a id='L100' name='L100'></a> 100                 operationName, <strong class='reserved'>true</strong>);
+<a id='L101' name='L101'></a> 101 
+<a id='L102' name='L102'></a> 102             <strong class='reserved'>if</strong> ( <a href='../S/1626.html#L504' title='Defined at 504 in src/java/lang/invoke/LambdaForm.java.'>parameter</a> != <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L103' name='L103'></a> 103                 os.<a href='../D/37259.html' title='Multiple defined in 7 places.'>write_string</a>( <a href='../S/1626.html#L504' title='Defined at 504 in src/java/lang/invoke/LambdaForm.java.'>parameter</a> );
+<a id='L104' name='L104'></a> 104             <em class='brace'>}</em>
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L107' name='L107'></a> 107                 <em class='comment'>// The only reason a null objref is passed is to get the version of</em>
+<a id='L108' name='L108'></a> 108                 <em class='comment'>// invoke used by streams.  Otherwise the PortableInterceptor</em>
+<a id='L109' name='L109'></a> 109                 <em class='comment'>// call stack will become unbalanced since the version of</em>
+<a id='L110' name='L110'></a> 110                 <em class='comment'>// invoke which only takes the stream does not call</em>
+<a id='L111' name='L111'></a> 111                 <em class='comment'>// PortableInterceptor ending points.</em>
+<a id='L112' name='L112'></a> 112                 <em class='comment'>// Note that the first parameter is ignored inside invoke.</em>
+<a id='L113' name='L113'></a> 113 
+<a id='L114' name='L114'></a> 114                 inStream = bootstrapDelegate.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>( objref, os);
+<a id='L115' name='L115'></a> 115             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/312.html#L32' title='Defined at 32 in src/org/omg/CORBA/portable/ApplicationException.java.'>ApplicationException</a> e) <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/11893.html' title='Multiple defined in 4 places.'>bootstrapApplicationException</a>( e ) ;
+<a id='L117' name='L117'></a> 117             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/308.html#L39' title='Defined at 39 in src/org/omg/CORBA/portable/RemarshalException.java.'>RemarshalException</a> e) <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118                 <em class='comment'>// XXX log this</em>
+<a id='L119' name='L119'></a> 119                 remarshal = <strong class='reserved'>true</strong>;
+<a id='L120' name='L120'></a> 120             <em class='brace'>}</em>
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123         <strong class='reserved'>return</strong> inStream;
+<a id='L124' name='L124'></a> 124     <em class='brace'>}</em>
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126     <strong class='reserved'>public</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/26316.html' title='Multiple referred from 78 places.'>resolve</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> identifier )
+<a id='L127' name='L127'></a> 127     <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128         <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> inStream = <strong class='reserved'>null</strong> ;
+<a id='L129' name='L129'></a> 129         org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>null</strong> ;
+<a id='L130' name='L130'></a> 130 
+<a id='L131' name='L131'></a> 131         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132             inStream = <a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>( "get", identifier ) ;
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = inStream.<a href='../D/30306.html' title='Multiple defined in 16 places.'>read_Object</a>();
+<a id='L135' name='L135'></a> 135 
+<a id='L136' name='L136'></a> 136             <em class='comment'>// NOTE: do note trap and ignore errors.</em>
+<a id='L137' name='L137'></a> 137             <em class='comment'>// Let them flow out.</em>
+<a id='L138' name='L138'></a> 138         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139             bootstrapDelegate.<a href='../D/30648.html' title='Multiple defined in 2 places.'>releaseReply</a>( <strong class='reserved'>null</strong>, inStream ) ;
+<a id='L140' name='L140'></a> 140         <em class='brace'>}</em>
+<a id='L141' name='L141'></a> 141 
+<a id='L142' name='L142'></a> 142         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> ;
+<a id='L143' name='L143'></a> 143     <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145     <strong class='reserved'>public</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a> <a href='../R/22527.html' title='Multiple referred from 1488 places.'>list</a>()
+<a id='L146' name='L146'></a> 146     <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147         <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> inStream = <strong class='reserved'>null</strong> ;
+<a id='L148' name='L148'></a> 148         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../S/1136.html#L89' title='Defined at 89 in src/java/util/HashSet.java.'>HashSet</a>() ;
+<a id='L149' name='L149'></a> 149 
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151             inStream = <a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>( "list", <strong class='reserved'>null</strong> ) ;
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153             <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = inStream.<a href='../D/30324.html' title='Multiple defined in 9 places.'>read_long</a>();
+<a id='L154' name='L154'></a> 154             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i &lt; <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>; i++)
+<a id='L155' name='L155'></a> 155                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>( inStream.<a href='../D/30336.html' title='Multiple defined in 9 places.'>read_string</a>() ) ;
+<a id='L156' name='L156'></a> 156 
+<a id='L157' name='L157'></a> 157             <em class='comment'>// NOTE: do note trap and ignore errors.</em>
+<a id='L158' name='L158'></a> 158             <em class='comment'>// Let them flow out.</em>
+<a id='L159' name='L159'></a> 159         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160             bootstrapDelegate.<a href='../D/30648.html' title='Multiple defined in 2 places.'>releaseReply</a>( <strong class='reserved'>null</strong>, inStream ) ;
+<a id='L161' name='L161'></a> 161         <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> ;
+<a id='L164' name='L164'></a> 164     <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L82'>[^]</a><a href='#L145'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

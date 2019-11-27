@@ -1,0 +1,343 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7817.html'>imageio</a>/<a href='../files/7818.html'>plugins</a>/<a href='../files/7822.html'>jpeg</a>/DQTMarkerSegment.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L292'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L87' title='Defined at 87.'>clone</a></li>
+<li><a href='#L98' title='Defined at 98.'>getNativeNode</a></li>
+<li><a href='#L111' title='Defined at 111.'>write</a></li>
+<li><a href='#L115' title='Defined at 115.'>print</a></li>
+<li><a href='#L131' title='Defined at 131.'>getChromaForLuma</a></li>
+<li><a href='#L171' title='Defined at 171.'>getQtableFromNode</a></li>
+<li><a href='#L271' title='Defined at 271.'>clone</a></li>
+<li><a href='#L282' title='Defined at 282.'>getNativeNode</a></li>
+<li><a href='#L292' title='Defined at 292.'>print</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.imageio.plugins.jpeg;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> javax.imageio.IIOException;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> javax.imageio.metadata.IIOInvalidTreeException;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> javax.imageio.metadata.IIOMetadataNode;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> javax.imageio.stream.ImageOutputStream;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> javax.imageio.plugins.jpeg.JPEGQTable;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.util.List;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.ArrayList;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.w3c.dom.Node;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> org.w3c.dom.NodeList;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> org.w3c.dom.NamedNodeMap;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <em class='comment'>/**</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * A DQT (Define Quantization Table) marker segment.</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> */</em>
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>class</strong> <a href='../R/1927.html' title='Multiple referred from 31 places.'>DQTMarkerSegment</a> <strong class='reserved'>extends</strong> <a href='../S/6820.html#L45' title='Defined at 45 in src/com/sun/imageio/plugins/jpeg/MarkerSegment.java.'>MarkerSegment</a> <em class='brace'>{</em>
+<a id='L47' name='L47'></a>  47     <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> tables = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();  <em class='comment'>// Could be 1 to 4</em>
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49     DQTMarkerSegment(<strong class='reserved'>float</strong> quality, <strong class='reserved'>boolean</strong> needTwo) <em class='brace'>{</em>
+<a id='L50' name='L50'></a>  50         <strong class='reserved'>super</strong>(<a href='../S/6816.html#L41' title='Defined at 41 in src/com/sun/imageio/plugins/jpeg/JPEG.java.'>JPEG</a>.DQT);
+<a id='L51' name='L51'></a>  51         tables.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(<strong class='reserved'>true</strong>, quality));
+<a id='L52' name='L52'></a>  52         <strong class='reserved'>if</strong> (needTwo) <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53             tables.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(<strong class='reserved'>false</strong>, quality));
+<a id='L54' name='L54'></a>  54         <em class='brace'>}</em>
+<a id='L55' name='L55'></a>  55     <em class='brace'>}</em>
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     DQTMarkerSegment(<a href='../S/6806.html#L37' title='Defined at 37 in src/com/sun/imageio/plugins/jpeg/JPEGBuffer.java.'>JPEGBuffer</a> <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>super</strong>(<a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>);
+<a id='L59' name='L59'></a>  59         <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L60' name='L60'></a>  60         <strong class='reserved'>while</strong> (<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> &gt; 0) <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61             <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> newGuy = <strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(<a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>);
+<a id='L62' name='L62'></a>  62             tables.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(newGuy);
+<a id='L63' name='L63'></a>  63             <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> -= newGuy.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>+1;
+<a id='L64' name='L64'></a>  64         <em class='brace'>}</em>
+<a id='L65' name='L65'></a>  65         <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.bufAvail -= <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L66' name='L66'></a>  66     <em class='brace'>}</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     DQTMarkerSegment(<a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>[] qtables) <em class='brace'>{</em>
+<a id='L69' name='L69'></a>  69         <strong class='reserved'>super</strong>(<a href='../S/6816.html#L41' title='Defined at 41 in src/com/sun/imageio/plugins/jpeg/JPEG.java.'>JPEG</a>.DQT);
+<a id='L70' name='L70'></a>  70         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; qtables.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L71' name='L71'></a>  71             tables.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(qtables[i], i));
+<a id='L72' name='L72'></a>  72         <em class='brace'>}</em>
+<a id='L73' name='L73'></a>  73     <em class='brace'>}</em>
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75     DQTMarkerSegment(<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <strong class='reserved'>throws</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a> <em class='brace'>{</em>
+<a id='L76' name='L76'></a>  76         <strong class='reserved'>super</strong>(<a href='../S/6816.html#L41' title='Defined at 41 in src/com/sun/imageio/plugins/jpeg/JPEG.java.'>JPEG</a>.DQT);
+<a id='L77' name='L77'></a>  77         <a href='../S/115.html#L52' title='Defined at 52 in src/org/w3c/dom/NodeList.java.'>NodeList</a> <a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a> = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/17640.html' title='Multiple defined in 11 places.'>getChildNodes</a>();
+<a id='L78' name='L78'></a>  78         <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = <a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a>.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L79' name='L79'></a>  79         <strong class='reserved'>if</strong> ((<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> &lt; 1) || (<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> &gt; 4)) <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a>("Invalid DQT node", <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L81' name='L81'></a>  81         <em class='brace'>}</em>
+<a id='L82' name='L82'></a>  82         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>; i++) <em class='brace'>{</em>
+<a id='L83' name='L83'></a>  83             tables.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(<a href='../D/12744.html' title='Multiple defined in 7 places.'>children</a>.<a href='../D/26564.html' title='Multiple defined in 60 places.'>item</a>(i)));
+<a id='L84' name='L84'></a>  84         <em class='brace'>}</em>
+<a id='L85' name='L85'></a>  85     <em class='brace'>}</em>
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>protected</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/11555.html' title='Multiple referred from 1378 places.'>clone</a>() <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88         <a href='../S/6825.html#L46' title='Defined at 46 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>DQTMarkerSegment</a> newGuy = (<a href='../S/6825.html#L46' title='Defined at 46 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>DQTMarkerSegment</a>) <strong class='reserved'>super</strong>.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L89' name='L89'></a>  89         newGuy.tables = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>(tables.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>());
+<a id='L90' name='L90'></a>  90         <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> <a href='../D/26587.html' title='Multiple defined in 2 places.'>iter</a> = tables.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L91' name='L91'></a>  91         <strong class='reserved'>while</strong> (<a href='../D/26587.html' title='Multiple defined in 2 places.'>iter</a>.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92             <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> table = (<a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>) <a href='../D/26587.html' title='Multiple defined in 2 places.'>iter</a>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L93' name='L93'></a>  93             newGuy.tables.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(table.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>());
+<a id='L94' name='L94'></a>  94         <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95         <strong class='reserved'>return</strong> newGuy;
+<a id='L96' name='L96'></a>  96     <em class='brace'>}</em>
+<a id='L97' name='L97'></a>  97 
+<a id='L98' name='L98'></a>  98     <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a> <a href='../R/17874.html' title='Multiple referred from 9 places.'>getNativeNode</a>() <em class='brace'>{</em>
+<a id='L99' name='L99'></a>  99         <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a> = <strong class='reserved'>new</strong> <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a>("dqt");
+<a id='L100' name='L100'></a> 100         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i= 0; i&lt;tables.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>(); i++) <em class='brace'>{</em>
+<a id='L101' name='L101'></a> 101             <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> table = (<a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>) tables.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(i);
+<a id='L102' name='L102'></a> 102             <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/11365.html' title='Multiple defined in 17 places.'>appendChild</a>(table.<a href='../D/20840.html' title='Multiple defined in 18 places.'>getNativeNode</a>());
+<a id='L103' name='L103'></a> 103         <em class='brace'>}</em>
+<a id='L104' name='L104'></a> 104         <strong class='reserved'>return</strong> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L105' name='L105'></a> 105     <em class='brace'>}</em>
+<a id='L106' name='L106'></a> 106 
+<a id='L107' name='L107'></a> 107     <em class='comment'>/**</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * Writes the data for this segment to the stream in</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * valid JPEG format.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     */</em>
+<a id='L111' name='L111'></a> 111     <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<a href='../S/4199.html#L52' title='Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.'>ImageOutputStream</a> ios) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L112' name='L112'></a> 112         <em class='comment'>// We don't write DQT segments; the IJG library does.</em>
+<a id='L113' name='L113'></a> 113     <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115     <strong class='reserved'>void</strong> <a href='../R/24978.html' title='Multiple referred from 1157 places.'>print</a>() <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116         <a href='../S/6820.html#L201' title='Defined at 201 in src/com/sun/imageio/plugins/jpeg/MarkerSegment.java.'>printTag</a>("DQT");
+<a id='L117' name='L117'></a> 117         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("Num tables: "
+<a id='L118' name='L118'></a> 118                            + <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(tables.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()));
+<a id='L119' name='L119'></a> 119         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i= 0; i&lt;tables.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>(); i++) <em class='brace'>{</em>
+<a id='L120' name='L120'></a> 120             <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> table = (<a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>) tables.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(i);
+<a id='L121' name='L121'></a> 121             table.<a href='../D/29620.html' title='Multiple defined in 86 places.'>print</a>();
+<a id='L122' name='L122'></a> 122         <em class='brace'>}</em>
+<a id='L123' name='L123'></a> 123         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>();
+<a id='L124' name='L124'></a> 124     <em class='brace'>}</em>
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126     <em class='comment'>/**</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * Assuming the given table was generated by scaling the "standard"</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * visually lossless luminance table, extract the scale factor that</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * was used.</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     */</em>
+<a id='L131' name='L131'></a> 131     <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> <a href='../S/6810.html#L1840' title='Referred from 1840 in src/com/sun/imageio/plugins/jpeg/JPEGMetadata.java.'>getChromaForLuma</a>(<a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> luma) <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132         <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> newGuy = <strong class='reserved'>null</strong>;
+<a id='L133' name='L133'></a> 133         <em class='comment'>// Determine if the table is all the same values</em>
+<a id='L134' name='L134'></a> 134         <em class='comment'>// if so, use the same table</em>
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>boolean</strong> allSame = <strong class='reserved'>true</strong>;
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 1; i &lt; luma.QTABLE_SIZE; i++) <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137             <strong class='reserved'>if</strong> (luma.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] != luma.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i-1]) <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138                 allSame = <strong class='reserved'>false</strong>;
+<a id='L139' name='L139'></a> 139                 <strong class='reserved'>break</strong>;
+<a id='L140' name='L140'></a> 140             <em class='brace'>}</em>
+<a id='L141' name='L141'></a> 141         <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142         <strong class='reserved'>if</strong> (allSame) <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143             newGuy = (<a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>) luma.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L144' name='L144'></a> 144             newGuy.tableID = 1;
+<a id='L145' name='L145'></a> 145         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146             <em class='comment'>// Otherwise, find the largest coefficient less than 255.  This is</em>
+<a id='L147' name='L147'></a> 147             <em class='comment'>// the largest value that we know did not clamp on scaling.</em>
+<a id='L148' name='L148'></a> 148             <strong class='reserved'>int</strong> largestPos = 0;
+<a id='L149' name='L149'></a> 149             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 1; i &lt; luma.QTABLE_SIZE; i++) <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150                 <strong class='reserved'>if</strong> (luma.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] &gt; luma.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[largestPos]) <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151                     largestPos = i;
+<a id='L152' name='L152'></a> 152                 <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153             <em class='brace'>}</em>
+<a id='L154' name='L154'></a> 154             <em class='comment'>// Compute the scale factor by dividing it by the value in the</em>
+<a id='L155' name='L155'></a> 155             <em class='comment'>// same position from the "standard" table.</em>
+<a id='L156' name='L156'></a> 156             <em class='comment'>// If the given table was not generated by scaling the standard,</em>
+<a id='L157' name='L157'></a> 157             <em class='comment'>// the resulting table will still be reasonable, as it will reflect</em>
+<a id='L158' name='L158'></a> 158             <em class='comment'>// a comparable scaling of chrominance frequency response of the</em>
+<a id='L159' name='L159'></a> 159             <em class='comment'>// eye.</em>
+<a id='L160' name='L160'></a> 160             <strong class='reserved'>float</strong> scaleFactor = ((<strong class='reserved'>float</strong>)(luma.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[largestPos]))
+<a id='L161' name='L161'></a> 161                 / ((<strong class='reserved'>float</strong>)(<a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>.K1Div2Luminance.<a href='../D/22972.html' title='Multiple defined in 9 places.'>getTable</a>()[largestPos]));
+<a id='L162' name='L162'></a> 162             <em class='comment'>//    generate a new table</em>
+<a id='L163' name='L163'></a> 163             <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a> jpegTable =
+<a id='L164' name='L164'></a> 164                 <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>.K2Div2Chrominance.<a href='../D/22244.html' title='Multiple defined in 3 places.'>getScaledInstance</a>(scaleFactor,
+<a id='L165' name='L165'></a> 165                                                                <strong class='reserved'>true</strong>);
+<a id='L166' name='L166'></a> 166             newGuy = <strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(jpegTable, 1);
+<a id='L167' name='L167'></a> 167         <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168         <strong class='reserved'>return</strong> newGuy;
+<a id='L169' name='L169'></a> 169     <em class='brace'>}</em>
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171     <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> <a href='../R/18565.html' title='Multiple referred from 2 places.'>getQtableFromNode</a>(<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <strong class='reserved'>throws</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a> <em class='brace'>{</em>
+<a id='L172' name='L172'></a> 172         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L173' name='L173'></a> 173     <em class='brace'>}</em>
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175     <em class='comment'>/**</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * A quantization table within a DQT marker segment.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     */</em>
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>class</strong> <a href='../R/6361.html' title='Multiple referred from 24 places.'>Qtable</a> <strong class='reserved'>implements</strong> <a href='../S/1744.html#L53' title='Defined at 53 in src/java/lang/Cloneable.java.'>Cloneable</a> <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179         <strong class='reserved'>int</strong> elementPrecision;
+<a id='L180' name='L180'></a> 180         <strong class='reserved'>int</strong> tableID;
+<a id='L181' name='L181'></a> 181         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> QTABLE_SIZE = 64;
+<a id='L182' name='L182'></a> 182         <strong class='reserved'>int</strong> [] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>; <em class='comment'>// 64 elements, in natural order</em>
+<a id='L183' name='L183'></a> 183 
+<a id='L184' name='L184'></a> 184         <em class='comment'>/**</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>         * The zigzag-order position of the i'th element</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>         * of a DCT block read in natural order.</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>         */</em>
+<a id='L188' name='L188'></a> 188         <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> [] zigzag = <em class='brace'>{</em>
+<a id='L189' name='L189'></a> 189             0,  1,  5,  6, 14, 15, 27, 28,
+<a id='L190' name='L190'></a> 190             2,  4,  7, 13, 16, 26, 29, 42,
+<a id='L191' name='L191'></a> 191             3,  8, 12, 17, 25, 30, 41, 43,
+<a id='L192' name='L192'></a> 192             9, 11, 18, 24, 31, 40, 44, 53,
+<a id='L193' name='L193'></a> 193             10, 19, 23, 32, 39, 45, 52, 54,
+<a id='L194' name='L194'></a> 194             20, 22, 33, 38, 46, 51, 55, 60,
+<a id='L195' name='L195'></a> 195             21, 34, 37, 47, 50, 56, 59, 61,
+<a id='L196' name='L196'></a> 196             35, 36, 48, 49, 57, 58, 62, 63
+<a id='L197' name='L197'></a> 197         <em class='brace'>}</em>;
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199         Qtable(<strong class='reserved'>boolean</strong> wantLuma, <strong class='reserved'>float</strong> quality) <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200             elementPrecision = 0;
+<a id='L201' name='L201'></a> 201             <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a> base = <strong class='reserved'>null</strong>;
+<a id='L202' name='L202'></a> 202             <strong class='reserved'>if</strong> (wantLuma) <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203                 tableID = 0;
+<a id='L204' name='L204'></a> 204                 base = <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>.K1Div2Luminance;
+<a id='L205' name='L205'></a> 205             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206                 tableID = 1;
+<a id='L207' name='L207'></a> 207                 base = <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>.K2Div2Chrominance;
+<a id='L208' name='L208'></a> 208             <em class='brace'>}</em>
+<a id='L209' name='L209'></a> 209             <strong class='reserved'>if</strong> (quality != <a href='../S/6816.html#L41' title='Defined at 41 in src/com/sun/imageio/plugins/jpeg/JPEG.java.'>JPEG</a>.DEFAULT_QUALITY) <em class='brace'>{</em>
+<a id='L210' name='L210'></a> 210                 quality = <a href='../S/6816.html#L41' title='Defined at 41 in src/com/sun/imageio/plugins/jpeg/JPEG.java.'>JPEG</a>.<a href='../S/6816.html#L324' title='Defined at 324 in src/com/sun/imageio/plugins/jpeg/JPEG.java.'>convertToLinearQuality</a>(quality);
+<a id='L211' name='L211'></a> 211                 <strong class='reserved'>if</strong> (wantLuma) <em class='brace'>{</em>
+<a id='L212' name='L212'></a> 212                     base = <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>.K1Luminance.<a href='../D/22244.html' title='Multiple defined in 3 places.'>getScaledInstance</a>
+<a id='L213' name='L213'></a> 213                         (quality, <strong class='reserved'>true</strong>);
+<a id='L214' name='L214'></a> 214                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L215' name='L215'></a> 215                     base = <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>.K2Div2Chrominance.<a href='../D/22244.html' title='Multiple defined in 3 places.'>getScaledInstance</a>
+<a id='L216' name='L216'></a> 216                         (quality, <strong class='reserved'>true</strong>);
+<a id='L217' name='L217'></a> 217                 <em class='brace'>}</em>
+<a id='L218' name='L218'></a> 218             <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = base.<a href='../D/22972.html' title='Multiple defined in 9 places.'>getTable</a>();
+<a id='L220' name='L220'></a> 220         <em class='brace'>}</em>
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222         Qtable(<a href='../S/6806.html#L37' title='Defined at 37 in src/com/sun/imageio/plugins/jpeg/JPEGBuffer.java.'>JPEGBuffer</a> <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L223' name='L223'></a> 223             elementPrecision = <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[<a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.bufPtr] &gt;&gt;&gt; 4;
+<a id='L224' name='L224'></a> 224             tableID = <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[<a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.bufPtr++] &amp; 0xf;
+<a id='L225' name='L225'></a> 225             <strong class='reserved'>if</strong> (elementPrecision != 0) <em class='brace'>{</em>
+<a id='L226' name='L226'></a> 226                 <em class='comment'>// IJG is compiled for 8-bits, so this shouldn't happen</em>
+<a id='L227' name='L227'></a> 227                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> ("Unsupported element precision");
+<a id='L228' name='L228'></a> 228             <em class='brace'>}</em>
+<a id='L229' name='L229'></a> 229             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong> [QTABLE_SIZE];
+<a id='L230' name='L230'></a> 230             <em class='comment'>// Read from zig-zag order to natural order</em>
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; QTABLE_SIZE; i++) <em class='brace'>{</em>
+<a id='L232' name='L232'></a> 232                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i] = <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.<a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[<a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.bufPtr+zigzag[i]] &amp; 0xff;
+<a id='L233' name='L233'></a> 233             <em class='brace'>}</em>
+<a id='L234' name='L234'></a> 234             <a href='../S/1629.html#L386' title='Defined at 386 in src/java/lang/invoke/LambdaFormEditor.java.'>buffer</a>.bufPtr += QTABLE_SIZE;
+<a id='L235' name='L235'></a> 235         <em class='brace'>}</em>
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237         Qtable(<a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a> table, <strong class='reserved'>int</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>) <em class='brace'>{</em>
+<a id='L238' name='L238'></a> 238             elementPrecision = 0;
+<a id='L239' name='L239'></a> 239             tableID = <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>;
+<a id='L240' name='L240'></a> 240             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = table.<a href='../D/22972.html' title='Multiple defined in 9 places.'>getTable</a>();
+<a id='L241' name='L241'></a> 241         <em class='brace'>}</em>
+<a id='L242' name='L242'></a> 242 
+<a id='L243' name='L243'></a> 243         Qtable(<a href='../D/6077.html' title='Multiple defined in 24 places.'>Node</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <strong class='reserved'>throws</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a> <em class='brace'>{</em>
+<a id='L244' name='L244'></a> 244             <strong class='reserved'>if</strong> (<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/20983.html' title='Multiple defined in 37 places.'>getNodeName</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("dqtable")) <em class='brace'>{</em>
+<a id='L245' name='L245'></a> 245                 <a href='../S/114.html#L56' title='Defined at 56 in src/org/w3c/dom/NamedNodeMap.java.'>NamedNodeMap</a> attrs = <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/17112.html' title='Multiple defined in 109 places.'>getAttributes</a>();
+<a id='L246' name='L246'></a> 246                 <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = attrs.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L247' name='L247'></a> 247                 <strong class='reserved'>if</strong> ((<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> &lt; 1) || (<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> &gt; 2)) <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a>
+<a id='L249' name='L249'></a> 249                         ("dqtable node must have 1 or 2 attributes", <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L250' name='L250'></a> 250                 <em class='brace'>}</em>
+<a id='L251' name='L251'></a> 251                 elementPrecision = 0;
+<a id='L252' name='L252'></a> 252                 tableID = <a href='../D/17108.html' title='Multiple defined in 14 places.'>getAttributeValue</a>(<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>, attrs, "qtableId", 0, 3, <strong class='reserved'>true</strong>);
+<a id='L253' name='L253'></a> 253                 <strong class='reserved'>if</strong> (<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a> <strong class='reserved'>instanceof</strong> <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a>) <em class='brace'>{</em>
+<a id='L254' name='L254'></a> 254                     <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a> ourNode = (<a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a>) <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L255' name='L255'></a> 255                     <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a> table = (<a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>) ourNode.<a href='../D/23493.html' title='Multiple defined in 2 places.'>getUserObject</a>();
+<a id='L256' name='L256'></a> 256                     <strong class='reserved'>if</strong> (table == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257                         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a>
+<a id='L258' name='L258'></a> 258                             ("dqtable node must have user object", <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L259' name='L259'></a> 259                     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260                     <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = table.<a href='../D/22972.html' title='Multiple defined in 9 places.'>getTable</a>();
+<a id='L261' name='L261'></a> 261                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a>
+<a id='L263' name='L263'></a> 263                         ("dqtable node must have user object", <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L264' name='L264'></a> 264                 <em class='brace'>}</em>
+<a id='L265' name='L265'></a> 265             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L266' name='L266'></a> 266                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4242.html#L46' title='Defined at 46 in src/javax/imageio/metadata/IIOInvalidTreeException.java.'>IIOInvalidTreeException</a>
+<a id='L267' name='L267'></a> 267                     ("Invalid node, expected dqtable", <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>);
+<a id='L268' name='L268'></a> 268             <em class='brace'>}</em>
+<a id='L269' name='L269'></a> 269         <em class='brace'>}</em>
+<a id='L270' name='L270'></a> 270 
+<a id='L271' name='L271'></a> 271         <strong class='reserved'>protected</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/11555.html' title='Multiple referred from 1378 places.'>clone</a>() <em class='brace'>{</em>
+<a id='L272' name='L272'></a> 272             <a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a> newGuy = <strong class='reserved'>null</strong>;
+<a id='L273' name='L273'></a> 273             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L274' name='L274'></a> 274                 newGuy = (<a href='../S/6825.html#L178' title='Defined at 178 in src/com/sun/imageio/plugins/jpeg/DQTMarkerSegment.java.'>Qtable</a>) <strong class='reserved'>super</strong>.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L275' name='L275'></a> 275             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1725.html#L45' title='Defined at 45 in src/java/lang/CloneNotSupportedException.java.'>CloneNotSupportedException</a> e) <em class='brace'>{</em><em class='brace'>}</em> <em class='comment'>// won't happen</em>
+<a id='L276' name='L276'></a> 276             <strong class='reserved'>if</strong> (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L277' name='L277'></a> 277                 newGuy.<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = (<strong class='reserved'>int</strong> []) <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/12888.html' title='Multiple defined in 229 places.'>clone</a>();
+<a id='L278' name='L278'></a> 278             <em class='brace'>}</em>
+<a id='L279' name='L279'></a> 279             <strong class='reserved'>return</strong> newGuy;
+<a id='L280' name='L280'></a> 280         <em class='brace'>}</em>
+<a id='L281' name='L281'></a> 281 
+<a id='L282' name='L282'></a> 282         <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a> <a href='../R/17874.html' title='Multiple referred from 9 places.'>getNativeNode</a>() <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283             <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a> = <strong class='reserved'>new</strong> <a href='../S/4241.html#L230' title='Defined at 230 in src/javax/imageio/metadata/IIOMetadataNode.java.'>IIOMetadataNode</a>("dqtable");
+<a id='L284' name='L284'></a> 284             <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/31941.html' title='Multiple defined in 34 places.'>setAttribute</a>("elementPrecision",
+<a id='L285' name='L285'></a> 285                               <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(elementPrecision));
+<a id='L286' name='L286'></a> 286             <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/31941.html' title='Multiple defined in 34 places.'>setAttribute</a>("qtableId",
+<a id='L287' name='L287'></a> 287                               <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(tableID));
+<a id='L288' name='L288'></a> 288             <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.<a href='../D/34250.html' title='Multiple defined in 5 places.'>setUserObject</a>(<strong class='reserved'>new</strong> <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>));
+<a id='L289' name='L289'></a> 289             <strong class='reserved'>return</strong> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>;
+<a id='L290' name='L290'></a> 290         <em class='brace'>}</em>
+<a id='L291' name='L291'></a> 291 
+<a id='L292' name='L292'></a> 292         <strong class='reserved'>void</strong> <a href='../R/24978.html' title='Multiple referred from 1157 places.'>print</a>() <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("Table id: " + <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(tableID));
+<a id='L294' name='L294'></a> 294             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("Element precision: "
+<a id='L295' name='L295'></a> 295                                + <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(elementPrecision));
+<a id='L296' name='L296'></a> 296 
+<a id='L297' name='L297'></a> 297             (<strong class='reserved'>new</strong> <a href='../D/4651.html' title='Multiple defined in 2 places.'>JPEGQTable</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>)).<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L298' name='L298'></a> 298             <em class='comment'>/*</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>              for (int i = 0; i &lt; 64; i++) {</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>              if (i % 8 == 0) {</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>              System.out.println();</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>              }</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>              System.out.print(" " + Integer.toString(data[i]));</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>              }</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>              System.out.println();</em>
+<a id='L306' name='L306'></a> 306 <em class='comment'>            */</em>
+<a id='L307' name='L307'></a> 307         <em class='brace'>}</em>
+<a id='L308' name='L308'></a> 308     <em class='brace'>}</em>
+<a id='L309' name='L309'></a> 309 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L292'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

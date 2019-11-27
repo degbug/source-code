@@ -1,0 +1,362 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7769.html'>resolver</a>/INSURLOperationImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L108'>[^]</a><a href='#L324'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L108' title='Defined at 108.'>getIORFromString</a></li>
+<li><a href='#L125' title='Defined at 125.'>operate</a></li>
+<li><a href='#L144' title='Defined at 144.'>resolveINSURL</a></li>
+<li><a href='#L158' title='Defined at 158.'>resolveCorbaloc</a></li>
+<li><a href='#L177' title='Defined at 177.'>resolveCorbaname</a></li>
+<li><a href='#L217' title='Defined at 217.'>getIORUsingCorbaloc</a></li>
+<li><a href='#L305' title='Defined at 305.'>getDefaultRootNamingContext</a></li>
+<li><a href='#L324' title='Defined at 324.'>clearRootNamingContextCache</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.resolver;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.List ;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Map ;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.util.Comparator ;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.util.Iterator ;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.util.HashMap ;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.util.ArrayList ;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.util.Collections ;
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.omg.CosNaming.NamingContextExt ;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.CosNaming.NamingContextExtHelper ;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> sun.corba.EncapsInputStreamFactory;
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IOR;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORTemplate;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKey;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORFactories;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKeyFactory ;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPAddress;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPProfile ;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPProfileTemplate ;
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPFactories ;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.GIOPVersion;
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.AlternateIIOPAddressComponent;
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains ;
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.Operation;
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> com.sun.corba.se.spi.resolver.Resolver;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> com.sun.corba.se.impl.encoding.EncapsInputStream;
+<a id='L58' name='L58'></a>  58 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException;
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.OMGSystemException;
+<a id='L60' name='L60'></a>  60 <strong class='reserved'>import</strong> com.sun.corba.se.impl.naming.namingutil.INSURLHandler;
+<a id='L61' name='L61'></a>  61 <strong class='reserved'>import</strong> com.sun.corba.se.impl.naming.namingutil.IIOPEndpointInfo;
+<a id='L62' name='L62'></a>  62 <strong class='reserved'>import</strong> com.sun.corba.se.impl.naming.namingutil.INSURL;
+<a id='L63' name='L63'></a>  63 <strong class='reserved'>import</strong> com.sun.corba.se.impl.naming.namingutil.CorbalocURL;
+<a id='L64' name='L64'></a>  64 <strong class='reserved'>import</strong> com.sun.corba.se.impl.naming.namingutil.CorbanameURL;
+<a id='L65' name='L65'></a>  65 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBConstants;
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68 <em class='comment'>/**</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'> * This class provides an Operation that converts from CORBA INS URL strings into</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'> * CORBA object references.  It will eventually become extensible, but for now it</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'> * simply encapsulates the existing implementation.  Once the full extensibility</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'> * is in place, we want this operation to convert string to INSURL, which has mainly</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'> * a public resolver method that returns an object reference.</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'> *</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'> * @author  Hemanth</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'> * @author  Ken</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'> */</em>
+<a id='L78' name='L78'></a>  78 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/3581.html' title='Multiple referred from 2 places.'>INSURLOperationImpl</a> <strong class='reserved'>implements</strong> <a href='../D/6392.html' title='Multiple defined in 3 places.'>Operation</a>
+<a id='L79' name='L79'></a>  79 <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80     <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L81' name='L81'></a>  81     <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> wrapper ;
+<a id='L82' name='L82'></a>  82     <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a> omgWrapper ;
+<a id='L83' name='L83'></a>  83     <a href='../D/7320.html' title='Multiple defined in 4 places.'>Resolver</a> bootstrapResolver ;
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85     <em class='comment'>// Root Naming Context for default resolution of names.</em>
+<a id='L86' name='L86'></a>  86     <strong class='reserved'>private</strong> <a href='../S/517.html#L25' title='Defined at 25 in src/org/omg/CosNaming/NamingContextExt.java.'>NamingContextExt</a> rootNamingContextExt;
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>private</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> rootContextCacheLock = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>() ;
+<a id='L88' name='L88'></a>  88 
+<a id='L89' name='L89'></a>  89     <em class='comment'>// The URLHandler to parse INS URL's</em>
+<a id='L90' name='L90'></a>  90     <strong class='reserved'>private</strong> <a href='../S/7163.html#L36' title='Defined at 36 in src/com/sun/corba/se/impl/naming/namingutil/INSURLHandler.java.'>INSURLHandler</a> insURLHandler = <a href='../S/7163.html#L36' title='Defined at 36 in src/com/sun/corba/se/impl/naming/namingutil/INSURLHandler.java.'>INSURLHandler</a>.<a href='../S/7163.html#L49' title='Defined at 49 in src/com/sun/corba/se/impl/naming/namingutil/INSURLHandler.java.'>getINSURLHandler</a>() ;
+<a id='L91' name='L91'></a>  91 
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>public</strong> INSURLOperationImpl( <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/7320.html' title='Multiple defined in 4 places.'>Resolver</a> bootstrapResolver )
+<a id='L93' name='L93'></a>  93     <em class='brace'>{</em>
+<a id='L94' name='L94'></a>  94         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ;
+<a id='L95' name='L95'></a>  95         wrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L96' name='L96'></a>  96             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.ORB_RESOLVER ) ;
+<a id='L97' name='L97'></a>  97         omgWrapper = <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L98' name='L98'></a>  98             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.ORB_RESOLVER ) ;
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>this</strong>.bootstrapResolver = bootstrapResolver ;
+<a id='L100' name='L100'></a> 100     <em class='brace'>}</em>
+<a id='L101' name='L101'></a> 101 
+<a id='L102' name='L102'></a> 102     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NIBBLES_PER_BYTE = 2 ;
+<a id='L103' name='L103'></a> 103     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> UN_SHIFT = 4 ; <em class='comment'>// "UPPER NIBBLE" shift factor for &lt;&lt;</em>
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105     <em class='comment'>/** This static method takes a Stringified IOR and converts it into IOR object.</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>      * It is the caller's responsibility to only pass strings that start with "IOR:".</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>      */</em>
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>private</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7274.html#L132' title='Referred from 132 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>getIORFromString</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> )
+<a id='L109' name='L109'></a> 109     <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110         <em class='comment'>// Length must be even for str to be valid</em>
+<a id='L111' name='L111'></a> 111         <strong class='reserved'>if</strong> ( (<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &amp; 1) == 1 )
+<a id='L112' name='L112'></a> 112             <strong class='reserved'>throw</strong> wrapper.<a href='../D/11763.html' title='Multiple defined in 4 places.'>badStringifiedIorLen</a>() ;
+<a id='L113' name='L113'></a> 113 
+<a id='L114' name='L114'></a> 114         <strong class='reserved'>byte</strong>[] <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[(<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() - <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.STRINGIFY_PREFIX.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>()) / NIBBLES_PER_BYTE];
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=<a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.STRINGIFY_PREFIX.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>(), j=0; i &lt; <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>(); i +=NIBBLES_PER_BYTE, j++) <em class='brace'>{</em>
+<a id='L116' name='L116'></a> 116              <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[j] = (<strong class='reserved'>byte</strong>)((<a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/24241.html' title='Multiple defined in 3 places.'>hexOf</a>(<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i)) &lt;&lt; UN_SHIFT) &amp; 0xF0);
+<a id='L117' name='L117'></a> 117              <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>[j] |= (<strong class='reserved'>byte</strong>)(<a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/24241.html' title='Multiple defined in 3 places.'>hexOf</a>(<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/12321.html' title='Multiple defined in 24 places.'>charAt</a>(i+1)) &amp; 0x0F);
+<a id='L118' name='L118'></a> 118         <em class='brace'>}</em>
+<a id='L119' name='L119'></a> 119         <a href='../S/6986.html#L56' title='Defined at 56 in src/com/sun/corba/se/impl/encoding/EncapsInputStream.java.'>EncapsInputStream</a> s = EncapsInputStreamFactory.newEncapsInputStream(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>, <a href='../D/11927.html' title='Multiple defined in 8 places.'>buf</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>,
+<a id='L120' name='L120'></a> 120                 <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/19280.html' title='Multiple defined in 23 places.'>getGIOPVersion</a>());
+<a id='L121' name='L121'></a> 121         s.<a href='../D/13300.html' title='Multiple defined in 6 places.'>consumeEndian</a>();
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>return</strong> s.<a href='../D/30306.html' title='Multiple defined in 16 places.'>read_Object</a>() ;
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/23996.html' title='Multiple referred from 28 places.'>operate</a>( <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a> )
+<a id='L126' name='L126'></a> 126     <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>if</strong> (<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a> <strong class='reserved'>instanceof</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>) <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> = (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)<a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a> ;
+<a id='L129' name='L129'></a> 129 
+<a id='L130' name='L130'></a> 130             <strong class='reserved'>if</strong> (<a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>( <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.STRINGIFY_PREFIX ))
+<a id='L131' name='L131'></a> 131                 <em class='comment'>// XXX handle this as just another URL scheme</em>
+<a id='L132' name='L132'></a> 132                 <strong class='reserved'>return</strong> <a href='../S/7274.html#L108' title='Defined at 108 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>getIORFromString</a>( <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> ) ;
+<a id='L133' name='L133'></a> 133             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L134' name='L134'></a> 134                 <a href='../S/7167.html#L34' title='Defined at 34 in src/com/sun/corba/se/impl/naming/namingutil/INSURL.java.'>INSURL</a> insURL = insURLHandler.<a href='../D/29225.html' title='Multiple defined in 4 places.'>parseURL</a>( <a href='../D/34924.html' title='Multiple defined in 10 places.'>str</a> ) ;
+<a id='L135' name='L135'></a> 135                 <strong class='reserved'>if</strong> (insURL == <strong class='reserved'>null</strong>)
+<a id='L136' name='L136'></a> 136                     <strong class='reserved'>throw</strong> omgWrapper.<a href='../D/34653.html' title='Multiple defined in 4 places.'>soBadSchemeName</a>() ;
+<a id='L137' name='L137'></a> 137                 <strong class='reserved'>return</strong> <a href='../S/7274.html#L144' title='Defined at 144 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>resolveINSURL</a>( insURL ) ;
+<a id='L138' name='L138'></a> 138             <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140 
+<a id='L141' name='L141'></a> 141         <strong class='reserved'>throw</strong> wrapper.<a href='../D/34931.html' title='Multiple defined in 4 places.'>stringExpected</a>() ;
+<a id='L142' name='L142'></a> 142     <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143 
+<a id='L144' name='L144'></a> 144     <strong class='reserved'>private</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7274.html#L137' title='Referred from 137 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>resolveINSURL</a>( <a href='../S/7167.html#L34' title='Defined at 34 in src/com/sun/corba/se/impl/naming/namingutil/INSURL.java.'>INSURL</a> theURLObject ) <em class='brace'>{</em>
+<a id='L145' name='L145'></a> 145         <em class='comment'>// XXX resolve should be a method on INSURL</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>if</strong>( theURLObject.<a href='../D/25375.html' title='Multiple defined in 4 places.'>isCorbanameURL</a>() ) <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147             <strong class='reserved'>return</strong> <a href='../S/7274.html#L177' title='Defined at 177 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>resolveCorbaname</a>( (<a href='../S/7165.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/naming/namingutil/CorbanameURL.java.'>CorbanameURL</a>)theURLObject );
+<a id='L148' name='L148'></a> 148         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149             <strong class='reserved'>return</strong> <a href='../S/7274.html#L158' title='Defined at 158 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>resolveCorbaloc</a>( (<a href='../S/7169.html#L40' title='Defined at 40 in src/com/sun/corba/se/impl/naming/namingutil/CorbalocURL.java.'>CorbalocURL</a>)theURLObject );
+<a id='L150' name='L150'></a> 150         <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <em class='comment'>/**</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     *  resolves a corbaloc: url that is encapsulated in a CorbalocURL object.</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     *</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     *  @return the CORBA.Object if resolution is successful</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     */</em>
+<a id='L158' name='L158'></a> 158     <strong class='reserved'>private</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7274.html#L149' title='Referred from 149 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>resolveCorbaloc</a>(
+<a id='L159' name='L159'></a> 159         <a href='../S/7169.html#L40' title='Defined at 40 in src/com/sun/corba/se/impl/naming/namingutil/CorbalocURL.java.'>CorbalocURL</a> theCorbaLocObject )
+<a id='L160' name='L160'></a> 160     <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161         org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>null</strong>;
+<a id='L162' name='L162'></a> 162         <em class='comment'>// If RIR flag is true use the Bootstrap protocol</em>
+<a id='L163' name='L163'></a> 163         <strong class='reserved'>if</strong>( theCorbaLocObject.<a href='../D/21824.html' title='Multiple defined in 2 places.'>getRIRFlag</a>( ) )  <em class='brace'>{</em>
+<a id='L164' name='L164'></a> 164             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = bootstrapResolver.<a href='../D/31237.html' title='Multiple defined in 38 places.'>resolve</a>(theCorbaLocObject.<a href='../D/19952.html' title='Multiple defined in 3 places.'>getKeyString</a>());
+<a id='L165' name='L165'></a> 165         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/7274.html#L217' title='Defined at 217 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>getIORUsingCorbaloc</a>( theCorbaLocObject );
+<a id='L167' name='L167'></a> 167         <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168 
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L170' name='L170'></a> 170     <em class='brace'>}</em>
+<a id='L171' name='L171'></a> 171 
+<a id='L172' name='L172'></a> 172     <em class='comment'>/**</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     *  resolves a corbaname: url that is encapsulated in a CorbanameURL object.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     *</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     *  @return the CORBA.Object if resolution is successful</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     */</em>
+<a id='L177' name='L177'></a> 177     <strong class='reserved'>private</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/7274.html#L147' title='Referred from 147 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>resolveCorbaname</a>( <a href='../S/7165.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/naming/namingutil/CorbanameURL.java.'>CorbanameURL</a> theCorbaName ) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178         org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>null</strong>;
+<a id='L179' name='L179'></a> 179 
+<a id='L180' name='L180'></a> 180         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L181' name='L181'></a> 181             <a href='../S/517.html#L25' title='Defined at 25 in src/org/omg/CosNaming/NamingContextExt.java.'>NamingContextExt</a> theNamingContext = <strong class='reserved'>null</strong>;
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>if</strong>( theCorbaName.<a href='../D/21824.html' title='Multiple defined in 2 places.'>getRIRFlag</a>( ) ) <em class='brace'>{</em>
+<a id='L184' name='L184'></a> 184                 <em class='comment'>// Case 1 of corbaname: rir#</em>
+<a id='L185' name='L185'></a> 185                 theNamingContext = <a href='../S/7274.html#L305' title='Defined at 305 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>getDefaultRootNamingContext</a>( );
+<a id='L186' name='L186'></a> 186             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L187' name='L187'></a> 187                 <em class='comment'>// Case 2 of corbaname: ::hostname#</em>
+<a id='L188' name='L188'></a> 188                 org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> corbalocResult =
+<a id='L189' name='L189'></a> 189                     <a href='../S/7274.html#L217' title='Defined at 217 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>getIORUsingCorbaloc</a>( theCorbaName );
+<a id='L190' name='L190'></a> 190                 <strong class='reserved'>if</strong>( corbalocResult == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191                     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L192' name='L192'></a> 192                 <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194                 theNamingContext =
+<a id='L195' name='L195'></a> 195                     <a href='../S/525.html#L25' title='Defined at 25 in src/org/omg/CosNaming/NamingContextExtHelper.java.'>NamingContextExtHelper</a>.<a href='../D/27885.html' title='Multiple defined in 42 places.'>narrow</a>( corbalocResult );
+<a id='L196' name='L196'></a> 196             <em class='brace'>}</em>
+<a id='L197' name='L197'></a> 197 
+<a id='L198' name='L198'></a> 198             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> StringifiedName = theCorbaName.<a href='../D/22796.html' title='Multiple defined in 2 places.'>getStringifiedName</a>( );
+<a id='L199' name='L199'></a> 199 
+<a id='L200' name='L200'></a> 200             <strong class='reserved'>if</strong>( StringifiedName == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L201' name='L201'></a> 201                 <em class='comment'>// This means return the Root Naming context</em>
+<a id='L202' name='L202'></a> 202                 <strong class='reserved'>return</strong> theNamingContext;
+<a id='L203' name='L203'></a> 203             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204                 <strong class='reserved'>return</strong> theNamingContext.<a href='../D/31337.html' title='Multiple defined in 4 places.'>resolve_str</a>( StringifiedName );
+<a id='L205' name='L205'></a> 205             <em class='brace'>}</em>
+<a id='L206' name='L206'></a> 206         <em class='brace'>}</em> <strong class='reserved'>catch</strong>( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e ) <em class='brace'>{</em>
+<a id='L207' name='L207'></a> 207             <a href='../S/7274.html#L324' title='Defined at 324 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>clearRootNamingContextCache</a>( );
+<a id='L208' name='L208'></a> 208             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L209' name='L209'></a> 209         <em class='brace'>}</em>
+<a id='L210' name='L210'></a> 210      <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211 
+<a id='L212' name='L212'></a> 212     <em class='comment'>/**</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     *  This is an internal method to get the IOR from the CorbalocURL object.</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     *</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     *  @return the CORBA.Object if resolution is successful</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     */</em>
+<a id='L217' name='L217'></a> 217      <strong class='reserved'>private</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/16948.html' title='Multiple referred from 2 places.'>getIORUsingCorbaloc</a>( <a href='../S/7167.html#L34' title='Defined at 34 in src/com/sun/corba/se/impl/naming/namingutil/INSURL.java.'>INSURL</a> corbalocObject )
+<a id='L218' name='L218'></a> 218      <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219         <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>     profileMap = <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>();
+<a id='L220' name='L220'></a> 220         <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>    profileList1_0 = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222         <em class='comment'>// corbalocObject cannot be null, because it's validated during</em>
+<a id='L223' name='L223'></a> 223         <em class='comment'>// parsing. So no null check is required.</em>
+<a id='L224' name='L224'></a> 224         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> theEndpointInfo = corbalocObject.<a href='../D/18779.html' title='Multiple defined in 2 places.'>getEndpointInfo</a>();
+<a id='L225' name='L225'></a> 225         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> theKeyString = corbalocObject.<a href='../D/19952.html' title='Multiple defined in 3 places.'>getKeyString</a>();
+<a id='L226' name='L226'></a> 226         <em class='comment'>// If there is no KeyString then it's invalid</em>
+<a id='L227' name='L227'></a> 227         <strong class='reserved'>if</strong>( theKeyString == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L228' name='L228'></a> 228             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L229' name='L229'></a> 229         <em class='brace'>}</em>
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231         <a href='../S/7502.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/ior/ObjectKey.java.'>ObjectKey</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21145.html' title='Multiple defined in 3 places.'>getObjectKeyFactory</a>().<a href='../D/13587.html' title='Multiple defined in 90 places.'>create</a>(
+<a id='L232' name='L232'></a> 232             theKeyString.<a href='../D/17415.html' title='Multiple defined in 35 places.'>getBytes</a>() );
+<a id='L233' name='L233'></a> 233         <a href='../S/7475.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/ior/IORTemplate.java.'>IORTemplate</a> iortemp = <a href='../S/7476.html#L62' title='Defined at 62 in src/com/sun/corba/se/spi/ior/IORFactories.java.'>IORFactories</a>.<a href='../D/27299.html' title='Multiple defined in 2 places.'>makeIORTemplate</a>( <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>.<a href='../D/23029.html' title='Multiple defined in 5 places.'>getTemplate</a>() );
+<a id='L234' name='L234'></a> 234         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a> = theEndpointInfo.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>( );
+<a id='L235' name='L235'></a> 235         <strong class='reserved'>while</strong>( <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>( ) ) <em class='brace'>{</em>
+<a id='L236' name='L236'></a> 236             <a href='../S/7166.html#L37' title='Defined at 37 in src/com/sun/corba/se/impl/naming/namingutil/IIOPEndpointInfo.java.'>IIOPEndpointInfo</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> =
+<a id='L237' name='L237'></a> 237                 (<a href='../S/7166.html#L37' title='Defined at 37 in src/com/sun/corba/se/impl/naming/namingutil/IIOPEndpointInfo.java.'>IIOPEndpointInfo</a>) <a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>( );
+<a id='L238' name='L238'></a> 238             <a href='../S/7482.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/ior/iiop/IIOPAddress.java.'>IIOPAddress</a> addr = <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../D/27290.html' title='Multiple defined in 2 places.'>makeIIOPAddress</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/19490.html' title='Multiple defined in 17 places.'>getHost</a>(),
+<a id='L239' name='L239'></a> 239                 <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/21541.html' title='Multiple defined in 42 places.'>getPort</a>() );
+<a id='L240' name='L240'></a> 240             <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> giopVersion = <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>( (<strong class='reserved'>byte</strong>)<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/20350.html' title='Multiple defined in 5 places.'>getMajor</a>(),
+<a id='L241' name='L241'></a> 241                                              (<strong class='reserved'>byte</strong>)<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/20672.html' title='Multiple defined in 5 places.'>getMinor</a>());
+<a id='L242' name='L242'></a> 242             <a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a> profileTemplate = <strong class='reserved'>null</strong>;
+<a id='L243' name='L243'></a> 243             <strong class='reserved'>if</strong> (giopVersion.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>.V1_0)) <em class='brace'>{</em>
+<a id='L244' name='L244'></a> 244                 profileTemplate = <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L226' title='Defined at 226 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeIIOPProfileTemplate</a>(
+<a id='L245' name='L245'></a> 245                     <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, giopVersion, addr);
+<a id='L246' name='L246'></a> 246                 profileList1_0.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(profileTemplate);
+<a id='L247' name='L247'></a> 247             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248                 <strong class='reserved'>if</strong> (profileMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(giopVersion) == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249                     profileTemplate = <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L226' title='Defined at 226 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeIIOPProfileTemplate</a>(
+<a id='L250' name='L250'></a> 250                         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, giopVersion, addr);
+<a id='L251' name='L251'></a> 251                     profileMap.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(giopVersion, profileTemplate);
+<a id='L252' name='L252'></a> 252                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253                     profileTemplate = (<a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a>)profileMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(giopVersion);
+<a id='L254' name='L254'></a> 254                     <a href='../S/7484.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/ior/iiop/AlternateIIOPAddressComponent.java.'>AlternateIIOPAddressComponent</a> iiopAddressComponent =
+<a id='L255' name='L255'></a> 255                                 <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L104' title='Defined at 104 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeAlternateIIOPAddressComponent</a>(addr);
+<a id='L256' name='L256'></a> 256                     profileTemplate.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(iiopAddressComponent);
+<a id='L257' name='L257'></a> 257                 <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258             <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259         <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261         <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> giopVersion = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>().<a href='../D/19280.html' title='Multiple defined in 23 places.'>getGIOPVersion</a>();
+<a id='L262' name='L262'></a> 262         <a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a> pTemplate = (<a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a>)profileMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(giopVersion);
+<a id='L263' name='L263'></a> 263         <strong class='reserved'>if</strong> (pTemplate != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264             iortemp.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(pTemplate); <em class='comment'>// Add profile for GIOP version used by this ORB</em>
+<a id='L265' name='L265'></a> 265             profileMap.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(giopVersion); <em class='comment'>// Now remove this value from the map</em>
+<a id='L266' name='L266'></a> 266         <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268         <em class='comment'>// Create a comparator that can sort in decending order (1.2, 1.1, ...)</em>
+<a id='L269' name='L269'></a> 269         <a href='../D/1687.html' title='Multiple defined in 3 places.'>Comparator</a> comp = <strong class='reserved'>new</strong> <a href='../D/1687.html' title='Multiple defined in 3 places.'>Comparator</a>() <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270             <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../D/13032.html' title='Multiple defined in 71 places.'>compare</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> o1, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> o2) <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271                 <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> gv1 = (<a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>)o1;
+<a id='L272' name='L272'></a> 272                 <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a> gv2 = (<a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>)o2;
+<a id='L273' name='L273'></a> 273                 <strong class='reserved'>return</strong> (gv1.<a href='../D/26834.html' title='Multiple defined in 11 places.'>lessThan</a>(gv2) ? 1 : (gv1.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(gv2) ? 0 : -1));
+<a id='L274' name='L274'></a> 274             <em class='brace'>}</em>;
+<a id='L275' name='L275'></a> 275         <em class='brace'>}</em>;
+<a id='L276' name='L276'></a> 276 
+<a id='L277' name='L277'></a> 277         <em class='comment'>// Now sort using the above comparator</em>
+<a id='L278' name='L278'></a> 278         <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>(profileMap.<a href='../D/26719.html' title='Multiple defined in 33 places.'>keySet</a>());
+<a id='L279' name='L279'></a> 279         <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.<a href='../D/34687.html' title='Multiple defined in 56 places.'>sort</a>(<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>, comp);
+<a id='L280' name='L280'></a> 280 
+<a id='L281' name='L281'></a> 281         <em class='comment'>// Add the profiles in the sorted order</em>
+<a id='L282' name='L282'></a> 282         <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> <a href='../D/26587.html' title='Multiple defined in 2 places.'>iter</a> = <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L283' name='L283'></a> 283         <strong class='reserved'>while</strong> (<a href='../D/26587.html' title='Multiple defined in 2 places.'>iter</a>.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L284' name='L284'></a> 284             <a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a> pt = (<a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a>)profileMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26587.html' title='Multiple defined in 2 places.'>iter</a>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>());
+<a id='L285' name='L285'></a> 285             iortemp.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(pt);
+<a id='L286' name='L286'></a> 286         <em class='brace'>}</em>
+<a id='L287' name='L287'></a> 287 
+<a id='L288' name='L288'></a> 288         <em class='comment'>// Finally add the 1.0 profiles</em>
+<a id='L289' name='L289'></a> 289         iortemp.<a href='../D/10646.html' title='Multiple defined in 78 places.'>addAll</a>(profileList1_0);
+<a id='L290' name='L290'></a> 290 
+<a id='L291' name='L291'></a> 291         <a href='../D/3967.html' title='Multiple defined in 3 places.'>IOR</a> <a href='../D/25124.html' title='Multiple defined in 2 places.'>ior</a> = iortemp.<a href='../D/27298.html' title='Multiple defined in 6 places.'>makeIOR</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, "", <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>.<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() ) ;
+<a id='L292' name='L292'></a> 292         <strong class='reserved'>return</strong> <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/27358.html' title='Multiple defined in 2 places.'>makeObjectReference</a>( <a href='../D/25124.html' title='Multiple defined in 2 places.'>ior</a> ) ;
+<a id='L293' name='L293'></a> 293     <em class='brace'>}</em>
+<a id='L294' name='L294'></a> 294 
+<a id='L295' name='L295'></a> 295     <em class='comment'>/**</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     *  This is required for corbaname: resolution. Currently we</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>     *  are not caching RootNamingContext as the reference to rootNamingContext</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>     *  may not be Persistent in all the implementations.</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>     *  _REVISIT_ to clear the rootNamingContext in case of COMM_FAILURE.</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>     *</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>     *  @return the org.omg.COSNaming.NamingContextExt if resolution is</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>     *   successful</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>     *</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>     */</em>
+<a id='L305' name='L305'></a> 305     <strong class='reserved'>private</strong> <a href='../S/517.html#L25' title='Defined at 25 in src/org/omg/CosNaming/NamingContextExt.java.'>NamingContextExt</a> <a href='../S/7274.html#L185' title='Referred from 185 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>getDefaultRootNamingContext</a>( ) <em class='brace'>{</em>
+<a id='L306' name='L306'></a> 306         <strong class='reserved'>synchronized</strong>( rootContextCacheLock ) <em class='brace'>{</em>
+<a id='L307' name='L307'></a> 307             <strong class='reserved'>if</strong>( rootNamingContextExt == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L308' name='L308'></a> 308                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309                     rootNamingContextExt =
+<a id='L310' name='L310'></a> 310                         <a href='../S/525.html#L25' title='Defined at 25 in src/org/omg/CosNaming/NamingContextExtHelper.java.'>NamingContextExtHelper</a>.<a href='../D/27885.html' title='Multiple defined in 42 places.'>narrow</a>(
+<a id='L311' name='L311'></a> 311                         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20212.html' title='Multiple defined in 3 places.'>getLocalResolver</a>().<a href='../D/31237.html' title='Multiple defined in 38 places.'>resolve</a>( "NameService" ) );
+<a id='L312' name='L312'></a> 312                 <em class='brace'>}</em> <strong class='reserved'>catch</strong>( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e ) <em class='brace'>{</em>
+<a id='L313' name='L313'></a> 313                     rootNamingContextExt = <strong class='reserved'>null</strong>;
+<a id='L314' name='L314'></a> 314                 <em class='brace'>}</em>
+<a id='L315' name='L315'></a> 315             <em class='brace'>}</em>
+<a id='L316' name='L316'></a> 316         <em class='brace'>}</em>
+<a id='L317' name='L317'></a> 317         <strong class='reserved'>return</strong> rootNamingContextExt;
+<a id='L318' name='L318'></a> 318     <em class='brace'>}</em>
+<a id='L319' name='L319'></a> 319 
+<a id='L320' name='L320'></a> 320     <em class='comment'>/**</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>     *  A utility method to clear the RootNamingContext, if there is an</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>     *  exception in resolving CosNaming:Name from the RootNamingContext,</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>     */</em>
+<a id='L324' name='L324'></a> 324     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/7274.html#L207' title='Referred from 207 in src/com/sun/corba/se/impl/resolver/INSURLOperationImpl.java.'>clearRootNamingContextCache</a>( ) <em class='brace'>{</em>
+<a id='L325' name='L325'></a> 325         <strong class='reserved'>synchronized</strong>( rootContextCacheLock ) <em class='brace'>{</em>
+<a id='L326' name='L326'></a> 326             rootNamingContextExt = <strong class='reserved'>null</strong>;
+<a id='L327' name='L327'></a> 327         <em class='brace'>}</em>
+<a id='L328' name='L328'></a> 328     <em class='brace'>}</em>
+<a id='L329' name='L329'></a> 329 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L108'>[^]</a><a href='#L324'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

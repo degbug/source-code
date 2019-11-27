@@ -1,0 +1,826 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7744.html'>javax</a>/<a href='../files/7745.html'>rmi</a>/<a href='../files/7746.html'>CORBA</a>/Util.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L140'>[^]</a><a href='#L771'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L140' title='Defined at 140.'>setInstance</a></li>
+<li><a href='#L145' title='Defined at 145.'>getInstance</a></li>
+<li><a href='#L149' title='Defined at 149.'>isInstanceDefined</a></li>
+<li><a href='#L155' title='Defined at 155.'>unregisterTargetsForORB</a></li>
+<li><a href='#L184' title='Defined at 184.'>mapSystemException</a></li>
+<li><a href='#L320' title='Defined at 320.'>writeAny</a></li>
+<li><a href='#L373' title='Defined at 373.'>createTypeCode</a></li>
+<li><a href='#L398' title='Defined at 398.'>createTypeCodeForNull</a></li>
+<li><a href='#L429' title='Defined at 429.'>readAny</a></li>
+<li><a href='#L447' title='Defined at 447.'>writeRemoteObject</a></li>
+<li><a href='#L465' title='Defined at 465.'>writeAbstractObject</a></li>
+<li><a href='#L480' title='Defined at 480.'>registerTarget</a></li>
+<li><a href='#L509' title='Defined at 509.'>unexportObject</a></li>
+<li><a href='#L538' title='Defined at 538.'>cleanUpTie</a></li>
+<li><a href='#L549' title='Defined at 549.'>getTie</a></li>
+<li><a href='#L559' title='Defined at 559.'>lookupTie</a></li>
+<li><a href='#L575' title='Defined at 575.'>createValueHandler</a></li>
+<li><a href='#L585' title='Defined at 585.'>getCodebase</a></li>
+<li><a href='#L599' title='Defined at 599.'>loadClass</a></li>
+<li><a href='#L625' title='Defined at 625.'>isLocal</a></li>
+<li><a href='#L657' title='Defined at 657.'>wrapException</a></li>
+<li><a href='#L687' title='Defined at 687.'>copyObjects</a></li>
+<li><a href='#L717' title='Defined at 717.'>copyObject</a></li>
+<li><a href='#L762' title='Defined at 762.'>run</a></li>
+<li><a href='#L771' title='Defined at 771.'>quit</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 <em class='comment'>/*</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'> * Licensed Materials - Property of IBM</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> * RMI-IIOP v1.0</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> * Copyright IBM Corp. 1998 1999  All Rights Reserved</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> *</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> */</em>
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.<a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.rmi.CORBA; <em class='comment'>// Util (sed marker, don't remove!)</em>
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.rmi.RemoteException;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.rmi.UnexpectedException;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.rmi.MarshalException;
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.rmi.server.RMIClassLoader;
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.util.Hashtable;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> java.util.Enumeration;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> java.util.Properties;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> java.util.Map;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> java.util.WeakHashMap;
+<a id='L45' name='L45'></a>  45 
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> java.io.Serializable;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> java.io.NotSerializableException;
+<a id='L48' name='L48'></a>  48 
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> java.lang.reflect.Constructor;
+<a id='L50' name='L50'></a>  50 
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> javax.rmi.CORBA.ValueHandler;
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> javax.rmi.CORBA.Tie;
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> java.security.AccessController;
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> java.security.PrivilegedAction;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> java.rmi.MarshalException;
+<a id='L58' name='L58'></a>  58 <strong class='reserved'>import</strong> java.rmi.NoSuchObjectException;
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>import</strong> java.rmi.AccessException;
+<a id='L60' name='L60'></a>  60 <strong class='reserved'>import</strong> java.rmi.Remote;
+<a id='L61' name='L61'></a>  61 <strong class='reserved'>import</strong> java.rmi.ServerError;
+<a id='L62' name='L62'></a>  62 <strong class='reserved'>import</strong> java.rmi.ServerException;
+<a id='L63' name='L63'></a>  63 <strong class='reserved'>import</strong> java.rmi.ServerRuntimeException;
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65 <strong class='reserved'>import</strong> javax.transaction.TransactionRequiredException;
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>import</strong> javax.transaction.TransactionRolledbackException;
+<a id='L67' name='L67'></a>  67 <strong class='reserved'>import</strong> javax.transaction.InvalidTransactionException;
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69 <strong class='reserved'>import</strong> org.omg.CORBA.SystemException;
+<a id='L70' name='L70'></a>  70 <strong class='reserved'>import</strong> org.omg.CORBA.Any;
+<a id='L71' name='L71'></a>  71 <strong class='reserved'>import</strong> org.omg.CORBA.TypeCode;
+<a id='L72' name='L72'></a>  72 <strong class='reserved'>import</strong> org.omg.CORBA.COMM_FAILURE;
+<a id='L73' name='L73'></a>  73 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_PARAM;
+<a id='L74' name='L74'></a>  74 <strong class='reserved'>import</strong> org.omg.CORBA.INV_OBJREF;
+<a id='L75' name='L75'></a>  75 <strong class='reserved'>import</strong> org.omg.CORBA.NO_PERMISSION;
+<a id='L76' name='L76'></a>  76 <strong class='reserved'>import</strong> org.omg.CORBA.MARSHAL;
+<a id='L77' name='L77'></a>  77 <strong class='reserved'>import</strong> org.omg.CORBA.OBJECT_NOT_EXIST;
+<a id='L78' name='L78'></a>  78 <strong class='reserved'>import</strong> org.omg.CORBA.TRANSACTION_REQUIRED;
+<a id='L79' name='L79'></a>  79 <strong class='reserved'>import</strong> org.omg.CORBA.TRANSACTION_ROLLEDBACK;
+<a id='L80' name='L80'></a>  80 <strong class='reserved'>import</strong> org.omg.CORBA.INVALID_TRANSACTION;
+<a id='L81' name='L81'></a>  81 <strong class='reserved'>import</strong> org.omg.CORBA.BAD_OPERATION;
+<a id='L82' name='L82'></a>  82 <strong class='reserved'>import</strong> org.omg.CORBA.ACTIVITY_REQUIRED;
+<a id='L83' name='L83'></a>  83 <strong class='reserved'>import</strong> org.omg.CORBA.ACTIVITY_COMPLETED;
+<a id='L84' name='L84'></a>  84 <strong class='reserved'>import</strong> org.omg.CORBA.INVALID_ACTIVITY;
+<a id='L85' name='L85'></a>  85 <strong class='reserved'>import</strong> org.omg.CORBA.CompletionStatus;
+<a id='L86' name='L86'></a>  86 <strong class='reserved'>import</strong> org.omg.CORBA.TCKind;
+<a id='L87' name='L87'></a>  87 <strong class='reserved'>import</strong> org.omg.CORBA.portable.UnknownException;
+<a id='L88' name='L88'></a>  88 <strong class='reserved'>import</strong> org.omg.CORBA.portable.InputStream;
+<a id='L89' name='L89'></a>  89 <strong class='reserved'>import</strong> org.omg.CORBA.portable.OutputStream;
+<a id='L90' name='L90'></a>  90 
+<a id='L91' name='L91'></a>  91 <em class='comment'>// This class must be able to function with non-Sun ORBs.</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>// This means that any of the following com.sun.corba classes</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>// must only occur in contexts that also handle the non-Sun case.</em>
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95 <strong class='reserved'>import</strong> com.sun.corba.se.pept.transport.ContactInfoList ;
+<a id='L96' name='L96'></a>  96 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB;
+<a id='L97' name='L97'></a>  97 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORBVersionFactory;
+<a id='L98' name='L98'></a>  98 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.CorbaClientDelegate;
+<a id='L99' name='L99'></a>  99 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaContactInfoList ;
+<a id='L100' name='L100'></a> 100 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.LocalClientRequestDispatcher ;
+<a id='L101' name='L101'></a> 101 <strong class='reserved'>import</strong> com.sun.corba.se.spi.copyobject.ReflectiveCopyException ;
+<a id='L102' name='L102'></a> 102 <strong class='reserved'>import</strong> com.sun.corba.se.spi.copyobject.CopierManager ;
+<a id='L103' name='L103'></a> 103 <strong class='reserved'>import</strong> com.sun.corba.se.spi.copyobject.ObjectCopierFactory ;
+<a id='L104' name='L104'></a> 104 <strong class='reserved'>import</strong> com.sun.corba.se.spi.copyobject.ObjectCopier ;
+<a id='L105' name='L105'></a> 105 <strong class='reserved'>import</strong> com.sun.corba.se.impl.io.ValueHandlerImpl;
+<a id='L106' name='L106'></a> 106 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBConstants;
+<a id='L107' name='L107'></a> 107 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L108' name='L108'></a> 108 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.OMGSystemException;
+<a id='L109' name='L109'></a> 109 <strong class='reserved'>import</strong> com.sun.corba.se.impl.util.Utility;
+<a id='L110' name='L110'></a> 110 <strong class='reserved'>import</strong> com.sun.corba.se.impl.util.IdentityHashtable;
+<a id='L111' name='L111'></a> 111 <strong class='reserved'>import</strong> com.sun.corba.se.impl.util.JDKBridge;
+<a id='L112' name='L112'></a> 112 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.UtilSystemException;
+<a id='L113' name='L113'></a> 113 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains;
+<a id='L114' name='L114'></a> 114 <strong class='reserved'>import</strong> sun.corba.SharedSecrets;
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116 <em class='comment'>/**</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'> * Provides utility methods that can be used by stubs and ties to</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'> * perform common operations.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'> */</em>
+<a id='L120' name='L120'></a> 120 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/8572.html' title='Multiple referred from 386 places.'>Util</a> <strong class='reserved'>implements</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.rmi.CORBA.<a href='../S/4434.html#L57' title='Defined at 57 in src/javax/rmi/CORBA/UtilDelegate.java.'>UtilDelegate</a>
+<a id='L121' name='L121'></a> 121 <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122     <em class='comment'>// Runs as long as there are exportedServants</em>
+<a id='L123' name='L123'></a> 123     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/7137.html#L753' title='Defined at 753 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>KeepAlive</a> keepAlive = <strong class='reserved'>null</strong>;
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <em class='comment'>// Maps targets to ties.</em>
+<a id='L126' name='L126'></a> 126     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/6900.html#L45' title='Defined at 45 in src/com/sun/corba/se/impl/util/IdentityHashtable.java.'>IdentityHashtable</a> exportedServants = <strong class='reserved'>new</strong> <a href='../S/6900.html#L45' title='Defined at 45 in src/com/sun/corba/se/impl/util/IdentityHashtable.java.'>IdentityHashtable</a>();
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/6959.html#L56' title='Defined at 56 in src/com/sun/corba/se/impl/io/ValueHandlerImpl.java.'>ValueHandlerImpl</a> valueHandlerSingleton =
+<a id='L129' name='L129'></a> 129         SharedSecrets.getJavaCorbaAccess().newValueHandlerImpl();
+<a id='L130' name='L130'></a> 130 
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>private</strong> <a href='../S/7265.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/UtilSystemException.java.'>UtilSystemException</a> utilWrapper = <a href='../S/7265.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/UtilSystemException.java.'>UtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(
+<a id='L132' name='L132'></a> 132                                                   <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_ENCODING);
+<a id='L133' name='L133'></a> 133 
+<a id='L134' name='L134'></a> 134     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a> <a href='../D/24872.html' title='Multiple defined in 6 places.'>instance</a> = <strong class='reserved'>null</strong>;
+<a id='L135' name='L135'></a> 135 
+<a id='L136' name='L136'></a> 136     <strong class='reserved'>public</strong> Util() <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137         <a href='../D/32967.html' title='Multiple defined in 2 places.'>setInstance</a>(<strong class='reserved'>this</strong>);
+<a id='L138' name='L138'></a> 138     <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139 
+<a id='L140' name='L140'></a> 140     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../S/7137.html#L137' title='Referred from 137 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>setInstance</a>( <a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a> util ) <em class='brace'>{</em>
+<a id='L141' name='L141'></a> 141         <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> <a href='../D/24872.html' title='Multiple defined in 6 places.'>instance</a> == <strong class='reserved'>null</strong> : "Instance already defined";
+<a id='L142' name='L142'></a> 142         <a href='../D/24872.html' title='Multiple defined in 6 places.'>instance</a> = util;
+<a id='L143' name='L143'></a> 143     <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a> <a href='../R/17115.html' title='Multiple referred from 459 places.'>getInstance</a>() <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>return</strong> <a href='../D/24872.html' title='Multiple defined in 6 places.'>instance</a>;
+<a id='L147' name='L147'></a> 147     <em class='brace'>}</em>
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21597.html' title='Multiple referred from 3 places.'>isInstanceDefined</a>() <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>return</strong> <a href='../D/24872.html' title='Multiple defined in 6 places.'>instance</a> != <strong class='reserved'>null</strong>;
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <em class='comment'>// Used by TOAFactory.shutdown to unexport all targets for this</em>
+<a id='L154' name='L154'></a> 154     <em class='comment'>// particular ORB.  This happens during ORB shutdown.</em>
+<a id='L155' name='L155'></a> 155     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/7182.html#L82' title='Referred from 82 in src/com/sun/corba/se/impl/oa/toa/TOAFactory.java.'>unregisterTargetsForORB</a>(org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L156' name='L156'></a> 156     <em class='brace'>{</em>
+<a id='L157' name='L157'></a> 157         <strong class='reserved'>for</strong> (<a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a> e = exportedServants.<a href='../D/26726.html' title='Multiple defined in 22 places.'>keys</a>(); e.<a href='../D/24128.html' title='Multiple defined in 32 places.'>hasMoreElements</a>(); )
+<a id='L158' name='L158'></a> 158         <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159             <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = e.<a href='../D/28145.html' title='Multiple defined in 35 places.'>nextElement</a>();
+<a id='L160' name='L160'></a> 160             <a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a> = (<a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a>)(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> <strong class='reserved'>instanceof</strong> <a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> ? ((<a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a>)<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>).<a href='../D/22997.html' title='Multiple defined in 36 places.'>getTarget</a>() : <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162             <em class='comment'>// Bug 4476347: BAD_OPERATION is thrown if the ties delegate isn't set.</em>
+<a id='L163' name='L163'></a> 163             <em class='comment'>// We can ignore this because it means the tie is not connected to an ORB.</em>
+<a id='L164' name='L164'></a> 164             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L165' name='L165'></a> 165                 <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> == <a href='../D/23131.html' title='Multiple defined in 8 places.'>getTie</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>).<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>()) <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166                     <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167                         <a href='../D/35838.html' title='Multiple defined in 12 places.'>unexportObject</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L168' name='L168'></a> 168                     <em class='brace'>}</em> <strong class='reserved'>catch</strong>( <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.rmi.<a href='../S/2495.html#L47' title='Defined at 47 in src/java/rmi/NoSuchObjectException.java.'>NoSuchObjectException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> ) <em class='brace'>{</em>
+<a id='L169' name='L169'></a> 169                         <em class='comment'>// We neglect this exception if at all if it is</em>
+<a id='L170' name='L170'></a> 170                         <em class='comment'>// raised. It is not harmful.</em>
+<a id='L171' name='L171'></a> 171                     <em class='brace'>}</em>
+<a id='L172' name='L172'></a> 172                 <em class='brace'>}</em>
+<a id='L173' name='L173'></a> 173             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/253.html#L40' title='Defined at 40 in src/org/omg/CORBA/BAD_OPERATION.java.'>BAD_OPERATION</a> bad) <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174                 <em class='comment'>/* Ignore */</em>
+<a id='L175' name='L175'></a> 175             <em class='brace'>}</em>
+<a id='L176' name='L176'></a> 176         <em class='brace'>}</em>
+<a id='L177' name='L177'></a> 177     <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179    <em class='comment'>/**</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     * Maps a SystemException to a RemoteException.</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>     * @param ex the SystemException to map.</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>     * @return the mapped exception.</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>     */</em>
+<a id='L184' name='L184'></a> 184     <strong class='reserved'>public</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> <a href='../R/23072.html' title='Multiple referred from 5 places.'>mapSystemException</a>(<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>)
+<a id='L185' name='L185'></a> 185     <em class='brace'>{</em>
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/316.html#L44' title='Defined at 44 in src/org/omg/CORBA/portable/UnknownException.java.'>UnknownException</a>) <em class='brace'>{</em>
+<a id='L187' name='L187'></a> 187             <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> orig = ((<a href='../S/316.html#L44' title='Defined at 44 in src/org/omg/CORBA/portable/UnknownException.java.'>UnknownException</a>)<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>).originalEx;
+<a id='L188' name='L188'></a> 188             <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/1772.html#L49' title='Defined at 49 in src/java/lang/Error.java.'>Error</a>) <em class='brace'>{</em>
+<a id='L189' name='L189'></a> 189                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2496.html#L40' title='Defined at 40 in src/java/rmi/ServerError.java.'>ServerError</a>("Error occurred in server thread",(<a href='../S/1772.html#L49' title='Defined at 49 in src/java/lang/Error.java.'>Error</a>)orig);
+<a id='L190' name='L190'></a> 190             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>) <em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2555.html#L40' title='Defined at 40 in src/java/rmi/ServerException.java.'>ServerException</a>("RemoteException occurred in server thread",
+<a id='L192' name='L192'></a> 192                     (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>)orig);
+<a id='L193' name='L193'></a> 193             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>) <em class='brace'>{</em>
+<a id='L194' name='L194'></a> 194                 <strong class='reserved'>throw</strong> (<a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>) orig;
+<a id='L195' name='L195'></a> 195             <em class='brace'>}</em>
+<a id='L196' name='L196'></a> 196         <em class='brace'>}</em>
+<a id='L197' name='L197'></a> 197 
+<a id='L198' name='L198'></a> 198         <em class='comment'>// Build the message string...</em>
+<a id='L199' name='L199'></a> 199         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
+<a id='L200' name='L200'></a> 200         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> corbaName = <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/26748.html' title='Multiple defined in 44 places.'>lastIndexOf</a>('.')+1);
+<a id='L201' name='L201'></a> 201         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/2277.html#L669' title='Defined at 669 in src/java/awt/image/PixelGrabber.java.'>status</a>;
+<a id='L202' name='L202'></a> 202         <strong class='reserved'>switch</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../S/2033.html#L55' title='Defined at 55 in src/java/nio/channels/CompletionHandler.java.'>completed</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>()) <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203             <strong class='reserved'>case</strong> <a href='../S/238.html#L53' title='Defined at 53 in src/org/omg/CORBA/CompletionStatus.java.'>CompletionStatus</a>._COMPLETED_YES:
+<a id='L204' name='L204'></a> 204                 <a href='../S/2277.html#L669' title='Defined at 669 in src/java/awt/image/PixelGrabber.java.'>status</a> = "Yes";
+<a id='L205' name='L205'></a> 205                 <strong class='reserved'>break</strong>;
+<a id='L206' name='L206'></a> 206             <strong class='reserved'>case</strong> <a href='../S/238.html#L53' title='Defined at 53 in src/org/omg/CORBA/CompletionStatus.java.'>CompletionStatus</a>._COMPLETED_NO:
+<a id='L207' name='L207'></a> 207                 <a href='../S/2277.html#L669' title='Defined at 669 in src/java/awt/image/PixelGrabber.java.'>status</a> = "No";
+<a id='L208' name='L208'></a> 208                 <strong class='reserved'>break</strong>;
+<a id='L209' name='L209'></a> 209             <strong class='reserved'>case</strong> <a href='../S/238.html#L53' title='Defined at 53 in src/org/omg/CORBA/CompletionStatus.java.'>CompletionStatus</a>._COMPLETED_MAYBE:
+<a id='L210' name='L210'></a> 210             <strong class='reserved'>default</strong>:
+<a id='L211' name='L211'></a> 211                 <a href='../S/2277.html#L669' title='Defined at 669 in src/java/awt/image/PixelGrabber.java.'>status</a> = "Maybe";
+<a id='L212' name='L212'></a> 212                 <strong class='reserved'>break</strong>;
+<a id='L213' name='L213'></a> 213         <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a> = "CORBA " + corbaName + " " + <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.minor + " " + <a href='../S/2277.html#L669' title='Defined at 669 in src/java/awt/image/PixelGrabber.java.'>status</a>;
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217         <em class='comment'>// Now map to the correct RemoteException type...</em>
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/379.html#L44' title='Defined at 44 in src/org/omg/CORBA/COMM_FAILURE.java.'>COMM_FAILURE</a>) <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/5428.html' title='Multiple defined in 3 places.'>MarshalException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L220' name='L220'></a> 220         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/420.html#L48' title='Defined at 48 in src/org/omg/CORBA/INV_OBJREF.java.'>INV_OBJREF</a>) <em class='brace'>{</em>
+<a id='L221' name='L221'></a> 221             <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> newEx = <strong class='reserved'>new</strong> <a href='../S/2495.html#L47' title='Defined at 47 in src/java/rmi/NoSuchObjectException.java.'>NoSuchObjectException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>);
+<a id='L222' name='L222'></a> 222             newEx.detail = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L223' name='L223'></a> 223             <strong class='reserved'>return</strong> newEx;
+<a id='L224' name='L224'></a> 224         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/424.html#L40' title='Defined at 40 in src/org/omg/CORBA/NO_PERMISSION.java.'>NO_PERMISSION</a>) <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2545.html#L43' title='Defined at 43 in src/java/rmi/AccessException.java.'>AccessException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L226' name='L226'></a> 226         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/400.html#L48' title='Defined at 48 in src/org/omg/CORBA/MARSHAL.java.'>MARSHAL</a>) <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/5428.html' title='Multiple defined in 3 places.'>MarshalException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L228' name='L228'></a> 228         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/258.html#L50' title='Defined at 50 in src/org/omg/CORBA/OBJECT_NOT_EXIST.java.'>OBJECT_NOT_EXIST</a>) <em class='brace'>{</em>
+<a id='L229' name='L229'></a> 229             <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> newEx = <strong class='reserved'>new</strong> <a href='../S/2495.html#L47' title='Defined at 47 in src/java/rmi/NoSuchObjectException.java.'>NoSuchObjectException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>);
+<a id='L230' name='L230'></a> 230             newEx.detail = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>return</strong> newEx;
+<a id='L232' name='L232'></a> 232         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/443.html#L40' title='Defined at 40 in src/org/omg/CORBA/TRANSACTION_REQUIRED.java.'>TRANSACTION_REQUIRED</a>) <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233             <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> newEx = <strong class='reserved'>new</strong> TransactionRequiredException(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>);
+<a id='L234' name='L234'></a> 234             newEx.detail = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L235' name='L235'></a> 235             <strong class='reserved'>return</strong> newEx;
+<a id='L236' name='L236'></a> 236         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/325.html#L43' title='Defined at 43 in src/org/omg/CORBA/TRANSACTION_ROLLEDBACK.java.'>TRANSACTION_ROLLEDBACK</a>) <em class='brace'>{</em>
+<a id='L237' name='L237'></a> 237             <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> newEx = <strong class='reserved'>new</strong> TransactionRolledbackException(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>);
+<a id='L238' name='L238'></a> 238             newEx.detail = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L239' name='L239'></a> 239             <strong class='reserved'>return</strong> newEx;
+<a id='L240' name='L240'></a> 240         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/268.html#L43' title='Defined at 43 in src/org/omg/CORBA/INVALID_TRANSACTION.java.'>INVALID_TRANSACTION</a>) <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241             <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> newEx = <strong class='reserved'>new</strong> InvalidTransactionException(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>);
+<a id='L242' name='L242'></a> 242             newEx.detail = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L243' name='L243'></a> 243             <strong class='reserved'>return</strong> newEx;
+<a id='L244' name='L244'></a> 244         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/432.html#L47' title='Defined at 47 in src/org/omg/CORBA/BAD_PARAM.java.'>BAD_PARAM</a>) <em class='brace'>{</em>
+<a id='L245' name='L245'></a> 245             <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> inner = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L246' name='L246'></a> 246 
+<a id='L247' name='L247'></a> 247             <em class='comment'>// Pre-Merlin Sun ORBs used the incorrect minor code for</em>
+<a id='L248' name='L248'></a> 248             <em class='comment'>// this case.  See Java to IDL ptc-00-01-08 1.4.8.</em>
+<a id='L249' name='L249'></a> 249             <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.minor == <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.LEGACY_SUN_NOT_SERIALIZABLE ||
+<a id='L250' name='L250'></a> 250                 <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.minor == <a href='../S/7267.html#L43' title='Defined at 43 in src/com/sun/corba/se/impl/logging/OMGSystemException.java.'>OMGSystemException</a>.NOT_SERIALIZABLE) <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251 
+<a id='L252' name='L252'></a> 252                 <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>() != <strong class='reserved'>null</strong>)
+<a id='L253' name='L253'></a> 253                     inner = <strong class='reserved'>new</strong> <a href='../S/1454.html#L36' title='Defined at 36 in src/java/io/NotSerializableException.java.'>NotSerializableException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
+<a id='L254' name='L254'></a> 254                 <strong class='reserved'>else</strong>
+<a id='L255' name='L255'></a> 255                     inner = <strong class='reserved'>new</strong> <a href='../S/1454.html#L36' title='Defined at 36 in src/java/io/NotSerializableException.java.'>NotSerializableException</a>();
+<a id='L256' name='L256'></a> 256 
+<a id='L257' name='L257'></a> 257                 inner.<a href='../D/24507.html' title='Multiple defined in 7 places.'>initCause</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> ) ;
+<a id='L258' name='L258'></a> 258             <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/5428.html' title='Multiple defined in 3 places.'>MarshalException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>,inner);
+<a id='L261' name='L261'></a> 261         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/402.html#L39' title='Defined at 39 in src/org/omg/CORBA/ACTIVITY_REQUIRED.java.'>ACTIVITY_REQUIRED</a>) <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; cl = SharedSecrets.getJavaCorbaAccess().<a href='../D/26901.html' title='Multiple defined in 49 places.'>loadClass</a>(
+<a id='L264' name='L264'></a> 264                                "javax.activity.ActivityRequiredException");
+<a id='L265' name='L265'></a> 265                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a> = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[2];
+<a id='L266' name='L266'></a> 266                 <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[0] = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>;
+<a id='L267' name='L267'></a> 267                 <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[1] = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a>.<strong class='reserved'>class</strong>;
+<a id='L268' name='L268'></a> 268                 <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a> cr = cl.<a href='../D/17932.html' title='Multiple defined in 2 places.'>getConstructor</a>(<a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>);
+<a id='L269' name='L269'></a> 269                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[2];
+<a id='L270' name='L270'></a> 270                 args[0] = <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>;
+<a id='L271' name='L271'></a> 271                 args[1] = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L272' name='L272'></a> 272                 <strong class='reserved'>return</strong> (<a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>) cr.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>(args);
+<a id='L273' name='L273'></a> 273             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> e) <em class='brace'>{</em>
+<a id='L274' name='L274'></a> 274                 utilWrapper.<a href='../D/12784.html' title='Multiple defined in 4 places.'>classNotFound</a>(
+<a id='L275' name='L275'></a> 275                               e, "javax.activity.ActivityRequiredException");
+<a id='L276' name='L276'></a> 276             <em class='brace'>}</em>
+<a id='L277' name='L277'></a> 277         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/339.html#L41' title='Defined at 41 in src/org/omg/CORBA/ACTIVITY_COMPLETED.java.'>ACTIVITY_COMPLETED</a>) <em class='brace'>{</em>
+<a id='L278' name='L278'></a> 278             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L279' name='L279'></a> 279                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; cl = SharedSecrets.getJavaCorbaAccess().<a href='../D/26901.html' title='Multiple defined in 49 places.'>loadClass</a>(
+<a id='L280' name='L280'></a> 280                                "javax.activity.ActivityCompletedException");
+<a id='L281' name='L281'></a> 281                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a> = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[2];
+<a id='L282' name='L282'></a> 282                 <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[0] = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>;
+<a id='L283' name='L283'></a> 283                 <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[1] = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a>.<strong class='reserved'>class</strong>;
+<a id='L284' name='L284'></a> 284                 <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a> cr = cl.<a href='../D/17932.html' title='Multiple defined in 2 places.'>getConstructor</a>(<a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>);
+<a id='L285' name='L285'></a> 285                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[2];
+<a id='L286' name='L286'></a> 286                 args[0] = <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>;
+<a id='L287' name='L287'></a> 287                 args[1] = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L288' name='L288'></a> 288                 <strong class='reserved'>return</strong> (<a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>) cr.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>(args);
+<a id='L289' name='L289'></a> 289               <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> e) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290                   utilWrapper.<a href='../D/12784.html' title='Multiple defined in 4 places.'>classNotFound</a>(
+<a id='L291' name='L291'></a> 291                                 e, "javax.activity.ActivityCompletedException");
+<a id='L292' name='L292'></a> 292               <em class='brace'>}</em>
+<a id='L293' name='L293'></a> 293         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/423.html#L40' title='Defined at 40 in src/org/omg/CORBA/INVALID_ACTIVITY.java.'>INVALID_ACTIVITY</a>) <em class='brace'>{</em>
+<a id='L294' name='L294'></a> 294             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; cl = SharedSecrets.getJavaCorbaAccess().<a href='../D/26901.html' title='Multiple defined in 49 places.'>loadClass</a>(
+<a id='L296' name='L296'></a> 296                                "javax.activity.InvalidActivityException");
+<a id='L297' name='L297'></a> 297                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a> = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[2];
+<a id='L298' name='L298'></a> 298                 <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[0] = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>;
+<a id='L299' name='L299'></a> 299                 <a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>[1] = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a>.<strong class='reserved'>class</strong>;
+<a id='L300' name='L300'></a> 300                 <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a> cr = cl.<a href='../D/17932.html' title='Multiple defined in 2 places.'>getConstructor</a>(<a href='../S/235.html#L141' title='Defined at 141 in src/org/omg/CORBA/ServerRequest.java.'>params</a>);
+<a id='L301' name='L301'></a> 301                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[2];
+<a id='L302' name='L302'></a> 302                 args[0] = <a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>;
+<a id='L303' name='L303'></a> 303                 args[1] = <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L304' name='L304'></a> 304                 <strong class='reserved'>return</strong> (<a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>) cr.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>(args);
+<a id='L305' name='L305'></a> 305               <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> e) <em class='brace'>{</em>
+<a id='L306' name='L306'></a> 306                   utilWrapper.<a href='../D/12784.html' title='Multiple defined in 4 places.'>classNotFound</a>(
+<a id='L307' name='L307'></a> 307                                 e, "javax.activity.InvalidActivityException");
+<a id='L308' name='L308'></a> 308               <em class='brace'>}</em>
+<a id='L309' name='L309'></a> 309         <em class='brace'>}</em>
+<a id='L310' name='L310'></a> 310 
+<a id='L311' name='L311'></a> 311         <em class='comment'>// Just map to a generic RemoteException...</em>
+<a id='L312' name='L312'></a> 312         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>(<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L313' name='L313'></a> 313     <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314 
+<a id='L315' name='L315'></a> 315     <em class='comment'>/**</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>     * Writes any java.lang.Object as a CORBA any.</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>     * @param out the stream in which to write the any.</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>     * @param obj the object to write as an any.</em>
+<a id='L319' name='L319'></a> 319 <em class='comment'>     */</em>
+<a id='L320' name='L320'></a> 320     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30551.html' title='Multiple referred from 7 places.'>writeAny</a>( org.omg.CORBA.portable.<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>,
+<a id='L321' name='L321'></a> 321                          <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj)
+<a id='L322' name='L322'></a> 322     <em class='brace'>{</em>
+<a id='L323' name='L323'></a> 323         org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>();
+<a id='L324' name='L324'></a> 324 
+<a id='L325' name='L325'></a> 325         <em class='comment'>// Create Any</em>
+<a id='L326' name='L326'></a> 326         <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/14356.html' title='Multiple defined in 3 places.'>create_any</a>();
+<a id='L327' name='L327'></a> 327 
+<a id='L328' name='L328'></a> 328         <em class='comment'>// Make sure we have a connected object...</em>
+<a id='L329' name='L329'></a> 329         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> newObj = <a href='../D/9444.html' title='Multiple defined in 3 places.'>Utility</a>.<a href='../S/6904.html#L111' title='Defined at 111 in src/com/sun/corba/se/impl/util/Utility.java.'>autoConnect</a>(obj,<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,<strong class='reserved'>false</strong>);
+<a id='L330' name='L330'></a> 330 
+<a id='L331' name='L331'></a> 331         <strong class='reserved'>if</strong> (newObj <strong class='reserved'>instanceof</strong> org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>) <em class='brace'>{</em>
+<a id='L332' name='L332'></a> 332             <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/24783.html' title='Multiple defined in 4 places.'>insert_Object</a>((org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>)newObj);
+<a id='L333' name='L333'></a> 333         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L334' name='L334'></a> 334             <strong class='reserved'>if</strong> (newObj == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L335' name='L335'></a> 335                 <em class='comment'>// Handle the null case, including backwards</em>
+<a id='L336' name='L336'></a> 336                 <em class='comment'>// compatibility issues</em>
+<a id='L337' name='L337'></a> 337                 <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/24787.html' title='Multiple defined in 4 places.'>insert_Value</a>(<strong class='reserved'>null</strong>, <a href='../S/7137.html#L398' title='Defined at 398 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>createTypeCodeForNull</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>));
+<a id='L338' name='L338'></a> 338             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L339' name='L339'></a> 339                 <strong class='reserved'>if</strong> (newObj <strong class='reserved'>instanceof</strong> <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>) <em class='brace'>{</em>
+<a id='L340' name='L340'></a> 340                     <em class='comment'>// If they're our Any and ORB implementations,</em>
+<a id='L341' name='L341'></a> 341                     <em class='comment'>// we may want to do type code related versioning.</em>
+<a id='L342' name='L342'></a> 342                     <a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> tc = <a href='../S/7137.html#L373' title='Defined at 373 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>createTypeCode</a>((<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>)newObj, <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>, <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>);
+<a id='L343' name='L343'></a> 343                     <strong class='reserved'>if</strong> (tc == <strong class='reserved'>null</strong>)
+<a id='L344' name='L344'></a> 344                         <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/24787.html' title='Multiple defined in 4 places.'>insert_Value</a>((<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>)newObj);
+<a id='L345' name='L345'></a> 345                     <strong class='reserved'>else</strong>
+<a id='L346' name='L346'></a> 346                         <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/24787.html' title='Multiple defined in 4 places.'>insert_Value</a>((<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>)newObj, tc);
+<a id='L347' name='L347'></a> 347                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (newObj <strong class='reserved'>instanceof</strong> <a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a>) <em class='brace'>{</em>
+<a id='L348' name='L348'></a> 348                     <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/35305.html' title='Multiple defined in 2 places.'>throwNotSerializableForCorba</a>(newObj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L349' name='L349'></a> 349                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L350' name='L350'></a> 350                     <a href='../S/6919.html#L98' title='Defined at 98 in src/com/sun/corba/se/impl/orbutil/ORBUtility.java.'>ORBUtility</a>.<a href='../D/35305.html' title='Multiple defined in 2 places.'>throwNotSerializableForCorba</a>(newObj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L351' name='L351'></a> 351                 <em class='brace'>}</em>
+<a id='L352' name='L352'></a> 352             <em class='brace'>}</em>
+<a id='L353' name='L353'></a> 353         <em class='brace'>}</em>
+<a id='L354' name='L354'></a> 354 
+<a id='L355' name='L355'></a> 355         <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/37226.html' title='Multiple defined in 7 places.'>write_any</a>(<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>);
+<a id='L356' name='L356'></a> 356     <em class='brace'>}</em>
+<a id='L357' name='L357'></a> 357 
+<a id='L358' name='L358'></a> 358     <em class='comment'>/**</em>
+<a id='L359' name='L359'></a> 359 <em class='comment'>     * When using our own ORB and Any implementations, we need to get</em>
+<a id='L360' name='L360'></a> 360 <em class='comment'>     * the ORB version and create the type code appropriately.  This is</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>     * to overcome a bug in which the JDK 1.3.x ORBs used a tk_char</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * rather than a tk_wchar to describe a Java char field.</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     *</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>     * This only works in RMI-IIOP with Util.writeAny since we actually</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>     * know what ORB and stream we're writing with when we insert</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>     * the value.</em>
+<a id='L367' name='L367'></a> 367 <em class='comment'>     *</em>
+<a id='L368' name='L368'></a> 368 <em class='comment'>     * Returns null if it wasn't possible to create the TypeCode (means</em>
+<a id='L369' name='L369'></a> 369 <em class='comment'>     * it wasn't our ORB or Any implementation).</em>
+<a id='L370' name='L370'></a> 370 <em class='comment'>     *</em>
+<a id='L371' name='L371'></a> 371 <em class='comment'>     * This does not handle null objs.</em>
+<a id='L372' name='L372'></a> 372 <em class='comment'>     */</em>
+<a id='L373' name='L373'></a> 373     <strong class='reserved'>private</strong> <a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> <a href='../S/7137.html#L342' title='Referred from 342 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>createTypeCode</a>(<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a> obj,
+<a id='L374' name='L374'></a> 374                                     org.omg.CORBA.<a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>,
+<a id='L375' name='L375'></a> 375                                     org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>) <em class='brace'>{</em>
+<a id='L376' name='L376'></a> 376 
+<a id='L377' name='L377'></a> 377         <strong class='reserved'>if</strong> (<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a> <strong class='reserved'>instanceof</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.corba.<a href='../S/7143.html#L68' title='Defined at 68 in src/com/sun/corba/se/impl/corba/AnyImpl.java.'>AnyImpl</a> &amp;&amp;
+<a id='L378' name='L378'></a> 378             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> <strong class='reserved'>instanceof</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>) <em class='brace'>{</em>
+<a id='L379' name='L379'></a> 379 
+<a id='L380' name='L380'></a> 380             com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.corba.<a href='../S/7143.html#L68' title='Defined at 68 in src/com/sun/corba/se/impl/corba/AnyImpl.java.'>AnyImpl</a> anyImpl
+<a id='L381' name='L381'></a> 381                 = (com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.corba.<a href='../S/7143.html#L68' title='Defined at 68 in src/com/sun/corba/se/impl/corba/AnyImpl.java.'>AnyImpl</a>)<a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>;
+<a id='L382' name='L382'></a> 382 
+<a id='L383' name='L383'></a> 383             <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> ourORB = (<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L384' name='L384'></a> 384 
+<a id='L385' name='L385'></a> 385             <strong class='reserved'>return</strong> anyImpl.<a href='../D/14277.html' title='Multiple defined in 2 places.'>createTypeCodeForClass</a>(obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>(), ourORB);
+<a id='L386' name='L386'></a> 386 
+<a id='L387' name='L387'></a> 387         <em class='brace'>}</em> <strong class='reserved'>else</strong>
+<a id='L388' name='L388'></a> 388             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L389' name='L389'></a> 389     <em class='brace'>}</em>
+<a id='L390' name='L390'></a> 390 
+<a id='L391' name='L391'></a> 391 
+<a id='L392' name='L392'></a> 392     <em class='comment'>/**</em>
+<a id='L393' name='L393'></a> 393 <em class='comment'>     * This is used to create the TypeCode for a null reference.</em>
+<a id='L394' name='L394'></a> 394 <em class='comment'>     * It also handles backwards compatibility with JDK 1.3.x.</em>
+<a id='L395' name='L395'></a> 395 <em class='comment'>     *</em>
+<a id='L396' name='L396'></a> 396 <em class='comment'>     * This method will not return null.</em>
+<a id='L397' name='L397'></a> 397 <em class='comment'>     */</em>
+<a id='L398' name='L398'></a> 398     <strong class='reserved'>private</strong> <a href='../S/324.html#L170' title='Defined at 170 in src/org/omg/CORBA/TypeCode.java.'>TypeCode</a> <a href='../S/7137.html#L337' title='Referred from 337 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>createTypeCodeForNull</a>(org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L399' name='L399'></a> 399     <em class='brace'>{</em>
+<a id='L400' name='L400'></a> 400         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> <strong class='reserved'>instanceof</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>) <em class='brace'>{</em>
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402             <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> ourORB = (<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L403' name='L403'></a> 403 
+<a id='L404' name='L404'></a> 404             <em class='comment'>// Preserve backwards compatibility with Kestrel and Ladybird</em>
+<a id='L405' name='L405'></a> 405             <em class='comment'>// by not fully implementing interop issue resolution 3857,</em>
+<a id='L406' name='L406'></a> 406             <em class='comment'>// and returning a null TypeCode with a tk_value TCKind.</em>
+<a id='L407' name='L407'></a> 407             <em class='comment'>// If we're not talking to Kestrel or Ladybird, fall through</em>
+<a id='L408' name='L408'></a> 408             <em class='comment'>// to the abstract interface case (also used for foreign ORBs).</em>
+<a id='L409' name='L409'></a> 409             <strong class='reserved'>if</strong> (!<a href='../S/7560.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/orb/ORBVersionFactory.java.'>ORBVersionFactory</a>.<a href='../S/7560.html#L36' title='Defined at 36 in src/com/sun/corba/se/spi/orb/ORBVersionFactory.java.'>getFOREIGN</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(ourORB.<a href='../D/21119.html' title='Multiple defined in 10 places.'>getORBVersion</a>()) &amp;&amp;
+<a id='L410' name='L410'></a> 410                 <a href='../S/7560.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/orb/ORBVersionFactory.java.'>ORBVersionFactory</a>.<a href='../S/7560.html#L56' title='Defined at 56 in src/com/sun/corba/se/spi/orb/ORBVersionFactory.java.'>getNEWER</a>().<a href='../D/13068.html' title='Multiple defined in 86 places.'>compareTo</a>(ourORB.<a href='../D/21119.html' title='Multiple defined in 10 places.'>getORBVersion</a>()) &gt; 0) <em class='brace'>{</em>
+<a id='L411' name='L411'></a> 411 
+<a id='L412' name='L412'></a> 412                 <strong class='reserved'>return</strong> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/23865.html' title='Multiple defined in 4 places.'>get_primitive_tc</a>(<a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>.tk_value);
+<a id='L413' name='L413'></a> 413             <em class='brace'>}</em>
+<a id='L414' name='L414'></a> 414         <em class='brace'>}</em>
+<a id='L415' name='L415'></a> 415 
+<a id='L416' name='L416'></a> 416         <em class='comment'>// Use tk_abstract_interface as detailed in the resolution</em>
+<a id='L417' name='L417'></a> 417 
+<a id='L418' name='L418'></a> 418         <em class='comment'>// REVISIT: Define this in IDL and get the ID in generated code</em>
+<a id='L419' name='L419'></a> 419         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> abstractBaseID = "IDL:omg.org/CORBA/AbstractBase:1.0";
+<a id='L420' name='L420'></a> 420 
+<a id='L421' name='L421'></a> 421         <strong class='reserved'>return</strong> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/14354.html' title='Multiple defined in 3 places.'>create_abstract_interface_tc</a>(abstractBaseID, "");
+<a id='L422' name='L422'></a> 422     <em class='brace'>}</em>
+<a id='L423' name='L423'></a> 423 
+<a id='L424' name='L424'></a> 424     <em class='comment'>/**</em>
+<a id='L425' name='L425'></a> 425 <em class='comment'>     * Reads a java.lang.Object as a CORBA any.</em>
+<a id='L426' name='L426'></a> 426 <em class='comment'>     * @param in the stream from which to read the any.</em>
+<a id='L427' name='L427'></a> 427 <em class='comment'>     * @return the object read from the stream.</em>
+<a id='L428' name='L428'></a> 428 <em class='comment'>     */</em>
+<a id='L429' name='L429'></a> 429     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/25420.html' title='Multiple referred from 6 places.'>readAny</a>(<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a>)
+<a id='L430' name='L430'></a> 430     <em class='brace'>{</em>
+<a id='L431' name='L431'></a> 431         <a href='../D/440.html' title='Multiple defined in 2 places.'>Any</a> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a> = <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a>.<a href='../D/30311.html' title='Multiple defined in 9 places.'>read_any</a>();
+<a id='L432' name='L432'></a> 432         <strong class='reserved'>if</strong> ( <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>().<a href='../D/26729.html' title='Multiple defined in 5 places.'>kind</a>().<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>() == <a href='../S/376.html#L70' title='Defined at 70 in src/org/omg/CORBA/TCKind.java.'>TCKind</a>._tk_objref )
+<a id='L433' name='L433'></a> 433             <strong class='reserved'>return</strong> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/15940.html' title='Multiple defined in 2 places.'>extract_Object</a> ();
+<a id='L434' name='L434'></a> 434         <strong class='reserved'>else</strong>
+<a id='L435' name='L435'></a> 435             <strong class='reserved'>return</strong> <a href='../D/11346.html' title='Multiple defined in 6 places.'>any</a>.<a href='../D/15944.html' title='Multiple defined in 2 places.'>extract_Value</a>();
+<a id='L436' name='L436'></a> 436     <em class='brace'>}</em>
+<a id='L437' name='L437'></a> 437 
+<a id='L438' name='L438'></a> 438     <em class='comment'>/**</em>
+<a id='L439' name='L439'></a> 439 <em class='comment'>     * Writes a java.lang.Object as a CORBA Object. If &lt;code&gt;obj&lt;/code&gt; is</em>
+<a id='L440' name='L440'></a> 440 <em class='comment'>     * an exported RMI-IIOP server object, the tie is found</em>
+<a id='L441' name='L441'></a> 441 <em class='comment'>     * and wired to &lt;code&gt;obj&lt;/code&gt;, then written to &lt;code&gt;out.write_Object(org.omg.CORBA.Object)&lt;/code&gt;.</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'>     * If &lt;code&gt;obj&lt;/code&gt; is a CORBA Object, it is written to</em>
+<a id='L443' name='L443'></a> 443 <em class='comment'>     * &lt;code&gt;out.write_Object(org.omg.CORBA.Object)&lt;/code&gt;.</em>
+<a id='L444' name='L444'></a> 444 <em class='comment'>     * @param out the stream in which to write the object.</em>
+<a id='L445' name='L445'></a> 445 <em class='comment'>     * @param obj the object to write.</em>
+<a id='L446' name='L446'></a> 446 <em class='comment'>     */</em>
+<a id='L447' name='L447'></a> 447     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30702.html' title='Multiple referred from 4 places.'>writeRemoteObject</a>(<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>, <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj)
+<a id='L448' name='L448'></a> 448     <em class='brace'>{</em>
+<a id='L449' name='L449'></a> 449         <em class='comment'>// Make sure we have a connected object, then</em>
+<a id='L450' name='L450'></a> 450         <em class='comment'>// write it out...</em>
+<a id='L451' name='L451'></a> 451 
+<a id='L452' name='L452'></a> 452         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> newObj = <a href='../D/9444.html' title='Multiple defined in 3 places.'>Utility</a>.<a href='../S/6904.html#L111' title='Defined at 111 in src/com/sun/corba/se/impl/util/Utility.java.'>autoConnect</a>(obj,<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>(),<strong class='reserved'>false</strong>);
+<a id='L453' name='L453'></a> 453         <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/37220.html' title='Multiple defined in 7 places.'>write_Object</a>((org.omg.CORBA.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>)newObj);
+<a id='L454' name='L454'></a> 454     <em class='brace'>}</em>
+<a id='L455' name='L455'></a> 455 
+<a id='L456' name='L456'></a> 456     <em class='comment'>/**</em>
+<a id='L457' name='L457'></a> 457 <em class='comment'>     * Writes a java.lang.Object as either a value or a CORBA Object.</em>
+<a id='L458' name='L458'></a> 458 <em class='comment'>     * If &lt;code&gt;obj&lt;/code&gt; is a value object or a stub object, it is written to</em>
+<a id='L459' name='L459'></a> 459 <em class='comment'>     * &lt;code&gt;out.write_abstract_interface(java.lang.Object)&lt;/code&gt;. If &lt;code&gt;obj&lt;/code&gt; is an exported</em>
+<a id='L460' name='L460'></a> 460 <em class='comment'>     * RMI-IIOP server object, the tie is found and wired to &lt;code&gt;obj&lt;/code&gt;,</em>
+<a id='L461' name='L461'></a> 461 <em class='comment'>     * then written to &lt;code&gt;out.write_abstract_interface(java.lang.Object)&lt;/code&gt;.</em>
+<a id='L462' name='L462'></a> 462 <em class='comment'>     * @param out the stream in which to write the object.</em>
+<a id='L463' name='L463'></a> 463 <em class='comment'>     * @param obj the object to write.</em>
+<a id='L464' name='L464'></a> 464 <em class='comment'>     */</em>
+<a id='L465' name='L465'></a> 465     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30548.html' title='Multiple referred from 5 places.'>writeAbstractObject</a>( <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>, <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj )
+<a id='L466' name='L466'></a> 466     <em class='brace'>{</em>
+<a id='L467' name='L467'></a> 467         <em class='comment'>// Make sure we have a connected object, then</em>
+<a id='L468' name='L468'></a> 468         <em class='comment'>// write it out...</em>
+<a id='L469' name='L469'></a> 469 
+<a id='L470' name='L470'></a> 470         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> newObj = <a href='../D/9444.html' title='Multiple defined in 3 places.'>Utility</a>.<a href='../S/6904.html#L111' title='Defined at 111 in src/com/sun/corba/se/impl/util/Utility.java.'>autoConnect</a>(obj,<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>(),<strong class='reserved'>false</strong>);
+<a id='L471' name='L471'></a> 471         ((org.omg.CORBA_2_3.portable.<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a>)<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>).<a href='../D/37225.html' title='Multiple defined in 5 places.'>write_abstract_interface</a>(newObj);
+<a id='L472' name='L472'></a> 472     <em class='brace'>}</em>
+<a id='L473' name='L473'></a> 473 
+<a id='L474' name='L474'></a> 474     <em class='comment'>/**</em>
+<a id='L475' name='L475'></a> 475 <em class='comment'>     * Registers a target for a tie. Adds the tie to an internal table and calls</em>
+<a id='L476' name='L476'></a> 476 <em class='comment'>     * {@link Tie#setTarget} on the tie object.</em>
+<a id='L477' name='L477'></a> 477 <em class='comment'>     * @param tie the tie to register.</em>
+<a id='L478' name='L478'></a> 478 <em class='comment'>     * @param target the target for the tie.</em>
+<a id='L479' name='L479'></a> 479 <em class='comment'>     */</em>
+<a id='L480' name='L480'></a> 480     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25820.html' title='Multiple referred from 2 places.'>registerTarget</a>(<a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.rmi.CORBA.<a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> tie, <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.rmi.<a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>)
+<a id='L481' name='L481'></a> 481     <em class='brace'>{</em>
+<a id='L482' name='L482'></a> 482         <strong class='reserved'>synchronized</strong> (exportedServants) <em class='brace'>{</em>
+<a id='L483' name='L483'></a> 483             <em class='comment'>// Do we already have this target registered?</em>
+<a id='L484' name='L484'></a> 484             <strong class='reserved'>if</strong> (<a href='../S/7137.html#L559' title='Defined at 559 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>lookupTie</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>) == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L485' name='L485'></a> 485                 <em class='comment'>// No, so register it and set the target...</em>
+<a id='L486' name='L486'></a> 486                 exportedServants.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>,tie);
+<a id='L487' name='L487'></a> 487                 tie.<a href='../D/34078.html' title='Multiple defined in 20 places.'>setTarget</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L488' name='L488'></a> 488 
+<a id='L489' name='L489'></a> 489                 <em class='comment'>// Do we need to instantiate our keep-alive thread?</em>
+<a id='L490' name='L490'></a> 490                 <strong class='reserved'>if</strong> (keepAlive == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L491' name='L491'></a> 491                     <em class='comment'>// Yes. Instantiate our keep-alive thread and start</em>
+<a id='L492' name='L492'></a> 492                     <em class='comment'>// it up...</em>
+<a id='L493' name='L493'></a> 493                     keepAlive = (<a href='../S/7137.html#L753' title='Defined at 753 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>KeepAlive</a>)<a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>() <em class='brace'>{</em>
+<a id='L494' name='L494'></a> 494                         <strong class='reserved'>public</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L495' name='L495'></a> 495                             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7137.html#L753' title='Defined at 753 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>KeepAlive</a>();
+<a id='L496' name='L496'></a> 496                         <em class='brace'>}</em>
+<a id='L497' name='L497'></a> 497                     <em class='brace'>}</em>);
+<a id='L498' name='L498'></a> 498                     keepAlive.<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>();
+<a id='L499' name='L499'></a> 499                 <em class='brace'>}</em>
+<a id='L500' name='L500'></a> 500             <em class='brace'>}</em>
+<a id='L501' name='L501'></a> 501         <em class='brace'>}</em>
+<a id='L502' name='L502'></a> 502     <em class='brace'>}</em>
+<a id='L503' name='L503'></a> 503 
+<a id='L504' name='L504'></a> 504     <em class='comment'>/**</em>
+<a id='L505' name='L505'></a> 505 <em class='comment'>     * Removes the associated tie from an internal table and calls {@link Tie#deactivate}</em>
+<a id='L506' name='L506'></a> 506 <em class='comment'>     * to deactivate the object.</em>
+<a id='L507' name='L507'></a> 507 <em class='comment'>     * @param target the object to unexport.</em>
+<a id='L508' name='L508'></a> 508 <em class='comment'>     */</em>
+<a id='L509' name='L509'></a> 509     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/29640.html' title='Multiple referred from 13 places.'>unexportObject</a>(<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.rmi.<a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>)
+<a id='L510' name='L510'></a> 510         <strong class='reserved'>throws</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.rmi.<a href='../S/2495.html#L47' title='Defined at 47 in src/java/rmi/NoSuchObjectException.java.'>NoSuchObjectException</a>
+<a id='L511' name='L511'></a> 511     <em class='brace'>{</em>
+<a id='L512' name='L512'></a> 512         <strong class='reserved'>synchronized</strong> (exportedServants) <em class='brace'>{</em>
+<a id='L513' name='L513'></a> 513             <a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> cachedTie = <a href='../S/7137.html#L559' title='Defined at 559 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>lookupTie</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L514' name='L514'></a> 514             <strong class='reserved'>if</strong> (cachedTie != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L515' name='L515'></a> 515                 exportedServants.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L516' name='L516'></a> 516                 <a href='../D/9444.html' title='Multiple defined in 3 places.'>Utility</a>.<a href='../S/6904.html#L706' title='Defined at 706 in src/com/sun/corba/se/impl/util/Utility.java.'>purgeStubForTie</a>(cachedTie);
+<a id='L517' name='L517'></a> 517                 <a href='../D/9444.html' title='Multiple defined in 3 places.'>Utility</a>.<a href='../S/6904.html#L721' title='Defined at 721 in src/com/sun/corba/se/impl/util/Utility.java.'>purgeTieAndServant</a>(cachedTie);
+<a id='L518' name='L518'></a> 518                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L519' name='L519'></a> 519                     <a href='../S/7137.html#L538' title='Defined at 538 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>cleanUpTie</a>(cachedTie);
+<a id='L520' name='L520'></a> 520                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/253.html#L40' title='Defined at 40 in src/org/omg/CORBA/BAD_OPERATION.java.'>BAD_OPERATION</a> e) <em class='brace'>{</em>
+<a id='L521' name='L521'></a> 521                     <em class='comment'>// ignore</em>
+<a id='L522' name='L522'></a> 522                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (org.omg.CORBA.<a href='../S/285.html#L45' title='Defined at 45 in src/org/omg/CORBA/OBJ_ADAPTER.java.'>OBJ_ADAPTER</a> e) <em class='brace'>{</em>
+<a id='L523' name='L523'></a> 523                     <em class='comment'>// This can happen when the target was never associated with a POA.</em>
+<a id='L524' name='L524'></a> 524                     <em class='comment'>// We can safely ignore this case.</em>
+<a id='L525' name='L525'></a> 525                 <em class='brace'>}</em>
+<a id='L526' name='L526'></a> 526 
+<a id='L527' name='L527'></a> 527                 <em class='comment'>// Is it time to shut down our keep alive thread?</em>
+<a id='L528' name='L528'></a> 528                 <strong class='reserved'>if</strong> (exportedServants.<a href='../D/25493.html' title='Multiple defined in 113 places.'>isEmpty</a>()) <em class='brace'>{</em>
+<a id='L529' name='L529'></a> 529                     keepAlive.<a href='../S/7137.html#L771' title='Defined at 771 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>quit</a>();
+<a id='L530' name='L530'></a> 530                     keepAlive = <strong class='reserved'>null</strong>;
+<a id='L531' name='L531'></a> 531                 <em class='brace'>}</em>
+<a id='L532' name='L532'></a> 532             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L533' name='L533'></a> 533                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.rmi.<a href='../S/2495.html#L47' title='Defined at 47 in src/java/rmi/NoSuchObjectException.java.'>NoSuchObjectException</a>("Tie not found" );
+<a id='L534' name='L534'></a> 534             <em class='brace'>}</em>
+<a id='L535' name='L535'></a> 535         <em class='brace'>}</em>
+<a id='L536' name='L536'></a> 536     <em class='brace'>}</em>
+<a id='L537' name='L537'></a> 537 
+<a id='L538' name='L538'></a> 538     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../S/7137.html#L519' title='Referred from 519 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>cleanUpTie</a>(<a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> cachedTie)
+<a id='L539' name='L539'></a> 539         <strong class='reserved'>throws</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.rmi.<a href='../S/2495.html#L47' title='Defined at 47 in src/java/rmi/NoSuchObjectException.java.'>NoSuchObjectException</a>
+<a id='L540' name='L540'></a> 540     <em class='brace'>{</em>
+<a id='L541' name='L541'></a> 541         cachedTie.<a href='../D/34078.html' title='Multiple defined in 20 places.'>setTarget</a>(<strong class='reserved'>null</strong>);
+<a id='L542' name='L542'></a> 542         cachedTie.<a href='../D/14479.html' title='Multiple defined in 5 places.'>deactivate</a>();
+<a id='L543' name='L543'></a> 543     <em class='brace'>}</em>
+<a id='L544' name='L544'></a> 544 
+<a id='L545' name='L545'></a> 545     <em class='comment'>/**</em>
+<a id='L546' name='L546'></a> 546 <em class='comment'>     * Returns the tie (if any) for a given target object.</em>
+<a id='L547' name='L547'></a> 547 <em class='comment'>     * @return the tie or null if no tie is registered for the given target.</em>
+<a id='L548' name='L548'></a> 548 <em class='comment'>     */</em>
+<a id='L549' name='L549'></a> 549     <strong class='reserved'>public</strong> <a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> <a href='../R/19486.html' title='Multiple referred from 10 places.'>getTie</a> (<a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>)
+<a id='L550' name='L550'></a> 550     <em class='brace'>{</em>
+<a id='L551' name='L551'></a> 551         <strong class='reserved'>synchronized</strong> (exportedServants) <em class='brace'>{</em>
+<a id='L552' name='L552'></a> 552             <strong class='reserved'>return</strong> <a href='../S/7137.html#L559' title='Defined at 559 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>lookupTie</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L553' name='L553'></a> 553         <em class='brace'>}</em>
+<a id='L554' name='L554'></a> 554     <em class='brace'>}</em>
+<a id='L555' name='L555'></a> 555 
+<a id='L556' name='L556'></a> 556     <em class='comment'>/**</em>
+<a id='L557' name='L557'></a> 557 <em class='comment'>     * An unsynchronized version of getTie() for internal use.</em>
+<a id='L558' name='L558'></a> 558 <em class='comment'>     */</em>
+<a id='L559' name='L559'></a> 559     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> <a href='../R/22781.html' title='Multiple referred from 3 places.'>lookupTie</a> (<a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>)
+<a id='L560' name='L560'></a> 560     <em class='brace'>{</em>
+<a id='L561' name='L561'></a> 561         <a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = (<a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a>)exportedServants.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>);
+<a id='L562' name='L562'></a> 562         <strong class='reserved'>if</strong> (<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> == <strong class='reserved'>null</strong> &amp;&amp; <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a> <strong class='reserved'>instanceof</strong> <a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a>) <em class='brace'>{</em>
+<a id='L563' name='L563'></a> 563             <strong class='reserved'>if</strong> (exportedServants.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>)) <em class='brace'>{</em>
+<a id='L564' name='L564'></a> 564                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = (<a href='../S/4437.html#L48' title='Defined at 48 in src/javax/rmi/CORBA/Tie.java.'>Tie</a>)<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>;
+<a id='L565' name='L565'></a> 565             <em class='brace'>}</em>
+<a id='L566' name='L566'></a> 566         <em class='brace'>}</em>
+<a id='L567' name='L567'></a> 567         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L568' name='L568'></a> 568     <em class='brace'>}</em>
+<a id='L569' name='L569'></a> 569 
+<a id='L570' name='L570'></a> 570     <em class='comment'>/**</em>
+<a id='L571' name='L571'></a> 571 <em class='comment'>     * Returns a singleton instance of a class that implements the</em>
+<a id='L572' name='L572'></a> 572 <em class='comment'>     * {@link ValueHandler} interface.</em>
+<a id='L573' name='L573'></a> 573 <em class='comment'>     * @return a class which implements the ValueHandler interface.</em>
+<a id='L574' name='L574'></a> 574 <em class='comment'>     */</em>
+<a id='L575' name='L575'></a> 575     <strong class='reserved'>public</strong> <a href='../S/4441.html#L38' title='Defined at 38 in src/javax/rmi/CORBA/ValueHandler.java.'>ValueHandler</a> <a href='../R/12772.html' title='Multiple referred from 8 places.'>createValueHandler</a>()
+<a id='L576' name='L576'></a> 576     <em class='brace'>{</em>
+<a id='L577' name='L577'></a> 577         <strong class='reserved'>return</strong> valueHandlerSingleton;
+<a id='L578' name='L578'></a> 578     <em class='brace'>}</em>
+<a id='L579' name='L579'></a> 579 
+<a id='L580' name='L580'></a> 580     <em class='comment'>/**</em>
+<a id='L581' name='L581'></a> 581 <em class='comment'>     * Returns the codebase, if any, for the given class.</em>
+<a id='L582' name='L582'></a> 582 <em class='comment'>     * @param clz the class to get a codebase for.</em>
+<a id='L583' name='L583'></a> 583 <em class='comment'>     * @return a space-separated list of URLs, or null.</em>
+<a id='L584' name='L584'></a> 584 <em class='comment'>     */</em>
+<a id='L585' name='L585'></a> 585     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/15647.html' title='Multiple referred from 22 places.'>getCodebase</a>(<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> clz) <em class='brace'>{</em>
+<a id='L586' name='L586'></a> 586         <strong class='reserved'>return</strong> <a href='../S/2535.html#L110' title='Defined at 110 in src/java/rmi/server/RMIClassLoader.java.'>RMIClassLoader</a>.<a href='../D/17677.html' title='Multiple defined in 2 places.'>getClassAnnotation</a>(clz);
+<a id='L587' name='L587'></a> 587     <em class='brace'>}</em>
+<a id='L588' name='L588'></a> 588 
+<a id='L589' name='L589'></a> 589     <em class='comment'>/**</em>
+<a id='L590' name='L590'></a> 590 <em class='comment'>     * Returns a class instance for the specified class.</em>
+<a id='L591' name='L591'></a> 591 <em class='comment'>     * @param className the name of the class.</em>
+<a id='L592' name='L592'></a> 592 <em class='comment'>     * @param remoteCodebase a space-separated list of URLs at which</em>
+<a id='L593' name='L593'></a> 593 <em class='comment'>     * the class might be found. May be null.</em>
+<a id='L594' name='L594'></a> 594 <em class='comment'>     * @param loadingContext a class whose ClassLoader may be used to</em>
+<a id='L595' name='L595'></a> 595 <em class='comment'>     * load the class if all other methods fail.</em>
+<a id='L596' name='L596'></a> 596 <em class='comment'>     * @return the &lt;code&gt;Class&lt;/code&gt; object representing the loaded class.</em>
+<a id='L597' name='L597'></a> 597 <em class='comment'>     * @exception ClassNotFoundException if class cannot be loaded.</em>
+<a id='L598' name='L598'></a> 598 <em class='comment'>     */</em>
+<a id='L599' name='L599'></a> 599     <strong class='reserved'>public</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> <a href='../R/22555.html' title='Multiple referred from 154 places.'>loadClass</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> remoteCodebase,
+<a id='L600' name='L600'></a> 600         <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> loader) <strong class='reserved'>throws</strong> <a href='../S/1705.html#L53' title='Defined at 53 in src/java/lang/ClassNotFoundException.java.'>ClassNotFoundException</a>
+<a id='L601' name='L601'></a> 601     <em class='brace'>{</em>
+<a id='L602' name='L602'></a> 602         <strong class='reserved'>return</strong> <a href='../S/6899.html#L52' title='Defined at 52 in src/com/sun/corba/se/impl/util/JDKBridge.java.'>JDKBridge</a>.<a href='../D/26901.html' title='Multiple defined in 49 places.'>loadClass</a>(<a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>,remoteCodebase,loader);
+<a id='L603' name='L603'></a> 603     <em class='brace'>}</em>
+<a id='L604' name='L604'></a> 604 
+<a id='L605' name='L605'></a> 605     <em class='comment'>/**</em>
+<a id='L606' name='L606'></a> 606 <em class='comment'>     * The &lt;tt&gt;isLocal&lt;/tt&gt; method has the same semantics as the</em>
+<a id='L607' name='L607'></a> 607 <em class='comment'>     * ObjectImpl._is_local method, except that it can throw a RemoteException.</em>
+<a id='L608' name='L608'></a> 608 <em class='comment'>     * (no it doesn't but the spec says it should.)</em>
+<a id='L609' name='L609'></a> 609 <em class='comment'>     *</em>
+<a id='L610' name='L610'></a> 610 <em class='comment'>     * The &lt;tt&gt;_is_local()&lt;/tt&gt; method is provided so that stubs may determine</em>
+<a id='L611' name='L611'></a> 611 <em class='comment'>     * if a particular object is implemented by a local servant and hence local</em>
+<a id='L612' name='L612'></a> 612 <em class='comment'>     * invocation APIs may be used.</em>
+<a id='L613' name='L613'></a> 613 <em class='comment'>     *</em>
+<a id='L614' name='L614'></a> 614 <em class='comment'>     * @param stub the stub to test.</em>
+<a id='L615' name='L615'></a> 615 <em class='comment'>     *</em>
+<a id='L616' name='L616'></a> 616 <em class='comment'>     * @return The &lt;tt&gt;_is_local()&lt;/tt&gt; method returns true if</em>
+<a id='L617' name='L617'></a> 617 <em class='comment'>     * the servant incarnating the object is located in the same process as</em>
+<a id='L618' name='L618'></a> 618 <em class='comment'>     * the stub and they both share the same ORB instance.  The &lt;tt&gt;_is_local()&lt;/tt&gt;</em>
+<a id='L619' name='L619'></a> 619 <em class='comment'>     * method returns false otherwise. The default behavior of &lt;tt&gt;_is_local()&lt;/tt&gt; is</em>
+<a id='L620' name='L620'></a> 620 <em class='comment'>     * to return false.</em>
+<a id='L621' name='L621'></a> 621 <em class='comment'>     *</em>
+<a id='L622' name='L622'></a> 622 <em class='comment'>     * @throws RemoteException The Java to IDL specification does to</em>
+<a id='L623' name='L623'></a> 623 <em class='comment'>     * specify the conditions that cause a RemoteException to be thrown.</em>
+<a id='L624' name='L624'></a> 624 <em class='comment'>     */</em>
+<a id='L625' name='L625'></a> 625     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21682.html' title='Multiple referred from 26 places.'>isLocal</a>(<a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.rmi.CORBA.<a href='../S/4436.html#L55' title='Defined at 55 in src/javax/rmi/CORBA/Stub.java.'>Stub</a> stub) <strong class='reserved'>throws</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>
+<a id='L626' name='L626'></a> 626     <em class='brace'>{</em>
+<a id='L627' name='L627'></a> 627         <strong class='reserved'>boolean</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>false</strong> ;
+<a id='L628' name='L628'></a> 628 
+<a id='L629' name='L629'></a> 629         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L630' name='L630'></a> 630             org.omg.CORBA.portable.<a href='../D/2367.html' title='Multiple defined in 7 places.'>Delegate</a> delegate = stub.<a href='../D/10438.html' title='Multiple defined in 2 places.'>_get_delegate</a>() ;
+<a id='L631' name='L631'></a> 631             <strong class='reserved'>if</strong> (delegate <strong class='reserved'>instanceof</strong> <a href='../S/7516.html#L28' title='Defined at 28 in src/com/sun/corba/se/spi/protocol/CorbaClientDelegate.java.'>CorbaClientDelegate</a>) <em class='brace'>{</em>
+<a id='L632' name='L632'></a> 632                 <em class='comment'>// For the Sun ORB</em>
+<a id='L633' name='L633'></a> 633                 <a href='../S/7516.html#L28' title='Defined at 28 in src/com/sun/corba/se/spi/protocol/CorbaClientDelegate.java.'>CorbaClientDelegate</a> cdel = (<a href='../S/7516.html#L28' title='Defined at 28 in src/com/sun/corba/se/spi/protocol/CorbaClientDelegate.java.'>CorbaClientDelegate</a>)delegate ;
+<a id='L634' name='L634'></a> 634                 <a href='../S/7285.html#L36' title='Defined at 36 in src/com/sun/corba/se/pept/transport/ContactInfoList.java.'>ContactInfoList</a> cil = cdel.<a href='../D/17943.html' title='Multiple defined in 6 places.'>getContactInfoList</a>() ;
+<a id='L635' name='L635'></a> 635                 <strong class='reserved'>if</strong> (cil <strong class='reserved'>instanceof</strong> <a href='../S/7323.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/transport/CorbaContactInfoList.java.'>CorbaContactInfoList</a>) <em class='brace'>{</em>
+<a id='L636' name='L636'></a> 636                     <a href='../S/7323.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/transport/CorbaContactInfoList.java.'>CorbaContactInfoList</a> ccil = (<a href='../S/7323.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/transport/CorbaContactInfoList.java.'>CorbaContactInfoList</a>)cil ;
+<a id='L637' name='L637'></a> 637                     <a href='../S/7512.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/protocol/LocalClientRequestDispatcher.java.'>LocalClientRequestDispatcher</a> lcs = ccil.<a href='../D/20191.html' title='Multiple defined in 2 places.'>getLocalClientRequestDispatcher</a>() ;
+<a id='L638' name='L638'></a> 638                     <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = lcs.<a href='../D/36272.html' title='Multiple defined in 3 places.'>useLocalInvocation</a>( <strong class='reserved'>null</strong> ) ;
+<a id='L639' name='L639'></a> 639                 <em class='brace'>}</em>
+<a id='L640' name='L640'></a> 640             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L641' name='L641'></a> 641                 <em class='comment'>// For a non-Sun ORB</em>
+<a id='L642' name='L642'></a> 642                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = delegate.<a href='../D/26557.html' title='Multiple defined in 5 places.'>is_local</a>( stub ) ;
+<a id='L643' name='L643'></a> 643             <em class='brace'>}</em>
+<a id='L644' name='L644'></a> 644         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a> e) <em class='brace'>{</em>
+<a id='L645' name='L645'></a> 645             <strong class='reserved'>throw</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.rmi.CORBA.<a href='../D/9440.html' title='Multiple defined in 6 places.'>Util</a>.<a href='../D/27473.html' title='Multiple defined in 3 places.'>mapSystemException</a>(e);
+<a id='L646' name='L646'></a> 646         <em class='brace'>}</em>
+<a id='L647' name='L647'></a> 647 
+<a id='L648' name='L648'></a> 648         <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> ;
+<a id='L649' name='L649'></a> 649     <em class='brace'>}</em>
+<a id='L650' name='L650'></a> 650 
+<a id='L651' name='L651'></a> 651     <em class='comment'>/**</em>
+<a id='L652' name='L652'></a> 652 <em class='comment'>     * Wraps an exception thrown by an implementation</em>
+<a id='L653' name='L653'></a> 653 <em class='comment'>     * method.  It returns the corresponding client-side exception.</em>
+<a id='L654' name='L654'></a> 654 <em class='comment'>     * @param orig the exception to wrap.</em>
+<a id='L655' name='L655'></a> 655 <em class='comment'>     * @return the wrapped exception.</em>
+<a id='L656' name='L656'></a> 656 <em class='comment'>     */</em>
+<a id='L657' name='L657'></a> 657     <strong class='reserved'>public</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> <a href='../R/30537.html' title='Multiple referred from 6 places.'>wrapException</a>(<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> orig)
+<a id='L658' name='L658'></a> 658     <em class='brace'>{</em>
+<a id='L659' name='L659'></a> 659         <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>) <em class='brace'>{</em>
+<a id='L660' name='L660'></a> 660             <strong class='reserved'>return</strong> <a href='../D/27473.html' title='Multiple defined in 3 places.'>mapSystemException</a>((<a href='../S/360.html#L51' title='Defined at 51 in src/org/omg/CORBA/SystemException.java.'>SystemException</a>)orig);
+<a id='L661' name='L661'></a> 661         <em class='brace'>}</em>
+<a id='L662' name='L662'></a> 662 
+<a id='L663' name='L663'></a> 663         <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/1772.html#L49' title='Defined at 49 in src/java/lang/Error.java.'>Error</a>) <em class='brace'>{</em>
+<a id='L664' name='L664'></a> 664             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2496.html#L40' title='Defined at 40 in src/java/rmi/ServerError.java.'>ServerError</a>("Error occurred in server thread",(<a href='../S/1772.html#L49' title='Defined at 49 in src/java/lang/Error.java.'>Error</a>)orig);
+<a id='L665' name='L665'></a> 665         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>) <em class='brace'>{</em>
+<a id='L666' name='L666'></a> 666             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2555.html#L40' title='Defined at 40 in src/java/rmi/ServerException.java.'>ServerException</a>("RemoteException occurred in server thread",
+<a id='L667' name='L667'></a> 667                                        (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>)orig);
+<a id='L668' name='L668'></a> 668         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>) <em class='brace'>{</em>
+<a id='L669' name='L669'></a> 669             <strong class='reserved'>throw</strong> (<a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>) orig;
+<a id='L670' name='L670'></a> 670         <em class='brace'>}</em>
+<a id='L671' name='L671'></a> 671 
+<a id='L672' name='L672'></a> 672         <strong class='reserved'>if</strong> (orig <strong class='reserved'>instanceof</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>)
+<a id='L673' name='L673'></a> 673             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2556.html#L37' title='Defined at 37 in src/java/rmi/UnexpectedException.java.'>UnexpectedException</a>( orig.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(), (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>)orig );
+<a id='L674' name='L674'></a> 674         <strong class='reserved'>else</strong>
+<a id='L675' name='L675'></a> 675             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/2556.html#L37' title='Defined at 37 in src/java/rmi/UnexpectedException.java.'>UnexpectedException</a>( orig.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
+<a id='L676' name='L676'></a> 676     <em class='brace'>}</em>
+<a id='L677' name='L677'></a> 677 
+<a id='L678' name='L678'></a> 678     <em class='comment'>/**</em>
+<a id='L679' name='L679'></a> 679 <em class='comment'>     * Copies or connects an array of objects. Used by local stubs</em>
+<a id='L680' name='L680'></a> 680 <em class='comment'>     * to copy any number of actual parameters, preserving sharing</em>
+<a id='L681' name='L681'></a> 681 <em class='comment'>     * across parameters as necessary to support RMI semantics.</em>
+<a id='L682' name='L682'></a> 682 <em class='comment'>     * @param obj the objects to copy or connect.</em>
+<a id='L683' name='L683'></a> 683 <em class='comment'>     * @param orb the ORB.</em>
+<a id='L684' name='L684'></a> 684 <em class='comment'>     * @return the copied or connected objects.</em>
+<a id='L685' name='L685'></a> 685 <em class='comment'>     * @exception RemoteException if any object could not be copied or connected.</em>
+<a id='L686' name='L686'></a> 686 <em class='comment'>     */</em>
+<a id='L687' name='L687'></a> 687     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <a href='../R/12122.html' title='Multiple referred from 2 places.'>copyObjects</a> (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] obj, org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L688' name='L688'></a> 688         <strong class='reserved'>throws</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>
+<a id='L689' name='L689'></a> 689     <em class='brace'>{</em>
+<a id='L690' name='L690'></a> 690         <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong>)
+<a id='L691' name='L691'></a> 691             <em class='comment'>// Bug fix for 5018613: JCK test expects copyObjects to throw</em>
+<a id='L692' name='L692'></a> 692             <em class='comment'>// NPE when obj==null.  This is actually not in the spec, since</em>
+<a id='L693' name='L693'></a> 693             <em class='comment'>// obj is not really an RMI-IDL data type, but we follow our</em>
+<a id='L694' name='L694'></a> 694             <em class='comment'>// test here, and force this error to be thrown.</em>
+<a id='L695' name='L695'></a> 695             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>() ;
+<a id='L696' name='L696'></a> 696 
+<a id='L697' name='L697'></a> 697         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> compType = obj.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/17880.html' title='Multiple defined in 2 places.'>getComponentType</a>() ;
+<a id='L698' name='L698'></a> 698         <strong class='reserved'>if</strong> (<a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>( compType ) &amp;&amp; !compType.<a href='../D/25735.html' title='Multiple defined in 6 places.'>isInterface</a>()) <em class='brace'>{</em>
+<a id='L699' name='L699'></a> 699             <em class='comment'>// obj is an array of remote impl types.  This</em>
+<a id='L700' name='L700'></a> 700             <em class='comment'>// causes problems with stream copier, so we copy</em>
+<a id='L701' name='L701'></a> 701             <em class='comment'>// it over to an array of Remotes instead.</em>
+<a id='L702' name='L702'></a> 702             <a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a>[] <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>new</strong> <a href='../S/2494.html#L50' title='Defined at 50 in src/java/rmi/Remote.java.'>Remote</a>[obj.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>] ;
+<a id='L703' name='L703'></a> 703             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>( (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>)obj, 0, (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>)<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>, 0, obj.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ) ;
+<a id='L704' name='L704'></a> 704             <strong class='reserved'>return</strong> (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[])<a href='../D/13510.html' title='Multiple defined in 3 places.'>copyObject</a>( <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>, <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ) ;
+<a id='L705' name='L705'></a> 705         <em class='brace'>}</em> <strong class='reserved'>else</strong>
+<a id='L706' name='L706'></a> 706             <strong class='reserved'>return</strong> (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[])<a href='../D/13510.html' title='Multiple defined in 3 places.'>copyObject</a>( obj, <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ) ;
+<a id='L707' name='L707'></a> 707     <em class='brace'>}</em>
+<a id='L708' name='L708'></a> 708 
+<a id='L709' name='L709'></a> 709     <em class='comment'>/**</em>
+<a id='L710' name='L710'></a> 710 <em class='comment'>     * Copies or connects an object. Used by local stubs to copy</em>
+<a id='L711' name='L711'></a> 711 <em class='comment'>     * an actual parameter, result object, or exception.</em>
+<a id='L712' name='L712'></a> 712 <em class='comment'>     * @param obj the object to copy.</em>
+<a id='L713' name='L713'></a> 713 <em class='comment'>     * @param orb the ORB.</em>
+<a id='L714' name='L714'></a> 714 <em class='comment'>     * @return the copy or connected object.</em>
+<a id='L715' name='L715'></a> 715 <em class='comment'>     * @exception RemoteException if the object could not be copied or connected.</em>
+<a id='L716' name='L716'></a> 716 <em class='comment'>     */</em>
+<a id='L717' name='L717'></a> 717     <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/12121.html' title='Multiple referred from 5 places.'>copyObject</a> (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj, org.omg.CORBA.<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>)
+<a id='L718' name='L718'></a> 718         <strong class='reserved'>throws</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>
+<a id='L719' name='L719'></a> 719     <em class='brace'>{</em>
+<a id='L720' name='L720'></a> 720         <strong class='reserved'>if</strong> (<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> <strong class='reserved'>instanceof</strong> <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>) <em class='brace'>{</em>
+<a id='L721' name='L721'></a> 721             <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> lorb = (<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> ;
+<a id='L722' name='L722'></a> 722 
+<a id='L723' name='L723'></a> 723             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L724' name='L724'></a> 724                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L725' name='L725'></a> 725                     <em class='comment'>// This gets the copier for the current invocation, which was</em>
+<a id='L726' name='L726'></a> 726                     <em class='comment'>// previously set by preinvoke.</em>
+<a id='L727' name='L727'></a> 727                     <strong class='reserved'>return</strong> lorb.<a href='../D/29295.html' title='Multiple defined in 3 places.'>peekInvocationInfo</a>().<a href='../S/7537.html#L96' title='Defined at 96 in src/com/sun/corba/se/spi/oa/OAInvocationInfo.java.'>getCopierFactory</a>().<a href='../D/27195.html' title='Multiple defined in 13 places.'>make</a>().<a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a>( obj ) ;
+<a id='L728' name='L728'></a> 728                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../S/1158.html#L37' title='Defined at 37 in src/java/util/EmptyStackException.java.'>EmptyStackException</a> exc) <em class='brace'>{</em>
+<a id='L729' name='L729'></a> 729                     <em class='comment'>// copyObject was invoked outside of an invocation, probably by</em>
+<a id='L730' name='L730'></a> 730                     <em class='comment'>// a test.  Get the default copier from the ORB.</em>
+<a id='L731' name='L731'></a> 731                     <em class='comment'>// XXX should we just make the default copier available directly</em>
+<a id='L732' name='L732'></a> 732                     <em class='comment'>// and avoid constructing one on each call?</em>
+<a id='L733' name='L733'></a> 733                     <a href='../S/7306.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/copyobject/CopierManager.java.'>CopierManager</a> cm = lorb.<a href='../D/18022.html' title='Multiple defined in 3 places.'>getCopierManager</a>() ;
+<a id='L734' name='L734'></a> 734                     <a href='../S/7307.html#L36' title='Defined at 36 in src/com/sun/corba/se/spi/copyobject/ObjectCopier.java.'>ObjectCopier</a> copier = cm.<a href='../D/18332.html' title='Multiple defined in 2 places.'>getDefaultObjectCopierFactory</a>().<a href='../D/27195.html' title='Multiple defined in 13 places.'>make</a>() ;
+<a id='L735' name='L735'></a> 735                     <strong class='reserved'>return</strong> copier.<a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a>( obj ) ;
+<a id='L736' name='L736'></a> 736                 <em class='brace'>}</em>
+<a id='L737' name='L737'></a> 737             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/7310.html#L27' title='Defined at 27 in src/com/sun/corba/se/spi/copyobject/ReflectiveCopyException.java.'>ReflectiveCopyException</a> exc) <em class='brace'>{</em>
+<a id='L738' name='L738'></a> 738                 <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a> rexc = <strong class='reserved'>new</strong> <a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>() ;
+<a id='L739' name='L739'></a> 739                 rexc.<a href='../D/24507.html' title='Multiple defined in 7 places.'>initCause</a>( exc ) ;
+<a id='L740' name='L740'></a> 740                 <strong class='reserved'>throw</strong> rexc ;
+<a id='L741' name='L741'></a> 741             <em class='brace'>}</em>
+<a id='L742' name='L742'></a> 742         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L743' name='L743'></a> 743             org.omg.CORBA_2_3.portable.<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a> =
+<a id='L744' name='L744'></a> 744                 (org.omg.CORBA_2_3.portable.<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a>)<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/14385.html' title='Multiple defined in 5 places.'>create_output_stream</a>();
+<a id='L745' name='L745'></a> 745             <a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/37270.html' title='Multiple defined in 28 places.'>write_value</a>((<a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>)obj);
+<a id='L746' name='L746'></a> 746             org.omg.CORBA_2_3.portable.<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a> =
+<a id='L747' name='L747'></a> 747                 (org.omg.CORBA_2_3.portable.<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a>)<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/14378.html' title='Multiple defined in 9 places.'>create_input_stream</a>();
+<a id='L748' name='L748'></a> 748             <strong class='reserved'>return</strong> <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a>.<a href='../D/30343.html' title='Multiple defined in 39 places.'>read_value</a>();
+<a id='L749' name='L749'></a> 749         <em class='brace'>}</em>
+<a id='L750' name='L750'></a> 750     <em class='brace'>}</em>
+<a id='L751' name='L751'></a> 751 <em class='brace'>}</em>
+<a id='L752' name='L752'></a> 752 
+<a id='L753' name='L753'></a> 753 <strong class='reserved'>class</strong> <a href='../R/4340.html' title='Multiple referred from 3 places.'>KeepAlive</a> <strong class='reserved'>extends</strong> <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>
+<a id='L754' name='L754'></a> 754 <em class='brace'>{</em>
+<a id='L755' name='L755'></a> 755     <strong class='reserved'>boolean</strong> <a href='../S/7137.html#L771' title='Defined at 771 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>quit</a> = <strong class='reserved'>false</strong>;
+<a id='L756' name='L756'></a> 756 
+<a id='L757' name='L757'></a> 757     <strong class='reserved'>public</strong> KeepAlive ()
+<a id='L758' name='L758'></a> 758     <em class='brace'>{</em>
+<a id='L759' name='L759'></a> 759         <a href='../D/32347.html' title='Multiple defined in 2 places.'>setDaemon</a>(<strong class='reserved'>false</strong>);
+<a id='L760' name='L760'></a> 760     <em class='brace'>}</em>
+<a id='L761' name='L761'></a> 761 
+<a id='L762' name='L762'></a> 762     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/26539.html' title='Multiple referred from 715 places.'>run</a> ()
+<a id='L763' name='L763'></a> 763     <em class='brace'>{</em>
+<a id='L764' name='L764'></a> 764         <strong class='reserved'>while</strong> (!<a href='../S/7137.html#L771' title='Defined at 771 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>quit</a>) <em class='brace'>{</em>
+<a id='L765' name='L765'></a> 765             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L766' name='L766'></a> 766                 <a href='../D/36778.html' title='Multiple defined in 3 places.'>wait</a>();
+<a id='L767' name='L767'></a> 767             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a> e) <em class='brace'>{</em><em class='brace'>}</em>
+<a id='L768' name='L768'></a> 768         <em class='brace'>}</em>
+<a id='L769' name='L769'></a> 769     <em class='brace'>}</em>
+<a id='L770' name='L770'></a> 770 
+<a id='L771' name='L771'></a> 771     <strong class='reserved'>public</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>void</strong> <a href='../R/25387.html' title='Multiple referred from 4 places.'>quit</a> ()
+<a id='L772' name='L772'></a> 772     <em class='brace'>{</em>
+<a id='L773' name='L773'></a> 773         <a href='../S/7137.html#L771' title='Defined at 771 in src/com/sun/corba/se/impl/javax/rmi/CORBA/Util.java.'>quit</a> = <strong class='reserved'>true</strong>;
+<a id='L774' name='L774'></a> 774         <a href='../S/1724.html#L295' title='Defined at 295 in src/java/lang/Object.java.'>notifyAll</a>();
+<a id='L775' name='L775'></a> 775     <em class='brace'>}</em>
+<a id='L776' name='L776'></a> 776 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L140'>[^]</a><a href='#L771'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

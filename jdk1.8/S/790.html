@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/net/DatagramSocketImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8011.html'>net</a>/DatagramSocketImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L50'>[^]</a><a href='#L311'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L50' title='Defined at 50.'>dataAvailable</a></li>
+<li><a href='#L62' title='Defined at 62.'>setDatagramSocket</a></li>
+<li><a href='#L66' title='Defined at 66.'>getDatagramSocket</a></li>
+<li><a href='#L75' title='Defined at 75.'>create</a></li>
+<li><a href='#L84' title='Defined at 84.'>bind</a></li>
+<li><a href='#L96' title='Defined at 96.'>send</a></li>
+<li><a href='#L115' title='Defined at 115.'>connect</a></li>
+<li><a href='#L121' title='Defined at 121.'>disconnect</a></li>
+<li><a href='#L133' title='Defined at 133.'>peek</a></li>
+<li><a href='#L148' title='Defined at 148.'>peekData</a></li>
+<li><a href='#L158' title='Defined at 158.'>receive</a></li>
+<li><a href='#L170' title='Defined at 170.'>setTTL</a></li>
+<li><a href='#L182' title='Defined at 182.'>getTTL</a></li>
+<li><a href='#L191' title='Defined at 191.'>setTimeToLive</a></li>
+<li><a href='#L200' title='Defined at 200.'>getTimeToLive</a></li>
+<li><a href='#L208' title='Defined at 208.'>join</a></li>
+<li><a href='#L216' title='Defined at 216.'>leave</a></li>
+<li><a href='#L227' title='Defined at 227.'>joinGroup</a></li>
+<li><a href='#L239' title='Defined at 239.'>leaveGroup</a></li>
+<li><a href='#L246' title='Defined at 246.'>close</a></li>
+<li><a href='#L252' title='Defined at 252.'>getLocalPort</a></li>
+<li><a href='#L256' title='Defined at 256.'>setOption</a></li>
+<li><a href='#L282' title='Defined at 282.'>getOption</a></li>
+<li><a href='#L311' title='Defined at 311.'>getFileDescriptor</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.net;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.FileDescriptor;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.io.InterruptedIOException;
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <em class='comment'>/**</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * Abstract datagram and multicast socket implementation base class.</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * @author Pavani Diwanji</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * @since  JDK1.1</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> */</em>
+<a id='L37' name='L37'></a>  37 
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/2010.html' title='Multiple referred from 7 places.'>DatagramSocketImpl</a> <strong class='reserved'>implements</strong> <a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a> <em class='brace'>{</em>
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40     <em class='comment'>/**</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'>     * The local port number.</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'>     */</em>
+<a id='L43' name='L43'></a>  43     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> localPort;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45     <em class='comment'>/**</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'>     * The file descriptor object.</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'>     */</em>
+<a id='L48' name='L48'></a>  48     <strong class='reserved'>protected</strong> <a href='../S/1371.html#L43' title='Defined at 43 in src/java/io/FileDescriptor.java.'>FileDescriptor</a> fd;
+<a id='L49' name='L49'></a>  49 
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>int</strong> <a href='../R/12895.html' title='Multiple referred from 2 places.'>dataAvailable</a>() <em class='brace'>{</em>
+<a id='L51' name='L51'></a>  51         <em class='comment'>// default impl returns zero, which disables the calling</em>
+<a id='L52' name='L52'></a>  52         <em class='comment'>// functionality</em>
+<a id='L53' name='L53'></a>  53         <strong class='reserved'>return</strong> 0;
+<a id='L54' name='L54'></a>  54     <em class='brace'>}</em>
+<a id='L55' name='L55'></a>  55 
+<a id='L56' name='L56'></a>  56     <em class='comment'>/**</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     * The DatagramSocket or MulticastSocket</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'>     * that owns this impl</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>     */</em>
+<a id='L60' name='L60'></a>  60     <a href='../S/750.html#L67' title='Defined at 67 in src/java/net/DatagramSocket.java.'>DatagramSocket</a> <a href='../D/34655.html' title='Multiple defined in 3 places.'>socket</a>;
+<a id='L61' name='L61'></a>  61 
+<a id='L62' name='L62'></a>  62     <strong class='reserved'>void</strong> <a href='../S/750.html#L338' title='Referred from 338 in src/java/net/DatagramSocket.java.'>setDatagramSocket</a>(<a href='../S/750.html#L67' title='Defined at 67 in src/java/net/DatagramSocket.java.'>DatagramSocket</a> <a href='../D/34655.html' title='Multiple defined in 3 places.'>socket</a>) <em class='brace'>{</em>
+<a id='L63' name='L63'></a>  63         <strong class='reserved'>this</strong>.<a href='../D/34655.html' title='Multiple defined in 3 places.'>socket</a> = <a href='../D/34655.html' title='Multiple defined in 3 places.'>socket</a>;
+<a id='L64' name='L64'></a>  64     <em class='brace'>}</em>
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66     <a href='../S/750.html#L67' title='Defined at 67 in src/java/net/DatagramSocket.java.'>DatagramSocket</a> <a href='../R/15955.html' title='Multiple referred from 6 places.'>getDatagramSocket</a>() <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67         <strong class='reserved'>return</strong> <a href='../D/34655.html' title='Multiple defined in 3 places.'>socket</a>;
+<a id='L68' name='L68'></a>  68     <em class='brace'>}</em>
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70     <em class='comment'>/**</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * Creates a datagram socket.</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * @exception SocketException if there is an error in the</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * underlying protocol, such as a TCP error.</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     */</em>
+<a id='L75' name='L75'></a>  75     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/12190.html' title='Multiple referred from 234 places.'>create</a>() <strong class='reserved'>throws</strong> <a href='../S/808.html#L37' title='Defined at 37 in src/java/net/SocketException.java.'>SocketException</a>;
+<a id='L76' name='L76'></a>  76 
+<a id='L77' name='L77'></a>  77     <em class='comment'>/**</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * Binds a datagram socket to a local port and address.</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * @param lport the local port</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * @param laddr the local address</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * @exception SocketException if there is an error in the</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * underlying protocol, such as a TCP error.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     */</em>
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/10598.html' title='Multiple referred from 221 places.'>bind</a>(<strong class='reserved'>int</strong> lport, <a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> laddr) <strong class='reserved'>throws</strong> <a href='../S/808.html#L37' title='Defined at 37 in src/java/net/SocketException.java.'>SocketException</a>;
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86     <em class='comment'>/**</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * Sends a datagram packet. The packet contains the data and the</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     * destination address to send the packet to.</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * @param p the packet to be sent.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * @exception IOException if an I/O exception occurs while sending the</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * datagram packet.</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * @exception  PortUnreachableException may be thrown if the socket is connected</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     * to a currently unreachable destination. Note, there is no guarantee that</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * the exception will be thrown.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     */</em>
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/26758.html' title='Multiple referred from 7 places.'>send</a>(<a href='../S/748.html#L43' title='Defined at 43 in src/java/net/DatagramPacket.java.'>DatagramPacket</a> p) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L97' name='L97'></a>  97 
+<a id='L98' name='L98'></a>  98     <em class='comment'>/**</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     * Connects a datagram socket to a remote destination. This associates the remote</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * address with the local socket so that datagrams may only be sent to this destination</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * and received from this destination. This may be overridden to call a native</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * system connect.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     *</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     * &lt;p&gt;If the remote destination to which the socket is connected does not</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     * exist, or is otherwise unreachable, and if an ICMP destination unreachable</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>     * packet has been received for that address, then a subsequent call to</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>     * send or receive may throw a PortUnreachableException.</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>     * Note, there is no guarantee that the exception will be thrown.</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * @param address the remote InetAddress to connect to</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     * @param port the remote port number</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * @exception   SocketException may be thrown if the socket cannot be</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     * connected to the remote destination</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * @since 1.4</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     */</em>
+<a id='L115' name='L115'></a> 115     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/11887.html' title='Multiple referred from 67 places.'>connect</a>(<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> <a href='../D/11204.html' title='Multiple defined in 16 places.'>address</a>, <strong class='reserved'>int</strong> port) <strong class='reserved'>throws</strong> <a href='../S/808.html#L37' title='Defined at 37 in src/java/net/SocketException.java.'>SocketException</a> <em class='brace'>{</em><em class='brace'>}</em>
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117     <em class='comment'>/**</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     * Disconnects a datagram socket from its remote destination.</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * @since 1.4</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     */</em>
+<a id='L121' name='L121'></a> 121     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13306.html' title='Multiple referred from 2 places.'>disconnect</a>() <em class='brace'>{</em><em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123     <em class='comment'>/**</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>     * Peek at the packet to see who it is from. Updates the specified {@code InetAddress}</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * to the address which the packet came from.</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * @param i an InetAddress object</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * @return the port number which the packet came from.</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * @exception  PortUnreachableException may be thrown if the socket is connected</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     *       to a currently unreachable destination. Note, there is no guarantee that the</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *       exception will be thrown.</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     */</em>
+<a id='L133' name='L133'></a> 133     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/24689.html' title='Multiple referred from 168 places.'>peek</a>(<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> i) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135     <em class='comment'>/**</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * Peek at the packet to see who it is from. The data is copied into the specified</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     * {@code DatagramPacket}. The data is returned,</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * but not consumed, so that a subsequent peekData/receive operation</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     * will see the same data.</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * @param p the Packet Received.</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * @return the port number which the packet came from.</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     * @exception  PortUnreachableException may be thrown if the socket is connected</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     *       to a currently unreachable destination. Note, there is no guarantee that the</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     *       exception will be thrown.</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * @since 1.4</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     */</em>
+<a id='L148' name='L148'></a> 148     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/24693.html' title='Multiple referred from 3 places.'>peekData</a>(<a href='../S/748.html#L43' title='Defined at 43 in src/java/net/DatagramPacket.java.'>DatagramPacket</a> p) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L149' name='L149'></a> 149     <em class='comment'>/**</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     * Receive the datagram packet.</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>     * @param p the Packet Received.</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>     * while receiving the datagram packet.</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * @exception  PortUnreachableException may be thrown if the socket is connected</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     *       to a currently unreachable destination. Note, there is no guarantee that the</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     *       exception will be thrown.</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     */</em>
+<a id='L158' name='L158'></a> 158     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/25641.html' title='Multiple referred from 10 places.'>receive</a>(<a href='../S/748.html#L43' title='Defined at 43 in src/java/net/DatagramPacket.java.'>DatagramPacket</a> p) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L159' name='L159'></a> 159 
+<a id='L160' name='L160'></a> 160     <em class='comment'>/**</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>     * Set the TTL (time-to-live) option.</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * @param ttl a byte specifying the TTL value</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     *</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     * @deprecated use setTimeToLive instead.</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>     * @exception IOException if an I/O exception occurs while setting</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>     * the time-to-live option.</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>     * @see #getTTL()</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>     */</em>
+<a id='L169' name='L169'></a> 169     @<a href='../D/2383.html' title='Multiple defined in 2 places.'>Deprecated</a>
+<a id='L170' name='L170'></a> 170     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/28253.html' title='Multiple referred from 3 places.'>setTTL</a>(<strong class='reserved'>byte</strong> ttl) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L171' name='L171'></a> 171 
+<a id='L172' name='L172'></a> 172     <em class='comment'>/**</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>     * Retrieve the TTL (time-to-live) option.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>     *</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>     * while retrieving the time-to-live option</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>     * @deprecated use getTimeToLive instead.</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>     * @return a byte representing the TTL value</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>     * @see #setTTL(byte)</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>     */</em>
+<a id='L181' name='L181'></a> 181     @<a href='../D/2383.html' title='Multiple defined in 2 places.'>Deprecated</a>
+<a id='L182' name='L182'></a> 182     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>byte</strong> <a href='../R/19344.html' title='Multiple referred from 2 places.'>getTTL</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L183' name='L183'></a> 183 
+<a id='L184' name='L184'></a> 184     <em class='comment'>/**</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     * Set the TTL (time-to-live) option.</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * @param ttl an {@code int} specifying the time-to-live value</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>     * while setting the time-to-live option.</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>     * @see #getTimeToLive()</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>     */</em>
+<a id='L191' name='L191'></a> 191     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/28297.html' title='Multiple referred from 2 places.'>setTimeToLive</a>(<strong class='reserved'>int</strong> ttl) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L192' name='L192'></a> 192 
+<a id='L193' name='L193'></a> 193     <em class='comment'>/**</em>
+<a id='L194' name='L194'></a> 194 <em class='comment'>     * Retrieve the TTL (time-to-live) option.</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * while retrieving the time-to-live option</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     * @return an {@code int} representing the time-to-live value</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>     * @see #setTimeToLive(int)</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>     */</em>
+<a id='L200' name='L200'></a> 200     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>int</strong> <a href='../R/19498.html' title='Multiple referred from 3 places.'>getTimeToLive</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202     <em class='comment'>/**</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     * Join the multicast group.</em>
+<a id='L204' name='L204'></a> 204 <em class='comment'>     * @param inetaddr multicast address to join.</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>     * while joining the multicast group.</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>     */</em>
+<a id='L208' name='L208'></a> 208     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/22372.html' title='Multiple referred from 37 places.'>join</a>(<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> inetaddr) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L209' name='L209'></a> 209 
+<a id='L210' name='L210'></a> 210     <em class='comment'>/**</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * Leave the multicast group.</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * @param inetaddr multicast address to leave.</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * @exception IOException if an I/O exception occurs</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * while leaving the multicast group.</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     */</em>
+<a id='L216' name='L216'></a> 216     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/22460.html' title='Multiple referred from 3 places.'>leave</a>(<a href='../S/826.html#L189' title='Defined at 189 in src/java/net/InetAddress.java.'>InetAddress</a> inetaddr) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218     <em class='comment'>/**</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>     * Join the multicast group.</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>     * @param mcastaddr address to join.</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * @param netIf specifies the local interface to receive multicast</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     *        datagram packets</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     * @throws IOException if an I/O exception occurs while joining</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * the multicast group</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * @since 1.4</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     */</em>
+<a id='L227' name='L227'></a> 227     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../S/744.html#L406' title='Referred from 406 in src/java/net/MulticastSocket.java.'>joinGroup</a>(<a href='../S/751.html#L41' title='Defined at 41 in src/java/net/SocketAddress.java.'>SocketAddress</a> mcastaddr,
+<a id='L228' name='L228'></a> 228                                       <a href='../S/820.html#L43' title='Defined at 43 in src/java/net/NetworkInterface.java.'>NetworkInterface</a> netIf)
+<a id='L229' name='L229'></a> 229         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231     <em class='comment'>/**</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>     * Leave the multicast group.</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>     * @param mcastaddr address to leave.</em>
+<a id='L234' name='L234'></a> 234 <em class='comment'>     * @param netIf specified the local interface to leave the group at</em>
+<a id='L235' name='L235'></a> 235 <em class='comment'>     * @throws IOException if an I/O exception occurs while leaving</em>
+<a id='L236' name='L236'></a> 236 <em class='comment'>     * the multicast group</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>     * @since 1.4</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     */</em>
+<a id='L239' name='L239'></a> 239     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../S/744.html#L453' title='Referred from 453 in src/java/net/MulticastSocket.java.'>leaveGroup</a>(<a href='../S/751.html#L41' title='Defined at 41 in src/java/net/SocketAddress.java.'>SocketAddress</a> mcastaddr,
+<a id='L240' name='L240'></a> 240                                        <a href='../S/820.html#L43' title='Defined at 43 in src/java/net/NetworkInterface.java.'>NetworkInterface</a> netIf)
+<a id='L241' name='L241'></a> 241         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
+<a id='L242' name='L242'></a> 242 
+<a id='L243' name='L243'></a> 243     <em class='comment'>/**</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     * Close the socket.</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     */</em>
+<a id='L246' name='L246'></a> 246     <strong class='reserved'>protected</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/11587.html' title='Multiple referred from 410 places.'>close</a>();
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248     <em class='comment'>/**</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>     * Gets the local port.</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>     * @return an {@code int} representing the local port value</em>
+<a id='L251' name='L251'></a> 251 <em class='comment'>     */</em>
+<a id='L252' name='L252'></a> 252     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> <a href='../R/17427.html' title='Multiple referred from 23 places.'>getLocalPort</a>() <em class='brace'>{</em>
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>return</strong> localPort;
+<a id='L254' name='L254'></a> 254     <em class='brace'>}</em>
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256     &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <strong class='reserved'>void</strong> <a href='../R/27860.html' title='Multiple referred from 41 places.'>setOption</a>(<a href='../S/775.html#L44' title='Defined at 44 in src/java/net/SocketOption.java.'>SocketOption</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.SO_SNDBUF) <em class='brace'>{</em>
+<a id='L258' name='L258'></a> 258             <a href='../D/33429.html' title='Multiple defined in 15 places.'>setOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.SO_SNDBUF, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L259' name='L259'></a> 259         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.SO_RCVBUF) <em class='brace'>{</em>
+<a id='L260' name='L260'></a> 260             <a href='../D/33429.html' title='Multiple defined in 15 places.'>setOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.SO_RCVBUF, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L261' name='L261'></a> 261         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.SO_REUSEADDR) <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262             <a href='../D/33429.html' title='Multiple defined in 15 places.'>setOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.SO_REUSEADDR, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L263' name='L263'></a> 263         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_TOS) <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264             <a href='../D/33429.html' title='Multiple defined in 15 places.'>setOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.IP_TOS, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L265' name='L265'></a> 265         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_MULTICAST_IF &amp;&amp;
+<a id='L266' name='L266'></a> 266             (<a href='../S/790.html#L66' title='Defined at 66 in src/java/net/DatagramSocketImpl.java.'>getDatagramSocket</a>() <strong class='reserved'>instanceof</strong> <a href='../S/744.html#L83' title='Defined at 83 in src/java/net/MulticastSocket.java.'>MulticastSocket</a>)) <em class='brace'>{</em>
+<a id='L267' name='L267'></a> 267             <a href='../D/33429.html' title='Multiple defined in 15 places.'>setOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.IP_MULTICAST_IF2, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L268' name='L268'></a> 268         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_MULTICAST_TTL &amp;&amp;
+<a id='L269' name='L269'></a> 269             (<a href='../S/790.html#L66' title='Defined at 66 in src/java/net/DatagramSocketImpl.java.'>getDatagramSocket</a>() <strong class='reserved'>instanceof</strong> <a href='../S/744.html#L83' title='Defined at 83 in src/java/net/MulticastSocket.java.'>MulticastSocket</a>)) <em class='brace'>{</em>
+<a id='L270' name='L270'></a> 270             <strong class='reserved'>if</strong> (! (<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> <strong class='reserved'>instanceof</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>)) <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("not an integer");
+<a id='L272' name='L272'></a> 272             <em class='brace'>}</em>
+<a id='L273' name='L273'></a> 273             <a href='../D/34142.html' title='Multiple defined in 5 places.'>setTimeToLive</a>((<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>)<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L274' name='L274'></a> 274         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_MULTICAST_LOOP &amp;&amp;
+<a id='L275' name='L275'></a> 275             (<a href='../S/790.html#L66' title='Defined at 66 in src/java/net/DatagramSocketImpl.java.'>getDatagramSocket</a>() <strong class='reserved'>instanceof</strong> <a href='../S/744.html#L83' title='Defined at 83 in src/java/net/MulticastSocket.java.'>MulticastSocket</a>)) <em class='brace'>{</em>
+<a id='L276' name='L276'></a> 276             <a href='../D/33429.html' title='Multiple defined in 15 places.'>setOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.IP_MULTICAST_LOOP, <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
+<a id='L277' name='L277'></a> 277         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L278' name='L278'></a> 278             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1777.html#L38' title='Defined at 38 in src/java/lang/UnsupportedOperationException.java.'>UnsupportedOperationException</a>("unsupported option");
+<a id='L279' name='L279'></a> 279         <em class='brace'>}</em>
+<a id='L280' name='L280'></a> 280     <em class='brace'>}</em>
+<a id='L281' name='L281'></a> 281 
+<a id='L282' name='L282'></a> 282     &lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a> <a href='../R/18155.html' title='Multiple referred from 41 places.'>getOption</a>(<a href='../S/775.html#L44' title='Defined at 44 in src/java/net/SocketOption.java.'>SocketOption</a>&lt;<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>&gt; <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.SO_SNDBUF) <em class='brace'>{</em>
+<a id='L284' name='L284'></a> 284             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>) <a href='../D/21227.html' title='Multiple defined in 11 places.'>getOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.SO_SNDBUF);
+<a id='L285' name='L285'></a> 285         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.SO_RCVBUF) <em class='brace'>{</em>
+<a id='L286' name='L286'></a> 286             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>) <a href='../D/21227.html' title='Multiple defined in 11 places.'>getOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.SO_RCVBUF);
+<a id='L287' name='L287'></a> 287         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.SO_REUSEADDR) <em class='brace'>{</em>
+<a id='L288' name='L288'></a> 288             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>) <a href='../D/21227.html' title='Multiple defined in 11 places.'>getOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.SO_REUSEADDR);
+<a id='L289' name='L289'></a> 289         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_TOS) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>) <a href='../D/21227.html' title='Multiple defined in 11 places.'>getOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.IP_TOS);
+<a id='L291' name='L291'></a> 291         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_MULTICAST_IF &amp;&amp;
+<a id='L292' name='L292'></a> 292             (<a href='../S/790.html#L66' title='Defined at 66 in src/java/net/DatagramSocketImpl.java.'>getDatagramSocket</a>() <strong class='reserved'>instanceof</strong> <a href='../S/744.html#L83' title='Defined at 83 in src/java/net/MulticastSocket.java.'>MulticastSocket</a>)) <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>) <a href='../D/21227.html' title='Multiple defined in 11 places.'>getOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.IP_MULTICAST_IF2);
+<a id='L294' name='L294'></a> 294         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_MULTICAST_TTL &amp;&amp;
+<a id='L295' name='L295'></a> 295             (<a href='../S/790.html#L66' title='Defined at 66 in src/java/net/DatagramSocketImpl.java.'>getDatagramSocket</a>() <strong class='reserved'>instanceof</strong> <a href='../S/744.html#L83' title='Defined at 83 in src/java/net/MulticastSocket.java.'>MulticastSocket</a>)) <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296             <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> ttl = <a href='../D/23151.html' title='Multiple defined in 6 places.'>getTimeToLive</a>();
+<a id='L297' name='L297'></a> 297             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>)ttl;
+<a id='L298' name='L298'></a> 298         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> == <a href='../S/795.html#L41' title='Defined at 41 in src/java/net/StandardSocketOptions.java.'>StandardSocketOptions</a>.IP_MULTICAST_LOOP &amp;&amp;
+<a id='L299' name='L299'></a> 299             (<a href='../S/790.html#L66' title='Defined at 66 in src/java/net/DatagramSocketImpl.java.'>getDatagramSocket</a>() <strong class='reserved'>instanceof</strong> <a href='../S/744.html#L83' title='Defined at 83 in src/java/net/MulticastSocket.java.'>MulticastSocket</a>)) <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300             <strong class='reserved'>return</strong> (<a href='../D/8701.html' title='Multiple defined in 3 places.'>T</a>) <a href='../D/21227.html' title='Multiple defined in 11 places.'>getOption</a>(<a href='../S/792.html#L46' title='Defined at 46 in src/java/net/SocketOptions.java.'>SocketOptions</a>.IP_MULTICAST_LOOP);
+<a id='L301' name='L301'></a> 301         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1777.html#L38' title='Defined at 38 in src/java/lang/UnsupportedOperationException.java.'>UnsupportedOperationException</a>("unsupported option");
+<a id='L303' name='L303'></a> 303         <em class='brace'>}</em>
+<a id='L304' name='L304'></a> 304     <em class='brace'>}</em>
+<a id='L305' name='L305'></a> 305 
+<a id='L306' name='L306'></a> 306     <em class='comment'>/**</em>
+<a id='L307' name='L307'></a> 307 <em class='comment'>     * Gets the datagram socket file descriptor.</em>
+<a id='L308' name='L308'></a> 308 <em class='comment'>     * @return a {@code FileDescriptor} object representing the datagram socket</em>
+<a id='L309' name='L309'></a> 309 <em class='comment'>     * file descriptor</em>
+<a id='L310' name='L310'></a> 310 <em class='comment'>     */</em>
+<a id='L311' name='L311'></a> 311     <strong class='reserved'>protected</strong> <a href='../S/1371.html#L43' title='Defined at 43 in src/java/io/FileDescriptor.java.'>FileDescriptor</a> <a href='../R/16571.html' title='Multiple referred from 4 places.'>getFileDescriptor</a>() <em class='brace'>{</em>
+<a id='L312' name='L312'></a> 312         <strong class='reserved'>return</strong> fd;
+<a id='L313' name='L313'></a> 313     <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L50'>[^]</a><a href='#L311'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

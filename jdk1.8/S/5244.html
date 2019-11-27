@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xerces/internal/xinclude/XIncludeNamespaceSupport.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7916.html'>xinclude</a>/XIncludeNamespaceSupport.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L88'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L57' title='Defined at 57.'>pushContext</a></li>
+<li><a href='#L75' title='Defined at 75.'>setContextInvalid</a></li>
+<li><a href='#L88' title='Defined at 88.'>getURIFromIncludeParent</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2003-2005 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.xinclude;
+<a id='L21' name='L21'></a>  21 
+<a id='L22' name='L22'></a>  22 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+<a id='L23' name='L23'></a>  23 
+<a id='L24' name='L24'></a>  24 <em class='comment'>/**</em>
+<a id='L25' name='L25'></a>  25 <em class='comment'> * This is an implementation of NamespaceContext which is intended to be used for</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'> * XInclude processing.  It enables each context to be marked as invalid, if necessary,</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> * to indicate that the namespaces recorded on those contexts won't be apparent in the</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> * resulting infoset.</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> *</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> * @author Peter McCracken, IBM</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> *</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> */</em>
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/8937.html' title='Multiple referred from 14 places.'>XIncludeNamespaceSupport</a> <strong class='reserved'>extends</strong> <a href='../S/5248.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/xinclude/MultipleScopeNamespaceSupport.java.'>MultipleScopeNamespaceSupport</a> <em class='brace'>{</em>
+<a id='L34' name='L34'></a>  34 
+<a id='L35' name='L35'></a>  35     <em class='comment'>/**</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'>     * This stores whether or not the context at the matching depth was valid.</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'>     */</em>
+<a id='L38' name='L38'></a>  38     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong>[] fValidContext = <strong class='reserved'>new</strong> <strong class='reserved'>boolean</strong>[8];
+<a id='L39' name='L39'></a>  39 
+<a id='L40' name='L40'></a>  40     <em class='comment'>/**</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'>     *</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'>     */</em>
+<a id='L43' name='L43'></a>  43     <strong class='reserved'>public</strong> XIncludeNamespaceSupport() <em class='brace'>{</em>
+<a id='L44' name='L44'></a>  44         <strong class='reserved'>super</strong>();
+<a id='L45' name='L45'></a>  45     <em class='brace'>}</em>
+<a id='L46' name='L46'></a>  46 
+<a id='L47' name='L47'></a>  47     <em class='comment'>/**</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'>     * @param context</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'>     */</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>public</strong> XIncludeNamespaceSupport(<a href='../D/5973.html' title='Multiple defined in 2 places.'>NamespaceContext</a> <a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>) <em class='brace'>{</em>
+<a id='L51' name='L51'></a>  51         <strong class='reserved'>super</strong>(<a href='../S/1916.html#L117' title='Defined at 117 in src/java/nio/file/WatchEvent.java.'>context</a>);
+<a id='L52' name='L52'></a>  52     <em class='brace'>}</em>
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54     <em class='comment'>/**</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     * Pushes a new context onto the stack.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     */</em>
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25262.html' title='Multiple referred from 29 places.'>pushContext</a>() <em class='brace'>{</em>
+<a id='L58' name='L58'></a>  58         <strong class='reserved'>super</strong>.<a href='../D/29939.html' title='Multiple defined in 10 places.'>pushContext</a>();
+<a id='L59' name='L59'></a>  59         <strong class='reserved'>if</strong> (fCurrentContext + 1 == fValidContext.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <em class='brace'>{</em>
+<a id='L60' name='L60'></a>  60             <strong class='reserved'>boolean</strong>[] contextarray = <strong class='reserved'>new</strong> <strong class='reserved'>boolean</strong>[fValidContext.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> * 2];
+<a id='L61' name='L61'></a>  61             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(fValidContext, 0, contextarray, 0, fValidContext.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L62' name='L62'></a>  62             fValidContext = contextarray;
+<a id='L63' name='L63'></a>  63         <em class='brace'>}</em>
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65         fValidContext[fCurrentContext] = <strong class='reserved'>true</strong>;
+<a id='L66' name='L66'></a>  66     <em class='brace'>}</em>
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68     <em class='comment'>/**</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     * This method is used to set a context invalid for XInclude namespace processing.</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * Any context defined by an &amp;lt;include&amp;gt; or &amp;lt;fallback&amp;gt; element is not</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * valid for processing the include parent's [in-scope namespaces]. Thus, contexts</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * defined by these elements are set to invalid by the XInclude processor using</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * this method.</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     */</em>
+<a id='L75' name='L75'></a>  75     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27112.html' title='Multiple referred from 4 places.'>setContextInvalid</a>() <em class='brace'>{</em>
+<a id='L76' name='L76'></a>  76         fValidContext[fCurrentContext] = <strong class='reserved'>false</strong>;
+<a id='L77' name='L77'></a>  77     <em class='brace'>}</em>
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79     <em class='comment'>/**</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * This returns the namespace URI which was associated with the given pretext, in</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * the context that existed at the include parent of the current element.  The</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * include parent is the last element, before the current one, which was not set</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * to an invalid context using setContextInvalid()</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     *</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * @param prefix the prefix of the desired URI</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * @return the URI corresponding to the prefix in the context of the include parent</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     */</em>
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/5246.html#L2044' title='Referred from 2044 in src/com/sun/org/apache/xerces/internal/xinclude/XIncludeHandler.java.'>getURIFromIncludeParent</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>) <em class='brace'>{</em>
+<a id='L89' name='L89'></a>  89         <strong class='reserved'>int</strong> lastValidContext = fCurrentContext - 1;
+<a id='L90' name='L90'></a>  90         <strong class='reserved'>while</strong> (lastValidContext &gt; 0 &amp;&amp; !fValidContext[lastValidContext]) <em class='brace'>{</em>
+<a id='L91' name='L91'></a>  91             lastValidContext--;
+<a id='L92' name='L92'></a>  92         <em class='brace'>}</em>
+<a id='L93' name='L93'></a>  93         <strong class='reserved'>return</strong> <a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, lastValidContext);
+<a id='L94' name='L94'></a>  94     <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L88'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/activation/ServerManagerImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7735.html'>activation</a>/ServerManagerImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L147'>[^]</a><a href='#L632'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L147' title='Defined at 147.'>activate</a></li>
+<li><a href='#L194' title='Defined at 194.'>active</a></li>
+<li><a href='#L218' title='Defined at 218.'>registerEndpoints</a></li>
+<li><a href='#L248' title='Defined at 248.'>getActiveServers</a></li>
+<li><a href='#L296' title='Defined at 296.'>shutdown</a></li>
+<li><a href='#L326' title='Defined at 326.'>getEntry</a></li>
+<li><a href='#L362' title='Defined at 362.'>locateServer</a></li>
+<li><a href='#L410' title='Defined at 410.'>locateServerForORB</a></li>
+<li><a href='#L460' title='Defined at 460.'>getORBNames</a></li>
+<li><a href='#L471' title='Defined at 471.'>getRunningEntry</a></li>
+<li><a href='#L486' title='Defined at 486.'>install</a></li>
+<li><a href='#L496' title='Defined at 496.'>uninstall</a></li>
+<li><a href='#L519' title='Defined at 519.'>locateServer</a></li>
+<li><a href='#L537' title='Defined at 537.'>locateServerForORB</a></li>
+<li><a href='#L553' title='Defined at 553.'>handle</a></li>
+<li><a href='#L626' title='Defined at 626.'>getEndpoint</a></li>
+<li><a href='#L632' title='Defined at 632.'>getServerPortForType</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.activation;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <em class='comment'>/**</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> *</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> * @author      Rohit Garg</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * @author      Ken Cavanaugh</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * @author      Hemanth Puttaswamy</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * @since       JDK1.2</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> */</em>
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.lang.reflect.Constructor;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.ArrayList;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.HashMap;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.util.NoSuchElementException;
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> org.omg.CORBA.OBJECT_NOT_EXIST;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> org.omg.CORBA.SystemException;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.EndPointInfo;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.IIOP_CLEAR_TEXT;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ORBPortInfo;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.Repository;
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.LocatorPackage.ServerLocation;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.LocatorPackage.ServerLocationPerORB;
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.RepositoryPackage.ServerDef;
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation._ServerManagerImplBase;
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ServerAlreadyActive;
+<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ServerAlreadyInstalled;
+<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ServerAlreadyUninstalled;
+<a id='L56' name='L56'></a>  56 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ServerNotRegistered;
+<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ORBAlreadyRegistered;
+<a id='L58' name='L58'></a>  58 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ServerHeldDown;
+<a id='L59' name='L59'></a>  59 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.ServerNotActive;
+<a id='L60' name='L60'></a>  60 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.NoSuchEndPoint;
+<a id='L61' name='L61'></a>  61 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.InvalidORBid;
+<a id='L62' name='L62'></a>  62 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.Server;
+<a id='L63' name='L63'></a>  63 <strong class='reserved'>import</strong> com.sun.corba.se.spi.activation.IIOP_CLEAR_TEXT;
+<a id='L64' name='L64'></a>  64 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORTemplate ;
+<a id='L65' name='L65'></a>  65 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IOR ;
+<a id='L66' name='L66'></a>  66 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKey ;
+<a id='L67' name='L67'></a>  67 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.ObjectKeyTemplate ;
+<a id='L68' name='L68'></a>  68 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.IORFactories ;
+<a id='L69' name='L69'></a>  69 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.GIOPVersion ;
+<a id='L70' name='L70'></a>  70 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPAddress ;
+<a id='L71' name='L71'></a>  71 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPProfileTemplate ;
+<a id='L72' name='L72'></a>  72 <strong class='reserved'>import</strong> com.sun.corba.se.spi.ior.iiop.IIOPFactories ;
+<a id='L73' name='L73'></a>  73 <strong class='reserved'>import</strong> com.sun.corba.se.spi.legacy.connection.LegacyServerSocketEndPointInfo;
+<a id='L74' name='L74'></a>  74 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.SocketOrChannelAcceptor;
+<a id='L75' name='L75'></a>  75 <strong class='reserved'>import</strong> com.sun.corba.se.spi.orb.ORB ;
+<a id='L76' name='L76'></a>  76 <strong class='reserved'>import</strong> com.sun.corba.se.spi.protocol.ForwardException;
+<a id='L77' name='L77'></a>  77 <strong class='reserved'>import</strong> com.sun.corba.se.spi.transport.CorbaTransportManager;
+<a id='L78' name='L78'></a>  78 
+<a id='L79' name='L79'></a>  79 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains ;
+<a id='L80' name='L80'></a>  80 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ActivationSystemException ;
+<a id='L81' name='L81'></a>  81 
+<a id='L82' name='L82'></a>  82 <strong class='reserved'>import</strong> com.sun.corba.se.impl.oa.poa.BadServerIdHandler;
+<a id='L83' name='L83'></a>  83 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBConstants;
+<a id='L84' name='L84'></a>  84 <strong class='reserved'>import</strong> com.sun.corba.se.impl.orbutil.ORBUtility;
+<a id='L85' name='L85'></a>  85 <strong class='reserved'>import</strong> com.sun.corba.se.impl.util.Utility;
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/7113.html' title='Multiple referred from 2 places.'>ServerManagerImpl</a> <strong class='reserved'>extends</strong> <a href='../D/10404.html' title='Multiple defined in 2 places.'>_ServerManagerImplBase</a>
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>implements</strong> <a href='../S/7195.html#L37' title='Defined at 37 in src/com/sun/corba/se/impl/oa/poa/BadServerIdHandler.java.'>BadServerIdHandler</a>
+<a id='L89' name='L89'></a>  89 <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90     <em class='comment'>// Using HashMap, since synchronization should be done by the calling</em>
+<a id='L91' name='L91'></a>  91     <em class='comment'>// routines</em>
+<a id='L92' name='L92'></a>  92     <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a> serverTable;
+<a id='L93' name='L93'></a>  93     <a href='../D/7270.html' title='Multiple defined in 5 places.'>Repository</a> repository;
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95     <a href='../S/7319.html#L40' title='Defined at 40 in src/com/sun/corba/se/spi/transport/CorbaTransportManager.java.'>CorbaTransportManager</a> transportManager;
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>int</strong> initialPort;
+<a id='L97' name='L97'></a>  97     <a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L98' name='L98'></a>  98     <a href='../S/7260.html#L26' title='Defined at 26 in src/com/sun/corba/se/impl/logging/ActivationSystemException.java.'>ActivationSystemException</a> wrapper;
+<a id='L99' name='L99'></a>  99     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dbDirName;
+<a id='L100' name='L100'></a> 100     <strong class='reserved'>boolean</strong> <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = <strong class='reserved'>false</strong> ;
+<a id='L101' name='L101'></a> 101 
+<a id='L102' name='L102'></a> 102     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> serverStartupDelay;
+<a id='L103' name='L103'></a> 103 
+<a id='L104' name='L104'></a> 104     ServerManagerImpl(<a href='../D/6219.html' title='Multiple defined in 5 places.'>ORB</a> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../S/7319.html#L40' title='Defined at 40 in src/com/sun/corba/se/spi/transport/CorbaTransportManager.java.'>CorbaTransportManager</a> transportManager,
+<a id='L105' name='L105'></a> 105                       <a href='../D/7270.html' title='Multiple defined in 5 places.'>Repository</a> repository, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> dbDirName, <strong class='reserved'>boolean</strong> <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L106' name='L106'></a> 106     <em class='brace'>{</em>
+<a id='L107' name='L107'></a> 107         <strong class='reserved'>this</strong>.<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a> = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>;
+<a id='L108' name='L108'></a> 108         wrapper = <a href='../S/7260.html#L26' title='Defined at 26 in src/com/sun/corba/se/impl/logging/ActivationSystemException.java.'>ActivationSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.ORBD_ACTIVATOR ) ;
+<a id='L109' name='L109'></a> 109 
+<a id='L110' name='L110'></a> 110         <strong class='reserved'>this</strong>.transportManager = transportManager; <em class='comment'>// REVISIT - NOT USED.</em>
+<a id='L111' name='L111'></a> 111         <strong class='reserved'>this</strong>.repository = repository;
+<a id='L112' name='L112'></a> 112         <strong class='reserved'>this</strong>.dbDirName = dbDirName;
+<a id='L113' name='L113'></a> 113         <strong class='reserved'>this</strong>.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> ;
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115         <a href='../S/7463.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/legacy/connection/LegacyServerSocketEndPointInfo.java.'>LegacyServerSocketEndPointInfo</a> endpoint =
+<a id='L116' name='L116'></a> 116             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20072.html' title='Multiple defined in 3 places.'>getLegacyServerSocketManager</a>()
+<a id='L117' name='L117'></a> 117                 .<a href='../D/26804.html' title='Multiple defined in 2 places.'>legacyGetEndpoint</a>(<a href='../S/7463.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/legacy/connection/LegacyServerSocketEndPointInfo.java.'>LegacyServerSocketEndPointInfo</a>.BOOT_NAMING);
+<a id='L118' name='L118'></a> 118 
+<a id='L119' name='L119'></a> 119         initialPort = ((<a href='../S/7322.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/transport/SocketOrChannelAcceptor.java.'>SocketOrChannelAcceptor</a>)endpoint)
+<a id='L120' name='L120'></a> 120             .<a href='../D/22432.html' title='Multiple defined in 4 places.'>getServerSocket</a>().<a href='../D/20210.html' title='Multiple defined in 8 places.'>getLocalPort</a>();
+<a id='L121' name='L121'></a> 121         serverTable = <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>(256);
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123         <em class='comment'>// The ServerStartupDelay is the delay added after the Server registers</em>
+<a id='L124' name='L124'></a> 124         <em class='comment'>// end point information. This is to allow the server to completely</em>
+<a id='L125' name='L125'></a> 125         <em class='comment'>// initialize after ORB is instantiated.</em>
+<a id='L126' name='L126'></a> 126         serverStartupDelay = <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.DEFAULT_SERVER_STARTUP_DELAY;
+<a id='L127' name='L127'></a> 127         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>  <a href='../S/2171.html#L532' title='Defined at 532 in src/java/awt/Robot.java.'>delay</a> = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../D/21720.html' title='Multiple defined in 77 places.'>getProperty</a>( <a href='../S/6920.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/orbutil/ORBConstants.java.'>ORBConstants</a>.SERVER_STARTUP_DELAY);
+<a id='L128' name='L128'></a> 128         <strong class='reserved'>if</strong>( <a href='../S/2171.html#L532' title='Defined at 532 in src/java/awt/Robot.java.'>delay</a> != <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L130' name='L130'></a> 130                 serverStartupDelay = <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.<a href='../D/29148.html' title='Multiple defined in 9 places.'>parseInt</a>( <a href='../S/2171.html#L532' title='Defined at 532 in src/java/awt/Robot.java.'>delay</a> );
+<a id='L131' name='L131'></a> 131             <em class='brace'>}</em> <strong class='reserved'>catch</strong> ( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e ) <em class='brace'>{</em>
+<a id='L132' name='L132'></a> 132                 <em class='comment'>// Just use the default 1000 milliseconds as the default</em>
+<a id='L133' name='L133'></a> 133             <em class='brace'>}</em>
+<a id='L134' name='L134'></a> 134         <em class='brace'>}</em>
+<a id='L135' name='L135'></a> 135 
+<a id='L136' name='L136'></a> 136         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls = <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/21104.html' title='Multiple defined in 3 places.'>getORBData</a>( ).<a href='../D/17183.html' title='Multiple defined in 2 places.'>getBadServerIdHandler</a>();
+<a id='L137' name='L137'></a> 137         <strong class='reserved'>if</strong>( cls == <strong class='reserved'>null</strong> ) <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/31982.html' title='Multiple defined in 3 places.'>setBadServerIdHandler</a>( <strong class='reserved'>this</strong> );
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140             <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/24503.html' title='Multiple defined in 3 places.'>initBadServerIdHandler</a>() ;
+<a id='L141' name='L141'></a> 141         <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142 
+<a id='L143' name='L143'></a> 143         <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/13242.html' title='Multiple defined in 53 places.'>connect</a>(<strong class='reserved'>this</strong>);
+<a id='L144' name='L144'></a> 144         <a href='../S/6969.html#L39' title='Defined at 39 in src/com/sun/corba/se/impl/activation/ProcessMonitorThread.java.'>ProcessMonitorThread</a>.<a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>( serverTable );
+<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
+<a id='L146' name='L146'></a> 146 
+<a id='L147' name='L147'></a> 147     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/9563.html' title='Multiple referred from 30 places.'>activate</a>(<strong class='reserved'>int</strong> serverId)
+<a id='L148' name='L148'></a> 148         <strong class='reserved'>throws</strong> <a href='../D/7791.html' title='Multiple defined in 2 places.'>ServerAlreadyActive</a>, <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>
+<a id='L149' name='L149'></a> 149     <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150 
+<a id='L151' name='L151'></a> 151         <a href='../S/7451.html#L11' title='Defined at 11 in src/com/sun/corba/se/spi/activation/LocatorPackage/ServerLocation.java.'>ServerLocation</a>   <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>;
+<a id='L152' name='L152'></a> 152         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry;
+<a id='L153' name='L153'></a> 153         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId);
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155         <strong class='reserved'>synchronized</strong>(serverTable) <em class='brace'>{</em>
+<a id='L156' name='L156'></a> 156             entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L157' name='L157'></a> 157         <em class='brace'>}</em>
+<a id='L158' name='L158'></a> 158 
+<a id='L159' name='L159'></a> 159         <strong class='reserved'>if</strong> (entry != <strong class='reserved'>null</strong> &amp;&amp; entry.<a href='../D/25158.html' title='Multiple defined in 19 places.'>isActive</a>()) <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L161' name='L161'></a> 161                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: activate for server Id " +
+<a id='L162' name='L162'></a> 162                                     serverId + " failed because server is already active. " +
+<a id='L163' name='L163'></a> 163                                     "entry = " + entry ) ;
+<a id='L164' name='L164'></a> 164 
+<a id='L165' name='L165'></a> 165             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/7791.html' title='Multiple defined in 2 places.'>ServerAlreadyActive</a>( serverId );
+<a id='L166' name='L166'></a> 166         <em class='brace'>}</em>
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168         <em class='comment'>// locate the server</em>
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171             <em class='comment'>// We call getEntry here so that state of the entry is</em>
+<a id='L172' name='L172'></a> 172             <em class='comment'>// checked for validity before we actually go and locate a server</em>
+<a id='L173' name='L173'></a> 173 
+<a id='L174' name='L174'></a> 174             entry = <a href='../D/18807.html' title='Multiple defined in 12 places.'>getEntry</a>(serverId);
+<a id='L175' name='L175'></a> 175 
+<a id='L176' name='L176'></a> 176             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L177' name='L177'></a> 177                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServer called with " +
+<a id='L178' name='L178'></a> 178                                 " serverId=" + serverId + " endpointType="
+<a id='L179' name='L179'></a> 179                                 + <a href='../D/3914.html' title='Multiple defined in 2 places.'>IIOP_CLEAR_TEXT</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> + " block=false" ) ;
+<a id='L180' name='L180'></a> 180 
+<a id='L181' name='L181'></a> 181             <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a> = <a href='../D/27023.html' title='Multiple defined in 8 places.'>locateServer</a>(entry, <a href='../D/3914.html' title='Multiple defined in 2 places.'>IIOP_CLEAR_TEXT</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <strong class='reserved'>false</strong>);
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L184' name='L184'></a> 184                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: activate for server Id " +
+<a id='L185' name='L185'></a> 185                                     serverId + " found location " +
+<a id='L186' name='L186'></a> 186                                     <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.<a href='../S/766.html#L208' title='Defined at 208 in src/java/net/HostPortrange.java.'>hostname</a> + " and activated it" ) ;
+<a id='L187' name='L187'></a> 187         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L189' name='L189'></a> 189                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: activate for server Id " +
+<a id='L190' name='L190'></a> 190                                     " threw NoSuchEndpoint exception, which was ignored" );
+<a id='L191' name='L191'></a> 191         <em class='brace'>}</em>
+<a id='L192' name='L192'></a> 192     <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/9574.html' title='Multiple referred from 88 places.'>active</a>(<strong class='reserved'>int</strong> serverId, <a href='../S/7457.html#L14' title='Defined at 14 in src/com/sun/corba/se/spi/activation/Server.java.'>Server</a> server) <strong class='reserved'>throws</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>
+<a id='L195' name='L195'></a> 195     <em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry;
+<a id='L197' name='L197'></a> 197         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId);
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199         <strong class='reserved'>synchronized</strong> (serverTable) <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200             entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L201' name='L201'></a> 201 
+<a id='L202' name='L202'></a> 202             <strong class='reserved'>if</strong> (entry == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L204' name='L204'></a> 204                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: active for server Id " +
+<a id='L205' name='L205'></a> 205                                         serverId + " called, but no such server is registered." ) ;
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/31814.html' title='Multiple defined in 4 places.'>serverNotExpectedToRegister</a>() ;
+<a id='L208' name='L208'></a> 208             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L210' name='L210'></a> 210                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: active for server Id " +
+<a id='L211' name='L211'></a> 211                                         serverId + " called.  This server is now active." ) ;
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213                 entry.<a href='../D/30517.html' title='Multiple defined in 40 places.'>register</a>(server);
+<a id='L214' name='L214'></a> 214             <em class='brace'>}</em>
+<a id='L215' name='L215'></a> 215         <em class='brace'>}</em>
+<a id='L216' name='L216'></a> 216     <em class='brace'>}</em>
+<a id='L217' name='L217'></a> 217 
+<a id='L218' name='L218'></a> 218     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25769.html' title='Multiple referred from 5 places.'>registerEndpoints</a>( <strong class='reserved'>int</strong> serverId, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> orbId,
+<a id='L219' name='L219'></a> 219         <a href='../D/2897.html' title='Multiple defined in 2 places.'>EndPointInfo</a> [] endpointList ) <strong class='reserved'>throws</strong> <a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a>, <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>,
+<a id='L220' name='L220'></a> 220         <a href='../D/6220.html' title='Multiple defined in 2 places.'>ORBAlreadyRegistered</a>
+<a id='L221' name='L221'></a> 221     <em class='brace'>{</em>
+<a id='L222' name='L222'></a> 222         <em class='comment'>// orbId is ignored for now</em>
+<a id='L223' name='L223'></a> 223         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry;
+<a id='L224' name='L224'></a> 224         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId);
+<a id='L225' name='L225'></a> 225 
+<a id='L226' name='L226'></a> 226         <strong class='reserved'>synchronized</strong> (serverTable) <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227             entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L228' name='L228'></a> 228 
+<a id='L229' name='L229'></a> 229             <strong class='reserved'>if</strong> (entry == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L230' name='L230'></a> 230                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L231' name='L231'></a> 231                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>(
+<a id='L232' name='L232'></a> 232                         "ServerManagerImpl: registerEndpoint for server Id " +
+<a id='L233' name='L233'></a> 233                         serverId + " called, but no such server is registered." ) ;
+<a id='L234' name='L234'></a> 234 
+<a id='L235' name='L235'></a> 235                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/31814.html' title='Multiple defined in 4 places.'>serverNotExpectedToRegister</a>() ;
+<a id='L236' name='L236'></a> 236             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L237' name='L237'></a> 237                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L238' name='L238'></a> 238                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>(
+<a id='L239' name='L239'></a> 239                         "ServerManagerImpl: registerEndpoints for server Id " +
+<a id='L240' name='L240'></a> 240                         serverId + " called.  This server is now active." ) ;
+<a id='L241' name='L241'></a> 241 
+<a id='L242' name='L242'></a> 242                 entry.<a href='../S/6962.html#L231' title='Defined at 231 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>registerPorts</a>( orbId, endpointList );
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244             <em class='brace'>}</em>
+<a id='L245' name='L245'></a> 245         <em class='brace'>}</em>
+<a id='L246' name='L246'></a> 246     <em class='brace'>}</em>
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong>[] <a href='../R/14962.html' title='Multiple referred from 9 places.'>getActiveServers</a>()
+<a id='L249' name='L249'></a> 249     <em class='brace'>{</em>
+<a id='L250' name='L250'></a> 250         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry;
+<a id='L251' name='L251'></a> 251         <strong class='reserved'>int</strong>[] <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>null</strong>;
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>synchronized</strong> (serverTable) <em class='brace'>{</em>
+<a id='L254' name='L254'></a> 254             <em class='comment'>// unlike vectors, list is not synchronized</em>
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256             <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a> servers = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>(0);
+<a id='L257' name='L257'></a> 257 
+<a id='L258' name='L258'></a> 258             <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> serverList = serverTable.<a href='../D/26719.html' title='Multiple defined in 33 places.'>keySet</a>().<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261                 <strong class='reserved'>while</strong> (serverList.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L262' name='L262'></a> 262                     <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = (<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>) serverList.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L263' name='L263'></a> 263                     <em class='comment'>// get an entry</em>
+<a id='L264' name='L264'></a> 264                     entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266                     <strong class='reserved'>if</strong> (entry.<a href='../D/26427.html' title='Multiple defined in 40 places.'>isValid</a>() &amp;&amp; entry.<a href='../D/25158.html' title='Multiple defined in 19 places.'>isActive</a>()) <em class='brace'>{</em>
+<a id='L267' name='L267'></a> 267                         servers.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(entry);
+<a id='L268' name='L268'></a> 268                     <em class='brace'>}</em>
+<a id='L269' name='L269'></a> 269                 <em class='brace'>}</em>
+<a id='L270' name='L270'></a> 270             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1128.html#L38' title='Defined at 38 in src/java/util/NoSuchElementException.java.'>NoSuchElementException</a> e) <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271                 <em class='comment'>// all done</em>
+<a id='L272' name='L272'></a> 272             <em class='brace'>}</em>
+<a id='L273' name='L273'></a> 273 
+<a id='L274' name='L274'></a> 274             <em class='comment'>// collect the active entries</em>
+<a id='L275' name='L275'></a> 275             <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a> = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[servers.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()];
+<a id='L276' name='L276'></a> 276             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; servers.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>(); i++) <em class='brace'>{</em>
+<a id='L277' name='L277'></a> 277                 entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) servers.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(i);
+<a id='L278' name='L278'></a> 278                 <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>[i] = entry.<a href='../D/22423.html' title='Multiple defined in 6 places.'>getServerId</a>();
+<a id='L279' name='L279'></a> 279             <em class='brace'>}</em>
+<a id='L280' name='L280'></a> 280         <em class='brace'>}</em>
+<a id='L281' name='L281'></a> 281 
+<a id='L282' name='L282'></a> 282         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283             <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> sb = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>() ;
+<a id='L284' name='L284'></a> 284             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> ctr=0; ctr&lt;<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ctr++) <em class='brace'>{</em>
+<a id='L285' name='L285'></a> 285                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>( ' ' ) ;
+<a id='L286' name='L286'></a> 286                 sb.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>( <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>[ctr] ) ;
+<a id='L287' name='L287'></a> 287             <em class='brace'>}</em>
+<a id='L288' name='L288'></a> 288 
+<a id='L289' name='L289'></a> 289             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: getActiveServers returns" +
+<a id='L290' name='L290'></a> 290                                 sb.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>() ) ;
+<a id='L291' name='L291'></a> 291         <em class='brace'>}</em>
+<a id='L292' name='L292'></a> 292 
+<a id='L293' name='L293'></a> 293         <strong class='reserved'>return</strong> <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>;
+<a id='L294' name='L294'></a> 294     <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28585.html' title='Multiple referred from 25 places.'>shutdown</a>(<strong class='reserved'>int</strong> serverId) <strong class='reserved'>throws</strong> <a href='../D/7835.html' title='Multiple defined in 2 places.'>ServerNotActive</a>
+<a id='L297' name='L297'></a> 297     <em class='brace'>{</em>
+<a id='L298' name='L298'></a> 298         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry;
+<a id='L299' name='L299'></a> 299         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId);
+<a id='L300' name='L300'></a> 300 
+<a id='L301' name='L301'></a> 301         <strong class='reserved'>synchronized</strong>(serverTable) <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302             entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L303' name='L303'></a> 303 
+<a id='L304' name='L304'></a> 304             <strong class='reserved'>if</strong> (entry == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L305' name='L305'></a> 305                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L306' name='L306'></a> 306                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: shutdown for server Id " +
+<a id='L307' name='L307'></a> 307                                     serverId + " throws ServerNotActive." ) ;
+<a id='L308' name='L308'></a> 308 
+<a id='L309' name='L309'></a> 309                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/7835.html' title='Multiple defined in 2 places.'>ServerNotActive</a>( serverId );
+<a id='L310' name='L310'></a> 310             <em class='brace'>}</em>
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L313' name='L313'></a> 313                 entry.<a href='../D/14870.html' title='Multiple defined in 55 places.'>destroy</a>();
+<a id='L314' name='L314'></a> 314 
+<a id='L315' name='L315'></a> 315                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L316' name='L316'></a> 316                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: shutdown for server Id " +
+<a id='L317' name='L317'></a> 317                                     serverId + " completed." ) ;
+<a id='L318' name='L318'></a> 318             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L319' name='L319'></a> 319                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L320' name='L320'></a> 320                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: shutdown for server Id " +
+<a id='L321' name='L321'></a> 321                                     serverId + " threw exception " + e ) ;
+<a id='L322' name='L322'></a> 322             <em class='brace'>}</em>
+<a id='L323' name='L323'></a> 323         <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324     <em class='brace'>}</em>
+<a id='L325' name='L325'></a> 325 
+<a id='L326' name='L326'></a> 326     <strong class='reserved'>private</strong> <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> <a href='../R/16396.html' title='Multiple referred from 29 places.'>getEntry</a>( <strong class='reserved'>int</strong> serverId )
+<a id='L327' name='L327'></a> 327         <strong class='reserved'>throws</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>
+<a id='L328' name='L328'></a> 328     <em class='brace'>{</em>
+<a id='L329' name='L329'></a> 329         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId);
+<a id='L330' name='L330'></a> 330         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <strong class='reserved'>null</strong> ;
+<a id='L331' name='L331'></a> 331 
+<a id='L332' name='L332'></a> 332         <strong class='reserved'>synchronized</strong> (serverTable) <em class='brace'>{</em>
+<a id='L333' name='L333'></a> 333             entry = (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L334' name='L334'></a> 334 
+<a id='L335' name='L335'></a> 335             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L336' name='L336'></a> 336                 <strong class='reserved'>if</strong> (entry == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L337' name='L337'></a> 337                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: getEntry: " +
+<a id='L338' name='L338'></a> 338                                         "no active server found." ) ;
+<a id='L339' name='L339'></a> 339                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L340' name='L340'></a> 340                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: getEntry: " +
+<a id='L341' name='L341'></a> 341                                         " active server found " + entry + "." ) ;
+<a id='L342' name='L342'></a> 342                 <em class='brace'>}</em>
+<a id='L343' name='L343'></a> 343 
+<a id='L344' name='L344'></a> 344             <strong class='reserved'>if</strong> ((entry != <strong class='reserved'>null</strong>) &amp;&amp; (!entry.<a href='../D/26427.html' title='Multiple defined in 40 places.'>isValid</a>())) <em class='brace'>{</em>
+<a id='L345' name='L345'></a> 345                 serverTable.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>);
+<a id='L346' name='L346'></a> 346                 entry = <strong class='reserved'>null</strong>;
+<a id='L347' name='L347'></a> 347             <em class='brace'>}</em>
+<a id='L348' name='L348'></a> 348 
+<a id='L349' name='L349'></a> 349             <strong class='reserved'>if</strong> (entry == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L350' name='L350'></a> 350                 <a href='../D/7807.html' title='Multiple defined in 2 places.'>ServerDef</a> serverDef = repository.<a href='../D/22418.html' title='Multiple defined in 6 places.'>getServer</a>(serverId);
+<a id='L351' name='L351'></a> 351 
+<a id='L352' name='L352'></a> 352                 entry = <strong class='reserved'>new</strong> <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>( wrapper,
+<a id='L353' name='L353'></a> 353                     serverId, serverDef, initialPort, dbDirName, <strong class='reserved'>false</strong>, <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>);
+<a id='L354' name='L354'></a> 354                 serverTable.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>, entry);
+<a id='L355' name='L355'></a> 355                 entry.<a href='../D/10597.html' title='Multiple defined in 17 places.'>activate</a>() ;
+<a id='L356' name='L356'></a> 356             <em class='brace'>}</em>
+<a id='L357' name='L357'></a> 357         <em class='brace'>}</em>
+<a id='L358' name='L358'></a> 358 
+<a id='L359' name='L359'></a> 359         <strong class='reserved'>return</strong> entry ;
+<a id='L360' name='L360'></a> 360     <em class='brace'>}</em>
+<a id='L361' name='L361'></a> 361 
+<a id='L362' name='L362'></a> 362     <strong class='reserved'>private</strong> <a href='../S/7451.html#L11' title='Defined at 11 in src/com/sun/corba/se/spi/activation/LocatorPackage/ServerLocation.java.'>ServerLocation</a> <a href='../R/22660.html' title='Multiple referred from 11 places.'>locateServer</a> (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> endpointType,
+<a id='L363' name='L363'></a> 363                                         <strong class='reserved'>boolean</strong> <a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>)
+<a id='L364' name='L364'></a> 364         <strong class='reserved'>throws</strong> <a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a>, <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>
+<a id='L365' name='L365'></a> 365     <em class='brace'>{</em>
+<a id='L366' name='L366'></a> 366         <a href='../S/7451.html#L11' title='Defined at 11 in src/com/sun/corba/se/spi/activation/LocatorPackage/ServerLocation.java.'>ServerLocation</a> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a> = <strong class='reserved'>new</strong> <a href='../S/7451.html#L11' title='Defined at 11 in src/com/sun/corba/se/spi/activation/LocatorPackage/ServerLocation.java.'>ServerLocation</a>() ;
+<a id='L367' name='L367'></a> 367 
+<a id='L368' name='L368'></a> 368         <em class='comment'>// if server location is desired, then wait for the server</em>
+<a id='L369' name='L369'></a> 369         <em class='comment'>// to register back, then return location</em>
+<a id='L370' name='L370'></a> 370 
+<a id='L371' name='L371'></a> 371         <a href='../D/6239.html' title='Multiple defined in 2 places.'>ORBPortInfo</a> [] serverORBAndPortList;
+<a id='L372' name='L372'></a> 372         <strong class='reserved'>if</strong> (<a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>) <em class='brace'>{</em>
+<a id='L373' name='L373'></a> 373             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L374' name='L374'></a> 374                     serverORBAndPortList = entry.<a href='../D/27095.html' title='Multiple defined in 22 places.'>lookup</a>(endpointType);
+<a id='L375' name='L375'></a> 375             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L376' name='L376'></a> 376                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L377' name='L377'></a> 377                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServer: " +
+<a id='L378' name='L378'></a> 378                                         "server held down" ) ;
+<a id='L379' name='L379'></a> 379 
+<a id='L380' name='L380'></a> 380                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>( entry.<a href='../D/22423.html' title='Multiple defined in 6 places.'>getServerId</a>() );
+<a id='L381' name='L381'></a> 381             <em class='brace'>}</em>
+<a id='L382' name='L382'></a> 382 
+<a id='L383' name='L383'></a> 383             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> host =
+<a id='L384' name='L384'></a> 384                 <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20072.html' title='Multiple defined in 3 places.'>getLegacyServerSocketManager</a>()
+<a id='L385' name='L385'></a> 385                     .<a href='../D/26804.html' title='Multiple defined in 2 places.'>legacyGetEndpoint</a>(<a href='../S/7463.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/legacy/connection/LegacyServerSocketEndPointInfo.java.'>LegacyServerSocketEndPointInfo</a>.DEFAULT_ENDPOINT).<a href='../D/19494.html' title='Multiple defined in 9 places.'>getHostName</a>();
+<a id='L386' name='L386'></a> 386             <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.<a href='../S/766.html#L208' title='Defined at 208 in src/java/net/HostPortrange.java.'>hostname</a> = host ;
+<a id='L387' name='L387'></a> 387             <strong class='reserved'>int</strong> listLength;
+<a id='L388' name='L388'></a> 388             <strong class='reserved'>if</strong> (serverORBAndPortList != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L389' name='L389'></a> 389                 listLength = serverORBAndPortList.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L390' name='L390'></a> 390             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L391' name='L391'></a> 391                 listLength = 0;
+<a id='L392' name='L392'></a> 392             <em class='brace'>}</em>
+<a id='L393' name='L393'></a> 393             <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.ports = <strong class='reserved'>new</strong> <a href='../D/6239.html' title='Multiple defined in 2 places.'>ORBPortInfo</a>[listLength];
+<a id='L394' name='L394'></a> 394             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; listLength; i++) <em class='brace'>{</em>
+<a id='L395' name='L395'></a> 395                 <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.ports[i] = <strong class='reserved'>new</strong> <a href='../D/6239.html' title='Multiple defined in 2 places.'>ORBPortInfo</a>(serverORBAndPortList[i].orbId,
+<a id='L396' name='L396'></a> 396                         serverORBAndPortList[i].port) ;
+<a id='L397' name='L397'></a> 397 
+<a id='L398' name='L398'></a> 398                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L399' name='L399'></a> 399                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServer: " +
+<a id='L400' name='L400'></a> 400                                     "server located at location " +
+<a id='L401' name='L401'></a> 401                                     <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.<a href='../S/766.html#L208' title='Defined at 208 in src/java/net/HostPortrange.java.'>hostname</a> + " ORBid  " +
+<a id='L402' name='L402'></a> 402                                     serverORBAndPortList[i].orbId +
+<a id='L403' name='L403'></a> 403                                     " Port " + serverORBAndPortList[i].port) ;
+<a id='L404' name='L404'></a> 404             <em class='brace'>}</em>
+<a id='L405' name='L405'></a> 405         <em class='brace'>}</em>
+<a id='L406' name='L406'></a> 406 
+<a id='L407' name='L407'></a> 407         <strong class='reserved'>return</strong> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>;
+<a id='L408' name='L408'></a> 408     <em class='brace'>}</em>
+<a id='L409' name='L409'></a> 409 
+<a id='L410' name='L410'></a> 410     <strong class='reserved'>private</strong> <a href='../D/7823.html' title='Multiple defined in 2 places.'>ServerLocationPerORB</a> <a href='../R/22661.html' title='Multiple referred from 11 places.'>locateServerForORB</a> (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> orbId,
+<a id='L411' name='L411'></a> 411                                         <strong class='reserved'>boolean</strong> <a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>)
+<a id='L412' name='L412'></a> 412         <strong class='reserved'>throws</strong> <a href='../D/4393.html' title='Multiple defined in 2 places.'>InvalidORBid</a>, <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>
+<a id='L413' name='L413'></a> 413     <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414         <a href='../D/7823.html' title='Multiple defined in 2 places.'>ServerLocationPerORB</a> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a> = <strong class='reserved'>new</strong> <a href='../D/7823.html' title='Multiple defined in 2 places.'>ServerLocationPerORB</a>() ;
+<a id='L415' name='L415'></a> 415 
+<a id='L416' name='L416'></a> 416         <em class='comment'>// if server location is desired, then wait for the server</em>
+<a id='L417' name='L417'></a> 417         <em class='comment'>// to register back, then return location</em>
+<a id='L418' name='L418'></a> 418 
+<a id='L419' name='L419'></a> 419         <a href='../D/2897.html' title='Multiple defined in 2 places.'>EndPointInfo</a> [] endpointInfoList;
+<a id='L420' name='L420'></a> 420         <strong class='reserved'>if</strong> (<a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>) <em class='brace'>{</em>
+<a id='L421' name='L421'></a> 421             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L422' name='L422'></a> 422                 endpointInfoList = entry.<a href='../S/6962.html#L434' title='Defined at 434 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>lookupForORB</a>(orbId);
+<a id='L423' name='L423'></a> 423             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../D/4393.html' title='Multiple defined in 2 places.'>InvalidORBid</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L424' name='L424'></a> 424                 <strong class='reserved'>throw</strong> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L425' name='L425'></a> 425             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L426' name='L426'></a> 426                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L427' name='L427'></a> 427                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServerForORB: " +
+<a id='L428' name='L428'></a> 428                                         "server held down" ) ;
+<a id='L429' name='L429'></a> 429 
+<a id='L430' name='L430'></a> 430                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>( entry.<a href='../D/22423.html' title='Multiple defined in 6 places.'>getServerId</a>() );
+<a id='L431' name='L431'></a> 431             <em class='brace'>}</em>
+<a id='L432' name='L432'></a> 432 
+<a id='L433' name='L433'></a> 433             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> host =
+<a id='L434' name='L434'></a> 434                 <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20072.html' title='Multiple defined in 3 places.'>getLegacyServerSocketManager</a>()
+<a id='L435' name='L435'></a> 435                     .<a href='../D/26804.html' title='Multiple defined in 2 places.'>legacyGetEndpoint</a>(<a href='../S/7463.html#L31' title='Defined at 31 in src/com/sun/corba/se/spi/legacy/connection/LegacyServerSocketEndPointInfo.java.'>LegacyServerSocketEndPointInfo</a>.DEFAULT_ENDPOINT).<a href='../D/19494.html' title='Multiple defined in 9 places.'>getHostName</a>();
+<a id='L436' name='L436'></a> 436             <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.<a href='../S/766.html#L208' title='Defined at 208 in src/java/net/HostPortrange.java.'>hostname</a> = host ;
+<a id='L437' name='L437'></a> 437             <strong class='reserved'>int</strong> listLength;
+<a id='L438' name='L438'></a> 438             <strong class='reserved'>if</strong> (endpointInfoList != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L439' name='L439'></a> 439                 listLength = endpointInfoList.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L440' name='L440'></a> 440             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L441' name='L441'></a> 441                 listLength = 0;
+<a id='L442' name='L442'></a> 442             <em class='brace'>}</em>
+<a id='L443' name='L443'></a> 443             <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.ports = <strong class='reserved'>new</strong> <a href='../D/2897.html' title='Multiple defined in 2 places.'>EndPointInfo</a>[listLength];
+<a id='L444' name='L444'></a> 444             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; listLength; i++) <em class='brace'>{</em>
+<a id='L445' name='L445'></a> 445                 <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.ports[i] = <strong class='reserved'>new</strong> <a href='../D/2897.html' title='Multiple defined in 2 places.'>EndPointInfo</a>(endpointInfoList[i].endpointType,
+<a id='L446' name='L446'></a> 446                         endpointInfoList[i].port) ;
+<a id='L447' name='L447'></a> 447 
+<a id='L448' name='L448'></a> 448                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L449' name='L449'></a> 449                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServer: " +
+<a id='L450' name='L450'></a> 450                                     "server located at location " +
+<a id='L451' name='L451'></a> 451                                     <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.<a href='../S/766.html#L208' title='Defined at 208 in src/java/net/HostPortrange.java.'>hostname</a> + " endpointType  " +
+<a id='L452' name='L452'></a> 452                                     endpointInfoList[i].endpointType +
+<a id='L453' name='L453'></a> 453                                     " Port " + endpointInfoList[i].port) ;
+<a id='L454' name='L454'></a> 454             <em class='brace'>}</em>
+<a id='L455' name='L455'></a> 455         <em class='brace'>}</em>
+<a id='L456' name='L456'></a> 456 
+<a id='L457' name='L457'></a> 457         <strong class='reserved'>return</strong> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>;
+<a id='L458' name='L458'></a> 458     <em class='brace'>}</em>
+<a id='L459' name='L459'></a> 459 
+<a id='L460' name='L460'></a> 460     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../R/18074.html' title='Multiple referred from 9 places.'>getORBNames</a>(<strong class='reserved'>int</strong> serverId)
+<a id='L461' name='L461'></a> 461         <strong class='reserved'>throws</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>
+<a id='L462' name='L462'></a> 462     <em class='brace'>{</em>
+<a id='L463' name='L463'></a> 463         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L464' name='L464'></a> 464             <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <a href='../D/18807.html' title='Multiple defined in 12 places.'>getEntry</a>( serverId ) ;
+<a id='L465' name='L465'></a> 465             <strong class='reserved'>return</strong> (entry.<a href='../S/6962.html#L474' title='Defined at 474 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>getORBList</a>());
+<a id='L466' name='L466'></a> 466         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L467' name='L467'></a> 467             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>(serverId);
+<a id='L468' name='L468'></a> 468         <em class='brace'>}</em>
+<a id='L469' name='L469'></a> 469     <em class='brace'>}</em>
+<a id='L470' name='L470'></a> 470 
+<a id='L471' name='L471'></a> 471     <strong class='reserved'>private</strong> <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> <a href='../S/6967.html#L489' title='Referred from 489 in src/com/sun/corba/se/impl/activation/ServerManagerImpl.java.'>getRunningEntry</a>( <strong class='reserved'>int</strong> serverId )
+<a id='L472' name='L472'></a> 472         <strong class='reserved'>throws</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>
+<a id='L473' name='L473'></a> 473     <em class='brace'>{</em>
+<a id='L474' name='L474'></a> 474         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <a href='../D/18807.html' title='Multiple defined in 12 places.'>getEntry</a>( serverId ) ;
+<a id='L475' name='L475'></a> 475 
+<a id='L476' name='L476'></a> 476         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L477' name='L477'></a> 477             <em class='comment'>// this is to see if the server has any listeners</em>
+<a id='L478' name='L478'></a> 478             <a href='../D/6239.html' title='Multiple defined in 2 places.'>ORBPortInfo</a> [] serverORBAndPortList = entry.<a href='../D/27095.html' title='Multiple defined in 22 places.'>lookup</a>(<a href='../D/3914.html' title='Multiple defined in 2 places.'>IIOP_CLEAR_TEXT</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>) ;
+<a id='L479' name='L479'></a> 479         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> exc) <em class='brace'>{</em>
+<a id='L480' name='L480'></a> 480             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong> ;
+<a id='L481' name='L481'></a> 481         <em class='brace'>}</em>
+<a id='L482' name='L482'></a> 482         <strong class='reserved'>return</strong> entry;
+<a id='L483' name='L483'></a> 483 
+<a id='L484' name='L484'></a> 484     <em class='brace'>}</em>
+<a id='L485' name='L485'></a> 485 
+<a id='L486' name='L486'></a> 486     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20832.html' title='Multiple referred from 32 places.'>install</a>( <strong class='reserved'>int</strong> serverId )
+<a id='L487' name='L487'></a> 487         <strong class='reserved'>throws</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>, <a href='../D/7794.html' title='Multiple defined in 2 places.'>ServerAlreadyInstalled</a>
+<a id='L488' name='L488'></a> 488     <em class='brace'>{</em>
+<a id='L489' name='L489'></a> 489         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <a href='../S/6967.html#L471' title='Defined at 471 in src/com/sun/corba/se/impl/activation/ServerManagerImpl.java.'>getRunningEntry</a>( serverId ) ;
+<a id='L490' name='L490'></a> 490         <strong class='reserved'>if</strong> (entry != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L491' name='L491'></a> 491             repository.<a href='../D/24817.html' title='Multiple defined in 32 places.'>install</a>( serverId ) ;
+<a id='L492' name='L492'></a> 492             entry.<a href='../D/24817.html' title='Multiple defined in 32 places.'>install</a>() ;
+<a id='L493' name='L493'></a> 493         <em class='brace'>}</em>
+<a id='L494' name='L494'></a> 494     <em class='brace'>}</em>
+<a id='L495' name='L495'></a> 495 
+<a id='L496' name='L496'></a> 496     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/29661.html' title='Multiple referred from 24 places.'>uninstall</a>( <strong class='reserved'>int</strong> serverId )
+<a id='L497' name='L497'></a> 497         <strong class='reserved'>throws</strong> <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>, <a href='../D/7800.html' title='Multiple defined in 2 places.'>ServerAlreadyUninstalled</a>
+<a id='L498' name='L498'></a> 498     <em class='brace'>{</em>
+<a id='L499' name='L499'></a> 499         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry =
+<a id='L500' name='L500'></a> 500             (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>( <strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId) );
+<a id='L501' name='L501'></a> 501 
+<a id='L502' name='L502'></a> 502         <strong class='reserved'>if</strong> (entry != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L503' name='L503'></a> 503 
+<a id='L504' name='L504'></a> 504             entry =
+<a id='L505' name='L505'></a> 505                 (<a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a>) serverTable.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<strong class='reserved'>new</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>(serverId));
+<a id='L506' name='L506'></a> 506 
+<a id='L507' name='L507'></a> 507             <strong class='reserved'>if</strong> (entry == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L508' name='L508'></a> 508                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L509' name='L509'></a> 509                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: shutdown for server Id " +
+<a id='L510' name='L510'></a> 510                                     serverId + " throws ServerNotActive." ) ;
+<a id='L511' name='L511'></a> 511 
+<a id='L512' name='L512'></a> 512                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>( serverId );
+<a id='L513' name='L513'></a> 513             <em class='brace'>}</em>
+<a id='L514' name='L514'></a> 514 
+<a id='L515' name='L515'></a> 515             entry.<a href='../D/35860.html' title='Multiple defined in 22 places.'>uninstall</a>();
+<a id='L516' name='L516'></a> 516         <em class='brace'>}</em>
+<a id='L517' name='L517'></a> 517     <em class='brace'>}</em>
+<a id='L518' name='L518'></a> 518 
+<a id='L519' name='L519'></a> 519     <strong class='reserved'>public</strong> <a href='../S/7451.html#L11' title='Defined at 11 in src/com/sun/corba/se/spi/activation/LocatorPackage/ServerLocation.java.'>ServerLocation</a> <a href='../R/22660.html' title='Multiple referred from 11 places.'>locateServer</a> (<strong class='reserved'>int</strong> serverId, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> endpointType)
+<a id='L520' name='L520'></a> 520         <strong class='reserved'>throws</strong> <a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a>, <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>
+<a id='L521' name='L521'></a> 521     <em class='brace'>{</em>
+<a id='L522' name='L522'></a> 522         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <a href='../D/18807.html' title='Multiple defined in 12 places.'>getEntry</a>( serverId ) ;
+<a id='L523' name='L523'></a> 523         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L524' name='L524'></a> 524             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServer called with " +
+<a id='L525' name='L525'></a> 525                                 " serverId=" + serverId + " endpointType=" +
+<a id='L526' name='L526'></a> 526                                 endpointType + " block=true" ) ;
+<a id='L527' name='L527'></a> 527 
+<a id='L528' name='L528'></a> 528         <em class='comment'>// passing in entry to eliminate multiple lookups for</em>
+<a id='L529' name='L529'></a> 529         <em class='comment'>// the same entry in some cases</em>
+<a id='L530' name='L530'></a> 530 
+<a id='L531' name='L531'></a> 531         <strong class='reserved'>return</strong> <a href='../D/27023.html' title='Multiple defined in 8 places.'>locateServer</a>(entry, endpointType, <strong class='reserved'>true</strong>);
+<a id='L532' name='L532'></a> 532     <em class='brace'>}</em>
+<a id='L533' name='L533'></a> 533 
+<a id='L534' name='L534'></a> 534     <em class='comment'>/** This method is used to obtain the registered ports for an ORB.</em>
+<a id='L535' name='L535'></a> 535 <em class='comment'>    * This is useful for custom Bad server ID handlers in ORBD.</em>
+<a id='L536' name='L536'></a> 536 <em class='comment'>    */</em>
+<a id='L537' name='L537'></a> 537     <strong class='reserved'>public</strong> <a href='../D/7823.html' title='Multiple defined in 2 places.'>ServerLocationPerORB</a> <a href='../R/22661.html' title='Multiple referred from 11 places.'>locateServerForORB</a> (<strong class='reserved'>int</strong> serverId, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> orbId)
+<a id='L538' name='L538'></a> 538         <strong class='reserved'>throws</strong> <a href='../D/4393.html' title='Multiple defined in 2 places.'>InvalidORBid</a>, <a href='../D/7839.html' title='Multiple defined in 2 places.'>ServerNotRegistered</a>, <a href='../D/7812.html' title='Multiple defined in 2 places.'>ServerHeldDown</a>
+<a id='L539' name='L539'></a> 539     <em class='brace'>{</em>
+<a id='L540' name='L540'></a> 540         <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <a href='../D/18807.html' title='Multiple defined in 12 places.'>getEntry</a>( serverId ) ;
+<a id='L541' name='L541'></a> 541 
+<a id='L542' name='L542'></a> 542         <em class='comment'>// passing in entry to eliminate multiple lookups for</em>
+<a id='L543' name='L543'></a> 543         <em class='comment'>// the same entry in some cases</em>
+<a id='L544' name='L544'></a> 544 
+<a id='L545' name='L545'></a> 545         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L546' name='L546'></a> 546             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: locateServerForORB called with " +
+<a id='L547' name='L547'></a> 547                                 " serverId=" + serverId + " orbId=" + orbId +
+<a id='L548' name='L548'></a> 548                                 " block=true" ) ;
+<a id='L549' name='L549'></a> 549         <strong class='reserved'>return</strong> <a href='../D/27024.html' title='Multiple defined in 8 places.'>locateServerForORB</a>(entry, orbId, <strong class='reserved'>true</strong>);
+<a id='L550' name='L550'></a> 550     <em class='brace'>}</em>
+<a id='L551' name='L551'></a> 551 
+<a id='L552' name='L552'></a> 552 
+<a id='L553' name='L553'></a> 553     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20059.html' title='Multiple referred from 158 places.'>handle</a>(<a href='../S/7502.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/ior/ObjectKey.java.'>ObjectKey</a> okey)
+<a id='L554' name='L554'></a> 554     <em class='brace'>{</em>
+<a id='L555' name='L555'></a> 555         <a href='../D/3967.html' title='Multiple defined in 3 places.'>IOR</a> newIOR = <strong class='reserved'>null</strong>;
+<a id='L556' name='L556'></a> 556         <a href='../D/7823.html' title='Multiple defined in 2 places.'>ServerLocationPerORB</a> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>;
+<a id='L557' name='L557'></a> 557 
+<a id='L558' name='L558'></a> 558         <em class='comment'>// we need to get the serverid and the orbid from the object key</em>
+<a id='L559' name='L559'></a> 559         <a href='../S/7480.html#L40' title='Defined at 40 in src/com/sun/corba/se/spi/ior/ObjectKeyTemplate.java.'>ObjectKeyTemplate</a> oktemp = okey.<a href='../D/23029.html' title='Multiple defined in 5 places.'>getTemplate</a>();
+<a id='L560' name='L560'></a> 560         <strong class='reserved'>int</strong> serverId = oktemp.<a href='../D/22423.html' title='Multiple defined in 6 places.'>getServerId</a>() ;
+<a id='L561' name='L561'></a> 561         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> orbId = oktemp.<a href='../D/21107.html' title='Multiple defined in 5 places.'>getORBId</a>() ;
+<a id='L562' name='L562'></a> 562 
+<a id='L563' name='L563'></a> 563         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L564' name='L564'></a> 564             <em class='comment'>// get the ORBName corresponding to the orbMapid, that was</em>
+<a id='L565' name='L565'></a> 565             <em class='comment'>// first registered by the server</em>
+<a id='L566' name='L566'></a> 566             <a href='../S/6962.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/activation/ServerTableEntry.java.'>ServerTableEntry</a> entry = <a href='../D/18807.html' title='Multiple defined in 12 places.'>getEntry</a>( serverId ) ;
+<a id='L567' name='L567'></a> 567             <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a> = <a href='../D/27024.html' title='Multiple defined in 8 places.'>locateServerForORB</a>(entry, orbId, <strong class='reserved'>true</strong>);
+<a id='L568' name='L568'></a> 568 
+<a id='L569' name='L569'></a> 569             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L570' name='L570'></a> 570                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: handle called for server id" +
+<a id='L571' name='L571'></a> 571                         serverId + "  orbid  " + orbId) ;
+<a id='L572' name='L572'></a> 572 
+<a id='L573' name='L573'></a> 573             <em class='comment'>// we received a list of ports corresponding to an ORB in a</em>
+<a id='L574' name='L574'></a> 574             <em class='comment'>// particular server, now retrieve the one corresponding</em>
+<a id='L575' name='L575'></a> 575             <em class='comment'>// to IIOP_CLEAR_TEXT, and for other created the tagged</em>
+<a id='L576' name='L576'></a> 576             <em class='comment'>// components to be added to the IOR</em>
+<a id='L577' name='L577'></a> 577 
+<a id='L578' name='L578'></a> 578             <strong class='reserved'>int</strong> clearPort = 0;
+<a id='L579' name='L579'></a> 579             <a href='../D/2897.html' title='Multiple defined in 2 places.'>EndPointInfo</a>[] listenerPorts = <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.ports;
+<a id='L580' name='L580'></a> 580             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; listenerPorts.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L581' name='L581'></a> 581                 <strong class='reserved'>if</strong> ((listenerPorts[i].endpointType).<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../D/3914.html' title='Multiple defined in 2 places.'>IIOP_CLEAR_TEXT</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>)) <em class='brace'>{</em>
+<a id='L582' name='L582'></a> 582                     clearPort = listenerPorts[i].port;
+<a id='L583' name='L583'></a> 583                     <strong class='reserved'>break</strong>;
+<a id='L584' name='L584'></a> 584                 <em class='brace'>}</em>
+<a id='L585' name='L585'></a> 585             <em class='brace'>}</em>
+<a id='L586' name='L586'></a> 586 
+<a id='L587' name='L587'></a> 587             <em class='comment'>// create a new IOR with the correct port and correct tagged</em>
+<a id='L588' name='L588'></a> 588             <em class='comment'>// components</em>
+<a id='L589' name='L589'></a> 589             <a href='../S/7482.html#L33' title='Defined at 33 in src/com/sun/corba/se/spi/ior/iiop/IIOPAddress.java.'>IIOPAddress</a> addr = <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../D/27290.html' title='Multiple defined in 2 places.'>makeIIOPAddress</a>( <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>,
+<a id='L590' name='L590'></a> 590                 <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.<a href='../S/766.html#L208' title='Defined at 208 in src/java/net/HostPortrange.java.'>hostname</a>, clearPort ) ;
+<a id='L591' name='L591'></a> 591             <a href='../S/7487.html#L42' title='Defined at 42 in src/com/sun/corba/se/spi/ior/iiop/IIOPProfileTemplate.java.'>IIOPProfileTemplate</a> iptemp =
+<a id='L592' name='L592'></a> 592                 <a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L226' title='Defined at 226 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeIIOPProfileTemplate</a>(
+<a id='L593' name='L593'></a> 593                     <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, <a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>.V1_2, addr ) ;
+<a id='L594' name='L594'></a> 594             <strong class='reserved'>if</strong> (<a href='../S/7486.html#L37' title='Defined at 37 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>GIOPVersion</a>.V1_2.<a href='../S/7486.html#L203' title='Defined at 203 in src/com/sun/corba/se/spi/ior/iiop/GIOPVersion.java.'>supportsIORIIOPProfileComponents</a>()) <em class='brace'>{</em>
+<a id='L595' name='L595'></a> 595                 iptemp.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L120' title='Defined at 120 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeCodeSetsComponent</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>));
+<a id='L596' name='L596'></a> 596                 iptemp.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../S/7489.html#L69' title='Defined at 69 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>IIOPFactories</a>.<a href='../S/7489.html#L172' title='Defined at 172 in src/com/sun/corba/se/spi/ior/iiop/IIOPFactories.java.'>makeMaxStreamFormatVersionComponent</a>());
+<a id='L597' name='L597'></a> 597             <em class='brace'>}</em>
+<a id='L598' name='L598'></a> 598             <a href='../S/7475.html#L34' title='Defined at 34 in src/com/sun/corba/se/spi/ior/IORTemplate.java.'>IORTemplate</a> iortemp = <a href='../S/7476.html#L62' title='Defined at 62 in src/com/sun/corba/se/spi/ior/IORFactories.java.'>IORFactories</a>.<a href='../D/27299.html' title='Multiple defined in 2 places.'>makeIORTemplate</a>(oktemp) ;
+<a id='L599' name='L599'></a> 599             iortemp.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>( iptemp ) ;
+<a id='L600' name='L600'></a> 600 
+<a id='L601' name='L601'></a> 601             newIOR = iortemp.<a href='../D/27298.html' title='Multiple defined in 6 places.'>makeIOR</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, "IDL:org/omg/CORBA/Object:1.0",
+<a id='L602' name='L602'></a> 602                 okey.<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() );
+<a id='L603' name='L603'></a> 603         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L604' name='L604'></a> 604             <strong class='reserved'>throw</strong> wrapper.<a href='../D/15702.html' title='Multiple defined in 4 places.'>errorInBadServerIdHandler</a>( e ) ;
+<a id='L605' name='L605'></a> 605         <em class='brace'>}</em>
+<a id='L606' name='L606'></a> 606 
+<a id='L607' name='L607'></a> 607         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)
+<a id='L608' name='L608'></a> 608             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "ServerManagerImpl: handle " +
+<a id='L609' name='L609'></a> 609                                 "throws ForwardException" ) ;
+<a id='L610' name='L610'></a> 610 
+<a id='L611' name='L611'></a> 611 
+<a id='L612' name='L612'></a> 612         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L613' name='L613'></a> 613             <em class='comment'>// This delay is required in case of Server is activated or</em>
+<a id='L614' name='L614'></a> 614             <em class='comment'>// re-activated the first time. Server needs some time before</em>
+<a id='L615' name='L615'></a> 615             <em class='comment'>// handling all the requests.</em>
+<a id='L616' name='L616'></a> 616             <em class='comment'>// (Talk to Ken to see whether there is a better way of doing this).</em>
+<a id='L617' name='L617'></a> 617             <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../D/34632.html' title='Multiple defined in 4 places.'>sleep</a>( serverStartupDelay );
+<a id='L618' name='L618'></a> 618         <em class='brace'>}</em> <strong class='reserved'>catch</strong> ( <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e ) <em class='brace'>{</em>
+<a id='L619' name='L619'></a> 619             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "Exception = " + e );
+<a id='L620' name='L620'></a> 620             e.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L621' name='L621'></a> 621         <em class='brace'>}</em>
+<a id='L622' name='L622'></a> 622 
+<a id='L623' name='L623'></a> 623         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/7519.html#L39' title='Defined at 39 in src/com/sun/corba/se/spi/protocol/ForwardException.java.'>ForwardException</a>(<a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>, newIOR);
+<a id='L624' name='L624'></a> 624     <em class='brace'>}</em>
+<a id='L625' name='L625'></a> 625 
+<a id='L626' name='L626'></a> 626     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/16375.html' title='Multiple referred from 10 places.'>getEndpoint</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> endpointType) <strong class='reserved'>throws</strong> <a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a>
+<a id='L627' name='L627'></a> 627     <em class='brace'>{</em>
+<a id='L628' name='L628'></a> 628         <strong class='reserved'>return</strong> <a href='../D/28564.html' title='Multiple defined in 24 places.'>orb</a>.<a href='../D/20072.html' title='Multiple defined in 3 places.'>getLegacyServerSocketManager</a>()
+<a id='L629' name='L629'></a> 629             .<a href='../D/26808.html' title='Multiple defined in 2 places.'>legacyGetTransientServerPort</a>(endpointType);
+<a id='L630' name='L630'></a> 630     <em class='brace'>}</em>
+<a id='L631' name='L631'></a> 631 
+<a id='L632' name='L632'></a> 632     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/18983.html' title='Multiple referred from 8 places.'>getServerPortForType</a>(<a href='../D/7823.html' title='Multiple defined in 2 places.'>ServerLocationPerORB</a> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>,
+<a id='L633' name='L633'></a> 633                                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> endPointType)
+<a id='L634' name='L634'></a> 634         <strong class='reserved'>throws</strong> <a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a>
+<a id='L635' name='L635'></a> 635     <em class='brace'>{</em>
+<a id='L636' name='L636'></a> 636         <a href='../D/2897.html' title='Multiple defined in 2 places.'>EndPointInfo</a>[] listenerPorts = <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>.ports;
+<a id='L637' name='L637'></a> 637         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; listenerPorts.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L638' name='L638'></a> 638             <strong class='reserved'>if</strong> ((listenerPorts[i].endpointType).<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(endPointType)) <em class='brace'>{</em>
+<a id='L639' name='L639'></a> 639                 <strong class='reserved'>return</strong> listenerPorts[i].port;
+<a id='L640' name='L640'></a> 640             <em class='brace'>}</em>
+<a id='L641' name='L641'></a> 641         <em class='brace'>}</em>
+<a id='L642' name='L642'></a> 642         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/6063.html' title='Multiple defined in 2 places.'>NoSuchEndPoint</a>();
+<a id='L643' name='L643'></a> 643     <em class='brace'>}</em>
+<a id='L644' name='L644'></a> 644 
+<a id='L645' name='L645'></a> 645 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L147'>[^]</a><a href='#L632'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

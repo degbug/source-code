@@ -1,0 +1,527 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/java/util/concurrent/FutureTask.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8038.html'>util</a>/<a href='../files/8039.html'>concurrent</a>/FutureTask.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L115'>[^]</a><a href='#L443'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L115' title='Defined at 115.'>SuppressWarnings</a></li>
+<li><a href='#L116' title='Defined at 116.'>report</a></li>
+<li><a href='#L156' title='Defined at 156.'>isCancelled</a></li>
+<li><a href='#L160' title='Defined at 160.'>isDone</a></li>
+<li><a href='#L164' title='Defined at 164.'>cancel</a></li>
+<li><a href='#L188' title='Defined at 188.'>get</a></li>
+<li><a href='#L198' title='Defined at 198.'>get</a></li>
+<li><a href='#L218' title='Defined at 218.'>done</a></li>
+<li><a href='#L229' title='Defined at 229.'>set</a></li>
+<li><a href='#L247' title='Defined at 247.'>setException</a></li>
+<li><a href='#L255' title='Defined at 255.'>run</a></li>
+<li><a href='#L297' title='Defined at 297.'>runAndReset</a></li>
+<li><a href='#L331' title='Defined at 331.'>handlePossibleCancellationInterrupt</a></li>
+<li><a href='#L364' title='Defined at 364.'>finishCompletion</a></li>
+<li><a href='#L396' title='Defined at 396.'>awaitDone</a></li>
+<li><a href='#L443' title='Defined at 443.'>removeWaiter</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> *</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> */</em>
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <em class='comment'>/*</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'> *</em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> *</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> *</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> *</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * Written by Doug Lea with assistance from members of JCP JSR-166</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * Expert Group and released to the public domain, as explained at</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * http://creativecommons.org/publicdomain/zero/1.0/</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> */</em>
+<a id='L35' name='L35'></a>  35 
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.concurrent;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.concurrent.locks.LockSupport;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 <em class='comment'>/**</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * A cancellable asynchronous computation.  This class provides a base</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * implementation of {@link Future}, with methods to start and cancel</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * a computation, query to see if the computation is complete, and</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * retrieve the result of the computation.  The result can only be</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * retrieved when the computation has completed; the {@code get}</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * methods will block if the computation has not yet completed.  Once</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * the computation has completed, the computation cannot be restarted</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * or cancelled (unless the computation is invoked using</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * {@link #runAndReset}).</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> *</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * &lt;p&gt;A {@code FutureTask} can be used to wrap a {@link Callable} or</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> * {@link Runnable} object.  Because {@code FutureTask} implements</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'> * {@code Runnable}, a {@code FutureTask} can be submitted to an</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'> * {@link Executor} for execution.</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'> *</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'> * &lt;p&gt;In addition to serving as a standalone class, this class provides</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'> * {@code protected} functionality that may be useful when creating</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'> * customized task classes.</em>
+<a id='L58' name='L58'></a>  58 <em class='comment'> *</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'> * @since 1.5</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'> * @author Doug Lea</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'> * @param &lt;V&gt; The result type returned by this FutureTask's {@code get} methods</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'> */</em>
+<a id='L63' name='L63'></a>  63 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/3181.html' title='Multiple referred from 11 places.'>FutureTask</a>&lt;V&gt; <strong class='reserved'>implements</strong> <a href='../S/1099.html#L48' title='Defined at 48 in src/java/util/concurrent/RunnableFuture.java.'>RunnableFuture</a>&lt;V&gt; <em class='brace'>{</em>
+<a id='L64' name='L64'></a>  64     <em class='comment'>/*</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * Revision notes: This differs from previous versions of this</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * class that relied on AbstractQueuedSynchronizer, mainly to</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * avoid surprising users about retaining interrupt status during</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     * cancellation races. Sync control in the current design relies</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     * on a "state" field updated via CAS to track completion, along</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     * with a simple Treiber stack to hold waiting threads.</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     *</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     * Style note: As usual, we bypass overhead of using</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     * AtomicXFieldUpdaters and instead directly use Unsafe intrinsics.</em>
+<a id='L74' name='L74'></a>  74 <em class='comment'>     */</em>
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>/**</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * The run state of this task, initially NEW.  The run state</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * transitions to a terminal state only in methods set,</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * setException, and cancel.  During completion, state may take on</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     * transient values of COMPLETING (while outcome is being set) or</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * INTERRUPTING (only while interrupting the runner to satisfy a</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * cancel(true)). Transitions from these intermediate to final</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * states use cheaper ordered/lazy writes because values are unique</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     * and cannot be further modified.</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     *</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * Possible state transitions:</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * NEW -&gt; COMPLETING -&gt; NORMAL</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     * NEW -&gt; COMPLETING -&gt; EXCEPTIONAL</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * NEW -&gt; CANCELLED</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * NEW -&gt; INTERRUPTING -&gt; INTERRUPTED</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     */</em>
+<a id='L92' name='L92'></a>  92     <strong class='reserved'>private</strong> <strong class='reserved'>volatile</strong> <strong class='reserved'>int</strong> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L93' name='L93'></a>  93     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>          = 0;
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> COMPLETING   = 1;
+<a id='L95' name='L95'></a>  95     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NORMAL       = 2;
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> EXCEPTIONAL  = 3;
+<a id='L97' name='L97'></a>  97     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> CANCELLED    = 4;
+<a id='L98' name='L98'></a>  98     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> INTERRUPTING = 5;
+<a id='L99' name='L99'></a>  99     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> INTERRUPTED  = 6;
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101     <em class='comment'>/** The underlying callable; nulled out after running */</em>
+<a id='L102' name='L102'></a> 102     <strong class='reserved'>private</strong> <a href='../S/1040.html#L58' title='Defined at 58 in src/java/util/concurrent/Callable.java.'>Callable</a>&lt;V&gt; <a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a>;
+<a id='L103' name='L103'></a> 103     <em class='comment'>/** The result to return or exception to throw from get() */</em>
+<a id='L104' name='L104'></a> 104     <strong class='reserved'>private</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> outcome; <em class='comment'>// non-volatile, protected by state reads/writes</em>
+<a id='L105' name='L105'></a> 105     <em class='comment'>/** The thread running the callable; CASed during run() */</em>
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>private</strong> <strong class='reserved'>volatile</strong> <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a> runner;
+<a id='L107' name='L107'></a> 107     <em class='comment'>/** Treiber stack of waiting threads */</em>
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>private</strong> <strong class='reserved'>volatile</strong> <a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> waiters;
+<a id='L109' name='L109'></a> 109 
+<a id='L110' name='L110'></a> 110     <em class='comment'>/**</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * Returns result or throws exception for completed task.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     *</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     * @param s completed state value</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>     */</em>
+<a id='L115' name='L115'></a> 115     @<a href='../R/7764.html' title='Multiple referred from 264 places.'>SuppressWarnings</a>("unchecked")
+<a id='L116' name='L116'></a> 116     <strong class='reserved'>private</strong> V <a href='../R/26181.html' title='Multiple referred from 8 places.'>report</a>(<strong class='reserved'>int</strong> s) <strong class='reserved'>throws</strong> <a href='../S/1069.html#L47' title='Defined at 47 in src/java/util/concurrent/ExecutionException.java.'>ExecutionException</a> <em class='brace'>{</em>
+<a id='L117' name='L117'></a> 117         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = outcome;
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>if</strong> (s == NORMAL)
+<a id='L119' name='L119'></a> 119             <strong class='reserved'>return</strong> (V)<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
+<a id='L120' name='L120'></a> 120         <strong class='reserved'>if</strong> (s &gt;= CANCELLED)
+<a id='L121' name='L121'></a> 121             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1068.html#L46' title='Defined at 46 in src/java/util/concurrent/CancellationException.java.'>CancellationException</a>();
+<a id='L122' name='L122'></a> 122         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1069.html#L47' title='Defined at 47 in src/java/util/concurrent/ExecutionException.java.'>ExecutionException</a>((<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a>)<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>);
+<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124 
+<a id='L125' name='L125'></a> 125     <em class='comment'>/**</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     * Creates a {@code FutureTask} that will, upon running, execute the</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * given {@code Callable}.</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     *</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     * @param  callable the callable task</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @throws NullPointerException if the callable is null</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     */</em>
+<a id='L132' name='L132'></a> 132     <strong class='reserved'>public</strong> FutureTask(<a href='../S/1040.html#L58' title='Defined at 58 in src/java/util/concurrent/Callable.java.'>Callable</a>&lt;V&gt; <a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a>) <em class='brace'>{</em>
+<a id='L133' name='L133'></a> 133         <strong class='reserved'>if</strong> (<a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a> == <strong class='reserved'>null</strong>)
+<a id='L134' name='L134'></a> 134             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>();
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>this</strong>.<a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a> = <a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a>;
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>this</strong>.<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> = <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>;       <em class='comment'>// ensure visibility of callable</em>
+<a id='L137' name='L137'></a> 137     <em class='brace'>}</em>
+<a id='L138' name='L138'></a> 138 
+<a id='L139' name='L139'></a> 139     <em class='comment'>/**</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     * Creates a {@code FutureTask} that will, upon running, execute the</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>     * given {@code Runnable}, and arrange that {@code get} will return the</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>     * given result on successful completion.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>     *</em>
+<a id='L144' name='L144'></a> 144 <em class='comment'>     * @param runnable the runnable task</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * @param result the result to return on successful completion. If</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * you don't need a particular result, consider using</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * constructions of the form:</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     * {@code Future&lt;?&gt; f = new FutureTask&lt;Void&gt;(runnable, null)}</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>     * @throws NullPointerException if the runnable is null</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>     */</em>
+<a id='L151' name='L151'></a> 151     <strong class='reserved'>public</strong> FutureTask(<a href='../S/1758.html#L56' title='Defined at 56 in src/java/lang/Runnable.java.'>Runnable</a> runnable, V <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>) <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152         <strong class='reserved'>this</strong>.<a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a> = <a href='../S/1124.html#L71' title='Defined at 71 in src/java/util/concurrent/Executors.java.'>Executors</a>.<a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a>(runnable, <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>);
+<a id='L153' name='L153'></a> 153         <strong class='reserved'>this</strong>.<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> = <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>;       <em class='comment'>// ensure visibility of callable</em>
+<a id='L154' name='L154'></a> 154     <em class='brace'>}</em>
+<a id='L155' name='L155'></a> 155 
+<a id='L156' name='L156'></a> 156     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21232.html' title='Multiple referred from 12 places.'>isCancelled</a>() <em class='brace'>{</em>
+<a id='L157' name='L157'></a> 157         <strong class='reserved'>return</strong> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> &gt;= CANCELLED;
+<a id='L158' name='L158'></a> 158     <em class='brace'>}</em>
+<a id='L159' name='L159'></a> 159 
+<a id='L160' name='L160'></a> 160     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21378.html' title='Multiple referred from 29 places.'>isDone</a>() <em class='brace'>{</em>
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>return</strong> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> != <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>;
+<a id='L162' name='L162'></a> 162     <em class='brace'>}</em>
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/10918.html' title='Multiple referred from 41 places.'>cancel</a>(<strong class='reserved'>boolean</strong> mayInterruptIfRunning) <em class='brace'>{</em>
+<a id='L165' name='L165'></a> 165         <strong class='reserved'>if</strong> (!(<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> == <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a> &amp;&amp;
+<a id='L166' name='L166'></a> 166               UNSAFE.compareAndSwapInt(<strong class='reserved'>this</strong>, stateOffset, <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>,
+<a id='L167' name='L167'></a> 167                   mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
+<a id='L168' name='L168'></a> 168             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L169' name='L169'></a> 169         <strong class='reserved'>try</strong> <em class='brace'>{</em>    <em class='comment'>// in case call to interrupt throws exception</em>
+<a id='L170' name='L170'></a> 170             <strong class='reserved'>if</strong> (mayInterruptIfRunning) <em class='brace'>{</em>
+<a id='L171' name='L171'></a> 171                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L172' name='L172'></a> 172                     <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a> t = runner;
+<a id='L173' name='L173'></a> 173                     <strong class='reserved'>if</strong> (t != <strong class='reserved'>null</strong>)
+<a id='L174' name='L174'></a> 174                         t.<a href='../D/24969.html' title='Multiple defined in 3 places.'>interrupt</a>();
+<a id='L175' name='L175'></a> 175                 <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em> <em class='comment'>// final state</em>
+<a id='L176' name='L176'></a> 176                     UNSAFE.putOrderedInt(<strong class='reserved'>this</strong>, stateOffset, INTERRUPTED);
+<a id='L177' name='L177'></a> 177                 <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178             <em class='brace'>}</em>
+<a id='L179' name='L179'></a> 179         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L180' name='L180'></a> 180             <a href='../S/1127.html#L364' title='Defined at 364 in src/java/util/concurrent/FutureTask.java.'>finishCompletion</a>();
+<a id='L181' name='L181'></a> 181         <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L183' name='L183'></a> 183     <em class='brace'>}</em>
+<a id='L184' name='L184'></a> 184 
+<a id='L185' name='L185'></a> 185     <em class='comment'>/**</em>
+<a id='L186' name='L186'></a> 186 <em class='comment'>     * @throws CancellationException {@inheritDoc}</em>
+<a id='L187' name='L187'></a> 187 <em class='comment'>     */</em>
+<a id='L188' name='L188'></a> 188     <strong class='reserved'>public</strong> V <a href='../R/14874.html' title='Multiple referred from 4230 places.'>get</a>() <strong class='reserved'>throws</strong> <a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a>, <a href='../S/1069.html#L47' title='Defined at 47 in src/java/util/concurrent/ExecutionException.java.'>ExecutionException</a> <em class='brace'>{</em>
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>int</strong> s = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L190' name='L190'></a> 190         <strong class='reserved'>if</strong> (s &lt;= COMPLETING)
+<a id='L191' name='L191'></a> 191             s = <a href='../S/1127.html#L396' title='Defined at 396 in src/java/util/concurrent/FutureTask.java.'>awaitDone</a>(<strong class='reserved'>false</strong>, 0L);
+<a id='L192' name='L192'></a> 192         <strong class='reserved'>return</strong> <a href='../D/31084.html' title='Multiple defined in 4 places.'>report</a>(s);
+<a id='L193' name='L193'></a> 193     <em class='brace'>}</em>
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195     <em class='comment'>/**</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     * @throws CancellationException {@inheritDoc}</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>     */</em>
+<a id='L198' name='L198'></a> 198     <strong class='reserved'>public</strong> V <a href='../R/14874.html' title='Multiple referred from 4230 places.'>get</a>(<strong class='reserved'>long</strong> timeout, <a href='../S/1102.html#L71' title='Defined at 71 in src/java/util/concurrent/TimeUnit.java.'>TimeUnit</a> unit)
+<a id='L199' name='L199'></a> 199         <strong class='reserved'>throws</strong> <a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a>, <a href='../S/1069.html#L47' title='Defined at 47 in src/java/util/concurrent/ExecutionException.java.'>ExecutionException</a>, <a href='../D/8986.html' title='Multiple defined in 2 places.'>TimeoutException</a> <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200         <strong class='reserved'>if</strong> (unit == <strong class='reserved'>null</strong>)
+<a id='L201' name='L201'></a> 201             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>();
+<a id='L202' name='L202'></a> 202         <strong class='reserved'>int</strong> s = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L203' name='L203'></a> 203         <strong class='reserved'>if</strong> (s &lt;= COMPLETING &amp;&amp;
+<a id='L204' name='L204'></a> 204             (s = <a href='../S/1127.html#L396' title='Defined at 396 in src/java/util/concurrent/FutureTask.java.'>awaitDone</a>(<strong class='reserved'>true</strong>, unit.<a href='../D/35449.html' title='Multiple defined in 2 places.'>toNanos</a>(timeout))) &lt;= COMPLETING)
+<a id='L205' name='L205'></a> 205             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/8986.html' title='Multiple defined in 2 places.'>TimeoutException</a>();
+<a id='L206' name='L206'></a> 206         <strong class='reserved'>return</strong> <a href='../D/31084.html' title='Multiple defined in 4 places.'>report</a>(s);
+<a id='L207' name='L207'></a> 207     <em class='brace'>}</em>
+<a id='L208' name='L208'></a> 208 
+<a id='L209' name='L209'></a> 209     <em class='comment'>/**</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>     * Protected method invoked when this task transitions to state</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>     * {@code isDone} (whether normally or via cancellation). The</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>     * default implementation does nothing.  Subclasses may override</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>     * this method to invoke completion callbacks or perform</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * bookkeeping. Note that you can query status inside the</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     * implementation of this method to determine whether this task</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * has been cancelled.</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     */</em>
+<a id='L218' name='L218'></a> 218     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/13474.html' title='Multiple referred from 130 places.'>done</a>() <em class='brace'>{</em> <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219 
+<a id='L220' name='L220'></a> 220     <em class='comment'>/**</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'>     * Sets the result of this future to the given value unless</em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>     * this future has already been set or has been cancelled.</em>
+<a id='L223' name='L223'></a> 223 <em class='comment'>     *</em>
+<a id='L224' name='L224'></a> 224 <em class='comment'>     * &lt;p&gt;This method is invoked internally by the {@link #run} method</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>     * upon successful completion of the computation.</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>     *</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>     * @param v the value</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>     */</em>
+<a id='L229' name='L229'></a> 229     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/26855.html' title='Multiple referred from 752 places.'>set</a>(V v) <em class='brace'>{</em>
+<a id='L230' name='L230'></a> 230         <strong class='reserved'>if</strong> (UNSAFE.compareAndSwapInt(<strong class='reserved'>this</strong>, stateOffset, <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, COMPLETING)) <em class='brace'>{</em>
+<a id='L231' name='L231'></a> 231             outcome = v;
+<a id='L232' name='L232'></a> 232             UNSAFE.putOrderedInt(<strong class='reserved'>this</strong>, stateOffset, NORMAL); <em class='comment'>// final state</em>
+<a id='L233' name='L233'></a> 233             <a href='../S/1127.html#L364' title='Defined at 364 in src/java/util/concurrent/FutureTask.java.'>finishCompletion</a>();
+<a id='L234' name='L234'></a> 234         <em class='brace'>}</em>
+<a id='L235' name='L235'></a> 235     <em class='brace'>}</em>
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237     <em class='comment'>/**</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>     * Causes this future to report an {@link ExecutionException}</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     * with the given throwable as its cause, unless this future has</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * already been set or has been cancelled.</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     *</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>     * &lt;p&gt;This method is invoked internally by the {@link #run} method</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>     * upon failure of the computation.</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>     *</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>     * @param t the cause of failure</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     */</em>
+<a id='L247' name='L247'></a> 247     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/27359.html' title='Multiple referred from 12 places.'>setException</a>(<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> t) <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248         <strong class='reserved'>if</strong> (UNSAFE.compareAndSwapInt(<strong class='reserved'>this</strong>, stateOffset, <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, COMPLETING)) <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249             outcome = t;
+<a id='L250' name='L250'></a> 250             UNSAFE.putOrderedInt(<strong class='reserved'>this</strong>, stateOffset, EXCEPTIONAL); <em class='comment'>// final state</em>
+<a id='L251' name='L251'></a> 251             <a href='../S/1127.html#L364' title='Defined at 364 in src/java/util/concurrent/FutureTask.java.'>finishCompletion</a>();
+<a id='L252' name='L252'></a> 252         <em class='brace'>}</em>
+<a id='L253' name='L253'></a> 253     <em class='brace'>}</em>
+<a id='L254' name='L254'></a> 254 
+<a id='L255' name='L255'></a> 255     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26539.html' title='Multiple referred from 715 places.'>run</a>() <em class='brace'>{</em>
+<a id='L256' name='L256'></a> 256         <strong class='reserved'>if</strong> (<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> != <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a> ||
+<a id='L257' name='L257'></a> 257             !UNSAFE.compareAndSwapObject(<strong class='reserved'>this</strong>, runnerOffset,
+<a id='L258' name='L258'></a> 258                                          <strong class='reserved'>null</strong>, <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>()))
+<a id='L259' name='L259'></a> 259             <strong class='reserved'>return</strong>;
+<a id='L260' name='L260'></a> 260         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261             <a href='../S/1040.html#L58' title='Defined at 58 in src/java/util/concurrent/Callable.java.'>Callable</a>&lt;V&gt; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a>;
+<a id='L262' name='L262'></a> 262             <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> != <strong class='reserved'>null</strong> &amp;&amp; <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> == <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>) <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263                 V <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
+<a id='L264' name='L264'></a> 264                 <strong class='reserved'>boolean</strong> ran;
+<a id='L265' name='L265'></a> 265                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L266' name='L266'></a> 266                     <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>();
+<a id='L267' name='L267'></a> 267                     ran = <strong class='reserved'>true</strong>;
+<a id='L268' name='L268'></a> 268                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L269' name='L269'></a> 269                     <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>null</strong>;
+<a id='L270' name='L270'></a> 270                     ran = <strong class='reserved'>false</strong>;
+<a id='L271' name='L271'></a> 271                     <a href='../D/32637.html' title='Multiple defined in 4 places.'>setException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L272' name='L272'></a> 272                 <em class='brace'>}</em>
+<a id='L273' name='L273'></a> 273                 <strong class='reserved'>if</strong> (ran)
+<a id='L274' name='L274'></a> 274                     <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>(<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>);
+<a id='L275' name='L275'></a> 275             <em class='brace'>}</em>
+<a id='L276' name='L276'></a> 276         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L277' name='L277'></a> 277             <em class='comment'>// runner must be non-null until state is settled to</em>
+<a id='L278' name='L278'></a> 278             <em class='comment'>// prevent concurrent calls to run()</em>
+<a id='L279' name='L279'></a> 279             runner = <strong class='reserved'>null</strong>;
+<a id='L280' name='L280'></a> 280             <em class='comment'>// state must be re-read after nulling runner to prevent</em>
+<a id='L281' name='L281'></a> 281             <em class='comment'>// leaked interrupts</em>
+<a id='L282' name='L282'></a> 282             <strong class='reserved'>int</strong> s = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L283' name='L283'></a> 283             <strong class='reserved'>if</strong> (s &gt;= INTERRUPTING)
+<a id='L284' name='L284'></a> 284                 <a href='../S/1127.html#L331' title='Defined at 331 in src/java/util/concurrent/FutureTask.java.'>handlePossibleCancellationInterrupt</a>(s);
+<a id='L285' name='L285'></a> 285         <em class='brace'>}</em>
+<a id='L286' name='L286'></a> 286     <em class='brace'>}</em>
+<a id='L287' name='L287'></a> 287 
+<a id='L288' name='L288'></a> 288     <em class='comment'>/**</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>     * Executes the computation without setting its result, and then</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>     * resets this future to initial state, failing to do so if the</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>     * computation encounters an exception or is cancelled.  This is</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>     * designed for use with tasks that intrinsically execute more</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>     * than once.</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>     *</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>     * @return {@code true} if successfully run and reset</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>     */</em>
+<a id='L297' name='L297'></a> 297     <strong class='reserved'>protected</strong> <strong class='reserved'>boolean</strong> <a href='../S/1098.html#L294' title='Referred from 294 in src/java/util/concurrent/ScheduledThreadPoolExecutor.java.'>runAndReset</a>() <em class='brace'>{</em>
+<a id='L298' name='L298'></a> 298         <strong class='reserved'>if</strong> (<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> != <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a> ||
+<a id='L299' name='L299'></a> 299             !UNSAFE.compareAndSwapObject(<strong class='reserved'>this</strong>, runnerOffset,
+<a id='L300' name='L300'></a> 300                                          <strong class='reserved'>null</strong>, <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>()))
+<a id='L301' name='L301'></a> 301             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L302' name='L302'></a> 302         <strong class='reserved'>boolean</strong> ran = <strong class='reserved'>false</strong>;
+<a id='L303' name='L303'></a> 303         <strong class='reserved'>int</strong> s = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L304' name='L304'></a> 304         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L305' name='L305'></a> 305             <a href='../S/1040.html#L58' title='Defined at 58 in src/java/util/concurrent/Callable.java.'>Callable</a>&lt;V&gt; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a>;
+<a id='L306' name='L306'></a> 306             <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> != <strong class='reserved'>null</strong> &amp;&amp; s == <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>) <em class='brace'>{</em>
+<a id='L307' name='L307'></a> 307                 <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L308' name='L308'></a> 308                     <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/12109.html' title='Multiple defined in 7 places.'>call</a>(); <em class='comment'>// don't set result</em>
+<a id='L309' name='L309'></a> 309                     ran = <strong class='reserved'>true</strong>;
+<a id='L310' name='L310'></a> 310                 <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L311' name='L311'></a> 311                     <a href='../D/32637.html' title='Multiple defined in 4 places.'>setException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L312' name='L312'></a> 312                 <em class='brace'>}</em>
+<a id='L313' name='L313'></a> 313             <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314         <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L315' name='L315'></a> 315             <em class='comment'>// runner must be non-null until state is settled to</em>
+<a id='L316' name='L316'></a> 316             <em class='comment'>// prevent concurrent calls to run()</em>
+<a id='L317' name='L317'></a> 317             runner = <strong class='reserved'>null</strong>;
+<a id='L318' name='L318'></a> 318             <em class='comment'>// state must be re-read after nulling runner to prevent</em>
+<a id='L319' name='L319'></a> 319             <em class='comment'>// leaked interrupts</em>
+<a id='L320' name='L320'></a> 320             s = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L321' name='L321'></a> 321             <strong class='reserved'>if</strong> (s &gt;= INTERRUPTING)
+<a id='L322' name='L322'></a> 322                 <a href='../S/1127.html#L331' title='Defined at 331 in src/java/util/concurrent/FutureTask.java.'>handlePossibleCancellationInterrupt</a>(s);
+<a id='L323' name='L323'></a> 323         <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324         <strong class='reserved'>return</strong> ran &amp;&amp; s == <a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>;
+<a id='L325' name='L325'></a> 325     <em class='brace'>}</em>
+<a id='L326' name='L326'></a> 326 
+<a id='L327' name='L327'></a> 327     <em class='comment'>/**</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>     * Ensures that any interrupt from a possible cancel(true) is only</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>     * delivered to a task while in run or runAndReset.</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>     */</em>
+<a id='L331' name='L331'></a> 331     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/20129.html' title='Multiple referred from 2 places.'>handlePossibleCancellationInterrupt</a>(<strong class='reserved'>int</strong> s) <em class='brace'>{</em>
+<a id='L332' name='L332'></a> 332         <em class='comment'>// It is possible for our interrupter to stall before getting a</em>
+<a id='L333' name='L333'></a> 333         <em class='comment'>// chance to interrupt us.  Let's spin-wait patiently.</em>
+<a id='L334' name='L334'></a> 334         <strong class='reserved'>if</strong> (s == INTERRUPTING)
+<a id='L335' name='L335'></a> 335             <strong class='reserved'>while</strong> (<a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a> == INTERRUPTING)
+<a id='L336' name='L336'></a> 336                 <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L282' title='Defined at 282 in src/java/lang/Thread.java.'>yield</a>(); <em class='comment'>// wait out pending interrupt</em>
+<a id='L337' name='L337'></a> 337 
+<a id='L338' name='L338'></a> 338         <em class='comment'>// assert state == INTERRUPTED;</em>
+<a id='L339' name='L339'></a> 339 
+<a id='L340' name='L340'></a> 340         <em class='comment'>// We want to clear any interrupt we may have received from</em>
+<a id='L341' name='L341'></a> 341         <em class='comment'>// cancel(true).  However, it is permissible to use interrupts</em>
+<a id='L342' name='L342'></a> 342         <em class='comment'>// as an independent mechanism for a task to communicate with</em>
+<a id='L343' name='L343'></a> 343         <em class='comment'>// its caller, and there is no way to clear only the</em>
+<a id='L344' name='L344'></a> 344         <em class='comment'>// cancellation interrupt.</em>
+<a id='L345' name='L345'></a> 345         <em class='comment'>//</em>
+<a id='L346' name='L346'></a> 346         <em class='comment'>// Thread.interrupted();</em>
+<a id='L347' name='L347'></a> 347     <em class='brace'>}</em>
+<a id='L348' name='L348'></a> 348 
+<a id='L349' name='L349'></a> 349     <em class='comment'>/**</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     * Simple linked list nodes to record waiting threads in a Treiber</em>
+<a id='L351' name='L351'></a> 351 <em class='comment'>     * stack.  See other classes such as Phaser and SynchronousQueue</em>
+<a id='L352' name='L352'></a> 352 <em class='comment'>     * for more detailed explanation.</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>     */</em>
+<a id='L354' name='L354'></a> 354     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/8719.html' title='Multiple referred from 8 places.'>WaitNode</a> <em class='brace'>{</em>
+<a id='L355' name='L355'></a> 355         <strong class='reserved'>volatile</strong> <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a> thread;
+<a id='L356' name='L356'></a> 356         <strong class='reserved'>volatile</strong> <a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L357' name='L357'></a> 357         WaitNode() <em class='brace'>{</em> thread = <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>(); <em class='brace'>}</em>
+<a id='L358' name='L358'></a> 358     <em class='brace'>}</em>
+<a id='L359' name='L359'></a> 359 
+<a id='L360' name='L360'></a> 360     <em class='comment'>/**</em>
+<a id='L361' name='L361'></a> 361 <em class='comment'>     * Removes and signals all waiting threads, invokes done(), and</em>
+<a id='L362' name='L362'></a> 362 <em class='comment'>     * nulls out callable.</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>     */</em>
+<a id='L364' name='L364'></a> 364     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/14521.html' title='Multiple referred from 3 places.'>finishCompletion</a>() <em class='brace'>{</em>
+<a id='L365' name='L365'></a> 365         <em class='comment'>// assert state &gt; COMPLETING;</em>
+<a id='L366' name='L366'></a> 366         <strong class='reserved'>for</strong> (<a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> q; (q = waiters) != <strong class='reserved'>null</strong>;) <em class='brace'>{</em>
+<a id='L367' name='L367'></a> 367             <strong class='reserved'>if</strong> (UNSAFE.compareAndSwapObject(<strong class='reserved'>this</strong>, waitersOffset, q, <strong class='reserved'>null</strong>)) <em class='brace'>{</em>
+<a id='L368' name='L368'></a> 368                 <strong class='reserved'>for</strong> (;;) <em class='brace'>{</em>
+<a id='L369' name='L369'></a> 369                     <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a> t = q.thread;
+<a id='L370' name='L370'></a> 370                     <strong class='reserved'>if</strong> (t != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L371' name='L371'></a> 371                         q.thread = <strong class='reserved'>null</strong>;
+<a id='L372' name='L372'></a> 372                         <a href='../S/1045.html#L120' title='Defined at 120 in src/java/util/concurrent/locks/LockSupport.java.'>LockSupport</a>.<a href='../S/1045.html#L139' title='Defined at 139 in src/java/util/concurrent/locks/LockSupport.java.'>unpark</a>(t);
+<a id='L373' name='L373'></a> 373                     <em class='brace'>}</em>
+<a id='L374' name='L374'></a> 374                     <a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = q.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L375' name='L375'></a> 375                     <strong class='reserved'>if</strong> (<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> == <strong class='reserved'>null</strong>)
+<a id='L376' name='L376'></a> 376                         <strong class='reserved'>break</strong>;
+<a id='L377' name='L377'></a> 377                     q.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = <strong class='reserved'>null</strong>; <em class='comment'>// unlink to help gc</em>
+<a id='L378' name='L378'></a> 378                     q = <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L379' name='L379'></a> 379                 <em class='brace'>}</em>
+<a id='L380' name='L380'></a> 380                 <strong class='reserved'>break</strong>;
+<a id='L381' name='L381'></a> 381             <em class='brace'>}</em>
+<a id='L382' name='L382'></a> 382         <em class='brace'>}</em>
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384         <a href='../D/15117.html' title='Multiple defined in 10 places.'>done</a>();
+<a id='L385' name='L385'></a> 385 
+<a id='L386' name='L386'></a> 386         <a href='../D/12117.html' title='Multiple defined in 4 places.'>callable</a> = <strong class='reserved'>null</strong>;        <em class='comment'>// to reduce footprint</em>
+<a id='L387' name='L387'></a> 387     <em class='brace'>}</em>
+<a id='L388' name='L388'></a> 388 
+<a id='L389' name='L389'></a> 389     <em class='comment'>/**</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     * Awaits completion or aborts on interrupt or timeout.</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     *</em>
+<a id='L392' name='L392'></a> 392 <em class='comment'>     * @param timed true if use timed waits</em>
+<a id='L393' name='L393'></a> 393 <em class='comment'>     * @param nanos time to wait, if timed</em>
+<a id='L394' name='L394'></a> 394 <em class='comment'>     * @return state upon completion</em>
+<a id='L395' name='L395'></a> 395 <em class='comment'>     */</em>
+<a id='L396' name='L396'></a> 396     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/10433.html' title='Multiple referred from 2 places.'>awaitDone</a>(<strong class='reserved'>boolean</strong> timed, <strong class='reserved'>long</strong> nanos)
+<a id='L397' name='L397'></a> 397         <strong class='reserved'>throws</strong> <a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a> <em class='brace'>{</em>
+<a id='L398' name='L398'></a> 398         <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> deadline = timed ? <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L399' title='Defined at 399 in src/java/lang/System.java.'>nanoTime</a>() + nanos : 0L;
+<a id='L399' name='L399'></a> 399         <a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> q = <strong class='reserved'>null</strong>;
+<a id='L400' name='L400'></a> 400         <strong class='reserved'>boolean</strong> queued = <strong class='reserved'>false</strong>;
+<a id='L401' name='L401'></a> 401         <strong class='reserved'>for</strong> (;;) <em class='brace'>{</em>
+<a id='L402' name='L402'></a> 402             <strong class='reserved'>if</strong> (<a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L943' title='Defined at 943 in src/java/lang/Thread.java.'>interrupted</a>()) <em class='brace'>{</em>
+<a id='L403' name='L403'></a> 403                 <a href='../S/1127.html#L443' title='Defined at 443 in src/java/util/concurrent/FutureTask.java.'>removeWaiter</a>(q);
+<a id='L404' name='L404'></a> 404                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a>();
+<a id='L405' name='L405'></a> 405             <em class='brace'>}</em>
+<a id='L406' name='L406'></a> 406 
+<a id='L407' name='L407'></a> 407             <strong class='reserved'>int</strong> s = <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L408' name='L408'></a> 408             <strong class='reserved'>if</strong> (s &gt; COMPLETING) <em class='brace'>{</em>
+<a id='L409' name='L409'></a> 409                 <strong class='reserved'>if</strong> (q != <strong class='reserved'>null</strong>)
+<a id='L410' name='L410'></a> 410                     q.thread = <strong class='reserved'>null</strong>;
+<a id='L411' name='L411'></a> 411                 <strong class='reserved'>return</strong> s;
+<a id='L412' name='L412'></a> 412             <em class='brace'>}</em>
+<a id='L413' name='L413'></a> 413             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (s == COMPLETING) <em class='comment'>// cannot time out yet</em>
+<a id='L414' name='L414'></a> 414                 <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L282' title='Defined at 282 in src/java/lang/Thread.java.'>yield</a>();
+<a id='L415' name='L415'></a> 415             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (q == <strong class='reserved'>null</strong>)
+<a id='L416' name='L416'></a> 416                 q = <strong class='reserved'>new</strong> <a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a>();
+<a id='L417' name='L417'></a> 417             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (!queued)
+<a id='L418' name='L418'></a> 418                 queued = UNSAFE.compareAndSwapObject(<strong class='reserved'>this</strong>, waitersOffset,
+<a id='L419' name='L419'></a> 419                                                      q.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = waiters, q);
+<a id='L420' name='L420'></a> 420             <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (timed) <em class='brace'>{</em>
+<a id='L421' name='L421'></a> 421                 nanos = deadline - <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L399' title='Defined at 399 in src/java/lang/System.java.'>nanoTime</a>();
+<a id='L422' name='L422'></a> 422                 <strong class='reserved'>if</strong> (nanos &lt;= 0L) <em class='brace'>{</em>
+<a id='L423' name='L423'></a> 423                     <a href='../S/1127.html#L443' title='Defined at 443 in src/java/util/concurrent/FutureTask.java.'>removeWaiter</a>(q);
+<a id='L424' name='L424'></a> 424                     <strong class='reserved'>return</strong> <a href='../D/34848.html' title='Multiple defined in 2 places.'>state</a>;
+<a id='L425' name='L425'></a> 425                 <em class='brace'>}</em>
+<a id='L426' name='L426'></a> 426                 <a href='../S/1045.html#L120' title='Defined at 120 in src/java/util/concurrent/locks/LockSupport.java.'>LockSupport</a>.<a href='../D/29074.html' title='Multiple defined in 2 places.'>parkNanos</a>(<strong class='reserved'>this</strong>, nanos);
+<a id='L427' name='L427'></a> 427             <em class='brace'>}</em>
+<a id='L428' name='L428'></a> 428             <strong class='reserved'>else</strong>
+<a id='L429' name='L429'></a> 429                 <a href='../S/1045.html#L120' title='Defined at 120 in src/java/util/concurrent/locks/LockSupport.java.'>LockSupport</a>.<a href='../D/29072.html' title='Multiple defined in 2 places.'>park</a>(<strong class='reserved'>this</strong>);
+<a id='L430' name='L430'></a> 430         <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431     <em class='brace'>}</em>
+<a id='L432' name='L432'></a> 432 
+<a id='L433' name='L433'></a> 433     <em class='comment'>/**</em>
+<a id='L434' name='L434'></a> 434 <em class='comment'>     * Tries to unlink a timed-out or interrupted wait node to avoid</em>
+<a id='L435' name='L435'></a> 435 <em class='comment'>     * accumulating garbage.  Internal nodes are simply unspliced</em>
+<a id='L436' name='L436'></a> 436 <em class='comment'>     * without CAS since it is harmless if they are traversed anyway</em>
+<a id='L437' name='L437'></a> 437 <em class='comment'>     * by releasers.  To avoid effects of unsplicing from already</em>
+<a id='L438' name='L438'></a> 438 <em class='comment'>     * removed nodes, the list is retraversed in case of an apparent</em>
+<a id='L439' name='L439'></a> 439 <em class='comment'>     * race.  This is slow when there are a lot of nodes, but we don't</em>
+<a id='L440' name='L440'></a> 440 <em class='comment'>     * expect lists to be long enough to outweigh higher-overhead</em>
+<a id='L441' name='L441'></a> 441 <em class='comment'>     * schemes.</em>
+<a id='L442' name='L442'></a> 442 <em class='comment'>     */</em>
+<a id='L443' name='L443'></a> 443     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/26101.html' title='Multiple referred from 2 places.'>removeWaiter</a>(<a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>) <em class='brace'>{</em>
+<a id='L444' name='L444'></a> 444         <strong class='reserved'>if</strong> (<a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L445' name='L445'></a> 445             <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>.thread = <strong class='reserved'>null</strong>;
+<a id='L446' name='L446'></a> 446             retry:
+<a id='L447' name='L447'></a> 447             <strong class='reserved'>for</strong> (;;) <em class='brace'>{</em>          <em class='comment'>// restart on removeWaiter race</em>
+<a id='L448' name='L448'></a> 448                 <strong class='reserved'>for</strong> (<a href='../S/1127.html#L354' title='Defined at 354 in src/java/util/concurrent/FutureTask.java.'>WaitNode</a> <a href='../S/1076.html#L734' title='Defined at 734 in src/java/util/concurrent/ConcurrentLinkedDeque.java.'>pred</a> = <strong class='reserved'>null</strong>, q = waiters, s; q != <strong class='reserved'>null</strong>; q = s) <em class='brace'>{</em>
+<a id='L449' name='L449'></a> 449                     s = q.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L450' name='L450'></a> 450                     <strong class='reserved'>if</strong> (q.thread != <strong class='reserved'>null</strong>)
+<a id='L451' name='L451'></a> 451                         <a href='../S/1076.html#L734' title='Defined at 734 in src/java/util/concurrent/ConcurrentLinkedDeque.java.'>pred</a> = q;
+<a id='L452' name='L452'></a> 452                     <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/1076.html#L734' title='Defined at 734 in src/java/util/concurrent/ConcurrentLinkedDeque.java.'>pred</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L453' name='L453'></a> 453                         <a href='../S/1076.html#L734' title='Defined at 734 in src/java/util/concurrent/ConcurrentLinkedDeque.java.'>pred</a>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = s;
+<a id='L454' name='L454'></a> 454                         <strong class='reserved'>if</strong> (<a href='../S/1076.html#L734' title='Defined at 734 in src/java/util/concurrent/ConcurrentLinkedDeque.java.'>pred</a>.thread == <strong class='reserved'>null</strong>) <em class='comment'>// check for race</em>
+<a id='L455' name='L455'></a> 455                             <strong class='reserved'>continue</strong> retry;
+<a id='L456' name='L456'></a> 456                     <em class='brace'>}</em>
+<a id='L457' name='L457'></a> 457                     <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (!UNSAFE.compareAndSwapObject(<strong class='reserved'>this</strong>, waitersOffset,
+<a id='L458' name='L458'></a> 458                                                           q, s))
+<a id='L459' name='L459'></a> 459                         <strong class='reserved'>continue</strong> retry;
+<a id='L460' name='L460'></a> 460                 <em class='brace'>}</em>
+<a id='L461' name='L461'></a> 461                 <strong class='reserved'>break</strong>;
+<a id='L462' name='L462'></a> 462             <em class='brace'>}</em>
+<a id='L463' name='L463'></a> 463         <em class='brace'>}</em>
+<a id='L464' name='L464'></a> 464     <em class='brace'>}</em>
+<a id='L465' name='L465'></a> 465 
+<a id='L466' name='L466'></a> 466     <em class='comment'>// Unsafe mechanics</em>
+<a id='L467' name='L467'></a> 467     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> sun.misc.Unsafe UNSAFE;
+<a id='L468' name='L468'></a> 468     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> stateOffset;
+<a id='L469' name='L469'></a> 469     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> runnerOffset;
+<a id='L470' name='L470'></a> 470     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> waitersOffset;
+<a id='L471' name='L471'></a> 471     <strong class='reserved'>static</strong> <em class='brace'>{</em>
+<a id='L472' name='L472'></a> 472         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L473' name='L473'></a> 473             UNSAFE = sun.misc.Unsafe.getUnsafe();
+<a id='L474' name='L474'></a> 474             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; k = <a href='../S/1127.html#L63' title='Defined at 63 in src/java/util/concurrent/FutureTask.java.'>FutureTask</a>.<strong class='reserved'>class</strong>;
+<a id='L475' name='L475'></a> 475             stateOffset = UNSAFE.<a href='../D/28395.html' title='Multiple defined in 5 places.'>objectFieldOffset</a>
+<a id='L476' name='L476'></a> 476                 (k.<a href='../S/1722.html#L2065' title='Defined at 2065 in src/java/lang/Class.java.'>getDeclaredField</a>("state"));
+<a id='L477' name='L477'></a> 477             runnerOffset = UNSAFE.<a href='../D/28395.html' title='Multiple defined in 5 places.'>objectFieldOffset</a>
+<a id='L478' name='L478'></a> 478                 (k.<a href='../S/1722.html#L2065' title='Defined at 2065 in src/java/lang/Class.java.'>getDeclaredField</a>("runner"));
+<a id='L479' name='L479'></a> 479             waitersOffset = UNSAFE.<a href='../D/28395.html' title='Multiple defined in 5 places.'>objectFieldOffset</a>
+<a id='L480' name='L480'></a> 480                 (k.<a href='../S/1722.html#L2065' title='Defined at 2065 in src/java/lang/Class.java.'>getDeclaredField</a>("waiters"));
+<a id='L481' name='L481'></a> 481         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
+<a id='L482' name='L482'></a> 482             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1772.html#L49' title='Defined at 49 in src/java/lang/Error.java.'>Error</a>(e);
+<a id='L483' name='L483'></a> 483         <em class='brace'>}</em>
+<a id='L484' name='L484'></a> 484     <em class='brace'>}</em>
+<a id='L485' name='L485'></a> 485 
+<a id='L486' name='L486'></a> 486 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L115'>[^]</a><a href='#L443'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

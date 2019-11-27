@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/interceptors/InterceptorList.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7740.html'>interceptors</a>/InterceptorList.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L105'>[^]</a><a href='#L218'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L105' title='Defined at 105.'>register_interceptor</a></li>
+<li><a href='#L149' title='Defined at 149.'>lock</a></li>
+<li><a href='#L157' title='Defined at 157.'>getInterceptors</a></li>
+<li><a href='#L165' title='Defined at 165.'>hasInterceptorsOfType</a></li>
+<li><a href='#L173' title='Defined at 173.'>initInterceptorArrays</a></li>
+<li><a href='#L186' title='Defined at 186.'>growInterceptorArray</a></li>
+<li><a href='#L204' title='Defined at 204.'>destroyAll</a></li>
+<li><a href='#L218' title='Defined at 218.'>sortInterceptors</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.interceptors;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.Interceptor;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ORBInitInfo;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> org.omg.PortableInterceptor.ORBInitInfoPackage.DuplicateName;
+<a id='L31' name='L31'></a>  31 
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> org.omg.CORBA.INTERNAL;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.util.ArrayList;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.util.Collection;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.Collections;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.List;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.lang.reflect.Array;
+<a id='L40' name='L40'></a>  40 
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.InterceptorsSystemException ;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <em class='comment'>/**</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * Provides a repository of registered Portable Interceptors, organized</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * by type.  This list is designed to be accessed as efficiently as</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * possible during runtime, with the expense of added complexity during</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * initialization and interceptor registration.  The class is designed</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * to easily allow for the addition of new interceptor types.</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> */</em>
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/3928.html' title='Multiple referred from 18 places.'>InterceptorList</a> <em class='brace'>{</em>
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52     <em class='comment'>// Interceptor type list.  If additional interceptors are needed,</em>
+<a id='L53' name='L53'></a>  53     <em class='comment'>// add additional types in numerical order (do not skip numbers),</em>
+<a id='L54' name='L54'></a>  54     <em class='comment'>// and update NUM_INTERCEPTOR_TYPES and classTypes accordingly.</em>
+<a id='L55' name='L55'></a>  55     <em class='comment'>// NUM_INTERCEPTOR_TYPES represents the number of interceptor</em>
+<a id='L56' name='L56'></a>  56     <em class='comment'>// types, so we know how many lists to maintain.</em>
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> INTERCEPTOR_TYPE_CLIENT            = 0;
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> INTERCEPTOR_TYPE_SERVER            = 1;
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> INTERCEPTOR_TYPE_IOR               = 2;
+<a id='L60' name='L60'></a>  60 
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NUM_INTERCEPTOR_TYPES              = 3;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63     <em class='comment'>// Array of class types for interceptors.  This is used to create the</em>
+<a id='L64' name='L64'></a>  64     <em class='comment'>// appropriate array type for each interceptor type.  These must</em>
+<a id='L65' name='L65'></a>  65     <em class='comment'>// match the indices of the constants declared above.</em>
+<a id='L66' name='L66'></a>  66     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] classTypes = <em class='brace'>{</em>
+<a id='L67' name='L67'></a>  67         org.omg.PortableInterceptor.<a href='../S/493.html#L28' title='Defined at 28 in src/org/omg/PortableInterceptor/ClientRequestInterceptor.java.'>ClientRequestInterceptor</a>.<strong class='reserved'>class</strong>,
+<a id='L68' name='L68'></a>  68         org.omg.PortableInterceptor.<a href='../S/459.html#L28' title='Defined at 28 in src/org/omg/PortableInterceptor/ServerRequestInterceptor.java.'>ServerRequestInterceptor</a>.<strong class='reserved'>class</strong>,
+<a id='L69' name='L69'></a>  69         org.omg.PortableInterceptor.<a href='../S/498.html#L26' title='Defined at 26 in src/org/omg/PortableInterceptor/IORInterceptor.java.'>IORInterceptor</a>.<strong class='reserved'>class</strong>
+<a id='L70' name='L70'></a>  70     <em class='brace'>}</em>;
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <em class='comment'>// True if no further interceptors may be registered with this list.</em>
+<a id='L73' name='L73'></a>  73     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> locked = <strong class='reserved'>false</strong>;
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>private</strong> <a href='../S/7266.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/InterceptorsSystemException.java.'>InterceptorsSystemException</a> wrapper ;
+<a id='L75' name='L75'></a>  75 
+<a id='L76' name='L76'></a>  76     <em class='comment'>// List of interceptors currently registered.  There are</em>
+<a id='L77' name='L77'></a>  77     <em class='comment'>// NUM_INTERCEPTOR_TYPES lists of registered interceptors.</em>
+<a id='L78' name='L78'></a>  78     <em class='comment'>// For example, interceptors[INTERCEPTOR_TYPE_CLIENT] contains an array</em>
+<a id='L79' name='L79'></a>  79     <em class='comment'>// of objects of type ClientRequestInterceptor.</em>
+<a id='L80' name='L80'></a>  80     <strong class='reserved'>private</strong> <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[][] interceptors =
+<a id='L81' name='L81'></a>  81         <strong class='reserved'>new</strong> <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[NUM_INTERCEPTOR_TYPES][];
+<a id='L82' name='L82'></a>  82 
+<a id='L83' name='L83'></a>  83     <em class='comment'>/**</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     * Creates a new Interceptor List.  Constructor is package scope so</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     * only the ORB can create it.</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     */</em>
+<a id='L87' name='L87'></a>  87     InterceptorList( <a href='../S/7266.html#L30' title='Defined at 30 in src/com/sun/corba/se/impl/logging/InterceptorsSystemException.java.'>InterceptorsSystemException</a> wrapper ) <em class='brace'>{</em>
+<a id='L88' name='L88'></a>  88         <strong class='reserved'>this</strong>.wrapper = wrapper ;
+<a id='L89' name='L89'></a>  89         <em class='comment'>// Create empty interceptors arrays for each type:</em>
+<a id='L90' name='L90'></a>  90         <a href='../S/6865.html#L173' title='Defined at 173 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>initInterceptorArrays</a>();
+<a id='L91' name='L91'></a>  91     <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93     <em class='comment'>/**</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * Registers an interceptor of the given type into the interceptor list.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     * The type is one of:</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     * &lt;ul&gt;</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     *   &lt;li&gt;INTERCEPTOR_TYPE_CLIENT - ClientRequestInterceptor</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     *   &lt;li&gt;INTERCEPTOR_TYPE_SERVER - ServerRequestInterceptor</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     *   &lt;li&gt;INTERCEPTOR_TYPE_IOR - IORInterceptor</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * &lt;/ul&gt;</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     *</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     * @exception DuplicateName Thrown if an interceptor of the given</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     *     name already exists for the given type.</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     */</em>
+<a id='L105' name='L105'></a> 105     <strong class='reserved'>void</strong> <a href='../R/25831.html' title='Multiple referred from 4 places.'>register_interceptor</a>( <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a> interceptor, <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> )
+<a id='L106' name='L106'></a> 106         <strong class='reserved'>throws</strong> <a href='../S/477.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateName.java.'>DuplicateName</a>
+<a id='L107' name='L107'></a> 107     <em class='brace'>{</em>
+<a id='L108' name='L108'></a> 108         <em class='comment'>// If locked, deny any further addition of interceptors.</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>if</strong>( locked ) <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110             <strong class='reserved'>throw</strong> wrapper.<a href='../D/24902.html' title='Multiple defined in 4 places.'>interceptorListLocked</a>() ;
+<a id='L111' name='L111'></a> 111         <em class='brace'>}</em>
+<a id='L112' name='L112'></a> 112 
+<a id='L113' name='L113'></a> 113         <em class='comment'>// Cache interceptor name:</em>
+<a id='L114' name='L114'></a> 114         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> interceptorName = interceptor.<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>();
+<a id='L115' name='L115'></a> 115         <strong class='reserved'>boolean</strong> anonymous = interceptorName.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>( "" );
+<a id='L116' name='L116'></a> 116         <strong class='reserved'>boolean</strong> foundDuplicate = <strong class='reserved'>false</strong>;
+<a id='L117' name='L117'></a> 117         <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[] interceptorList = interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>];
+<a id='L118' name='L118'></a> 118 
+<a id='L119' name='L119'></a> 119         <em class='comment'>// If this is not an anonymous interceptor,</em>
+<a id='L120' name='L120'></a> 120         <em class='comment'>// search for an interceptor of the same name in this category:</em>
+<a id='L121' name='L121'></a> 121         <strong class='reserved'>if</strong>( !anonymous ) <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122             <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = interceptorList.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L123' name='L123'></a> 123 
+<a id='L124' name='L124'></a> 124             <em class='comment'>// An O(n) search will suffice because register_interceptor is not</em>
+<a id='L125' name='L125'></a> 125             <em class='comment'>// likely to be called often.</em>
+<a id='L126' name='L126'></a> 126             <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>; i++ ) <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127                 <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a> <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a> = (<a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>)interceptorList[i];
+<a id='L128' name='L128'></a> 128                 <strong class='reserved'>if</strong>( <a href='../D/24395.html' title='Multiple defined in 2 places.'>in</a>.<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>( interceptorName ) ) <em class='brace'>{</em>
+<a id='L129' name='L129'></a> 129                     foundDuplicate = <strong class='reserved'>true</strong>;
+<a id='L130' name='L130'></a> 130                     <strong class='reserved'>break</strong>;
+<a id='L131' name='L131'></a> 131                 <em class='brace'>}</em>
+<a id='L132' name='L132'></a> 132             <em class='brace'>}</em>
+<a id='L133' name='L133'></a> 133         <em class='brace'>}</em>
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>if</strong>( !foundDuplicate ) <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136             <a href='../S/6865.html#L186' title='Defined at 186 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>growInterceptorArray</a>( <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> );
+<a id='L137' name='L137'></a> 137             interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>][interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>-1] = interceptor;
+<a id='L138' name='L138'></a> 138         <em class='brace'>}</em>
+<a id='L139' name='L139'></a> 139         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L140' name='L140'></a> 140             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/477.html#L11' title='Defined at 11 in src/org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateName.java.'>DuplicateName</a>( interceptorName );
+<a id='L141' name='L141'></a> 141         <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142     <em class='brace'>}</em>
+<a id='L143' name='L143'></a> 143 
+<a id='L144' name='L144'></a> 144     <em class='comment'>/**</em>
+<a id='L145' name='L145'></a> 145 <em class='comment'>     * Locks this interceptor list so that no more interceptors may be</em>
+<a id='L146' name='L146'></a> 146 <em class='comment'>     * registered.  This method is called after all interceptors are</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>     * registered for security reasons.</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>     */</em>
+<a id='L149' name='L149'></a> 149     <strong class='reserved'>void</strong> <a href='../R/22669.html' title='Multiple referred from 810 places.'>lock</a>() <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150         locked = <strong class='reserved'>true</strong>;
+<a id='L151' name='L151'></a> 151     <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152 
+<a id='L153' name='L153'></a> 153     <em class='comment'>/**</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>     * Retrieves an array of interceptors of the given type.  For efficiency,</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * the type parameter is assumed to be valid.</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     */</em>
+<a id='L157' name='L157'></a> 157     <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[] <a href='../R/17139.html' title='Multiple referred from 8 places.'>getInterceptors</a>( <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> ) <em class='brace'>{</em>
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>return</strong> interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>];
+<a id='L159' name='L159'></a> 159     <em class='brace'>}</em>
+<a id='L160' name='L160'></a> 160 
+<a id='L161' name='L161'></a> 161     <em class='comment'>/**</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>     * Returns true if there is at least one interceptor of the given type,</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * or false if not.</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     */</em>
+<a id='L165' name='L165'></a> 165     <strong class='reserved'>boolean</strong> <a href='../R/20208.html' title='Multiple referred from 2 places.'>hasInterceptorsOfType</a>( <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> ) <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>return</strong> interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0;
+<a id='L167' name='L167'></a> 167     <em class='brace'>}</em>
+<a id='L168' name='L168'></a> 168 
+<a id='L169' name='L169'></a> 169     <em class='comment'>/**</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>     * Initializes all interceptors arrays to zero-length arrays of the</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>     * correct type, based on the classTypes list.</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>     */</em>
+<a id='L173' name='L173'></a> 173     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6865.html#L90' title='Referred from 90 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>initInterceptorArrays</a>() <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174         <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = 0; <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> &lt; NUM_INTERCEPTOR_TYPES; <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>++ ) <em class='brace'>{</em>
+<a id='L175' name='L175'></a> 175             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> classType = classTypes[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>];
+<a id='L176' name='L176'></a> 176 
+<a id='L177' name='L177'></a> 177             <em class='comment'>// Create a zero-length array for each type:</em>
+<a id='L178' name='L178'></a> 178             interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>] =
+<a id='L179' name='L179'></a> 179                 (<a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[])<a href='../D/487.html' title='Multiple defined in 2 places.'>Array</a>.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>( classType, 0 );
+<a id='L180' name='L180'></a> 180         <em class='brace'>}</em>
+<a id='L181' name='L181'></a> 181     <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183     <em class='comment'>/**</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>     * Grows the given interceptor array by one:</em>
+<a id='L185' name='L185'></a> 185 <em class='comment'>     */</em>
+<a id='L186' name='L186'></a> 186     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6865.html#L136' title='Referred from 136 in src/com/sun/corba/se/impl/interceptors/InterceptorList.java.'>growInterceptorArray</a>( <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> ) <em class='brace'>{</em>
+<a id='L187' name='L187'></a> 187         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> classType = classTypes[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>];
+<a id='L188' name='L188'></a> 188         <strong class='reserved'>int</strong> currentLength = interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L189' name='L189'></a> 189         <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[] replacementArray;
+<a id='L190' name='L190'></a> 190 
+<a id='L191' name='L191'></a> 191         <em class='comment'>// Create new array to replace the old one.  The new array will be</em>
+<a id='L192' name='L192'></a> 192         <em class='comment'>// one element larger but have the same type as the old one.</em>
+<a id='L193' name='L193'></a> 193         replacementArray = (<a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>[])
+<a id='L194' name='L194'></a> 194             <a href='../D/487.html' title='Multiple defined in 2 places.'>Array</a>.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>( classType, currentLength + 1 );
+<a id='L195' name='L195'></a> 195         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>( interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>], 0,
+<a id='L196' name='L196'></a> 196                           replacementArray, 0, currentLength );
+<a id='L197' name='L197'></a> 197         interceptors[<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>] = replacementArray;
+<a id='L198' name='L198'></a> 198     <em class='brace'>}</em>
+<a id='L199' name='L199'></a> 199 
+<a id='L200' name='L200'></a> 200     <em class='comment'>/**</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>     * Destroys all interceptors in this list by invoking their destroy()</em>
+<a id='L202' name='L202'></a> 202 <em class='comment'>     * method.</em>
+<a id='L203' name='L203'></a> 203 <em class='comment'>     */</em>
+<a id='L204' name='L204'></a> 204     <strong class='reserved'>void</strong> <a href='../S/6864.html#L296' title='Referred from 296 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>destroyAll</a>() <em class='brace'>{</em>
+<a id='L205' name='L205'></a> 205         <strong class='reserved'>int</strong> numTypes = interceptors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207         <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> i = 0; i &lt; numTypes; i++ ) <em class='brace'>{</em>
+<a id='L208' name='L208'></a> 208             <strong class='reserved'>int</strong> numInterceptors = interceptors[i].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L209' name='L209'></a> 209             <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> j = 0; j &lt; numInterceptors; j++ ) <em class='brace'>{</em>
+<a id='L210' name='L210'></a> 210                 interceptors[i][j].<a href='../D/14870.html' title='Multiple defined in 55 places.'>destroy</a>();
+<a id='L211' name='L211'></a> 211             <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212         <em class='brace'>}</em>
+<a id='L213' name='L213'></a> 213     <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215     <em class='comment'>/**</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>     * Sort interceptors.</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>     */</em>
+<a id='L218' name='L218'></a> 218     <strong class='reserved'>void</strong> <a href='../S/6864.html#L255' title='Referred from 255 in src/com/sun/corba/se/impl/interceptors/PIHandlerImpl.java.'>sortInterceptors</a>() <em class='brace'>{</em>
+<a id='L219' name='L219'></a> 219         <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> <a href='../D/34694.html' title='Multiple defined in 10 places.'>sorted</a> = <strong class='reserved'>null</strong>;
+<a id='L220' name='L220'></a> 220         <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> unsorted = <strong class='reserved'>null</strong>;
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222         <strong class='reserved'>int</strong> numTypes = interceptors.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224         <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> i = 0; i &lt; numTypes; i++ ) <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225             <strong class='reserved'>int</strong> numInterceptors = interceptors[i].<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L226' name='L226'></a> 226             <strong class='reserved'>if</strong> (numInterceptors &gt; 0) <em class='brace'>{</em>
+<a id='L227' name='L227'></a> 227                 <em class='comment'>// Get fresh sorting bins for each non empty type.</em>
+<a id='L228' name='L228'></a> 228                 <a href='../D/34694.html' title='Multiple defined in 10 places.'>sorted</a> = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>(); <em class='comment'>// not synchronized like we want.</em>
+<a id='L229' name='L229'></a> 229                 unsorted = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L230' name='L230'></a> 230             <em class='brace'>}</em>
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> j = 0; j &lt; numInterceptors; j++ ) <em class='brace'>{</em>
+<a id='L232' name='L232'></a> 232                 <a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a> interceptor = interceptors[i][j];
+<a id='L233' name='L233'></a> 233                 <strong class='reserved'>if</strong> (interceptor <strong class='reserved'>instanceof</strong> <a href='../S/1704.html#L96' title='Defined at 96 in src/java/lang/Comparable.java.'>Comparable</a>) <em class='brace'>{</em>
+<a id='L234' name='L234'></a> 234                     <a href='../D/34694.html' title='Multiple defined in 10 places.'>sorted</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(interceptor);
+<a id='L235' name='L235'></a> 235                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L236' name='L236'></a> 236                     unsorted.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(interceptor);
+<a id='L237' name='L237'></a> 237                 <em class='brace'>}</em>
+<a id='L238' name='L238'></a> 238             <em class='brace'>}</em>
+<a id='L239' name='L239'></a> 239             <strong class='reserved'>if</strong> (numInterceptors &gt; 0 &amp;&amp; <a href='../D/34694.html' title='Multiple defined in 10 places.'>sorted</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() &gt; 0) <em class='brace'>{</em>
+<a id='L240' name='L240'></a> 240                 <em class='comment'>// Let the RuntimeExceptions thrown by sort</em>
+<a id='L241' name='L241'></a> 241                 <em class='comment'>// (i.e., ClassCastException and UnsupportedOperationException)</em>
+<a id='L242' name='L242'></a> 242                 <em class='comment'>// flow back to the user.</em>
+<a id='L243' name='L243'></a> 243                 <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.<a href='../D/34687.html' title='Multiple defined in 56 places.'>sort</a>(<a href='../D/34694.html' title='Multiple defined in 10 places.'>sorted</a>);
+<a id='L244' name='L244'></a> 244                 <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> sortedIterator = <a href='../D/34694.html' title='Multiple defined in 10 places.'>sorted</a>.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L245' name='L245'></a> 245                 <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> unsortedIterator = unsorted.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L246' name='L246'></a> 246                 <strong class='reserved'>for</strong>( <strong class='reserved'>int</strong> j = 0; j &lt; numInterceptors; j++ ) <em class='brace'>{</em>
+<a id='L247' name='L247'></a> 247                     <strong class='reserved'>if</strong> (sortedIterator.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248                         interceptors[i][j] =
+<a id='L249' name='L249'></a> 249                             (<a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>) sortedIterator.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L250' name='L250'></a> 250                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (unsortedIterator.<a href='../D/24134.html' title='Multiple defined in 81 places.'>hasNext</a>()) <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251                         interceptors[i][j] =
+<a id='L252' name='L252'></a> 252                             (<a href='../S/448.html#L15' title='Defined at 15 in src/org/omg/PortableInterceptor/Interceptor.java.'>Interceptor</a>) unsortedIterator.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>();
+<a id='L253' name='L253'></a> 253                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L254' name='L254'></a> 254                         <strong class='reserved'>throw</strong> wrapper.<a href='../D/34693.html' title='Multiple defined in 4 places.'>sortSizeMismatch</a>() ;
+<a id='L255' name='L255'></a> 255                     <em class='brace'>}</em>
+<a id='L256' name='L256'></a> 256                 <em class='brace'>}</em>
+<a id='L257' name='L257'></a> 257             <em class='brace'>}</em>
+<a id='L258' name='L258'></a> 258         <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L105'>[^]</a><a href='#L218'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

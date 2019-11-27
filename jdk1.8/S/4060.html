@@ -1,0 +1,485 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/javax/xml/validation/SchemaFactoryFinder.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8126.html'>xml</a>/<a href='../files/8151.html'>validation</a>/SchemaFactoryFinder.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L79'>[^]</a><a href='#L434'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L79' title='Defined at 79.'>debugPrintln</a></li>
+<li><a href='#L108' title='Defined at 108.'>debugDisplayClassLoader</a></li>
+<li><a href='#L141' title='Defined at 141.'>newFactory</a></li>
+<li><a href='#L161' title='Defined at 161.'>_newFactory</a></li>
+<li><a href='#L243' title='Defined at 243.'>createClass</a></li>
+<li><a href='#L278' title='Defined at 278.'>createInstance</a></li>
+<li><a href='#L282' title='Defined at 282.'>createInstance</a></li>
+<li><a href='#L334' title='Defined at 334.'>newInstanceNoServiceLoader</a></li>
+<li><a href='#L375' title='Defined at 375.'>isSchemaLanguageSupportedBy</a></li>
+<li><a href='#L394' title='Defined at 394.'>findServiceProvider</a></li>
+<li><a href='#L422' title='Defined at 422.'>which</a></li>
+<li><a href='#L434' title='Defined at 434.'>which</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.xml.validation;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.File;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.lang.reflect.Method;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.lang.reflect.Modifier;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.net.URL;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.security.AccessControlContext;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.security.AccessController;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.security.PrivilegedAction;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.util.Properties;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.ServiceConfigurationError;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.ServiceLoader;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 <em class='comment'>/**</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * Implementation of {@link SchemaFactory#newInstance(String)}.</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> *</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> * @author &lt;a href="Kohsuke.Kawaguchi@Sun.com"&gt;Kohsuke Kawaguchi&lt;/a&gt;</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * @version $Revision: 1.8 $, $Date: 2010-11-01 04:36:13 $</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * @since 1.5</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> */</em>
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>class</strong> <a href='../R/6934.html' title='Multiple referred from 2 places.'>SchemaFactoryFinder</a>  <em class='brace'>{</em>
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48     <em class='comment'>/** debug support code. */</em>
+<a id='L49' name='L49'></a>  49     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = <strong class='reserved'>false</strong>;
+<a id='L50' name='L50'></a>  50     <em class='comment'>/**</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     *&lt;p&gt; Take care of restrictions imposed by java security model &lt;/p&gt;</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>     */</em>
+<a id='L53' name='L53'></a>  53     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/7684.html' title='Multiple defined in 12 places.'>SecuritySupport</a> ss = <strong class='reserved'>new</strong> <a href='../D/7684.html' title='Multiple defined in 12 places.'>SecuritySupport</a>();
+<a id='L54' name='L54'></a>  54     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";
+<a id='L55' name='L55'></a>  55     <em class='comment'>/**</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     * &lt;p&gt;Cache properties for performance.&lt;/p&gt;</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>     */</em>
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1039.html#L122' title='Defined at 122 in src/java/util/Properties.java.'>Properties</a> cacheProps = <strong class='reserved'>new</strong> <a href='../S/1039.html#L122' title='Defined at 122 in src/java/util/Properties.java.'>Properties</a>();
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <em class='comment'>/**</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * &lt;p&gt;First time requires initialization overhead.&lt;/p&gt;</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     */</em>
+<a id='L63' name='L63'></a>  63     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>volatile</strong> <strong class='reserved'>boolean</strong> firstTime = <strong class='reserved'>true</strong>;
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65     <strong class='reserved'>static</strong> <em class='brace'>{</em>
+<a id='L66' name='L66'></a>  66         <em class='comment'>// Use try/catch block to support applets</em>
+<a id='L67' name='L67'></a>  67         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L68' name='L68'></a>  68             <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = ss.<a href='../D/22922.html' title='Multiple defined in 24 places.'>getSystemProperty</a>("jaxp.debug") != <strong class='reserved'>null</strong>;
+<a id='L69' name='L69'></a>  69         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> unused) <em class='brace'>{</em>
+<a id='L70' name='L70'></a>  70             <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> = <strong class='reserved'>false</strong>;
+<a id='L71' name='L71'></a>  71         <em class='brace'>}</em>
+<a id='L72' name='L72'></a>  72     <em class='brace'>}</em>
+<a id='L73' name='L73'></a>  73 
+<a id='L74' name='L74'></a>  74     <em class='comment'>/**</em>
+<a id='L75' name='L75'></a>  75 <em class='comment'>     * &lt;p&gt;Conditional debug printing.&lt;/p&gt;</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>     *</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>     * @param msg to print</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     */</em>
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/12925.html' title='Multiple referred from 40 places.'>debugPrintln</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>) <em class='brace'>{</em>
+<a id='L80' name='L80'></a>  80         <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
+<a id='L81' name='L81'></a>  81             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.err.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("JAXP: " + <a href='../S/6957.html#L1026' title='Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.'>msg</a>);
+<a id='L82' name='L82'></a>  82         <em class='brace'>}</em>
+<a id='L83' name='L83'></a>  83     <em class='brace'>}</em>
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85     <em class='comment'>/**</em>
+<a id='L86' name='L86'></a>  86 <em class='comment'>     * &lt;p&gt;&lt;code&gt;ClassLoader&lt;/code&gt; to use to find &lt;code&gt;SchemaFactory&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     */</em>
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> classLoader;
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90     <em class='comment'>/**</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     * &lt;p&gt;Constructor that specifies &lt;code&gt;ClassLoader&lt;/code&gt; to use</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * to find &lt;code&gt;SchemaFactory&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     *</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * @param loader</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     *      to be used to load resource, {@link SchemaFactory}, and</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     *      {@link SchemaFactoryLoader} implementations during</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>     *      the resolution process.</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>     *      If this parameter is null, the default system class loader</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>     *      will be used.</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     */</em>
+<a id='L101' name='L101'></a> 101     <strong class='reserved'>public</strong> SchemaFactoryFinder(<a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> loader) <em class='brace'>{</em>
+<a id='L102' name='L102'></a> 102         <strong class='reserved'>this</strong>.classLoader = loader;
+<a id='L103' name='L103'></a> 103         <strong class='reserved'>if</strong>( <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> ) <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104             <a href='../D/14489.html' title='Multiple defined in 2 places.'>debugDisplayClassLoader</a>();
+<a id='L105' name='L105'></a> 105         <em class='brace'>}</em>
+<a id='L106' name='L106'></a> 106     <em class='brace'>}</em>
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/12917.html' title='Multiple referred from 2 places.'>debugDisplayClassLoader</a>() <em class='brace'>{</em>
+<a id='L109' name='L109'></a> 109         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110             <strong class='reserved'>if</strong>( classLoader == ss.<a href='../D/17977.html' title='Multiple defined in 21 places.'>getContextClassLoader</a>() ) <em class='brace'>{</em>
+<a id='L111' name='L111'></a> 111                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("using thread context class loader ("+classLoader+") for search");
+<a id='L112' name='L112'></a> 112                 <strong class='reserved'>return</strong>;
+<a id='L113' name='L113'></a> 113             <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114         <em class='brace'>}</em> <strong class='reserved'>catch</strong>( <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> unused ) <em class='brace'>{</em>
+<a id='L115' name='L115'></a> 115             <em class='comment'>// getContextClassLoader() undefined in JDK1.1</em>
+<a id='L116' name='L116'></a> 116         <em class='brace'>}</em>
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118         <strong class='reserved'>if</strong>( classLoader==<a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a>.<a href='../D/22895.html' title='Multiple defined in 7 places.'>getSystemClassLoader</a>() ) <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("using system class loader ("+classLoader+") for search");
+<a id='L120' name='L120'></a> 120             <strong class='reserved'>return</strong>;
+<a id='L121' name='L121'></a> 121         <em class='brace'>}</em>
+<a id='L122' name='L122'></a> 122 
+<a id='L123' name='L123'></a> 123         <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("using class loader ("+classLoader+") for search");
+<a id='L124' name='L124'></a> 124     <em class='brace'>}</em>
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126     <em class='comment'>/**</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * &lt;p&gt;Creates a new {@link SchemaFactory} object for the specified</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     * schema language.&lt;/p&gt;</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     *</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>     * @param schemaLanguage</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>     *      See {@link SchemaFactory Schema Language} table in &lt;code&gt;SchemaFactory&lt;/code&gt;</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>     *      for the list of available schema languages.</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     *</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     * @return &lt;code&gt;null&lt;/code&gt; if the callee fails to create one.</em>
+<a id='L135' name='L135'></a> 135 <em class='comment'>     *</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>     * @throws NullPointerException</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>     *      If the &lt;code&gt;schemaLanguage&lt;/code&gt; parameter is null.</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>     * @throws SchemaFactoryConfigurationError</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>     *      If a configuration error is encountered.</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>     */</em>
+<a id='L141' name='L141'></a> 141     <strong class='reserved'>public</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../R/23553.html' title='Multiple referred from 3 places.'>newFactory</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> schemaLanguage) <em class='brace'>{</em>
+<a id='L142' name='L142'></a> 142         <strong class='reserved'>if</strong>(schemaLanguage==<strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L143' name='L143'></a> 143             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1559.html#L53' title='Defined at 53 in src/java/lang/NullPointerException.java.'>NullPointerException</a>();
+<a id='L144' name='L144'></a> 144         <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145         <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> f = <a href='../D/10455.html' title='Multiple defined in 2 places.'>_newFactory</a>(schemaLanguage);
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>if</strong> (f != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L147' name='L147'></a> 147             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("factory '" + f.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() + "' was found for " + schemaLanguage);
+<a id='L148' name='L148'></a> 148         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("unable to find a factory for " + schemaLanguage);
+<a id='L150' name='L150'></a> 150         <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151         <strong class='reserved'>return</strong> f;
+<a id='L152' name='L152'></a> 152     <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153 
+<a id='L154' name='L154'></a> 154     <em class='comment'>/**</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>     * &lt;p&gt;Lookup a &lt;code&gt;SchemaFactory&lt;/code&gt; for the given &lt;code&gt;schemaLanguage&lt;/code&gt;.&lt;/p&gt;</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     *</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     * @param schemaLanguage Schema language to lookup &lt;code&gt;SchemaFactory&lt;/code&gt; for.</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>     *</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>     * @return &lt;code&gt;SchemaFactory&lt;/code&gt; for the given &lt;code&gt;schemaLanguage&lt;/code&gt;.</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>     */</em>
+<a id='L161' name='L161'></a> 161     <strong class='reserved'>private</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../R/9436.html' title='Multiple referred from 2 places.'>_newFactory</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> schemaLanguage) <em class='brace'>{</em>
+<a id='L162' name='L162'></a> 162         <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> sf;
+<a id='L163' name='L163'></a> 163 
+<a id='L164' name='L164'></a> 164         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6298.html#L1524' title='Defined at 1524 in src/com/sun/jmx/mbeanserver/DefaultMXBeanMappingFactory.java.'>propertyName</a> = SERVICE_CLASS.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() + ":" + schemaLanguage;
+<a id='L165' name='L165'></a> 165 
+<a id='L166' name='L166'></a> 166         <em class='comment'>// system property look up</em>
+<a id='L167' name='L167'></a> 167         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("Looking up system property '"+<a href='../S/6298.html#L1524' title='Defined at 1524 in src/com/sun/jmx/mbeanserver/DefaultMXBeanMappingFactory.java.'>propertyName</a>+"'" );
+<a id='L169' name='L169'></a> 169             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> r = ss.<a href='../D/22922.html' title='Multiple defined in 24 places.'>getSystemProperty</a>(<a href='../S/6298.html#L1524' title='Defined at 1524 in src/com/sun/jmx/mbeanserver/DefaultMXBeanMappingFactory.java.'>propertyName</a>);
+<a id='L170' name='L170'></a> 170             <strong class='reserved'>if</strong>(r!=<strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L171' name='L171'></a> 171                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("The value is '"+r+"'");
+<a id='L172' name='L172'></a> 172                 sf = <a href='../D/13970.html' title='Multiple defined in 4 places.'>createInstance</a>(r, <strong class='reserved'>true</strong>);
+<a id='L173' name='L173'></a> 173                 <strong class='reserved'>if</strong>(sf!=<strong class='reserved'>null</strong>)    <strong class='reserved'>return</strong> sf;
+<a id='L174' name='L174'></a> 174             <em class='brace'>}</em> <strong class='reserved'>else</strong>
+<a id='L175' name='L175'></a> 175                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("The property is undefined.");
+<a id='L176' name='L176'></a> 176         <em class='brace'>}</em> <strong class='reserved'>catch</strong>( <a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> t ) <em class='brace'>{</em>
+<a id='L177' name='L177'></a> 177             <strong class='reserved'>if</strong>( <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> ) <em class='brace'>{</em>
+<a id='L178' name='L178'></a> 178                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("failed to look up system property '"+<a href='../S/6298.html#L1524' title='Defined at 1524 in src/com/sun/jmx/mbeanserver/DefaultMXBeanMappingFactory.java.'>propertyName</a>+"'" );
+<a id='L179' name='L179'></a> 179                 t.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L180' name='L180'></a> 180             <em class='brace'>}</em>
+<a id='L181' name='L181'></a> 181         <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> javah = ss.<a href='../D/22922.html' title='Multiple defined in 24 places.'>getSystemProperty</a>( "java.home" );
+<a id='L184' name='L184'></a> 184         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> configFile = javah + <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a>.<a href='../D/31774.html' title='Multiple defined in 7 places.'>separator</a> +
+<a id='L185' name='L185'></a> 185         "lib" + <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a>.<a href='../D/31774.html' title='Multiple defined in 7 places.'>separator</a> + "jaxp.properties";
+<a id='L186' name='L186'></a> 186 
+<a id='L187' name='L187'></a> 187 
+<a id='L188' name='L188'></a> 188         <em class='comment'>// try to read from $java.home/lib/jaxp.properties</em>
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190             <strong class='reserved'>if</strong>(firstTime)<em class='brace'>{</em>
+<a id='L191' name='L191'></a> 191                 <strong class='reserved'>synchronized</strong>(cacheProps)<em class='brace'>{</em>
+<a id='L192' name='L192'></a> 192                     <strong class='reserved'>if</strong>(firstTime)<em class='brace'>{</em>
+<a id='L193' name='L193'></a> 193                         <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a> f=<strong class='reserved'>new</strong> <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a>( configFile );
+<a id='L194' name='L194'></a> 194                         firstTime = <strong class='reserved'>false</strong>;
+<a id='L195' name='L195'></a> 195                         <strong class='reserved'>if</strong>(ss.<a href='../D/15109.html' title='Multiple defined in 7 places.'>doesFileExist</a>(f))<em class='brace'>{</em>
+<a id='L196' name='L196'></a> 196                             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("Read properties file " + f);
+<a id='L197' name='L197'></a> 197                             cacheProps.<a href='../D/26888.html' title='Multiple defined in 27 places.'>load</a>(ss.<a href='../D/19053.html' title='Multiple defined in 12 places.'>getFileInputStream</a>(f));
+<a id='L198' name='L198'></a> 198                         <em class='brace'>}</em>
+<a id='L199' name='L199'></a> 199                     <em class='brace'>}</em>
+<a id='L200' name='L200'></a> 200                 <em class='brace'>}</em>
+<a id='L201' name='L201'></a> 201             <em class='brace'>}</em>
+<a id='L202' name='L202'></a> 202             <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> factoryClassName = cacheProps.<a href='../D/21720.html' title='Multiple defined in 77 places.'>getProperty</a>(<a href='../S/6298.html#L1524' title='Defined at 1524 in src/com/sun/jmx/mbeanserver/DefaultMXBeanMappingFactory.java.'>propertyName</a>);
+<a id='L203' name='L203'></a> 203             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("found " + factoryClassName + " in $java.home/jaxp.properties");
+<a id='L204' name='L204'></a> 204 
+<a id='L205' name='L205'></a> 205             <strong class='reserved'>if</strong> (factoryClassName != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206                 sf = <a href='../D/13970.html' title='Multiple defined in 4 places.'>createInstance</a>(factoryClassName, <strong class='reserved'>true</strong>);
+<a id='L207' name='L207'></a> 207                 <strong class='reserved'>if</strong>(sf != <strong class='reserved'>null</strong>)<em class='brace'>{</em>
+<a id='L208' name='L208'></a> 208                     <strong class='reserved'>return</strong> sf;
+<a id='L209' name='L209'></a> 209                 <em class='brace'>}</em>
+<a id='L210' name='L210'></a> 210             <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L212' name='L212'></a> 212             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
+<a id='L213' name='L213'></a> 213                 <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L214' name='L214'></a> 214             <em class='brace'>}</em>
+<a id='L215' name='L215'></a> 215         <em class='brace'>}</em>
+<a id='L216' name='L216'></a> 216 
+<a id='L217' name='L217'></a> 217         <em class='comment'>// Try with ServiceLoader</em>
+<a id='L218' name='L218'></a> 218         <strong class='reserved'>final</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> factoryImpl = <a href='../D/16235.html' title='Multiple defined in 6 places.'>findServiceProvider</a>(schemaLanguage);
+<a id='L219' name='L219'></a> 219 
+<a id='L220' name='L220'></a> 220         <em class='comment'>// The following assertion should always be true.</em>
+<a id='L221' name='L221'></a> 221         <em class='comment'>// Uncomment it, recompile, and run with -ea in case of doubts:</em>
+<a id='L222' name='L222'></a> 222         <em class='comment'>// assert factoryImpl == null || factoryImpl.isSchemaLanguageSupported(schemaLanguage);</em>
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224         <strong class='reserved'>if</strong> (factoryImpl != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225             <strong class='reserved'>return</strong> factoryImpl;
+<a id='L226' name='L226'></a> 226         <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227 
+<a id='L228' name='L228'></a> 228         <em class='comment'>// platform default</em>
+<a id='L229' name='L229'></a> 229         <strong class='reserved'>if</strong>(schemaLanguage.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("http://www.w3.org/2001/XMLSchema")) <em class='brace'>{</em>
+<a id='L230' name='L230'></a> 230             <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("attempting to use the platform default XML Schema validator");
+<a id='L231' name='L231'></a> 231             <strong class='reserved'>return</strong> <a href='../D/13970.html' title='Multiple defined in 4 places.'>createInstance</a>("com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory", <strong class='reserved'>true</strong>);
+<a id='L232' name='L232'></a> 232         <em class='brace'>}</em>
+<a id='L233' name='L233'></a> 233 
+<a id='L234' name='L234'></a> 234         <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("all things were tried, but none was found. bailing out.");
+<a id='L235' name='L235'></a> 235         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L236' name='L236'></a> 236     <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238     <em class='comment'>/** &lt;p&gt;Create class using appropriate ClassLoader.&lt;/p&gt;</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>     *</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>     * @param className Name of class to create.</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>     * @return Created class or &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>     */</em>
+<a id='L243' name='L243'></a> 243     <strong class='reserved'>private</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../R/12274.html' title='Multiple referred from 3 places.'>createClass</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>) <em class='brace'>{</em>
+<a id='L244' name='L244'></a> 244         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>;
+<a id='L245' name='L245'></a> 245         <em class='comment'>// make sure we have access to restricted packages</em>
+<a id='L246' name='L246'></a> 246         <strong class='reserved'>boolean</strong> internal = <strong class='reserved'>false</strong>;
+<a id='L247' name='L247'></a> 247         <strong class='reserved'>if</strong> (<a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>() != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L248' name='L248'></a> 248             <strong class='reserved'>if</strong> (<a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a> != <strong class='reserved'>null</strong> &amp;&amp; <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>.<a href='../D/34843.html' title='Multiple defined in 24 places.'>startsWith</a>(DEFAULT_PACKAGE)) <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249                 internal = <strong class='reserved'>true</strong>;
+<a id='L250' name='L250'></a> 250             <em class='brace'>}</em>
+<a id='L251' name='L251'></a> 251         <em class='brace'>}</em>
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L254' name='L254'></a> 254             <strong class='reserved'>if</strong> (classLoader != <strong class='reserved'>null</strong> &amp;&amp; !internal) <em class='brace'>{</em>
+<a id='L255' name='L255'></a> 255                 <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a> = <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>.<a href='../D/16518.html' title='Multiple defined in 6 places.'>forName</a>(<a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>, <strong class='reserved'>false</strong>, classLoader);
+<a id='L256' name='L256'></a> 256             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257                 <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a> = <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>.<a href='../D/16518.html' title='Multiple defined in 6 places.'>forName</a>(<a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>);
+<a id='L258' name='L258'></a> 258             <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1726.html#L114' title='Defined at 114 in src/java/lang/Throwable.java.'>Throwable</a> t) <em class='brace'>{</em>
+<a id='L260' name='L260'></a> 260             <strong class='reserved'>if</strong>(<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>)  <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261                 t.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L262' name='L262'></a> 262             <em class='brace'>}</em>
+<a id='L263' name='L263'></a> 263             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L264' name='L264'></a> 264         <em class='brace'>}</em>
+<a id='L265' name='L265'></a> 265 
+<a id='L266' name='L266'></a> 266         <strong class='reserved'>return</strong> <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>;
+<a id='L267' name='L267'></a> 267     <em class='brace'>}</em>
+<a id='L268' name='L268'></a> 268 
+<a id='L269' name='L269'></a> 269     <em class='comment'>/**</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     * &lt;p&gt;Creates an instance of the specified and returns it.&lt;/p&gt;</em>
+<a id='L271' name='L271'></a> 271 <em class='comment'>     *</em>
+<a id='L272' name='L272'></a> 272 <em class='comment'>     * @param className</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>     *      fully qualified class name to be instantiated.</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>     *</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>     * @return null</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>     *      if it fails. Error messages will be printed by this method.</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>     */</em>
+<a id='L278' name='L278'></a> 278     <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../R/12509.html' title='Multiple referred from 15 places.'>createInstance</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a> ) <em class='brace'>{</em>
+<a id='L279' name='L279'></a> 279         <strong class='reserved'>return</strong> <a href='../D/13970.html' title='Multiple defined in 4 places.'>createInstance</a>( <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>, <strong class='reserved'>false</strong> );
+<a id='L280' name='L280'></a> 280     <em class='brace'>}</em>
+<a id='L281' name='L281'></a> 281 
+<a id='L282' name='L282'></a> 282     <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../R/12509.html' title='Multiple referred from 15 places.'>createInstance</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>, <strong class='reserved'>boolean</strong> <a href='../S/5933.html#L781' title='Defined at 781 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>useServicesMechanism</a> ) <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283         <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> schemaFactory = <strong class='reserved'>null</strong>;
+<a id='L284' name='L284'></a> 284 
+<a id='L285' name='L285'></a> 285         <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("createInstance(" + <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a> + ")");
+<a id='L286' name='L286'></a> 286 
+<a id='L287' name='L287'></a> 287         <em class='comment'>// get Class from className</em>
+<a id='L288' name='L288'></a> 288         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a> = <a href='../D/13691.html' title='Multiple defined in 3 places.'>createClass</a>(<a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a>);
+<a id='L289' name='L289'></a> 289         <strong class='reserved'>if</strong> (<a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L290' name='L290'></a> 290                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("failed to getClass(" + <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a> + ")");
+<a id='L291' name='L291'></a> 291                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L292' name='L292'></a> 292         <em class='brace'>}</em>
+<a id='L293' name='L293'></a> 293         <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("loaded " + <a href='../D/12779.html' title='Multiple defined in 4 places.'>className</a> + " from " + <a href='../D/36852.html' title='Multiple defined in 6 places.'>which</a>(<a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>));
+<a id='L294' name='L294'></a> 294 
+<a id='L295' name='L295'></a> 295         <em class='comment'>// instantiate Class as a SchemaFactory</em>
+<a id='L296' name='L296'></a> 296         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L297' name='L297'></a> 297                 <strong class='reserved'>if</strong> (!<a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(<a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>)) <em class='brace'>{</em>
+<a id='L298' name='L298'></a> 298                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1727.html#L41' title='Defined at 41 in src/java/lang/ClassCastException.java.'>ClassCastException</a>(<a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>()
+<a id='L299' name='L299'></a> 299                                 + " cannot be cast to " + <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>.<strong class='reserved'>class</strong>);
+<a id='L300' name='L300'></a> 300                 <em class='brace'>}</em>
+<a id='L301' name='L301'></a> 301                 <strong class='reserved'>if</strong> (!<a href='../S/5933.html#L781' title='Defined at 781 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>useServicesMechanism</a>) <em class='brace'>{</em>
+<a id='L302' name='L302'></a> 302                     schemaFactory = <a href='../D/28019.html' title='Multiple defined in 3 places.'>newInstanceNoServiceLoader</a>(<a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>);
+<a id='L303' name='L303'></a> 303                 <em class='brace'>}</em>
+<a id='L304' name='L304'></a> 304                 <strong class='reserved'>if</strong> (schemaFactory == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L305' name='L305'></a> 305                     schemaFactory = (<a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>) <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>();
+<a id='L306' name='L306'></a> 306                 <em class='brace'>}</em>
+<a id='L307' name='L307'></a> 307         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1727.html#L41' title='Defined at 41 in src/java/lang/ClassCastException.java.'>ClassCastException</a> classCastException) <em class='brace'>{</em>
+<a id='L308' name='L308'></a> 308                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("could not instantiate " + <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L309' name='L309'></a> 309                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
+<a id='L310' name='L310'></a> 310                         classCastException.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L311' name='L311'></a> 311                 <em class='brace'>}</em>
+<a id='L312' name='L312'></a> 312                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L313' name='L313'></a> 313         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a> illegalAccessException) <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("could not instantiate " + <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L315' name='L315'></a> 315                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
+<a id='L316' name='L316'></a> 316                         illegalAccessException.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L317' name='L317'></a> 317                 <em class='brace'>}</em>
+<a id='L318' name='L318'></a> 318                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L319' name='L319'></a> 319         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1743.html#L46' title='Defined at 46 in src/java/lang/InstantiationException.java.'>InstantiationException</a> instantiationException) <em class='brace'>{</em>
+<a id='L320' name='L320'></a> 320                 <a href='../D/14497.html' title='Multiple defined in 4 places.'>debugPrintln</a>("could not instantiate " + <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
+<a id='L321' name='L321'></a> 321                 <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
+<a id='L322' name='L322'></a> 322                         instantiationException.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L323' name='L323'></a> 323                 <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L325' name='L325'></a> 325         <em class='brace'>}</em>
+<a id='L326' name='L326'></a> 326 
+<a id='L327' name='L327'></a> 327         <strong class='reserved'>return</strong> schemaFactory;
+<a id='L328' name='L328'></a> 328     <em class='brace'>}</em>
+<a id='L329' name='L329'></a> 329 
+<a id='L330' name='L330'></a> 330     <em class='comment'>/**</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>     * Try to construct using newXMLSchemaFactoryNoServiceLoader</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>     *   method if available.</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>     */</em>
+<a id='L334' name='L334'></a> 334     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../R/23569.html' title='Multiple referred from 3 places.'>newInstanceNoServiceLoader</a>(
+<a id='L335' name='L335'></a> 335          <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; providerClass
+<a id='L336' name='L336'></a> 336     ) <em class='brace'>{</em>
+<a id='L337' name='L337'></a> 337         <em class='comment'>// Retain maximum compatibility if no security manager.</em>
+<a id='L338' name='L338'></a> 338         <strong class='reserved'>if</strong> (<a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>() == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L339' name='L339'></a> 339             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L340' name='L340'></a> 340         <em class='brace'>}</em>
+<a id='L341' name='L341'></a> 341         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L342' name='L342'></a> 342             <strong class='reserved'>final</strong> <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> creationMethod =
+<a id='L343' name='L343'></a> 343                 providerClass.<a href='../D/18255.html' title='Multiple defined in 2 places.'>getDeclaredMethod</a>(
+<a id='L344' name='L344'></a> 344                     "newXMLSchemaFactoryNoServiceLoader"
+<a id='L345' name='L345'></a> 345                 );
+<a id='L346' name='L346'></a> 346             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a> = creationMethod.<a href='../D/20712.html' title='Multiple defined in 18 places.'>getModifiers</a>();
+<a id='L347' name='L347'></a> 347 
+<a id='L348' name='L348'></a> 348             <em class='comment'>// Do not call the method if it's not public static.</em>
+<a id='L349' name='L349'></a> 349             <strong class='reserved'>if</strong> (!<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26281.html' title='Multiple defined in 7 places.'>isStatic</a>(<a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>) || !<a href='../D/5688.html' title='Multiple defined in 3 places.'>Modifier</a>.<a href='../D/26117.html' title='Multiple defined in 5 places.'>isPublic</a>(<a href='../S/7693.html#L86' title='Defined at 86 in src/com/sun/javadoc/ProgramElementDoc.java.'>modifiers</a>)) <em class='brace'>{</em>
+<a id='L350' name='L350'></a> 350                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L351' name='L351'></a> 351             <em class='brace'>}</em>
+<a id='L352' name='L352'></a> 352 
+<a id='L353' name='L353'></a> 353             <em class='comment'>// Only calls "newXMLSchemaFactoryNoServiceLoader" if it's</em>
+<a id='L354' name='L354'></a> 354             <em class='comment'>// declared to return an instance of SchemaFactory.</em>
+<a id='L355' name='L355'></a> 355             <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a> = creationMethod.<a href='../D/22080.html' title='Multiple defined in 12 places.'>getReturnType</a>();
+<a id='L356' name='L356'></a> 356             <strong class='reserved'>if</strong> (SERVICE_CLASS.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>)) <em class='brace'>{</em>
+<a id='L357' name='L357'></a> 357                 <strong class='reserved'>return</strong> SERVICE_CLASS.<a href='../D/12274.html' title='Multiple defined in 6 places.'>cast</a>(creationMethod.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>(<strong class='reserved'>null</strong>, (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[])<strong class='reserved'>null</strong>));
+<a id='L358' name='L358'></a> 358             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L359' name='L359'></a> 359                 <em class='comment'>// Should not happen since</em>
+<a id='L360' name='L360'></a> 360                 <em class='comment'>// XMLSchemaFactory.newXMLSchemaFactoryNoServiceLoader is</em>
+<a id='L361' name='L361'></a> 361                 <em class='comment'>// declared to return XMLSchemaFactory.</em>
+<a id='L362' name='L362'></a> 362                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1727.html#L41' title='Defined at 41 in src/java/lang/ClassCastException.java.'>ClassCastException</a>(<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>
+<a id='L363' name='L363'></a> 363                             + " cannot be cast to " + SERVICE_CLASS);
+<a id='L364' name='L364'></a> 364             <em class='brace'>}</em>
+<a id='L365' name='L365'></a> 365         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../S/1727.html#L41' title='Defined at 41 in src/java/lang/ClassCastException.java.'>ClassCastException</a> e) <em class='brace'>{</em>
+<a id='L366' name='L366'></a> 366             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4059.html#L35' title='Defined at 35 in src/javax/xml/validation/SchemaFactoryConfigurationError.java.'>SchemaFactoryConfigurationError</a>(e.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>(), e);
+<a id='L367' name='L367'></a> 367         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1776.html#L35' title='Defined at 35 in src/java/lang/NoSuchMethodException.java.'>NoSuchMethodException</a> exc) <em class='brace'>{</em>
+<a id='L368' name='L368'></a> 368             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L369' name='L369'></a> 369         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> exc) <em class='brace'>{</em>
+<a id='L370' name='L370'></a> 370             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L371' name='L371'></a> 371         <em class='brace'>}</em>
+<a id='L372' name='L372'></a> 372     <em class='brace'>}</em>
+<a id='L373' name='L373'></a> 373 
+<a id='L374' name='L374'></a> 374     <em class='comment'>// Call isSchemaLanguageSupported with initial context.</em>
+<a id='L375' name='L375'></a> 375     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../S/4060.html#L406' title='Referred from 406 in src/javax/xml/validation/SchemaFactoryFinder.java.'>isSchemaLanguageSupportedBy</a>(<strong class='reserved'>final</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a>,
+<a id='L376' name='L376'></a> 376             <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> schemaLanguage,
+<a id='L377' name='L377'></a> 377             <a href='../S/1212.html#L77' title='Defined at 77 in src/java/security/AccessControlContext.java.'>AccessControlContext</a> acc) <em class='brace'>{</em>
+<a id='L378' name='L378'></a> 378         <strong class='reserved'>return</strong> <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a>&gt;() <em class='brace'>{</em>
+<a id='L379' name='L379'></a> 379             <strong class='reserved'>public</strong> <a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L380' name='L380'></a> 380                 <strong class='reserved'>return</strong> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a>.<a href='../D/26209.html' title='Multiple defined in 2 places.'>isSchemaLanguageSupported</a>(schemaLanguage);
+<a id='L381' name='L381'></a> 381             <em class='brace'>}</em>
+<a id='L382' name='L382'></a> 382         <em class='brace'>}</em>, acc);
+<a id='L383' name='L383'></a> 383     <em class='brace'>}</em>
+<a id='L384' name='L384'></a> 384 
+<a id='L385' name='L385'></a> 385     <em class='comment'>/**</em>
+<a id='L386' name='L386'></a> 386 <em class='comment'>     * Finds a service provider subclass of SchemaFactory that supports the</em>
+<a id='L387' name='L387'></a> 387 <em class='comment'>     * given schema language using the ServiceLoader.</em>
+<a id='L388' name='L388'></a> 388 <em class='comment'>     *</em>
+<a id='L389' name='L389'></a> 389 <em class='comment'>     * @param schemaLanguage The schema language for which we seek a factory.</em>
+<a id='L390' name='L390'></a> 390 <em class='comment'>     * @return A SchemaFactory supporting the specified schema language, or null</em>
+<a id='L391' name='L391'></a> 391 <em class='comment'>     *         if none is found.</em>
+<a id='L392' name='L392'></a> 392 <em class='comment'>     * @throws SchemaFactoryConfigurationError if a configuration error is found.</em>
+<a id='L393' name='L393'></a> 393 <em class='comment'>     */</em>
+<a id='L394' name='L394'></a> 394     <strong class='reserved'>private</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../R/14481.html' title='Multiple referred from 6 places.'>findServiceProvider</a>(<strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> schemaLanguage) <em class='brace'>{</em>
+<a id='L395' name='L395'></a> 395         <a href='../S/1616.html#L490' title='Defined at 490 in src/java/lang/invoke/MethodType.java.'>assert</a> schemaLanguage != <strong class='reserved'>null</strong>;
+<a id='L396' name='L396'></a> 396         <em class='comment'>// store current context.</em>
+<a id='L397' name='L397'></a> 397         <strong class='reserved'>final</strong> <a href='../S/1212.html#L77' title='Defined at 77 in src/java/security/AccessControlContext.java.'>AccessControlContext</a> acc = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
+<a id='L398' name='L398'></a> 398         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L399' name='L399'></a> 399             <strong class='reserved'>return</strong> <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>&gt;() <em class='brace'>{</em>
+<a id='L400' name='L400'></a> 400                 <strong class='reserved'>public</strong> <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
+<a id='L401' name='L401'></a> 401                     <strong class='reserved'>final</strong> <a href='../S/1190.html#L185' title='Defined at 185 in src/java/util/ServiceLoader.java.'>ServiceLoader</a>&lt;<a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>&gt; loader =
+<a id='L402' name='L402'></a> 402                             <a href='../S/1190.html#L185' title='Defined at 185 in src/java/util/ServiceLoader.java.'>ServiceLoader</a>.<a href='../D/26888.html' title='Multiple defined in 27 places.'>load</a>(SERVICE_CLASS);
+<a id='L403' name='L403'></a> 403                     <strong class='reserved'>for</strong> (<a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a> : loader) <em class='brace'>{</em>
+<a id='L404' name='L404'></a> 404                         <em class='comment'>// restore initial context to call</em>
+<a id='L405' name='L405'></a> 405                         <em class='comment'>// factory.isSchemaLanguageSupported</em>
+<a id='L406' name='L406'></a> 406                         <strong class='reserved'>if</strong> (<a href='../S/4060.html#L375' title='Defined at 375 in src/javax/xml/validation/SchemaFactoryFinder.java.'>isSchemaLanguageSupportedBy</a>(<a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a>, schemaLanguage, acc)) <em class='brace'>{</em>
+<a id='L407' name='L407'></a> 407                             <strong class='reserved'>return</strong> <a href='../D/15962.html' title='Multiple defined in 2 places.'>factory</a>;
+<a id='L408' name='L408'></a> 408                         <em class='brace'>}</em>
+<a id='L409' name='L409'></a> 409                     <em class='brace'>}</em>
+<a id='L410' name='L410'></a> 410                     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>; <em class='comment'>// no factory found.</em>
+<a id='L411' name='L411'></a> 411                 <em class='brace'>}</em>
+<a id='L412' name='L412'></a> 412             <em class='brace'>}</em>);
+<a id='L413' name='L413'></a> 413         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1155.html#L59' title='Defined at 59 in src/java/util/ServiceConfigurationError.java.'>ServiceConfigurationError</a> <a href='../D/15699.html' title='Multiple defined in 51 places.'>error</a>) <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4059.html#L35' title='Defined at 35 in src/javax/xml/validation/SchemaFactoryConfigurationError.java.'>SchemaFactoryConfigurationError</a>(
+<a id='L415' name='L415'></a> 415                     "Provider for " + SERVICE_CLASS + " cannot be created", <a href='../D/15699.html' title='Multiple defined in 51 places.'>error</a>);
+<a id='L416' name='L416'></a> 416         <em class='brace'>}</em>
+<a id='L417' name='L417'></a> 417     <em class='brace'>}</em>
+<a id='L418' name='L418'></a> 418 
+<a id='L419' name='L419'></a> 419     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;<a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>&gt; SERVICE_CLASS = <a href='../S/4056.html#L110' title='Defined at 110 in src/javax/xml/validation/SchemaFactory.java.'>SchemaFactory</a>.<strong class='reserved'>class</strong>;
+<a id='L420' name='L420'></a> 420 
+<a id='L421' name='L421'></a> 421 
+<a id='L422' name='L422'></a> 422     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/30466.html' title='Multiple referred from 124 places.'>which</a>( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a> ) <em class='brace'>{</em>
+<a id='L423' name='L423'></a> 423         <strong class='reserved'>return</strong> <a href='../D/36852.html' title='Multiple defined in 6 places.'>which</a>( <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(), <a href='../S/986.html#L2481' title='Defined at 2481 in src/java/util/regex/Pattern.java.'>clazz</a>.<a href='../D/17691.html' title='Multiple defined in 20 places.'>getClassLoader</a>() );
+<a id='L424' name='L424'></a> 424     <em class='brace'>}</em>
+<a id='L425' name='L425'></a> 425 
+<a id='L426' name='L426'></a> 426     <em class='comment'>/**</em>
+<a id='L427' name='L427'></a> 427 <em class='comment'>     * &lt;p&gt;Search the specified classloader for the given classname.&lt;/p&gt;</em>
+<a id='L428' name='L428'></a> 428 <em class='comment'>     *</em>
+<a id='L429' name='L429'></a> 429 <em class='comment'>     * @param classname the fully qualified name of the class to search for</em>
+<a id='L430' name='L430'></a> 430 <em class='comment'>     * @param loader the classloader to search</em>
+<a id='L431' name='L431'></a> 431 <em class='comment'>     *</em>
+<a id='L432' name='L432'></a> 432 <em class='comment'>     * @return the source location of the resource, or null if it wasn't found</em>
+<a id='L433' name='L433'></a> 433 <em class='comment'>     */</em>
+<a id='L434' name='L434'></a> 434     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/30466.html' title='Multiple referred from 124 places.'>which</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> classname, <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> loader) <em class='brace'>{</em>
+<a id='L435' name='L435'></a> 435 
+<a id='L436' name='L436'></a> 436         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> classnameAsResource = classname.<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/') + ".class";
+<a id='L437' name='L437'></a> 437 
+<a id='L438' name='L438'></a> 438         <strong class='reserved'>if</strong>( loader==<strong class='reserved'>null</strong> )  loader = <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a>.<a href='../D/22895.html' title='Multiple defined in 7 places.'>getSystemClassLoader</a>();
+<a id='L439' name='L439'></a> 439 
+<a id='L440' name='L440'></a> 440         <em class='comment'>//URL it = loader.getResource(classnameAsResource);</em>
+<a id='L441' name='L441'></a> 441         <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> it = ss.<a href='../D/22046.html' title='Multiple defined in 2 places.'>getResourceAsURL</a>(loader, classnameAsResource);
+<a id='L442' name='L442'></a> 442         <strong class='reserved'>if</strong> (it != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L443' name='L443'></a> 443             <strong class='reserved'>return</strong> it.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L444' name='L444'></a> 444         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L445' name='L445'></a> 445             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
+<a id='L446' name='L446'></a> 446         <em class='brace'>}</em>
+<a id='L447' name='L447'></a> 447     <em class='brace'>}</em>
+<a id='L448' name='L448'></a> 448 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L79'>[^]</a><a href='#L434'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

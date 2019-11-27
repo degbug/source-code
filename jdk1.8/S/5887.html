@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7923.html'>xml</a>/<a href='../files/7924.html'>internal</a>/<a href='../files/7925.html'>dtm</a>/<a href='../files/7926.html'>ref</a>/ExpandedNameTable.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L135'>[^]</a><a href='#L367'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L135' title='Defined at 135.'>initExtendedTypes</a></li>
+<li><a href='#L158' title='Defined at 158.'>getExpandedTypeID</a></li>
+<li><a href='#L181' title='Defined at 181.'>getExpandedTypeID</a></li>
+<li><a href='#L247' title='Defined at 247.'>rehash</a></li>
+<li><a href='#L280' title='Defined at 280.'>getExpandedTypeID</a></li>
+<li><a href='#L291' title='Defined at 291.'>getLocalName</a></li>
+<li><a href='#L302' title='Defined at 302.'>getLocalNameID</a></li>
+<li><a href='#L319' title='Defined at 319.'>getNamespace</a></li>
+<li><a href='#L331' title='Defined at 331.'>getNamespaceID</a></li>
+<li><a href='#L346' title='Defined at 346.'>getType</a></li>
+<li><a href='#L357' title='Defined at 357.'>getSize</a></li>
+<li><a href='#L367' title='Defined at 367.'>getExtendedTypes</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 1999-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: ExpandedNameTable.java,v 1.2.4.1 2005/09/15 08:15:06 suresh_emailid Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>package</strong> com.sun.org.apache.xml.internal.dtm.<a href='../S/986.html#L2252' title='Defined at 2252 in src/java/util/regex/Pattern.java.'>ref</a>;
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> com.sun.org.apache.xml.internal.dtm.DTM;
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <em class='comment'>/**</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> * This is a default implementation of a table that manages mappings from</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * expanded names to expandedNameIDs.</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * %OPT% The performance of the getExpandedTypeID() method is very important</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * to DTM building. To get the best performance out of this class, we implement</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> * a simple hash algorithm directly into this class, instead of using the</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * inefficient java.util.Hashtable. The code for the get and put operations</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * are combined in getExpandedTypeID() method to share the same hash calculation</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * code. We only need to implement the rehash() interface which is used to</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * expand the hash table.</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> */</em>
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/2788.html' title='Multiple referred from 16 places.'>ExpandedNameTable</a>
+<a id='L40' name='L40'></a>  40 <em class='brace'>{</em>
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42   <em class='comment'>/** Array of extended types for this document   */</em>
+<a id='L43' name='L43'></a>  43   <strong class='reserved'>private</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[] m_extendedTypes;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45   <em class='comment'>/** The initial size of the m_extendedTypes array */</em>
+<a id='L46' name='L46'></a>  46   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> m_initialSize = 128;
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48   <em class='comment'>/** Next available extended type   */</em>
+<a id='L49' name='L49'></a>  49   <em class='comment'>// %REVIEW% Since this is (should be) always equal</em>
+<a id='L50' name='L50'></a>  50   <em class='comment'>// to the length of m_extendedTypes, do we need this?</em>
+<a id='L51' name='L51'></a>  51   <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> m_nextType;
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53   <em class='comment'>// These are all the types prerotated, for caller convenience.</em>
+<a id='L54' name='L54'></a>  54   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> ELEMENT = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.ELEMENT_NODE) ;
+<a id='L55' name='L55'></a>  55   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> ATTRIBUTE = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.ATTRIBUTE_NODE) ;
+<a id='L56' name='L56'></a>  56   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> TEXT = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.TEXT_NODE) ;
+<a id='L57' name='L57'></a>  57   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> CDATA_SECTION = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.CDATA_SECTION_NODE) ;
+<a id='L58' name='L58'></a>  58   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> ENTITY_REFERENCE = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.ENTITY_REFERENCE_NODE) ;
+<a id='L59' name='L59'></a>  59   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> ENTITY = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.ENTITY_NODE) ;
+<a id='L60' name='L60'></a>  60   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> PROCESSING_INSTRUCTION = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.PROCESSING_INSTRUCTION_NODE) ;
+<a id='L61' name='L61'></a>  61   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> COMMENT = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.COMMENT_NODE) ;
+<a id='L62' name='L62'></a>  62   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> DOCUMENT = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.DOCUMENT_NODE) ;
+<a id='L63' name='L63'></a>  63   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> DOCUMENT_TYPE = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.DOCUMENT_TYPE_NODE) ;
+<a id='L64' name='L64'></a>  64   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> DOCUMENT_FRAGMENT =((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.DOCUMENT_FRAGMENT_NODE) ;
+<a id='L65' name='L65'></a>  65   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NOTATION = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.NOTATION_NODE) ;
+<a id='L66' name='L66'></a>  66   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> NAMESPACE = ((<strong class='reserved'>int</strong>)<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.NAMESPACE_NODE) ;
+<a id='L67' name='L67'></a>  67 
+<a id='L68' name='L68'></a>  68   <em class='comment'>/** Workspace for lookup. NOT THREAD SAFE!</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>   * */</em>
+<a id='L70' name='L70'></a>  70   <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a> hashET = <strong class='reserved'>new</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>(-1, "", "");
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72   <em class='comment'>/** The array to store the default extended types. */</em>
+<a id='L73' name='L73'></a>  73   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[] m_defaultExtendedTypes;
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75   <em class='comment'>/**</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>   * The default load factor of the Hashtable.</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>   * This is used to calcualte the threshold.</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>   */</em>
+<a id='L79' name='L79'></a>  79   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>float</strong> m_loadFactor = 0.75f;
+<a id='L80' name='L80'></a>  80 
+<a id='L81' name='L81'></a>  81   <em class='comment'>/**</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>   * The initial capacity of the hash table. Use a bigger number</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>   * to avoid the cost of expanding the table.</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>   */</em>
+<a id='L85' name='L85'></a>  85   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> m_initialCapacity = 203;
+<a id='L86' name='L86'></a>  86 
+<a id='L87' name='L87'></a>  87   <em class='comment'>/**</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>   * The capacity of the hash table, i.e. the size of the</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>   * internal HashEntry array.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>   */</em>
+<a id='L91' name='L91'></a>  91   <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> m_capacity;
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93   <em class='comment'>/**</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>   * The threshold of the hash table, which is equal to capacity * loadFactor.</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>   * If the number of entries in the hash table is bigger than the threshold,</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>   * the hash table needs to be expanded.</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>   */</em>
+<a id='L98' name='L98'></a>  98   <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> m_threshold;
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100   <em class='comment'>/**</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>   * The internal array to store the hash entries.</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>   * Each array member is a slot for a hash bucket.</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>   */</em>
+<a id='L104' name='L104'></a> 104   <strong class='reserved'>private</strong> <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>[] m_table;
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106   <em class='comment'>/**</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>   * Init default values</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>   */</em>
+<a id='L109' name='L109'></a> 109   <strong class='reserved'>static</strong> <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110     m_defaultExtendedTypes = <strong class='reserved'>new</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[<a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.NTYPES];
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112     <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.NTYPES; i++)
+<a id='L113' name='L113'></a> 113     <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114       m_defaultExtendedTypes[i] = <strong class='reserved'>new</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>(i, "", "");
+<a id='L115' name='L115'></a> 115     <em class='brace'>}</em>
+<a id='L116' name='L116'></a> 116   <em class='brace'>}</em>
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118   <em class='comment'>/**</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>   * Create an expanded name table.</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>   */</em>
+<a id='L121' name='L121'></a> 121   <strong class='reserved'>public</strong> ExpandedNameTable()
+<a id='L122' name='L122'></a> 122   <em class='brace'>{</em>
+<a id='L123' name='L123'></a> 123     m_capacity = m_initialCapacity;
+<a id='L124' name='L124'></a> 124     m_threshold = (<strong class='reserved'>int</strong>)(m_capacity * m_loadFactor);
+<a id='L125' name='L125'></a> 125     m_table = <strong class='reserved'>new</strong> <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>[m_capacity];
+<a id='L126' name='L126'></a> 126 
+<a id='L127' name='L127'></a> 127     <a href='../S/5887.html#L135' title='Defined at 135 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>initExtendedTypes</a>();
+<a id='L128' name='L128'></a> 128   <em class='brace'>}</em>
+<a id='L129' name='L129'></a> 129 
+<a id='L130' name='L130'></a> 130 
+<a id='L131' name='L131'></a> 131   <em class='comment'>/**</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>   *  Initialize the vector of extended types with the</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>   *  basic DOM node types.</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>   */</em>
+<a id='L135' name='L135'></a> 135   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/5887.html#L127' title='Referred from 127 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>initExtendedTypes</a>()
+<a id='L136' name='L136'></a> 136   <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137     m_extendedTypes = <strong class='reserved'>new</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[m_initialSize];
+<a id='L138' name='L138'></a> 138     <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.NTYPES; i++) <em class='brace'>{</em>
+<a id='L139' name='L139'></a> 139         m_extendedTypes[i] = m_defaultExtendedTypes[i];
+<a id='L140' name='L140'></a> 140         m_table[i] = <strong class='reserved'>new</strong> <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>(m_defaultExtendedTypes[i], i, i, <strong class='reserved'>null</strong>);
+<a id='L141' name='L141'></a> 141     <em class='brace'>}</em>
+<a id='L142' name='L142'></a> 142 
+<a id='L143' name='L143'></a> 143     m_nextType = <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.NTYPES;
+<a id='L144' name='L144'></a> 144   <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146   <em class='comment'>/**</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>   * Given an expanded name represented by namespace, local name and node type,</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>   * return an ID.  If the expanded-name does not exist in the internal tables,</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>   * the entry will be created, and the ID will be returned.  Any additional</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>   * nodes that are created that have this expanded name will use this ID.</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>   *</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>   * @param namespace The namespace</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>   * @param localName The local name</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>   * @param type The node type</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>   *</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>   * @return the expanded-name id of the node.</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>   */</em>
+<a id='L158' name='L158'></a> 158   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/16489.html' title='Multiple referred from 61 places.'>getExpandedTypeID</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>)
+<a id='L159' name='L159'></a> 159   <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160     <strong class='reserved'>return</strong> <a href='../D/18929.html' title='Multiple defined in 16 places.'>getExpandedTypeID</a>(<a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>, <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, <strong class='reserved'>false</strong>);
+<a id='L161' name='L161'></a> 161   <em class='brace'>}</em>
+<a id='L162' name='L162'></a> 162 
+<a id='L163' name='L163'></a> 163   <em class='comment'>/**</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>   * Given an expanded name represented by namespace, local name and node type,</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>   * return an ID.  If the expanded-name does not exist in the internal tables,</em>
+<a id='L166' name='L166'></a> 166 <em class='comment'>   * the entry will be created, and the ID will be returned.  Any additional</em>
+<a id='L167' name='L167'></a> 167 <em class='comment'>   * nodes that are created that have this expanded name will use this ID.</em>
+<a id='L168' name='L168'></a> 168 <em class='comment'>   * &lt;p&gt;</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>   * If searchOnly is true, we will return -1 if the name is not found in the</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>   * table, otherwise the name is added to the table and the expanded name id</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>   * of the new entry is returned.</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>   *</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>   * @param namespace The namespace</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>   * @param localName The local name</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>   * @param type The node type</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>   * @param searchOnly If it is true, we will only search for the expanded name.</em>
+<a id='L177' name='L177'></a> 177 <em class='comment'>   * -1 is return is the name is not found.</em>
+<a id='L178' name='L178'></a> 178 <em class='comment'>   *</em>
+<a id='L179' name='L179'></a> 179 <em class='comment'>   * @return the expanded-name id of the node.</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>   */</em>
+<a id='L181' name='L181'></a> 181   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/16489.html' title='Multiple referred from 61 places.'>getExpandedTypeID</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, <strong class='reserved'>boolean</strong> searchOnly)
+<a id='L182' name='L182'></a> 182   <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183     <strong class='reserved'>if</strong> (<strong class='reserved'>null</strong> == <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>)
+<a id='L184' name='L184'></a> 184       <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a> = "";
+<a id='L185' name='L185'></a> 185     <strong class='reserved'>if</strong> (<strong class='reserved'>null</strong> == <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>)
+<a id='L186' name='L186'></a> 186       <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a> = "";
+<a id='L187' name='L187'></a> 187 
+<a id='L188' name='L188'></a> 188     <em class='comment'>// Calculate the hash code</em>
+<a id='L189' name='L189'></a> 189     <strong class='reserved'>int</strong> <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> = <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> + <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>.<a href='../D/24220.html' title='Multiple defined in 552 places.'>hashCode</a>() + <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>.<a href='../D/24220.html' title='Multiple defined in 552 places.'>hashCode</a>();
+<a id='L190' name='L190'></a> 190 
+<a id='L191' name='L191'></a> 191     <em class='comment'>// Redefine the hashET object to represent the new expanded name.</em>
+<a id='L192' name='L192'></a> 192     hashET.<a href='../D/30422.html' title='Multiple defined in 2 places.'>redefine</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>, <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a>);
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194     <em class='comment'>// Calculate the index into the HashEntry table.</em>
+<a id='L195' name='L195'></a> 195     <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> % m_capacity;
+<a id='L196' name='L196'></a> 196     <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> &lt; 0)
+<a id='L197' name='L197'></a> 197       <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = -<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;
+<a id='L198' name='L198'></a> 198 
+<a id='L199' name='L199'></a> 199     <em class='comment'>// Look up the expanded name in the hash table. Return the id if</em>
+<a id='L200' name='L200'></a> 200     <em class='comment'>// the expanded name is already in the hash table.</em>
+<a id='L201' name='L201'></a> 201     <strong class='reserved'>for</strong> (<a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a> e = m_table[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>]; e != <strong class='reserved'>null</strong>; e = e.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>)
+<a id='L202' name='L202'></a> 202     <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203       <strong class='reserved'>if</strong> (e.<a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> == <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> &amp;&amp; e.<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(hashET))
+<a id='L204' name='L204'></a> 204         <strong class='reserved'>return</strong> e.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L205' name='L205'></a> 205     <em class='brace'>}</em>
+<a id='L206' name='L206'></a> 206 
+<a id='L207' name='L207'></a> 207     <strong class='reserved'>if</strong> (searchOnly)
+<a id='L208' name='L208'></a> 208     <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209       <strong class='reserved'>return</strong> <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a>.<a href='../S/2603.html#L115' title='Defined at 115 in src/java/sql/JDBCType.java.'>NULL</a>;
+<a id='L210' name='L210'></a> 210     <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211 
+<a id='L212' name='L212'></a> 212     <em class='comment'>// Expand the internal HashEntry array if necessary.</em>
+<a id='L213' name='L213'></a> 213     <strong class='reserved'>if</strong> (m_nextType &gt; m_threshold) <em class='brace'>{</em>
+<a id='L214' name='L214'></a> 214       <a href='../D/30620.html' title='Multiple defined in 6 places.'>rehash</a>();
+<a id='L215' name='L215'></a> 215       <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> % m_capacity;
+<a id='L216' name='L216'></a> 216       <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> &lt; 0)
+<a id='L217' name='L217'></a> 217         <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = -<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;
+<a id='L218' name='L218'></a> 218     <em class='brace'>}</em>
+<a id='L219' name='L219'></a> 219 
+<a id='L220' name='L220'></a> 220     <em class='comment'>// Create a new ExtendedType object</em>
+<a id='L221' name='L221'></a> 221     <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a> newET = <strong class='reserved'>new</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>(<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>, <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>, <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a>);
+<a id='L222' name='L222'></a> 222 
+<a id='L223' name='L223'></a> 223     <em class='comment'>// Expand the m_extendedTypes array if necessary.</em>
+<a id='L224' name='L224'></a> 224     <strong class='reserved'>if</strong> (m_extendedTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == m_nextType) <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225         <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[] <a href='../D/27956.html' title='Multiple defined in 13 places.'>newArray</a> = <strong class='reserved'>new</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[m_extendedTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> * 2];
+<a id='L226' name='L226'></a> 226         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(m_extendedTypes, 0, <a href='../D/27956.html' title='Multiple defined in 13 places.'>newArray</a>, 0,
+<a id='L227' name='L227'></a> 227                          m_extendedTypes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L228' name='L228'></a> 228         m_extendedTypes = <a href='../D/27956.html' title='Multiple defined in 13 places.'>newArray</a>;
+<a id='L229' name='L229'></a> 229     <em class='brace'>}</em>
+<a id='L230' name='L230'></a> 230 
+<a id='L231' name='L231'></a> 231     m_extendedTypes[m_nextType] = newET;
+<a id='L232' name='L232'></a> 232 
+<a id='L233' name='L233'></a> 233     <em class='comment'>// Create a new hash entry for the new ExtendedType and put it into</em>
+<a id='L234' name='L234'></a> 234     <em class='comment'>// the table.</em>
+<a id='L235' name='L235'></a> 235     <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a> entry = <strong class='reserved'>new</strong> <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>(newET, m_nextType, <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a>, m_table[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>]);
+<a id='L236' name='L236'></a> 236     m_table[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>] = entry;
+<a id='L237' name='L237'></a> 237 
+<a id='L238' name='L238'></a> 238     <strong class='reserved'>return</strong> m_nextType++;
+<a id='L239' name='L239'></a> 239   <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241   <em class='comment'>/**</em>
+<a id='L242' name='L242'></a> 242 <em class='comment'>   * Increases the capacity of and internally reorganizes the hashtable,</em>
+<a id='L243' name='L243'></a> 243 <em class='comment'>   * in order to accommodate and access its entries more efficiently.</em>
+<a id='L244' name='L244'></a> 244 <em class='comment'>   * This method is called when the number of keys in the hashtable exceeds</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>   * this hashtable's capacity and load factor.</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>   */</em>
+<a id='L247' name='L247'></a> 247   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25834.html' title='Multiple referred from 6 places.'>rehash</a>()
+<a id='L248' name='L248'></a> 248   <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249     <strong class='reserved'>int</strong> oldCapacity = m_capacity;
+<a id='L250' name='L250'></a> 250     <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>[] oldTable = m_table;
+<a id='L251' name='L251'></a> 251 
+<a id='L252' name='L252'></a> 252     <strong class='reserved'>int</strong> newCapacity = 2 * oldCapacity + 1;
+<a id='L253' name='L253'></a> 253     m_capacity = newCapacity;
+<a id='L254' name='L254'></a> 254     m_threshold = (<strong class='reserved'>int</strong>)(newCapacity * m_loadFactor);
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256     m_table = <strong class='reserved'>new</strong> <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>[newCapacity];
+<a id='L257' name='L257'></a> 257     <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = oldCapacity-1; i &gt;=0 ; i--)
+<a id='L258' name='L258'></a> 258     <em class='brace'>{</em>
+<a id='L259' name='L259'></a> 259       <strong class='reserved'>for</strong> (<a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a> old = oldTable[i]; old != <strong class='reserved'>null</strong>; )
+<a id='L260' name='L260'></a> 260       <em class='brace'>{</em>
+<a id='L261' name='L261'></a> 261         <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a> e = old;
+<a id='L262' name='L262'></a> 262         old = old.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L263' name='L263'></a> 263 
+<a id='L264' name='L264'></a> 264         <strong class='reserved'>int</strong> <a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a> = e.<a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> % newCapacity;
+<a id='L265' name='L265'></a> 265         <strong class='reserved'>if</strong> (<a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a> &lt; 0)
+<a id='L266' name='L266'></a> 266           <a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a> = -<a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a>;
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268         e.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = m_table[<a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a>];
+<a id='L269' name='L269'></a> 269         m_table[<a href='../S/1626.html#L1437' title='Defined at 1437 in src/java/lang/invoke/LambdaForm.java.'>newIndex</a>] = e;
+<a id='L270' name='L270'></a> 270       <em class='brace'>}</em>
+<a id='L271' name='L271'></a> 271     <em class='brace'>}</em>
+<a id='L272' name='L272'></a> 272   <em class='brace'>}</em>
+<a id='L273' name='L273'></a> 273 
+<a id='L274' name='L274'></a> 274   <em class='comment'>/**</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>   * Given a type, return an expanded name ID.Any additional nodes that are</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>   * created that have this expanded name will use this ID.</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>   *</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>   * @return the expanded-name id of the node.</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>   */</em>
+<a id='L280' name='L280'></a> 280   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/16489.html' title='Multiple referred from 61 places.'>getExpandedTypeID</a>(<strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>)
+<a id='L281' name='L281'></a> 281   <em class='brace'>{</em>
+<a id='L282' name='L282'></a> 282     <strong class='reserved'>return</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>;
+<a id='L283' name='L283'></a> 283   <em class='brace'>}</em>
+<a id='L284' name='L284'></a> 284 
+<a id='L285' name='L285'></a> 285   <em class='comment'>/**</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>   * Given an expanded-name ID, return the local name part.</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>   *</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>   * @param ExpandedNameID an ID that represents an expanded-name.</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>   * @return String Local name of this node, or null if the node has no name.</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>   */</em>
+<a id='L291' name='L291'></a> 291   <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/17419.html' title='Multiple referred from 323 places.'>getLocalName</a>(<strong class='reserved'>int</strong> ExpandedNameID)
+<a id='L292' name='L292'></a> 292   <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293     <strong class='reserved'>return</strong> m_extendedTypes[ExpandedNameID].<a href='../D/20201.html' title='Multiple defined in 44 places.'>getLocalName</a>();
+<a id='L294' name='L294'></a> 294   <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295 
+<a id='L296' name='L296'></a> 296   <em class='comment'>/**</em>
+<a id='L297' name='L297'></a> 297 <em class='comment'>   * Given an expanded-name ID, return the local name ID.</em>
+<a id='L298' name='L298'></a> 298 <em class='comment'>   *</em>
+<a id='L299' name='L299'></a> 299 <em class='comment'>   * @param ExpandedNameID an ID that represents an expanded-name.</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>   * @return The id of this local name.</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>   */</em>
+<a id='L302' name='L302'></a> 302   <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../R/17421.html' title='Multiple referred from 4 places.'>getLocalNameID</a>(<strong class='reserved'>int</strong> ExpandedNameID)
+<a id='L303' name='L303'></a> 303   <em class='brace'>{</em>
+<a id='L304' name='L304'></a> 304     <em class='comment'>// ExtendedType etype = m_extendedTypes[ExpandedNameID];</em>
+<a id='L305' name='L305'></a> 305     <strong class='reserved'>if</strong> (m_extendedTypes[ExpandedNameID].<a href='../D/20201.html' title='Multiple defined in 44 places.'>getLocalName</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(""))
+<a id='L306' name='L306'></a> 306       <strong class='reserved'>return</strong> 0;
+<a id='L307' name='L307'></a> 307     <strong class='reserved'>else</strong>
+<a id='L308' name='L308'></a> 308     <strong class='reserved'>return</strong> ExpandedNameID;
+<a id='L309' name='L309'></a> 309   <em class='brace'>}</em>
+<a id='L310' name='L310'></a> 310 
+<a id='L311' name='L311'></a> 311 
+<a id='L312' name='L312'></a> 312   <em class='comment'>/**</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>   * Given an expanded-name ID, return the namespace URI part.</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>   *</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>   * @param ExpandedNameID an ID that represents an expanded-name.</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>   * @return String URI value of this node's namespace, or null if no</em>
+<a id='L317' name='L317'></a> 317 <em class='comment'>   * namespace was resolved.</em>
+<a id='L318' name='L318'></a> 318 <em class='comment'>   */</em>
+<a id='L319' name='L319'></a> 319   <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/17847.html' title='Multiple referred from 90 places.'>getNamespace</a>(<strong class='reserved'>int</strong> ExpandedNameID)
+<a id='L320' name='L320'></a> 320   <em class='brace'>{</em>
+<a id='L321' name='L321'></a> 321     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a> = m_extendedTypes[ExpandedNameID].<a href='../D/20808.html' title='Multiple defined in 28 places.'>getNamespace</a>();
+<a id='L322' name='L322'></a> 322     <strong class='reserved'>return</strong> (<a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("") ? <strong class='reserved'>null</strong> : <a href='../D/27870.html' title='Multiple defined in 10 places.'>namespace</a>);
+<a id='L323' name='L323'></a> 323   <em class='brace'>}</em>
+<a id='L324' name='L324'></a> 324 
+<a id='L325' name='L325'></a> 325   <em class='comment'>/**</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>   * Given an expanded-name ID, return the namespace URI ID.</em>
+<a id='L327' name='L327'></a> 327 <em class='comment'>   *</em>
+<a id='L328' name='L328'></a> 328 <em class='comment'>   * @param ExpandedNameID an ID that represents an expanded-name.</em>
+<a id='L329' name='L329'></a> 329 <em class='comment'>   * @return The id of this namespace.</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>   */</em>
+<a id='L331' name='L331'></a> 331   <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../R/17854.html' title='Multiple referred from 7 places.'>getNamespaceID</a>(<strong class='reserved'>int</strong> ExpandedNameID)
+<a id='L332' name='L332'></a> 332   <em class='brace'>{</em>
+<a id='L333' name='L333'></a> 333     <em class='comment'>//ExtendedType etype = m_extendedTypes[ExpandedNameID];</em>
+<a id='L334' name='L334'></a> 334     <strong class='reserved'>if</strong> (m_extendedTypes[ExpandedNameID].<a href='../D/20808.html' title='Multiple defined in 28 places.'>getNamespace</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(""))
+<a id='L335' name='L335'></a> 335       <strong class='reserved'>return</strong> 0;
+<a id='L336' name='L336'></a> 336     <strong class='reserved'>else</strong>
+<a id='L337' name='L337'></a> 337     <strong class='reserved'>return</strong> ExpandedNameID;
+<a id='L338' name='L338'></a> 338   <em class='brace'>}</em>
+<a id='L339' name='L339'></a> 339 
+<a id='L340' name='L340'></a> 340   <em class='comment'>/**</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>   * Given an expanded-name ID, return the local name ID.</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>   *</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>   * @param ExpandedNameID an ID that represents an expanded-name.</em>
+<a id='L344' name='L344'></a> 344 <em class='comment'>   * @return The id of this local name.</em>
+<a id='L345' name='L345'></a> 345 <em class='comment'>   */</em>
+<a id='L346' name='L346'></a> 346   <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>short</strong> <a href='../R/19609.html' title='Multiple referred from 540 places.'>getType</a>(<strong class='reserved'>int</strong> ExpandedNameID)
+<a id='L347' name='L347'></a> 347   <em class='brace'>{</em>
+<a id='L348' name='L348'></a> 348     <em class='comment'>//ExtendedType etype = m_extendedTypes[ExpandedNameID];</em>
+<a id='L349' name='L349'></a> 349     <strong class='reserved'>return</strong> (<strong class='reserved'>short</strong>)m_extendedTypes[ExpandedNameID].<a href='../D/20988.html' title='Multiple defined in 34 places.'>getNodeType</a>();
+<a id='L350' name='L350'></a> 350   <em class='brace'>}</em>
+<a id='L351' name='L351'></a> 351 
+<a id='L352' name='L352'></a> 352   <em class='comment'>/**</em>
+<a id='L353' name='L353'></a> 353 <em class='comment'>   * Return the size of the ExpandedNameTable</em>
+<a id='L354' name='L354'></a> 354 <em class='comment'>   *</em>
+<a id='L355' name='L355'></a> 355 <em class='comment'>   * @return The size of the ExpandedNameTable</em>
+<a id='L356' name='L356'></a> 356 <em class='comment'>   */</em>
+<a id='L357' name='L357'></a> 357   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/19054.html' title='Multiple referred from 291 places.'>getSize</a>()
+<a id='L358' name='L358'></a> 358   <em class='brace'>{</em>
+<a id='L359' name='L359'></a> 359     <strong class='reserved'>return</strong> m_nextType;
+<a id='L360' name='L360'></a> 360   <em class='brace'>}</em>
+<a id='L361' name='L361'></a> 361 
+<a id='L362' name='L362'></a> 362   <em class='comment'>/**</em>
+<a id='L363' name='L363'></a> 363 <em class='comment'>   * Return the array of extended types</em>
+<a id='L364' name='L364'></a> 364 <em class='comment'>   *</em>
+<a id='L365' name='L365'></a> 365 <em class='comment'>   * @return The array of extended types</em>
+<a id='L366' name='L366'></a> 366 <em class='comment'>   */</em>
+<a id='L367' name='L367'></a> 367   <strong class='reserved'>public</strong> <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a>[] <a href='../S/5891.html#L2316' title='Referred from 2316 in src/com/sun/org/apache/xml/internal/dtm/ref/sax2dtm/SAX2DTM2.java.'>getExtendedTypes</a>()
+<a id='L368' name='L368'></a> 368   <em class='brace'>{</em>
+<a id='L369' name='L369'></a> 369     <strong class='reserved'>return</strong> m_extendedTypes;
+<a id='L370' name='L370'></a> 370   <em class='brace'>}</em>
+<a id='L371' name='L371'></a> 371 
+<a id='L372' name='L372'></a> 372   <em class='comment'>/**</em>
+<a id='L373' name='L373'></a> 373 <em class='comment'>   * Inner class which represents a hash table entry.</em>
+<a id='L374' name='L374'></a> 374 <em class='comment'>   * The field next points to the next entry which is hashed into</em>
+<a id='L375' name='L375'></a> 375 <em class='comment'>   * the same bucket in the case of "hash collision".</em>
+<a id='L376' name='L376'></a> 376 <em class='comment'>   */</em>
+<a id='L377' name='L377'></a> 377   <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/3383.html' title='Multiple referred from 11 places.'>HashEntry</a>
+<a id='L378' name='L378'></a> 378   <em class='brace'>{</em>
+<a id='L379' name='L379'></a> 379     <a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>;
+<a id='L380' name='L380'></a> 380     <strong class='reserved'>int</strong> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L381' name='L381'></a> 381     <strong class='reserved'>int</strong> <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a>;
+<a id='L382' name='L382'></a> 382     <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384     <strong class='reserved'>protected</strong> <a href='../S/5887.html#L377' title='Defined at 377 in src/com/sun/org/apache/xml/internal/dtm/ref/ExpandedNameTable.java.'>HashEntry</a>(<a href='../S/5898.html#L29' title='Defined at 29 in src/com/sun/org/apache/xml/internal/dtm/ref/ExtendedType.java.'>ExtendedType</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>, <strong class='reserved'>int</strong> <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>, <strong class='reserved'>int</strong> <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a>, HashEntry <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>)
+<a id='L385' name='L385'></a> 385     <em class='brace'>{</em>
+<a id='L386' name='L386'></a> 386       <strong class='reserved'>this</strong>.<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>;
+<a id='L387' name='L387'></a> 387       <strong class='reserved'>this</strong>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> = <a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
+<a id='L388' name='L388'></a> 388       <strong class='reserved'>this</strong>.<a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a> = <a href='../D/24219.html' title='Multiple defined in 17 places.'>hash</a>;
+<a id='L389' name='L389'></a> 389       <strong class='reserved'>this</strong>.<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>;
+<a id='L390' name='L390'></a> 390     <em class='brace'>}</em>
+<a id='L391' name='L391'></a> 391   <em class='brace'>}</em>
+<a id='L392' name='L392'></a> 392 
+<a id='L393' name='L393'></a> 393 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L135'>[^]</a><a href='#L367'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

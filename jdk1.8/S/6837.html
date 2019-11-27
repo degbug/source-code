@@ -1,0 +1,1135 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/imageio/plugins/gif/GIFImageReader.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7817.html'>imageio</a>/<a href='../files/7818.html'>plugins</a>/<a href='../files/7821.html'>gif</a>/GIFImageReader.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L131'>[^]</a><a href='#L1059'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L131' title='Defined at 131.'>setInput</a></li>
+<li><a href='#L149' title='Defined at 149.'>getNumImages</a></li>
+<li><a href='#L169' title='Defined at 169.'>checkIndex</a></li>
+<li><a href='#L178' title='Defined at 178.'>getWidth</a></li>
+<li><a href='#L189' title='Defined at 189.'>getHeight</a></li>
+<li><a href='#L202' title='Defined at 202.'>createIndexed</a></li>
+<li><a href='#L230' title='Defined at 230.'>getImageTypes</a></li>
+<li><a href='#L291' title='Defined at 291.'>getDefaultReadParam</a></li>
+<li><a href='#L295' title='Defined at 295.'>getStreamMetadata</a></li>
+<li><a href='#L300' title='Defined at 300.'>getImageMetadata</a></li>
+<li><a href='#L313' title='Defined at 313.'>initNext32Bits</a></li>
+<li><a href='#L327' title='Defined at 327.'>getCode</a></li>
+<li><a href='#L365' title='Defined at 365.'>initializeStringTable</a></li>
+<li><a href='#L407' title='Defined at 407.'>outputRow</a></li>
+<li><a href='#L433' title='Defined at 433.'>computeDecodeThisRow</a></li>
+<li><a href='#L441' title='Defined at 441.'>outputPixels</a></li>
+<li><a href='#L494' title='Defined at 494.'>readHeader</a></li>
+<li><a href='#L545' title='Defined at 545.'>skipImage</a></li>
+<li><a href='#L600' title='Defined at 600.'>locateImage</a></li>
+<li><a href='#L634' title='Defined at 634.'>concatenateBlocks</a></li>
+<li><a href='#L651' title='Defined at 651.'>readMetadata</a></li>
+<li><a href='#L796' title='Defined at 796.'>copyData</a></li>
+<li><a href='#L806' title='Defined at 806.'>startPass</a></li>
+<li><a href='#L850' title='Defined at 850.'>read</a></li>
+<li><a href='#L1021' title='Defined at 1021.'>reset</a></li>
+<li><a href='#L1029' title='Defined at 1029.'>resetStreamSettings</a></li>
+<li><a href='#L1059' title='Defined at 1059.'>getDefaultPalette</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.imageio.plugins.gif;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.Point;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.Rectangle;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.awt.image.BufferedImage;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.awt.image.DataBuffer;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.awt.image.WritableRaster;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.io.EOFException;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.io.IOException;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.nio.ByteOrder;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.ArrayList;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.Iterator;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.List;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> javax.imageio.IIOException;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> javax.imageio.ImageReader;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> javax.imageio.ImageReadParam;
+<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> javax.imageio.ImageTypeSpecifier;
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> javax.imageio.metadata.IIOMetadata;
+<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> javax.imageio.spi.ImageReaderSpi;
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> javax.imageio.stream.ImageInputStream;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.imageio.plugins.common.ReaderUtil;
+<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> java.awt.image.ColorModel;
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> java.awt.image.IndexColorModel;
+<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> java.awt.image.MultiPixelPackedSampleModel;
+<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> java.awt.image.PixelInterleavedSampleModel;
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> java.awt.image.SampleModel;
+<a id='L52' name='L52'></a>  52 
+<a id='L53' name='L53'></a>  53 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../S/6841.html#L96' title='Referred from 96 in src/com/sun/imageio/plugins/gif/GIFImageReaderSpi.java.'>GIFImageReader</a> <strong class='reserved'>extends</strong> <a href='../S/4230.html#L73' title='Defined at 73 in src/javax/imageio/ImageReader.java.'>ImageReader</a> <em class='brace'>{</em>
+<a id='L54' name='L54'></a>  54 
+<a id='L55' name='L55'></a>  55     <em class='comment'>// The current ImageInputStream source.</em>
+<a id='L56' name='L56'></a>  56     <a href='../S/4202.html#L46' title='Defined at 46 in src/javax/imageio/stream/ImageInputStream.java.'>ImageInputStream</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>null</strong>;
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58     <em class='comment'>// Per-stream settings</em>
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <em class='comment'>// True if the file header including stream metadata has been read.</em>
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>boolean</strong> gotHeader = <strong class='reserved'>false</strong>;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63     <em class='comment'>// Global metadata, read once per input setting.</em>
+<a id='L64' name='L64'></a>  64     <a href='../S/6842.html#L35' title='Defined at 35 in src/com/sun/imageio/plugins/gif/GIFStreamMetadata.java.'>GIFStreamMetadata</a> streamMetadata = <strong class='reserved'>null</strong>;
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66     <em class='comment'>// The current image index</em>
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>int</strong> currIndex = -1;
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <em class='comment'>// Metadata for image at 'currIndex', or null.</em>
+<a id='L70' name='L70'></a>  70     <a href='../S/6849.html#L40' title='Defined at 40 in src/com/sun/imageio/plugins/gif/GIFImageMetadata.java.'>GIFImageMetadata</a> imageMetadata = <strong class='reserved'>null</strong>;
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <em class='comment'>// A List of Longs indicating the stream positions of the</em>
+<a id='L73' name='L73'></a>  73     <em class='comment'>// start of the metadata for each image.  Entries are added</em>
+<a id='L74' name='L74'></a>  74     <em class='comment'>// as needed.</em>
+<a id='L75' name='L75'></a>  75     <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> imageStartPosition = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L76' name='L76'></a>  76 
+<a id='L77' name='L77'></a>  77     <em class='comment'>// Length of metadata for image at 'currIndex', valid only if</em>
+<a id='L78' name='L78'></a>  78     <em class='comment'>// imageMetadata != null.</em>
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>int</strong> imageMetadataLength;
+<a id='L80' name='L80'></a>  80 
+<a id='L81' name='L81'></a>  81     <em class='comment'>// The number of images in the stream, if known, otherwise -1.</em>
+<a id='L82' name='L82'></a>  82     <strong class='reserved'>int</strong> numImages = -1;
+<a id='L83' name='L83'></a>  83 
+<a id='L84' name='L84'></a>  84     <em class='comment'>// Variables used by the LZW decoding process</em>
+<a id='L85' name='L85'></a>  85     <strong class='reserved'>byte</strong>[] <a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[255];
+<a id='L86' name='L86'></a>  86     <strong class='reserved'>int</strong> blockLength = 0;
+<a id='L87' name='L87'></a>  87     <strong class='reserved'>int</strong> bitPos = 0;
+<a id='L88' name='L88'></a>  88     <strong class='reserved'>int</strong> <a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a> = 0;
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>int</strong> initCodeSize;
+<a id='L90' name='L90'></a>  90     <strong class='reserved'>int</strong> clearCode;
+<a id='L91' name='L91'></a>  91     <strong class='reserved'>int</strong> eofCode;
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93     <em class='comment'>// 32-bit lookahead buffer</em>
+<a id='L94' name='L94'></a>  94     <strong class='reserved'>int</strong> next32Bits = 0;
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <em class='comment'>// Try if the end of the data blocks has been found,</em>
+<a id='L97' name='L97'></a>  97     <em class='comment'>// and we are simply draining the 32-bit buffer</em>
+<a id='L98' name='L98'></a>  98     <strong class='reserved'>boolean</strong> lastBlockFound = <strong class='reserved'>false</strong>;
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100     <em class='comment'>// The image to be written.</em>
+<a id='L101' name='L101'></a> 101     <a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a> theImage = <strong class='reserved'>null</strong>;
+<a id='L102' name='L102'></a> 102 
+<a id='L103' name='L103'></a> 103     <em class='comment'>// The image's tile.</em>
+<a id='L104' name='L104'></a> 104     <a href='../S/2280.html#L49' title='Defined at 49 in src/java/awt/image/WritableRaster.java.'>WritableRaster</a> theTile = <strong class='reserved'>null</strong>;
+<a id='L105' name='L105'></a> 105 
+<a id='L106' name='L106'></a> 106     <em class='comment'>// The image dimensions (from the stream).</em>
+<a id='L107' name='L107'></a> 107     <strong class='reserved'>int</strong> <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> = -1, <a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> = -1;
+<a id='L108' name='L108'></a> 108 
+<a id='L109' name='L109'></a> 109     <em class='comment'>// The pixel currently being decoded (in the stream's coordinates).</em>
+<a id='L110' name='L110'></a> 110     <strong class='reserved'>int</strong> streamX = -1, streamY = -1;
+<a id='L111' name='L111'></a> 111 
+<a id='L112' name='L112'></a> 112     <em class='comment'>// The number of rows decoded</em>
+<a id='L113' name='L113'></a> 113     <strong class='reserved'>int</strong> rowsDone = 0;
+<a id='L114' name='L114'></a> 114 
+<a id='L115' name='L115'></a> 115     <em class='comment'>// The current interlace pass, starting with 0.</em>
+<a id='L116' name='L116'></a> 116     <strong class='reserved'>int</strong> interlacePass = 0;
+<a id='L117' name='L117'></a> 117 
+<a id='L118' name='L118'></a> 118     <strong class='reserved'>private</strong> <strong class='reserved'>byte</strong>[] fallbackColorTable = <strong class='reserved'>null</strong>;
+<a id='L119' name='L119'></a> 119 
+<a id='L120' name='L120'></a> 120     <em class='comment'>// End per-stream settings</em>
+<a id='L121' name='L121'></a> 121 
+<a id='L122' name='L122'></a> 122     <em class='comment'>// Constants used to control interlacing.</em>
+<a id='L123' name='L123'></a> 123     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>[] interlaceIncrement = <em class='brace'>{</em> 8, 8, 4, 2, -1 <em class='brace'>}</em>;
+<a id='L124' name='L124'></a> 124     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>[] interlaceOffset = <em class='brace'>{</em> 0, 4, 2, 1, -1 <em class='brace'>}</em>;
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126     <strong class='reserved'>public</strong> GIFImageReader(<a href='../S/4224.html#L74' title='Defined at 74 in src/javax/imageio/spi/ImageReaderSpi.java.'>ImageReaderSpi</a> originatingProvider) <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>super</strong>(originatingProvider);
+<a id='L128' name='L128'></a> 128     <em class='brace'>}</em>
+<a id='L129' name='L129'></a> 129 
+<a id='L130' name='L130'></a> 130     <em class='comment'>// Take input from an ImageInputStream</em>
+<a id='L131' name='L131'></a> 131     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27573.html' title='Multiple referred from 20 places.'>setInput</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>,
+<a id='L132' name='L132'></a> 132                          <strong class='reserved'>boolean</strong> seekForwardOnly,
+<a id='L133' name='L133'></a> 133                          <strong class='reserved'>boolean</strong> ignoreMetadata) <em class='brace'>{</em>
+<a id='L134' name='L134'></a> 134         <strong class='reserved'>super</strong>.<a href='../D/32954.html' title='Multiple defined in 12 places.'>setInput</a>(<a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>, seekForwardOnly, ignoreMetadata);
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>if</strong> (<a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136             <strong class='reserved'>if</strong> (!(<a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a> <strong class='reserved'>instanceof</strong> <a href='../S/4202.html#L46' title='Defined at 46 in src/javax/imageio/stream/ImageInputStream.java.'>ImageInputStream</a>)) <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>
+<a id='L138' name='L138'></a> 138                     ("input not an ImageInputStream!");
+<a id='L139' name='L139'></a> 139             <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140             <strong class='reserved'>this</strong>.<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = (<a href='../S/4202.html#L46' title='Defined at 46 in src/javax/imageio/stream/ImageInputStream.java.'>ImageInputStream</a>)<a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>;
+<a id='L141' name='L141'></a> 141         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L142' name='L142'></a> 142             <strong class='reserved'>this</strong>.<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>null</strong>;
+<a id='L143' name='L143'></a> 143         <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144 
+<a id='L145' name='L145'></a> 145         <em class='comment'>// Clear all values based on the previous stream contents</em>
+<a id='L146' name='L146'></a> 146         <a href='../D/31211.html' title='Multiple defined in 2 places.'>resetStreamSettings</a>();
+<a id='L147' name='L147'></a> 147     <em class='brace'>}</em>
+<a id='L148' name='L148'></a> 148 
+<a id='L149' name='L149'></a> 149     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> getNumImages(<strong class='reserved'>boolean</strong> allowSearch) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L150' name='L150'></a> 150         <strong class='reserved'>if</strong> (<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L151' name='L151'></a> 151             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>("Input not set!");
+<a id='L152' name='L152'></a> 152         <em class='brace'>}</em>
+<a id='L153' name='L153'></a> 153         <strong class='reserved'>if</strong> (seekForwardOnly &amp;&amp; allowSearch) <em class='brace'>{</em>
+<a id='L154' name='L154'></a> 154             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>
+<a id='L155' name='L155'></a> 155                 ("seekForwardOnly and allowSearch can't both be true!");
+<a id='L156' name='L156'></a> 156         <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158         <strong class='reserved'>if</strong> (numImages &gt; 0) <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159             <strong class='reserved'>return</strong> numImages;
+<a id='L160' name='L160'></a> 160         <em class='brace'>}</em>
+<a id='L161' name='L161'></a> 161         <strong class='reserved'>if</strong> (allowSearch) <em class='brace'>{</em>
+<a id='L162' name='L162'></a> 162             <strong class='reserved'>this</strong>.numImages = <a href='../S/6837.html#L600' title='Defined at 600 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>locateImage</a>(<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>.MAX_VALUE) + 1;
+<a id='L163' name='L163'></a> 163         <em class='brace'>}</em>
+<a id='L164' name='L164'></a> 164         <strong class='reserved'>return</strong> numImages;
+<a id='L165' name='L165'></a> 165     <em class='brace'>}</em>
+<a id='L166' name='L166'></a> 166 
+<a id='L167' name='L167'></a> 167     <em class='comment'>// Throw an IndexOutOfBoundsException if index &lt; minIndex,</em>
+<a id='L168' name='L168'></a> 168     <em class='comment'>// and bump minIndex if required.</em>
+<a id='L169' name='L169'></a> 169     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/11197.html' title='Multiple referred from 118 places.'>checkIndex</a>(<strong class='reserved'>int</strong> imageIndex) <em class='brace'>{</em>
+<a id='L170' name='L170'></a> 170         <strong class='reserved'>if</strong> (imageIndex &lt; minIndex) <em class='brace'>{</em>
+<a id='L171' name='L171'></a> 171             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>("imageIndex &lt; minIndex!");
+<a id='L172' name='L172'></a> 172         <em class='brace'>}</em>
+<a id='L173' name='L173'></a> 173         <strong class='reserved'>if</strong> (seekForwardOnly) <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174             minIndex = imageIndex;
+<a id='L175' name='L175'></a> 175         <em class='brace'>}</em>
+<a id='L176' name='L176'></a> 176     <em class='brace'>}</em>
+<a id='L177' name='L177'></a> 177 
+<a id='L178' name='L178'></a> 178     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/19866.html' title='Multiple referred from 1025 places.'>getWidth</a>(<strong class='reserved'>int</strong> imageIndex) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179         <a href='../D/12492.html' title='Multiple defined in 7 places.'>checkIndex</a>(imageIndex);
+<a id='L180' name='L180'></a> 180 
+<a id='L181' name='L181'></a> 181         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/6837.html#L600' title='Defined at 600 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>locateImage</a>(imageIndex);
+<a id='L182' name='L182'></a> 182         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> != imageIndex) <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>();
+<a id='L184' name='L184'></a> 184         <em class='brace'>}</em>
+<a id='L185' name='L185'></a> 185         <a href='../D/30221.html' title='Multiple defined in 2 places.'>readMetadata</a>();
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>return</strong> imageMetadata.imageWidth;
+<a id='L187' name='L187'></a> 187     <em class='brace'>}</em>
+<a id='L188' name='L188'></a> 188 
+<a id='L189' name='L189'></a> 189     <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/16875.html' title='Multiple referred from 1014 places.'>getHeight</a>(<strong class='reserved'>int</strong> imageIndex) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190         <a href='../D/12492.html' title='Multiple defined in 7 places.'>checkIndex</a>(imageIndex);
+<a id='L191' name='L191'></a> 191 
+<a id='L192' name='L192'></a> 192         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/6837.html#L600' title='Defined at 600 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>locateImage</a>(imageIndex);
+<a id='L193' name='L193'></a> 193         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> != imageIndex) <em class='brace'>{</em>
+<a id='L194' name='L194'></a> 194             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>();
+<a id='L195' name='L195'></a> 195         <em class='brace'>}</em>
+<a id='L196' name='L196'></a> 196         <a href='../D/30221.html' title='Multiple defined in 2 places.'>readMetadata</a>();
+<a id='L197' name='L197'></a> 197         <strong class='reserved'>return</strong> imageMetadata.imageHeight;
+<a id='L198' name='L198'></a> 198     <em class='brace'>}</em>
+<a id='L199' name='L199'></a> 199 
+<a id='L200' name='L200'></a> 200     <em class='comment'>// We don't check all parameters as ImageTypeSpecifier.createIndexed do</em>
+<a id='L201' name='L201'></a> 201     <em class='comment'>// since this method is private and we pass consistent data here</em>
+<a id='L202' name='L202'></a> 202     <strong class='reserved'>private</strong> <a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a> <a href='../R/12494.html' title='Multiple referred from 3 places.'>createIndexed</a>(<strong class='reserved'>byte</strong>[] r, <strong class='reserved'>byte</strong>[] g, <strong class='reserved'>byte</strong>[] b,
+<a id='L203' name='L203'></a> 203                                              <strong class='reserved'>int</strong> bits) <em class='brace'>{</em>
+<a id='L204' name='L204'></a> 204         <a href='../D/1637.html' title='Multiple defined in 2 places.'>ColorModel</a> colorModel;
+<a id='L205' name='L205'></a> 205         <strong class='reserved'>if</strong> (imageMetadata.transparentColorFlag) <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206             <em class='comment'>// Some files erroneously have a transparent color index</em>
+<a id='L207' name='L207'></a> 207             <em class='comment'>// of 255 even though there are fewer than 256 colors.</em>
+<a id='L208' name='L208'></a> 208             <strong class='reserved'>int</strong> idx = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(imageMetadata.transparentColorIndex,
+<a id='L209' name='L209'></a> 209                     r.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1);
+<a id='L210' name='L210'></a> 210             colorModel = <strong class='reserved'>new</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>(bits, r.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, r, g, b, idx);
+<a id='L211' name='L211'></a> 211         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L212' name='L212'></a> 212             colorModel = <strong class='reserved'>new</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>(bits, r.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, r, g, b);
+<a id='L213' name='L213'></a> 213         <em class='brace'>}</em>
+<a id='L214' name='L214'></a> 214 
+<a id='L215' name='L215'></a> 215         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sampleModel;
+<a id='L216' name='L216'></a> 216         <strong class='reserved'>if</strong> (bits == 8) <em class='brace'>{</em>
+<a id='L217' name='L217'></a> 217             <strong class='reserved'>int</strong>[] bandOffsets = <em class='brace'>{</em>0<em class='brace'>}</em>;
+<a id='L218' name='L218'></a> 218             sampleModel =
+<a id='L219' name='L219'></a> 219                     <strong class='reserved'>new</strong> <a href='../S/2244.html#L56' title='Defined at 56 in src/java/awt/image/PixelInterleavedSampleModel.java.'>PixelInterleavedSampleModel</a>(<a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE,
+<a id='L220' name='L220'></a> 220                     1, 1, 1, 1,
+<a id='L221' name='L221'></a> 221                     bandOffsets);
+<a id='L222' name='L222'></a> 222         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L223' name='L223'></a> 223             sampleModel =
+<a id='L224' name='L224'></a> 224                     <strong class='reserved'>new</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>(<a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE,
+<a id='L225' name='L225'></a> 225                     1, 1, bits);
+<a id='L226' name='L226'></a> 226         <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a>(colorModel, sampleModel);
+<a id='L228' name='L228'></a> 228     <em class='brace'>}</em>
+<a id='L229' name='L229'></a> 229 
+<a id='L230' name='L230'></a> 230     <strong class='reserved'>public</strong> <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> <a href='../R/16987.html' title='Multiple referred from 6 places.'>getImageTypes</a>(<strong class='reserved'>int</strong> imageIndex) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L231' name='L231'></a> 231         <a href='../D/12492.html' title='Multiple defined in 7 places.'>checkIndex</a>(imageIndex);
+<a id='L232' name='L232'></a> 232 
+<a id='L233' name='L233'></a> 233         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/6837.html#L600' title='Defined at 600 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>locateImage</a>(imageIndex);
+<a id='L234' name='L234'></a> 234         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> != imageIndex) <em class='brace'>{</em>
+<a id='L235' name='L235'></a> 235             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>();
+<a id='L236' name='L236'></a> 236         <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237         <a href='../D/30221.html' title='Multiple defined in 2 places.'>readMetadata</a>();
+<a id='L238' name='L238'></a> 238 
+<a id='L239' name='L239'></a> 239         <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a> l = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>(1);
+<a id='L240' name='L240'></a> 240 
+<a id='L241' name='L241'></a> 241         <strong class='reserved'>byte</strong>[] colorTable;
+<a id='L242' name='L242'></a> 242         <strong class='reserved'>if</strong> (imageMetadata.localColorTable != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L243' name='L243'></a> 243             colorTable = imageMetadata.localColorTable;
+<a id='L244' name='L244'></a> 244             fallbackColorTable = imageMetadata.localColorTable;
+<a id='L245' name='L245'></a> 245         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L246' name='L246'></a> 246             colorTable = streamMetadata.globalColorTable;
+<a id='L247' name='L247'></a> 247         <em class='brace'>}</em>
+<a id='L248' name='L248'></a> 248 
+<a id='L249' name='L249'></a> 249         <strong class='reserved'>if</strong> (colorTable == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L250' name='L250'></a> 250             <strong class='reserved'>if</strong> (fallbackColorTable == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L251' name='L251'></a> 251                 <strong class='reserved'>this</strong>.<a href='../D/29868.html' title='Multiple defined in 4 places.'>processWarningOccurred</a>("Use default color table.");
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253                 <em class='comment'>// no color table, the spec allows to use any palette.</em>
+<a id='L254' name='L254'></a> 254                 fallbackColorTable = <a href='../S/6837.html#L1059' title='Defined at 1059 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>getDefaultPalette</a>();
+<a id='L255' name='L255'></a> 255             <em class='brace'>}</em>
+<a id='L256' name='L256'></a> 256 
+<a id='L257' name='L257'></a> 257             colorTable = fallbackColorTable;
+<a id='L258' name='L258'></a> 258         <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259 
+<a id='L260' name='L260'></a> 260         <em class='comment'>// Normalize color table length to 2^1, 2^2, 2^4, or 2^8</em>
+<a id='L261' name='L261'></a> 261         <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = colorTable.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>/3;
+<a id='L262' name='L262'></a> 262         <strong class='reserved'>int</strong> bits;
+<a id='L263' name='L263'></a> 263         <strong class='reserved'>if</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 2) <em class='brace'>{</em>
+<a id='L264' name='L264'></a> 264             bits = 1;
+<a id='L265' name='L265'></a> 265         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 4) <em class='brace'>{</em>
+<a id='L266' name='L266'></a> 266             bits = 2;
+<a id='L267' name='L267'></a> 267         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 8 || <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 16) <em class='brace'>{</em>
+<a id='L268' name='L268'></a> 268             <em class='comment'>// Bump from 3 to 4 bits</em>
+<a id='L269' name='L269'></a> 269             bits = 4;
+<a id='L270' name='L270'></a> 270         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L271' name='L271'></a> 271             <em class='comment'>// Bump to 8 bits</em>
+<a id='L272' name='L272'></a> 272             bits = 8;
+<a id='L273' name='L273'></a> 273         <em class='brace'>}</em>
+<a id='L274' name='L274'></a> 274         <strong class='reserved'>int</strong> lutLength = 1 &lt;&lt; bits;
+<a id='L275' name='L275'></a> 275         <strong class='reserved'>byte</strong>[] r = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[lutLength];
+<a id='L276' name='L276'></a> 276         <strong class='reserved'>byte</strong>[] g = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[lutLength];
+<a id='L277' name='L277'></a> 277         <strong class='reserved'>byte</strong>[] b = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[lutLength];
+<a id='L278' name='L278'></a> 278 
+<a id='L279' name='L279'></a> 279         <em class='comment'>// Entries from length + 1 to lutLength - 1 will be 0</em>
+<a id='L280' name='L280'></a> 280         <strong class='reserved'>int</strong> rgbIndex = 0;
+<a id='L281' name='L281'></a> 281         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
+<a id='L282' name='L282'></a> 282             r[i] = colorTable[rgbIndex++];
+<a id='L283' name='L283'></a> 283             g[i] = colorTable[rgbIndex++];
+<a id='L284' name='L284'></a> 284             b[i] = colorTable[rgbIndex++];
+<a id='L285' name='L285'></a> 285         <em class='brace'>}</em>
+<a id='L286' name='L286'></a> 286 
+<a id='L287' name='L287'></a> 287         l.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../D/13952.html' title='Multiple defined in 2 places.'>createIndexed</a>(r, g, b, bits));
+<a id='L288' name='L288'></a> 288         <strong class='reserved'>return</strong> l.<a href='../D/26592.html' title='Multiple defined in 126 places.'>iterator</a>();
+<a id='L289' name='L289'></a> 289     <em class='brace'>}</em>
+<a id='L290' name='L290'></a> 290 
+<a id='L291' name='L291'></a> 291     <strong class='reserved'>public</strong> <a href='../S/4213.html#L130' title='Defined at 130 in src/javax/imageio/ImageReadParam.java.'>ImageReadParam</a> <a href='../R/16068.html' title='Multiple referred from 5 places.'>getDefaultReadParam</a>() <em class='brace'>{</em>
+<a id='L292' name='L292'></a> 292         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/4213.html#L130' title='Defined at 130 in src/javax/imageio/ImageReadParam.java.'>ImageReadParam</a>();
+<a id='L293' name='L293'></a> 293     <em class='brace'>}</em>
+<a id='L294' name='L294'></a> 294 
+<a id='L295' name='L295'></a> 295     <strong class='reserved'>public</strong> <a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../S/4230.html#L807' title='Referred from 807 in src/javax/imageio/ImageReader.java.'>getStreamMetadata</a>() <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L296' name='L296'></a> 296         <a href='../D/30195.html' title='Multiple defined in 6 places.'>readHeader</a>();
+<a id='L297' name='L297'></a> 297         <strong class='reserved'>return</strong> streamMetadata;
+<a id='L298' name='L298'></a> 298     <em class='brace'>}</em>
+<a id='L299' name='L299'></a> 299 
+<a id='L300' name='L300'></a> 300     <strong class='reserved'>public</strong> <a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../R/16981.html' title='Multiple referred from 4 places.'>getImageMetadata</a>(<strong class='reserved'>int</strong> imageIndex) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L301' name='L301'></a> 301         <a href='../D/12492.html' title='Multiple defined in 7 places.'>checkIndex</a>(imageIndex);
+<a id='L302' name='L302'></a> 302 
+<a id='L303' name='L303'></a> 303         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/6837.html#L600' title='Defined at 600 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>locateImage</a>(imageIndex);
+<a id='L304' name='L304'></a> 304         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> != imageIndex) <em class='brace'>{</em>
+<a id='L305' name='L305'></a> 305             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>("Bad image index!");
+<a id='L306' name='L306'></a> 306         <em class='brace'>}</em>
+<a id='L307' name='L307'></a> 307         <a href='../D/30221.html' title='Multiple defined in 2 places.'>readMetadata</a>();
+<a id='L308' name='L308'></a> 308         <strong class='reserved'>return</strong> imageMetadata;
+<a id='L309' name='L309'></a> 309     <em class='brace'>}</em>
+<a id='L310' name='L310'></a> 310 
+<a id='L311' name='L311'></a> 311     <em class='comment'>// BEGIN LZW STUFF</em>
+<a id='L312' name='L312'></a> 312 
+<a id='L313' name='L313'></a> 313     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6837.html#L931' title='Referred from 931 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>initNext32Bits</a>() <em class='brace'>{</em>
+<a id='L314' name='L314'></a> 314         next32Bits = <a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>[0] &amp; 0xff;
+<a id='L315' name='L315'></a> 315         next32Bits |= (<a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>[1] &amp; 0xff) &lt;&lt; 8;
+<a id='L316' name='L316'></a> 316         next32Bits |= (<a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>[2] &amp; 0xff) &lt;&lt; 16;
+<a id='L317' name='L317'></a> 317         next32Bits |= <a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>[3] &lt;&lt; 24;
+<a id='L318' name='L318'></a> 318         <a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a> = 4;
+<a id='L319' name='L319'></a> 319     <em class='brace'>}</em>
+<a id='L320' name='L320'></a> 320 
+<a id='L321' name='L321'></a> 321     <em class='comment'>// Load a block (1-255 bytes) at a time, and maintain</em>
+<a id='L322' name='L322'></a> 322     <em class='comment'>// a 32-bit lookahead buffer that is filled from the left</em>
+<a id='L323' name='L323'></a> 323     <em class='comment'>// and extracted from the right.</em>
+<a id='L324' name='L324'></a> 324     <em class='comment'>//</em>
+<a id='L325' name='L325'></a> 325     <em class='comment'>// When the last block is found, we continue to</em>
+<a id='L326' name='L326'></a> 326     <em class='comment'>//</em>
+<a id='L327' name='L327'></a> 327     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/15630.html' title='Multiple referred from 9 places.'>getCode</a>(<strong class='reserved'>int</strong> codeSize, <strong class='reserved'>int</strong> codeMask) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L328' name='L328'></a> 328         <strong class='reserved'>if</strong> (bitPos + codeSize &gt; 32) <em class='brace'>{</em>
+<a id='L329' name='L329'></a> 329             <strong class='reserved'>return</strong> eofCode; <em class='comment'>// No more data available</em>
+<a id='L330' name='L330'></a> 330         <em class='brace'>}</em>
+<a id='L331' name='L331'></a> 331 
+<a id='L332' name='L332'></a> 332         <strong class='reserved'>int</strong> code = (next32Bits &gt;&gt; bitPos) &amp; codeMask;
+<a id='L333' name='L333'></a> 333         bitPos += codeSize;
+<a id='L334' name='L334'></a> 334 
+<a id='L335' name='L335'></a> 335         <em class='comment'>// Shift in a byte of new data at a time</em>
+<a id='L336' name='L336'></a> 336         <strong class='reserved'>while</strong> (bitPos &gt;= 8 &amp;&amp; !lastBlockFound) <em class='brace'>{</em>
+<a id='L337' name='L337'></a> 337             next32Bits &gt;&gt;&gt;= 8;
+<a id='L338' name='L338'></a> 338             bitPos -= 8;
+<a id='L339' name='L339'></a> 339 
+<a id='L340' name='L340'></a> 340             <em class='comment'>// Check if current block is out of bytes</em>
+<a id='L341' name='L341'></a> 341             <strong class='reserved'>if</strong> (<a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a> &gt;= blockLength) <em class='brace'>{</em>
+<a id='L342' name='L342'></a> 342                 <em class='comment'>// Get next block size</em>
+<a id='L343' name='L343'></a> 343                 blockLength = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L344' name='L344'></a> 344                 <strong class='reserved'>if</strong> (blockLength == 0) <em class='brace'>{</em>
+<a id='L345' name='L345'></a> 345                     lastBlockFound = <strong class='reserved'>true</strong>;
+<a id='L346' name='L346'></a> 346                     <strong class='reserved'>return</strong> code;
+<a id='L347' name='L347'></a> 347                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L348' name='L348'></a> 348                     <strong class='reserved'>int</strong> left = blockLength;
+<a id='L349' name='L349'></a> 349                     <strong class='reserved'>int</strong> off = 0;
+<a id='L350' name='L350'></a> 350                     <strong class='reserved'>while</strong> (left &gt; 0) <em class='brace'>{</em>
+<a id='L351' name='L351'></a> 351                         <strong class='reserved'>int</strong> nbytes = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(<a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>, off, left);
+<a id='L352' name='L352'></a> 352                         off += nbytes;
+<a id='L353' name='L353'></a> 353                         left -= nbytes;
+<a id='L354' name='L354'></a> 354                     <em class='brace'>}</em>
+<a id='L355' name='L355'></a> 355                     <a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a> = 0;
+<a id='L356' name='L356'></a> 356                 <em class='brace'>}</em>
+<a id='L357' name='L357'></a> 357             <em class='brace'>}</em>
+<a id='L358' name='L358'></a> 358 
+<a id='L359' name='L359'></a> 359             next32Bits |= <a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>[<a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a>++] &lt;&lt; 24;
+<a id='L360' name='L360'></a> 360         <em class='brace'>}</em>
+<a id='L361' name='L361'></a> 361 
+<a id='L362' name='L362'></a> 362         <strong class='reserved'>return</strong> code;
+<a id='L363' name='L363'></a> 363     <em class='brace'>}</em>
+<a id='L364' name='L364'></a> 364 
+<a id='L365' name='L365'></a> 365     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20721.html' title='Multiple referred from 2 places.'>initializeStringTable</a>(<strong class='reserved'>int</strong>[] <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>,
+<a id='L366' name='L366'></a> 366                                       <strong class='reserved'>byte</strong>[] suffix,
+<a id='L367' name='L367'></a> 367                                       <strong class='reserved'>byte</strong>[] initial,
+<a id='L368' name='L368'></a> 368                                       <strong class='reserved'>int</strong>[] <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <em class='brace'>{</em>
+<a id='L369' name='L369'></a> 369         <strong class='reserved'>int</strong> numEntries = 1 &lt;&lt; initCodeSize;
+<a id='L370' name='L370'></a> 370         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; numEntries; i++) <em class='brace'>{</em>
+<a id='L371' name='L371'></a> 371             <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>[i] = -1;
+<a id='L372' name='L372'></a> 372             suffix[i] = (<strong class='reserved'>byte</strong>)i;
+<a id='L373' name='L373'></a> 373             initial[i] = (<strong class='reserved'>byte</strong>)i;
+<a id='L374' name='L374'></a> 374             <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>[i] = 1;
+<a id='L375' name='L375'></a> 375         <em class='brace'>}</em>
+<a id='L376' name='L376'></a> 376 
+<a id='L377' name='L377'></a> 377         <em class='comment'>// Fill in the entire table for robustness against</em>
+<a id='L378' name='L378'></a> 378         <em class='comment'>// out-of-sequence codes.</em>
+<a id='L379' name='L379'></a> 379         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = numEntries; i &lt; 4096; i++) <em class='brace'>{</em>
+<a id='L380' name='L380'></a> 380             <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>[i] = -1;
+<a id='L381' name='L381'></a> 381             <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>[i] = 1;
+<a id='L382' name='L382'></a> 382         <em class='brace'>}</em>
+<a id='L383' name='L383'></a> 383 
+<a id='L384' name='L384'></a> 384         <em class='comment'>// tableIndex = numEntries + 2;</em>
+<a id='L385' name='L385'></a> 385         <em class='comment'>// codeSize = initCodeSize + 1;</em>
+<a id='L386' name='L386'></a> 386         <em class='comment'>// codeMask = (1 &lt;&lt; codeSize) - 1;</em>
+<a id='L387' name='L387'></a> 387     <em class='brace'>}</em>
+<a id='L388' name='L388'></a> 388 
+<a id='L389' name='L389'></a> 389     <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> sourceRegion;
+<a id='L390' name='L390'></a> 390     <strong class='reserved'>int</strong> sourceXSubsampling;
+<a id='L391' name='L391'></a> 391     <strong class='reserved'>int</strong> sourceYSubsampling;
+<a id='L392' name='L392'></a> 392     <strong class='reserved'>int</strong> sourceMinProgressivePass;
+<a id='L393' name='L393'></a> 393     <strong class='reserved'>int</strong> sourceMaxProgressivePass;
+<a id='L394' name='L394'></a> 394 
+<a id='L395' name='L395'></a> 395     <a href='../S/2123.html#L38' title='Defined at 38 in src/java/awt/Point.java.'>Point</a> destinationOffset;
+<a id='L396' name='L396'></a> 396     <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> destinationRegion;
+<a id='L397' name='L397'></a> 397 
+<a id='L398' name='L398'></a> 398     <em class='comment'>// Used only if IIOReadUpdateListeners are present</em>
+<a id='L399' name='L399'></a> 399     <strong class='reserved'>int</strong> updateMinY;
+<a id='L400' name='L400'></a> 400     <strong class='reserved'>int</strong> updateYStep;
+<a id='L401' name='L401'></a> 401 
+<a id='L402' name='L402'></a> 402     <strong class='reserved'>boolean</strong> decodeThisRow = <strong class='reserved'>true</strong>;
+<a id='L403' name='L403'></a> 403     <strong class='reserved'>int</strong> destY = 0;
+<a id='L404' name='L404'></a> 404 
+<a id='L405' name='L405'></a> 405     <strong class='reserved'>byte</strong>[] rowBuf;
+<a id='L406' name='L406'></a> 406 
+<a id='L407' name='L407'></a> 407     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6837.html#L460' title='Referred from 460 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>outputRow</a>() <em class='brace'>{</em>
+<a id='L408' name='L408'></a> 408         <em class='comment'>// Clip against ImageReadParam</em>
+<a id='L409' name='L409'></a> 409         <strong class='reserved'>int</strong> <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(sourceRegion.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>,
+<a id='L410' name='L410'></a> 410                              destinationRegion.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>*sourceXSubsampling);
+<a id='L411' name='L411'></a> 411         <strong class='reserved'>int</strong> destX = destinationRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
+<a id='L412' name='L412'></a> 412 
+<a id='L413' name='L413'></a> 413         <strong class='reserved'>if</strong> (sourceXSubsampling == 1) <em class='brace'>{</em>
+<a id='L414' name='L414'></a> 414             theTile.<a href='../D/32349.html' title='Multiple defined in 9 places.'>setDataElements</a>(destX, destY, <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>, 1, rowBuf);
+<a id='L415' name='L415'></a> 415         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L416' name='L416'></a> 416             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = 0; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> &lt; <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>; <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> += sourceXSubsampling, destX++) <em class='brace'>{</em>
+<a id='L417' name='L417'></a> 417                 theTile.<a href='../D/33797.html' title='Multiple defined in 14 places.'>setSample</a>(destX, destY, 0, rowBuf[<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>] &amp; 0xff);
+<a id='L418' name='L418'></a> 418             <em class='brace'>}</em>
+<a id='L419' name='L419'></a> 419         <em class='brace'>}</em>
+<a id='L420' name='L420'></a> 420 
+<a id='L421' name='L421'></a> 421         <em class='comment'>// Update IIOReadUpdateListeners, if any</em>
+<a id='L422' name='L422'></a> 422         <strong class='reserved'>if</strong> (updateListeners != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L423' name='L423'></a> 423             <strong class='reserved'>int</strong>[] bands = <em class='brace'>{</em> 0 <em class='brace'>}</em>;
+<a id='L424' name='L424'></a> 424             <em class='comment'>// updateYStep will have been initialized if</em>
+<a id='L425' name='L425'></a> 425             <em class='comment'>// updateListeners is non-null</em>
+<a id='L426' name='L426'></a> 426             <a href='../S/4230.html#L2238' title='Defined at 2238 in src/javax/imageio/ImageReader.java.'>processImageUpdate</a>(theImage,
+<a id='L427' name='L427'></a> 427                                destX, destY,
+<a id='L428' name='L428'></a> 428                                <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>, 1, 1, updateYStep,
+<a id='L429' name='L429'></a> 429                                bands);
+<a id='L430' name='L430'></a> 430         <em class='brace'>}</em>
+<a id='L431' name='L431'></a> 431     <em class='brace'>}</em>
+<a id='L432' name='L432'></a> 432 
+<a id='L433' name='L433'></a> 433     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/11820.html' title='Multiple referred from 2 places.'>computeDecodeThisRow</a>() <em class='brace'>{</em>
+<a id='L434' name='L434'></a> 434         <strong class='reserved'>this</strong>.decodeThisRow =
+<a id='L435' name='L435'></a> 435             (destY &lt; destinationRegion.y + destinationRegion.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>) &amp;&amp;
+<a id='L436' name='L436'></a> 436             (streamY &gt;= sourceRegion.y) &amp;&amp;
+<a id='L437' name='L437'></a> 437             (streamY &lt; sourceRegion.y + sourceRegion.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>) &amp;&amp;
+<a id='L438' name='L438'></a> 438             (((streamY - sourceRegion.y) % sourceYSubsampling) == 0);
+<a id='L439' name='L439'></a> 439     <em class='brace'>}</em>
+<a id='L440' name='L440'></a> 440 
+<a id='L441' name='L441'></a> 441     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6837.html#L1005' title='Referred from 1005 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>outputPixels</a>(<strong class='reserved'>byte</strong>[] <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>, <strong class='reserved'>int</strong> len) <em class='brace'>{</em>
+<a id='L442' name='L442'></a> 442         <strong class='reserved'>if</strong> (interlacePass &lt; sourceMinProgressivePass ||
+<a id='L443' name='L443'></a> 443             interlacePass &gt; sourceMaxProgressivePass) <em class='brace'>{</em>
+<a id='L444' name='L444'></a> 444             <strong class='reserved'>return</strong>;
+<a id='L445' name='L445'></a> 445         <em class='brace'>}</em>
+<a id='L446' name='L446'></a> 446 
+<a id='L447' name='L447'></a> 447         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; len; i++) <em class='brace'>{</em>
+<a id='L448' name='L448'></a> 448             <strong class='reserved'>if</strong> (streamX &gt;= sourceRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) <em class='brace'>{</em>
+<a id='L449' name='L449'></a> 449                 rowBuf[streamX - sourceRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>] = <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>[i];
+<a id='L450' name='L450'></a> 450             <em class='brace'>}</em>
+<a id='L451' name='L451'></a> 451 
+<a id='L452' name='L452'></a> 452             <em class='comment'>// Process end-of-row</em>
+<a id='L453' name='L453'></a> 453             ++streamX;
+<a id='L454' name='L454'></a> 454             <strong class='reserved'>if</strong> (streamX == <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>) <em class='brace'>{</em>
+<a id='L455' name='L455'></a> 455                 <em class='comment'>// Update IIOReadProgressListeners</em>
+<a id='L456' name='L456'></a> 456                 ++rowsDone;
+<a id='L457' name='L457'></a> 457                 <a href='../D/29811.html' title='Multiple defined in 2 places.'>processImageProgress</a>(100.0F*rowsDone/<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>);
+<a id='L458' name='L458'></a> 458 
+<a id='L459' name='L459'></a> 459                 <strong class='reserved'>if</strong> (decodeThisRow) <em class='brace'>{</em>
+<a id='L460' name='L460'></a> 460                     <a href='../S/6837.html#L407' title='Defined at 407 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>outputRow</a>();
+<a id='L461' name='L461'></a> 461                 <em class='brace'>}</em>
+<a id='L462' name='L462'></a> 462 
+<a id='L463' name='L463'></a> 463                 streamX = 0;
+<a id='L464' name='L464'></a> 464                 <strong class='reserved'>if</strong> (imageMetadata.interlaceFlag) <em class='brace'>{</em>
+<a id='L465' name='L465'></a> 465                     streamY += interlaceIncrement[interlacePass];
+<a id='L466' name='L466'></a> 466                     <strong class='reserved'>if</strong> (streamY &gt;= <a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>) <em class='brace'>{</em>
+<a id='L467' name='L467'></a> 467                         <em class='comment'>// Inform IIOReadUpdateListeners of end of pass</em>
+<a id='L468' name='L468'></a> 468                         <strong class='reserved'>if</strong> (updateListeners != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L469' name='L469'></a> 469                             <a href='../S/4230.html#L2267' title='Defined at 2267 in src/javax/imageio/ImageReader.java.'>processPassComplete</a>(theImage);
+<a id='L470' name='L470'></a> 470                         <em class='brace'>}</em>
+<a id='L471' name='L471'></a> 471 
+<a id='L472' name='L472'></a> 472                         ++interlacePass;
+<a id='L473' name='L473'></a> 473                         <strong class='reserved'>if</strong> (interlacePass &gt; sourceMaxProgressivePass) <em class='brace'>{</em>
+<a id='L474' name='L474'></a> 474                             <strong class='reserved'>return</strong>;
+<a id='L475' name='L475'></a> 475                         <em class='brace'>}</em>
+<a id='L476' name='L476'></a> 476                         streamY = interlaceOffset[interlacePass];
+<a id='L477' name='L477'></a> 477                         <a href='../S/6837.html#L806' title='Defined at 806 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>startPass</a>(interlacePass);
+<a id='L478' name='L478'></a> 478                     <em class='brace'>}</em>
+<a id='L479' name='L479'></a> 479                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L480' name='L480'></a> 480                     ++streamY;
+<a id='L481' name='L481'></a> 481                 <em class='brace'>}</em>
+<a id='L482' name='L482'></a> 482 
+<a id='L483' name='L483'></a> 483                 <em class='comment'>// Determine whether pixels from this row will</em>
+<a id='L484' name='L484'></a> 484                 <em class='comment'>// be written to the destination</em>
+<a id='L485' name='L485'></a> 485                 <strong class='reserved'>this</strong>.destY = destinationRegion.y +
+<a id='L486' name='L486'></a> 486                     (streamY - sourceRegion.y)/sourceYSubsampling;
+<a id='L487' name='L487'></a> 487                 <a href='../S/6837.html#L433' title='Defined at 433 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>computeDecodeThisRow</a>();
+<a id='L488' name='L488'></a> 488             <em class='brace'>}</em>
+<a id='L489' name='L489'></a> 489         <em class='brace'>}</em>
+<a id='L490' name='L490'></a> 490     <em class='brace'>}</em>
+<a id='L491' name='L491'></a> 491 
+<a id='L492' name='L492'></a> 492     <em class='comment'>// END LZW STUFF</em>
+<a id='L493' name='L493'></a> 493 
+<a id='L494' name='L494'></a> 494     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25485.html' title='Multiple referred from 24 places.'>readHeader</a>() <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L495' name='L495'></a> 495         <strong class='reserved'>if</strong> (gotHeader) <em class='brace'>{</em>
+<a id='L496' name='L496'></a> 496             <strong class='reserved'>return</strong>;
+<a id='L497' name='L497'></a> 497         <em class='brace'>}</em>
+<a id='L498' name='L498'></a> 498         <strong class='reserved'>if</strong> (<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L499' name='L499'></a> 499             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>("Input not set!");
+<a id='L500' name='L500'></a> 500         <em class='brace'>}</em>
+<a id='L501' name='L501'></a> 501 
+<a id='L502' name='L502'></a> 502         <em class='comment'>// Create an object to store the stream metadata</em>
+<a id='L503' name='L503'></a> 503         <strong class='reserved'>this</strong>.streamMetadata = <strong class='reserved'>new</strong> <a href='../S/6842.html#L35' title='Defined at 35 in src/com/sun/imageio/plugins/gif/GIFStreamMetadata.java.'>GIFStreamMetadata</a>();
+<a id='L504' name='L504'></a> 504 
+<a id='L505' name='L505'></a> 505         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L506' name='L506'></a> 506             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/32066.html' title='Multiple defined in 2 places.'>setByteOrder</a>(<a href='../S/1965.html#L37' title='Defined at 37 in src/java/nio/ByteOrder.java.'>ByteOrder</a>.LITTLE_ENDIAN);
+<a id='L507' name='L507'></a> 507 
+<a id='L508' name='L508'></a> 508             <strong class='reserved'>byte</strong>[] <a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[6];
+<a id='L509' name='L509'></a> 509             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30189.html' title='Multiple defined in 33 places.'>readFully</a>(<a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>);
+<a id='L510' name='L510'></a> 510 
+<a id='L511' name='L511'></a> 511             <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a> <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a> = <strong class='reserved'>new</strong> <a href='../S/1583.html#L97' title='Defined at 97 in src/java/lang/StringBuffer.java.'>StringBuffer</a>(3);
+<a id='L512' name='L512'></a> 512             <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>((<strong class='reserved'>char</strong>)<a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>[3]);
+<a id='L513' name='L513'></a> 513             <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>((<strong class='reserved'>char</strong>)<a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>[4]);
+<a id='L514' name='L514'></a> 514             <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>.<a href='../D/11357.html' title='Multiple defined in 137 places.'>append</a>((<strong class='reserved'>char</strong>)<a href='../S/7698.html#L129' title='Defined at 129 in src/com/sun/javadoc/ExecutableMemberDoc.java.'>signature</a>[5]);
+<a id='L515' name='L515'></a> 515             streamMetadata.<a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a> = <a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
+<a id='L516' name='L516'></a> 516 
+<a id='L517' name='L517'></a> 517             streamMetadata.logicalScreenWidth = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L518' name='L518'></a> 518             streamMetadata.logicalScreenHeight = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L519' name='L519'></a> 519 
+<a id='L520' name='L520'></a> 520             <strong class='reserved'>int</strong> packedFields = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L521' name='L521'></a> 521             <strong class='reserved'>boolean</strong> globalColorTableFlag = (packedFields &amp; 0x80) != 0;
+<a id='L522' name='L522'></a> 522             streamMetadata.colorResolution = ((packedFields &gt;&gt; 4) &amp; 0x7) + 1;
+<a id='L523' name='L523'></a> 523             streamMetadata.sortFlag = (packedFields &amp; 0x8) != 0;
+<a id='L524' name='L524'></a> 524             <strong class='reserved'>int</strong> numGCTEntries = 1 &lt;&lt; ((packedFields &amp; 0x7) + 1);
+<a id='L525' name='L525'></a> 525 
+<a id='L526' name='L526'></a> 526             streamMetadata.backgroundColorIndex = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L527' name='L527'></a> 527             streamMetadata.pixelAspectRatio = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L528' name='L528'></a> 528 
+<a id='L529' name='L529'></a> 529             <strong class='reserved'>if</strong> (globalColorTableFlag) <em class='brace'>{</em>
+<a id='L530' name='L530'></a> 530                 streamMetadata.globalColorTable = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[3*numGCTEntries];
+<a id='L531' name='L531'></a> 531                 <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30189.html' title='Multiple defined in 33 places.'>readFully</a>(streamMetadata.globalColorTable);
+<a id='L532' name='L532'></a> 532             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L533' name='L533'></a> 533                 streamMetadata.globalColorTable = <strong class='reserved'>null</strong>;
+<a id='L534' name='L534'></a> 534             <em class='brace'>}</em>
+<a id='L535' name='L535'></a> 535 
+<a id='L536' name='L536'></a> 536             <em class='comment'>// Found position of metadata for image 0</em>
+<a id='L537' name='L537'></a> 537             imageStartPosition.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>.<a href='../D/36373.html' title='Multiple defined in 48 places.'>valueOf</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/22762.html' title='Multiple defined in 3 places.'>getStreamPosition</a>()));
+<a id='L538' name='L538'></a> 538         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> e) <em class='brace'>{</em>
+<a id='L539' name='L539'></a> 539             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>("I/O error reading header!", e);
+<a id='L540' name='L540'></a> 540         <em class='brace'>}</em>
+<a id='L541' name='L541'></a> 541 
+<a id='L542' name='L542'></a> 542         gotHeader = <strong class='reserved'>true</strong>;
+<a id='L543' name='L543'></a> 543     <em class='brace'>}</em>
+<a id='L544' name='L544'></a> 544 
+<a id='L545' name='L545'></a> 545     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../R/28658.html' title='Multiple referred from 3 places.'>skipImage</a>() <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L546' name='L546'></a> 546         <em class='comment'>// Stream must be at the beginning of an image descriptor</em>
+<a id='L547' name='L547'></a> 547         <em class='comment'>// upon exit</em>
+<a id='L548' name='L548'></a> 548 
+<a id='L549' name='L549'></a> 549         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L550' name='L550'></a> 550             <strong class='reserved'>while</strong> (<strong class='reserved'>true</strong>) <em class='brace'>{</em>
+<a id='L551' name='L551'></a> 551                 <strong class='reserved'>int</strong> blockType = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L552' name='L552'></a> 552 
+<a id='L553' name='L553'></a> 553                 <strong class='reserved'>if</strong> (blockType == 0x2c) <em class='brace'>{</em>
+<a id='L554' name='L554'></a> 554                     <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(8);
+<a id='L555' name='L555'></a> 555 
+<a id='L556' name='L556'></a> 556                     <strong class='reserved'>int</strong> packedFields = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L557' name='L557'></a> 557                     <strong class='reserved'>if</strong> ((packedFields &amp; 0x80) != 0) <em class='brace'>{</em>
+<a id='L558' name='L558'></a> 558                         <em class='comment'>// Skip color table if any</em>
+<a id='L559' name='L559'></a> 559                         <strong class='reserved'>int</strong> bits = (packedFields &amp; 0x7) + 1;
+<a id='L560' name='L560'></a> 560                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(3*(1 &lt;&lt; bits));
+<a id='L561' name='L561'></a> 561                     <em class='brace'>}</em>
+<a id='L562' name='L562'></a> 562 
+<a id='L563' name='L563'></a> 563                     <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(1);
+<a id='L564' name='L564'></a> 564 
+<a id='L565' name='L565'></a> 565                     <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = 0;
+<a id='L566' name='L566'></a> 566                     <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L567' name='L567'></a> 567                         <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L568' name='L568'></a> 568                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L569' name='L569'></a> 569                     <em class='brace'>}</em> <strong class='reserved'>while</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0);
+<a id='L570' name='L570'></a> 570 
+<a id='L571' name='L571'></a> 571                     <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
+<a id='L572' name='L572'></a> 572                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (blockType == 0x3b) <em class='brace'>{</em>
+<a id='L573' name='L573'></a> 573                     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L574' name='L574'></a> 574                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (blockType == 0x21) <em class='brace'>{</em>
+<a id='L575' name='L575'></a> 575                     <strong class='reserved'>int</strong> <a href='../S/7710.html#L56' title='Defined at 56 in src/com/sun/javadoc/SeeTag.java.'>label</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L576' name='L576'></a> 576 
+<a id='L577' name='L577'></a> 577                     <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = 0;
+<a id='L578' name='L578'></a> 578                     <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L579' name='L579'></a> 579                         <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L580' name='L580'></a> 580                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L581' name='L581'></a> 581                     <em class='brace'>}</em> <strong class='reserved'>while</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0);
+<a id='L582' name='L582'></a> 582                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (blockType == 0x0) <em class='brace'>{</em>
+<a id='L583' name='L583'></a> 583                     <em class='comment'>// EOF</em>
+<a id='L584' name='L584'></a> 584                     <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L585' name='L585'></a> 585                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L586' name='L586'></a> 586                     <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = 0;
+<a id='L587' name='L587'></a> 587                     <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L588' name='L588'></a> 588                         <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L589' name='L589'></a> 589                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L590' name='L590'></a> 590                     <em class='brace'>}</em> <strong class='reserved'>while</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0);
+<a id='L591' name='L591'></a> 591                 <em class='brace'>}</em>
+<a id='L592' name='L592'></a> 592             <em class='brace'>}</em>
+<a id='L593' name='L593'></a> 593         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1440.html#L42' title='Defined at 42 in src/java/io/EOFException.java.'>EOFException</a> e) <em class='brace'>{</em>
+<a id='L594' name='L594'></a> 594             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
+<a id='L595' name='L595'></a> 595         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> e) <em class='brace'>{</em>
+<a id='L596' name='L596'></a> 596             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>("I/O error locating image!", e);
+<a id='L597' name='L597'></a> 597         <em class='brace'>}</em>
+<a id='L598' name='L598'></a> 598     <em class='brace'>}</em>
+<a id='L599' name='L599'></a> 599 
+<a id='L600' name='L600'></a> 600     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/22659.html' title='Multiple referred from 6 places.'>locateImage</a>(<strong class='reserved'>int</strong> imageIndex) <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L601' name='L601'></a> 601         <a href='../D/30195.html' title='Multiple defined in 6 places.'>readHeader</a>();
+<a id='L602' name='L602'></a> 602 
+<a id='L603' name='L603'></a> 603         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L604' name='L604'></a> 604             <em class='comment'>// Find closest known index</em>
+<a id='L605' name='L605'></a> 605             <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(imageIndex, imageStartPosition.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() - 1);
+<a id='L606' name='L606'></a> 606 
+<a id='L607' name='L607'></a> 607             <em class='comment'>// Seek to that position</em>
+<a id='L608' name='L608'></a> 608             <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a> l = (<a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>)imageStartPosition.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L609' name='L609'></a> 609             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/31669.html' title='Multiple defined in 19 places.'>seek</a>(l.<a href='../D/27086.html' title='Multiple defined in 24 places.'>longValue</a>());
+<a id='L610' name='L610'></a> 610 
+<a id='L611' name='L611'></a> 611             <em class='comment'>// Skip images until at desired index or last image found</em>
+<a id='L612' name='L612'></a> 612             <strong class='reserved'>while</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> &lt; imageIndex) <em class='brace'>{</em>
+<a id='L613' name='L613'></a> 613                 <strong class='reserved'>if</strong> (!<a href='../D/34613.html' title='Multiple defined in 2 places.'>skipImage</a>()) <em class='brace'>{</em>
+<a id='L614' name='L614'></a> 614                     --<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;
+<a id='L615' name='L615'></a> 615                     <strong class='reserved'>return</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;
+<a id='L616' name='L616'></a> 616                 <em class='brace'>}</em>
+<a id='L617' name='L617'></a> 617 
+<a id='L618' name='L618'></a> 618                 <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a> l1 = <strong class='reserved'>new</strong> <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/22762.html' title='Multiple defined in 3 places.'>getStreamPosition</a>());
+<a id='L619' name='L619'></a> 619                 imageStartPosition.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(l1);
+<a id='L620' name='L620'></a> 620                 ++<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>;
+<a id='L621' name='L621'></a> 621             <em class='brace'>}</em>
+<a id='L622' name='L622'></a> 622         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> e) <em class='brace'>{</em>
+<a id='L623' name='L623'></a> 623             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>("Couldn't seek!", e);
+<a id='L624' name='L624'></a> 624         <em class='brace'>}</em>
+<a id='L625' name='L625'></a> 625 
+<a id='L626' name='L626'></a> 626         <strong class='reserved'>if</strong> (currIndex != imageIndex) <em class='brace'>{</em>
+<a id='L627' name='L627'></a> 627             imageMetadata = <strong class='reserved'>null</strong>;
+<a id='L628' name='L628'></a> 628         <em class='brace'>}</em>
+<a id='L629' name='L629'></a> 629         currIndex = imageIndex;
+<a id='L630' name='L630'></a> 630         <strong class='reserved'>return</strong> imageIndex;
+<a id='L631' name='L631'></a> 631     <em class='brace'>}</em>
+<a id='L632' name='L632'></a> 632 
+<a id='L633' name='L633'></a> 633     <em class='comment'>// Read blocks of 1-255 bytes, stop at a 0-length block</em>
+<a id='L634' name='L634'></a> 634     <strong class='reserved'>private</strong> <strong class='reserved'>byte</strong>[] <a href='../R/11859.html' title='Multiple referred from 3 places.'>concatenateBlocks</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
+<a id='L635' name='L635'></a> 635         <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[0];
+<a id='L636' name='L636'></a> 636         <strong class='reserved'>while</strong> (<strong class='reserved'>true</strong>) <em class='brace'>{</em>
+<a id='L637' name='L637'></a> 637             <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L638' name='L638'></a> 638             <strong class='reserved'>if</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 0) <em class='brace'>{</em>
+<a id='L639' name='L639'></a> 639                 <strong class='reserved'>break</strong>;
+<a id='L640' name='L640'></a> 640             <em class='brace'>}</em>
+<a id='L641' name='L641'></a> 641             <strong class='reserved'>byte</strong>[] newData = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> + <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>];
+<a id='L642' name='L642'></a> 642             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, 0, newData, 0, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L643' name='L643'></a> 643             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30189.html' title='Multiple defined in 33 places.'>readFully</a>(newData, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L644' name='L644'></a> 644             <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = newData;
+<a id='L645' name='L645'></a> 645         <em class='brace'>}</em>
+<a id='L646' name='L646'></a> 646 
+<a id='L647' name='L647'></a> 647         <strong class='reserved'>return</strong> <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>;
+<a id='L648' name='L648'></a> 648     <em class='brace'>}</em>
+<a id='L649' name='L649'></a> 649 
+<a id='L650' name='L650'></a> 650     <em class='comment'>// Stream must be positioned at start of metadata for 'currIndex'</em>
+<a id='L651' name='L651'></a> 651     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/25509.html' title='Multiple referred from 8 places.'>readMetadata</a>() <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L652' name='L652'></a> 652         <strong class='reserved'>if</strong> (<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L653' name='L653'></a> 653             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>("Input not set!");
+<a id='L654' name='L654'></a> 654         <em class='brace'>}</em>
+<a id='L655' name='L655'></a> 655 
+<a id='L656' name='L656'></a> 656         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L657' name='L657'></a> 657             <em class='comment'>// Create an object to store the image metadata</em>
+<a id='L658' name='L658'></a> 658             <strong class='reserved'>this</strong>.imageMetadata = <strong class='reserved'>new</strong> <a href='../S/6849.html#L40' title='Defined at 40 in src/com/sun/imageio/plugins/gif/GIFImageMetadata.java.'>GIFImageMetadata</a>();
+<a id='L659' name='L659'></a> 659 
+<a id='L660' name='L660'></a> 660             <strong class='reserved'>long</strong> startPosition = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/22762.html' title='Multiple defined in 3 places.'>getStreamPosition</a>();
+<a id='L661' name='L661'></a> 661             <strong class='reserved'>while</strong> (<strong class='reserved'>true</strong>) <em class='brace'>{</em>
+<a id='L662' name='L662'></a> 662                 <strong class='reserved'>int</strong> blockType = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L663' name='L663'></a> 663                 <strong class='reserved'>if</strong> (blockType == 0x2c) <em class='brace'>{</em> <em class='comment'>// Image Descriptor</em>
+<a id='L664' name='L664'></a> 664                     imageMetadata.imageLeftPosition =
+<a id='L665' name='L665'></a> 665                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L666' name='L666'></a> 666                     imageMetadata.imageTopPosition =
+<a id='L667' name='L667'></a> 667                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L668' name='L668'></a> 668                     imageMetadata.imageWidth = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L669' name='L669'></a> 669                     imageMetadata.imageHeight = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L670' name='L670'></a> 670 
+<a id='L671' name='L671'></a> 671                     <strong class='reserved'>int</strong> idPackedFields = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L672' name='L672'></a> 672                     <strong class='reserved'>boolean</strong> localColorTableFlag =
+<a id='L673' name='L673'></a> 673                         (idPackedFields &amp; 0x80) != 0;
+<a id='L674' name='L674'></a> 674                     imageMetadata.interlaceFlag = (idPackedFields &amp; 0x40) != 0;
+<a id='L675' name='L675'></a> 675                     imageMetadata.sortFlag = (idPackedFields &amp; 0x20) != 0;
+<a id='L676' name='L676'></a> 676                     <strong class='reserved'>int</strong> numLCTEntries = 1 &lt;&lt; ((idPackedFields &amp; 0x7) + 1);
+<a id='L677' name='L677'></a> 677 
+<a id='L678' name='L678'></a> 678                     <strong class='reserved'>if</strong> (localColorTableFlag) <em class='brace'>{</em>
+<a id='L679' name='L679'></a> 679                         <em class='comment'>// Read color table if any</em>
+<a id='L680' name='L680'></a> 680                         imageMetadata.localColorTable =
+<a id='L681' name='L681'></a> 681                             <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[3*numLCTEntries];
+<a id='L682' name='L682'></a> 682                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30189.html' title='Multiple defined in 33 places.'>readFully</a>(imageMetadata.localColorTable);
+<a id='L683' name='L683'></a> 683                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L684' name='L684'></a> 684                         imageMetadata.localColorTable = <strong class='reserved'>null</strong>;
+<a id='L685' name='L685'></a> 685                     <em class='brace'>}</em>
+<a id='L686' name='L686'></a> 686 
+<a id='L687' name='L687'></a> 687                     <em class='comment'>// Record length of this metadata block</em>
+<a id='L688' name='L688'></a> 688                     <strong class='reserved'>this</strong>.imageMetadataLength =
+<a id='L689' name='L689'></a> 689                         (<strong class='reserved'>int</strong>)(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/22762.html' title='Multiple defined in 3 places.'>getStreamPosition</a>() - startPosition);
+<a id='L690' name='L690'></a> 690 
+<a id='L691' name='L691'></a> 691                     <em class='comment'>// Now positioned at start of LZW-compressed pixels</em>
+<a id='L692' name='L692'></a> 692                     <strong class='reserved'>return</strong>;
+<a id='L693' name='L693'></a> 693                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (blockType == 0x21) <em class='brace'>{</em> <em class='comment'>// Extension block</em>
+<a id='L694' name='L694'></a> 694                     <strong class='reserved'>int</strong> <a href='../S/7710.html#L56' title='Defined at 56 in src/com/sun/javadoc/SeeTag.java.'>label</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L695' name='L695'></a> 695 
+<a id='L696' name='L696'></a> 696                     <strong class='reserved'>if</strong> (<a href='../S/7710.html#L56' title='Defined at 56 in src/com/sun/javadoc/SeeTag.java.'>label</a> == 0xf9) <em class='brace'>{</em> <em class='comment'>// Graphics Control Extension</em>
+<a id='L697' name='L697'></a> 697                         <strong class='reserved'>int</strong> gceLength = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>(); <em class='comment'>// 4</em>
+<a id='L698' name='L698'></a> 698                         <strong class='reserved'>int</strong> gcePackedFields = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L699' name='L699'></a> 699                         imageMetadata.disposalMethod =
+<a id='L700' name='L700'></a> 700                             (gcePackedFields &gt;&gt; 2) &amp; 0x3;
+<a id='L701' name='L701'></a> 701                         imageMetadata.userInputFlag =
+<a id='L702' name='L702'></a> 702                             (gcePackedFields &amp; 0x2) != 0;
+<a id='L703' name='L703'></a> 703                         imageMetadata.transparentColorFlag =
+<a id='L704' name='L704'></a> 704                             (gcePackedFields &amp; 0x1) != 0;
+<a id='L705' name='L705'></a> 705 
+<a id='L706' name='L706'></a> 706                         imageMetadata.delayTime = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L707' name='L707'></a> 707                         imageMetadata.transparentColorIndex
+<a id='L708' name='L708'></a> 708                             = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L709' name='L709'></a> 709 
+<a id='L710' name='L710'></a> 710                         <strong class='reserved'>int</strong> terminator = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L711' name='L711'></a> 711                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/7710.html#L56' title='Defined at 56 in src/com/sun/javadoc/SeeTag.java.'>label</a> == 0x1) <em class='brace'>{</em> <em class='comment'>// Plain text extension</em>
+<a id='L712' name='L712'></a> 712                         <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L713' name='L713'></a> 713                         imageMetadata.hasPlainTextExtension = <strong class='reserved'>true</strong>;
+<a id='L714' name='L714'></a> 714                         imageMetadata.textGridLeft =
+<a id='L715' name='L715'></a> 715                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L716' name='L716'></a> 716                         imageMetadata.textGridTop =
+<a id='L717' name='L717'></a> 717                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L718' name='L718'></a> 718                         imageMetadata.textGridWidth =
+<a id='L719' name='L719'></a> 719                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L720' name='L720'></a> 720                         imageMetadata.textGridHeight =
+<a id='L721' name='L721'></a> 721                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30293.html' title='Multiple defined in 8 places.'>readUnsignedShort</a>();
+<a id='L722' name='L722'></a> 722                         imageMetadata.characterCellWidth =
+<a id='L723' name='L723'></a> 723                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L724' name='L724'></a> 724                         imageMetadata.characterCellHeight =
+<a id='L725' name='L725'></a> 725                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L726' name='L726'></a> 726                         imageMetadata.textForegroundColor =
+<a id='L727' name='L727'></a> 727                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L728' name='L728'></a> 728                         imageMetadata.textBackgroundColor =
+<a id='L729' name='L729'></a> 729                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L730' name='L730'></a> 730                         imageMetadata.<a href='../D/35255.html' title='Multiple defined in 4 places.'>text</a> = <a href='../S/6837.html#L634' title='Defined at 634 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>concatenateBlocks</a>();
+<a id='L731' name='L731'></a> 731                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/7710.html#L56' title='Defined at 56 in src/com/sun/javadoc/SeeTag.java.'>label</a> == 0xfe) <em class='brace'>{</em> <em class='comment'>// Comment extension</em>
+<a id='L732' name='L732'></a> 732                         <strong class='reserved'>byte</strong>[] <a href='../D/13011.html' title='Multiple defined in 65 places.'>comment</a> = <a href='../S/6837.html#L634' title='Defined at 634 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>concatenateBlocks</a>();
+<a id='L733' name='L733'></a> 733                         <strong class='reserved'>if</strong> (imageMetadata.<a href='../S/3654.html#L70' title='Defined at 70 in src/javax/annotation/Generated.java.'>comments</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L734' name='L734'></a> 734                             imageMetadata.<a href='../S/3654.html#L70' title='Defined at 70 in src/javax/annotation/Generated.java.'>comments</a> = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L735' name='L735'></a> 735                         <em class='brace'>}</em>
+<a id='L736' name='L736'></a> 736                         imageMetadata.<a href='../S/3654.html#L70' title='Defined at 70 in src/javax/annotation/Generated.java.'>comments</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(<a href='../D/13011.html' title='Multiple defined in 65 places.'>comment</a>);
+<a id='L737' name='L737'></a> 737                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/7710.html#L56' title='Defined at 56 in src/com/sun/javadoc/SeeTag.java.'>label</a> == 0xff) <em class='brace'>{</em> <em class='comment'>// Application extension</em>
+<a id='L738' name='L738'></a> 738                         <strong class='reserved'>int</strong> blockSize = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L739' name='L739'></a> 739                         <strong class='reserved'>byte</strong>[] applicationID = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[8];
+<a id='L740' name='L740'></a> 740                         <strong class='reserved'>byte</strong>[] authCode = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[3];
+<a id='L741' name='L741'></a> 741 
+<a id='L742' name='L742'></a> 742                         <em class='comment'>// read available data</em>
+<a id='L743' name='L743'></a> 743                         <strong class='reserved'>byte</strong>[] blockData = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[blockSize];
+<a id='L744' name='L744'></a> 744                         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30189.html' title='Multiple defined in 33 places.'>readFully</a>(blockData);
+<a id='L745' name='L745'></a> 745 
+<a id='L746' name='L746'></a> 746                         <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = <a href='../D/13487.html' title='Multiple defined in 3 places.'>copyData</a>(blockData, 0, applicationID);
+<a id='L747' name='L747'></a> 747                         <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = <a href='../D/13487.html' title='Multiple defined in 3 places.'>copyData</a>(blockData, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, authCode);
+<a id='L748' name='L748'></a> 748 
+<a id='L749' name='L749'></a> 749                         <strong class='reserved'>byte</strong>[] applicationData = <a href='../S/6837.html#L634' title='Defined at 634 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>concatenateBlocks</a>();
+<a id='L750' name='L750'></a> 750 
+<a id='L751' name='L751'></a> 751                         <strong class='reserved'>if</strong> (<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> &lt; blockSize) <em class='brace'>{</em>
+<a id='L752' name='L752'></a> 752                             <strong class='reserved'>int</strong> len = blockSize - <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L753' name='L753'></a> 753                             <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> =
+<a id='L754' name='L754'></a> 754                                 <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[len + applicationData.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>];
+<a id='L755' name='L755'></a> 755 
+<a id='L756' name='L756'></a> 756                             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(blockData, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, 0, len);
+<a id='L757' name='L757'></a> 757                             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(applicationData, 0, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>, len,
+<a id='L758' name='L758'></a> 758                                              applicationData.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L759' name='L759'></a> 759 
+<a id='L760' name='L760'></a> 760                             applicationData = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>;
+<a id='L761' name='L761'></a> 761                         <em class='brace'>}</em>
+<a id='L762' name='L762'></a> 762 
+<a id='L763' name='L763'></a> 763                         <em class='comment'>// Init lists if necessary</em>
+<a id='L764' name='L764'></a> 764                         <strong class='reserved'>if</strong> (imageMetadata.applicationIDs == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L765' name='L765'></a> 765                             imageMetadata.applicationIDs = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L766' name='L766'></a> 766                             imageMetadata.authenticationCodes =
+<a id='L767' name='L767'></a> 767                                 <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L768' name='L768'></a> 768                             imageMetadata.applicationData = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L769' name='L769'></a> 769                         <em class='brace'>}</em>
+<a id='L770' name='L770'></a> 770                         imageMetadata.applicationIDs.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(applicationID);
+<a id='L771' name='L771'></a> 771                         imageMetadata.authenticationCodes.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(authCode);
+<a id='L772' name='L772'></a> 772                         imageMetadata.applicationData.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(applicationData);
+<a id='L773' name='L773'></a> 773                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L774' name='L774'></a> 774                         <em class='comment'>// Skip over unknown extension blocks</em>
+<a id='L775' name='L775'></a> 775                         <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = 0;
+<a id='L776' name='L776'></a> 776                         <strong class='reserved'>do</strong> <em class='brace'>{</em>
+<a id='L777' name='L777'></a> 777                             <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L778' name='L778'></a> 778                             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/34600.html' title='Multiple defined in 12 places.'>skipBytes</a>(<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L779' name='L779'></a> 779                         <em class='brace'>}</em> <strong class='reserved'>while</strong> (<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> &gt; 0);
+<a id='L780' name='L780'></a> 780                     <em class='brace'>}</em>
+<a id='L781' name='L781'></a> 781                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (blockType == 0x3b) <em class='brace'>{</em> <em class='comment'>// Trailer</em>
+<a id='L782' name='L782'></a> 782                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>
+<a id='L783' name='L783'></a> 783                         ("Attempt to read past end of image sequence!");
+<a id='L784' name='L784'></a> 784                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L785' name='L785'></a> 785                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>("Unexpected block type " +
+<a id='L786' name='L786'></a> 786                                            blockType + "!");
+<a id='L787' name='L787'></a> 787                 <em class='brace'>}</em>
+<a id='L788' name='L788'></a> 788             <em class='brace'>}</em>
+<a id='L789' name='L789'></a> 789         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> iioe) <em class='brace'>{</em>
+<a id='L790' name='L790'></a> 790             <strong class='reserved'>throw</strong> iioe;
+<a id='L791' name='L791'></a> 791         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> ioe) <em class='brace'>{</em>
+<a id='L792' name='L792'></a> 792             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>("I/O error reading image metadata!", ioe);
+<a id='L793' name='L793'></a> 793         <em class='brace'>}</em>
+<a id='L794' name='L794'></a> 794     <em class='brace'>}</em>
+<a id='L795' name='L795'></a> 795 
+<a id='L796' name='L796'></a> 796     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/12098.html' title='Multiple referred from 2 places.'>copyData</a>(<strong class='reserved'>byte</strong>[] src, <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, <strong class='reserved'>byte</strong>[] dst) <em class='brace'>{</em>
+<a id='L797' name='L797'></a> 797         <strong class='reserved'>int</strong> len = dst.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
+<a id='L798' name='L798'></a> 798         <strong class='reserved'>int</strong> rest = src.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>;
+<a id='L799' name='L799'></a> 799         <strong class='reserved'>if</strong> (len &gt; rest) <em class='brace'>{</em>
+<a id='L800' name='L800'></a> 800             len = rest;
+<a id='L801' name='L801'></a> 801         <em class='brace'>}</em>
+<a id='L802' name='L802'></a> 802         <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(src, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, dst, 0, len);
+<a id='L803' name='L803'></a> 803         <strong class='reserved'>return</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> + len;
+<a id='L804' name='L804'></a> 804     <em class='brace'>}</em>
+<a id='L805' name='L805'></a> 805 
+<a id='L806' name='L806'></a> 806     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/28845.html' title='Multiple referred from 2 places.'>startPass</a>(<strong class='reserved'>int</strong> pass) <em class='brace'>{</em>
+<a id='L807' name='L807'></a> 807         <strong class='reserved'>if</strong> (updateListeners == <strong class='reserved'>null</strong> || !imageMetadata.interlaceFlag) <em class='brace'>{</em>
+<a id='L808' name='L808'></a> 808             <strong class='reserved'>return</strong>;
+<a id='L809' name='L809'></a> 809         <em class='brace'>}</em>
+<a id='L810' name='L810'></a> 810 
+<a id='L811' name='L811'></a> 811         <strong class='reserved'>int</strong> y = interlaceOffset[interlacePass];
+<a id='L812' name='L812'></a> 812         <strong class='reserved'>int</strong> yStep = interlaceIncrement[interlacePass];
+<a id='L813' name='L813'></a> 813 
+<a id='L814' name='L814'></a> 814         <strong class='reserved'>int</strong>[] vals = <a href='../S/6786.html#L40' title='Defined at 40 in src/com/sun/imageio/plugins/common/ReaderUtil.java.'>ReaderUtil</a>.
+<a id='L815' name='L815'></a> 815             <a href='../D/13199.html' title='Multiple defined in 2 places.'>computeUpdatedPixels</a>(sourceRegion,
+<a id='L816' name='L816'></a> 816                                  destinationOffset,
+<a id='L817' name='L817'></a> 817                                  destinationRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>,
+<a id='L818' name='L818'></a> 818                                  destinationRegion.y,
+<a id='L819' name='L819'></a> 819                                  destinationRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> +
+<a id='L820' name='L820'></a> 820                                  destinationRegion.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> - 1,
+<a id='L821' name='L821'></a> 821                                  destinationRegion.y +
+<a id='L822' name='L822'></a> 822                                  destinationRegion.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> - 1,
+<a id='L823' name='L823'></a> 823                                  sourceXSubsampling,
+<a id='L824' name='L824'></a> 824                                  sourceYSubsampling,
+<a id='L825' name='L825'></a> 825                                  0,
+<a id='L826' name='L826'></a> 826                                  y,
+<a id='L827' name='L827'></a> 827                                  destinationRegion.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>,
+<a id='L828' name='L828'></a> 828                                  (destinationRegion.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> + yStep - 1)/yStep,
+<a id='L829' name='L829'></a> 829                                  1,
+<a id='L830' name='L830'></a> 830                                  yStep);
+<a id='L831' name='L831'></a> 831 
+<a id='L832' name='L832'></a> 832         <em class='comment'>// Initialized updateMinY and updateYStep</em>
+<a id='L833' name='L833'></a> 833         <strong class='reserved'>this</strong>.updateMinY = vals[1];
+<a id='L834' name='L834'></a> 834         <strong class='reserved'>this</strong>.updateYStep = vals[5];
+<a id='L835' name='L835'></a> 835 
+<a id='L836' name='L836'></a> 836         <em class='comment'>// Inform IIOReadUpdateListeners of new pass</em>
+<a id='L837' name='L837'></a> 837         <strong class='reserved'>int</strong>[] bands = <em class='brace'>{</em> 0 <em class='brace'>}</em>;
+<a id='L838' name='L838'></a> 838 
+<a id='L839' name='L839'></a> 839         <a href='../S/4230.html#L2196' title='Defined at 2196 in src/javax/imageio/ImageReader.java.'>processPassStarted</a>(theImage,
+<a id='L840' name='L840'></a> 840                            interlacePass,
+<a id='L841' name='L841'></a> 841                            sourceMinProgressivePass,
+<a id='L842' name='L842'></a> 842                            sourceMaxProgressivePass,
+<a id='L843' name='L843'></a> 843                            0,
+<a id='L844' name='L844'></a> 844                            updateMinY,
+<a id='L845' name='L845'></a> 845                            1,
+<a id='L846' name='L846'></a> 846                            updateYStep,
+<a id='L847' name='L847'></a> 847                            bands);
+<a id='L848' name='L848'></a> 848     <em class='brace'>}</em>
+<a id='L849' name='L849'></a> 849 
+<a id='L850' name='L850'></a> 850     <strong class='reserved'>public</strong> <a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a> <a href='../R/25407.html' title='Multiple referred from 1300 places.'>read</a>(<strong class='reserved'>int</strong> imageIndex, <a href='../S/4213.html#L130' title='Defined at 130 in src/javax/imageio/ImageReadParam.java.'>ImageReadParam</a> param)
+<a id='L851' name='L851'></a> 851         <strong class='reserved'>throws</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a> <em class='brace'>{</em>
+<a id='L852' name='L852'></a> 852         <strong class='reserved'>if</strong> (<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L853' name='L853'></a> 853             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>("Input not set!");
+<a id='L854' name='L854'></a> 854         <em class='brace'>}</em>
+<a id='L855' name='L855'></a> 855         <a href='../D/12492.html' title='Multiple defined in 7 places.'>checkIndex</a>(imageIndex);
+<a id='L856' name='L856'></a> 856 
+<a id='L857' name='L857'></a> 857         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../S/6837.html#L600' title='Defined at 600 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>locateImage</a>(imageIndex);
+<a id='L858' name='L858'></a> 858         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> != imageIndex) <em class='brace'>{</em>
+<a id='L859' name='L859'></a> 859             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1778.html#L38' title='Defined at 38 in src/java/lang/IndexOutOfBoundsException.java.'>IndexOutOfBoundsException</a>("imageIndex out of bounds!");
+<a id='L860' name='L860'></a> 860         <em class='brace'>}</em>
+<a id='L861' name='L861'></a> 861 
+<a id='L862' name='L862'></a> 862         <a href='../D/12819.html' title='Multiple defined in 3 places.'>clearAbortRequest</a>();
+<a id='L863' name='L863'></a> 863         <a href='../D/30221.html' title='Multiple defined in 2 places.'>readMetadata</a>();
+<a id='L864' name='L864'></a> 864 
+<a id='L865' name='L865'></a> 865         <em class='comment'>// A null ImageReadParam means we use the default</em>
+<a id='L866' name='L866'></a> 866         <strong class='reserved'>if</strong> (param == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L867' name='L867'></a> 867             param = <a href='../D/18351.html' title='Multiple defined in 6 places.'>getDefaultReadParam</a>();
+<a id='L868' name='L868'></a> 868         <em class='brace'>}</em>
+<a id='L869' name='L869'></a> 869 
+<a id='L870' name='L870'></a> 870         <em class='comment'>// Initialize the destination image</em>
+<a id='L871' name='L871'></a> 871         <a href='../D/4461.html' title='Multiple defined in 3 places.'>Iterator</a> imageTypes = <a href='../D/19596.html' title='Multiple defined in 6 places.'>getImageTypes</a>(imageIndex);
+<a id='L872' name='L872'></a> 872         <strong class='reserved'>this</strong>.theImage = <a href='../D/18450.html' title='Multiple defined in 3 places.'>getDestination</a>(param,
+<a id='L873' name='L873'></a> 873                                        imageTypes,
+<a id='L874' name='L874'></a> 874                                        imageMetadata.imageWidth,
+<a id='L875' name='L875'></a> 875                                        imageMetadata.imageHeight);
+<a id='L876' name='L876'></a> 876         <strong class='reserved'>this</strong>.theTile = theImage.<a href='../D/23728.html' title='Multiple defined in 2 places.'>getWritableTile</a>(0, 0);
+<a id='L877' name='L877'></a> 877         <strong class='reserved'>this</strong>.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> = imageMetadata.imageWidth;
+<a id='L878' name='L878'></a> 878         <strong class='reserved'>this</strong>.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> = imageMetadata.imageHeight;
+<a id='L879' name='L879'></a> 879         <strong class='reserved'>this</strong>.streamX = 0;
+<a id='L880' name='L880'></a> 880         <strong class='reserved'>this</strong>.streamY = 0;
+<a id='L881' name='L881'></a> 881         <strong class='reserved'>this</strong>.rowsDone = 0;
+<a id='L882' name='L882'></a> 882         <strong class='reserved'>this</strong>.interlacePass = 0;
+<a id='L883' name='L883'></a> 883 
+<a id='L884' name='L884'></a> 884         <em class='comment'>// Get source region, taking subsampling offsets into account,</em>
+<a id='L885' name='L885'></a> 885         <em class='comment'>// and clipping against the true source bounds</em>
+<a id='L886' name='L886'></a> 886 
+<a id='L887' name='L887'></a> 887         <strong class='reserved'>this</strong>.sourceRegion = <strong class='reserved'>new</strong> <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a>(0, 0, 0, 0);
+<a id='L888' name='L888'></a> 888         <strong class='reserved'>this</strong>.destinationRegion = <strong class='reserved'>new</strong> <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a>(0, 0, 0, 0);
+<a id='L889' name='L889'></a> 889         <a href='../D/13191.html' title='Multiple defined in 2 places.'>computeRegions</a>(param, <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>, <a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a>, theImage,
+<a id='L890' name='L890'></a> 890                        sourceRegion, destinationRegion);
+<a id='L891' name='L891'></a> 891         <strong class='reserved'>this</strong>.destinationOffset = <strong class='reserved'>new</strong> <a href='../S/2123.html#L38' title='Defined at 38 in src/java/awt/Point.java.'>Point</a>(destinationRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>,
+<a id='L892' name='L892'></a> 892                                            destinationRegion.y);
+<a id='L893' name='L893'></a> 893 
+<a id='L894' name='L894'></a> 894         <strong class='reserved'>this</strong>.sourceXSubsampling = param.<a href='../S/4198.html#L345' title='Defined at 345 in src/javax/imageio/IIOParam.java.'>getSourceXSubsampling</a>();
+<a id='L895' name='L895'></a> 895         <strong class='reserved'>this</strong>.sourceYSubsampling = param.<a href='../S/4198.html#L360' title='Defined at 360 in src/javax/imageio/IIOParam.java.'>getSourceYSubsampling</a>();
+<a id='L896' name='L896'></a> 896         <strong class='reserved'>this</strong>.sourceMinProgressivePass =
+<a id='L897' name='L897'></a> 897             <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>(param.<a href='../S/4213.html#L472' title='Defined at 472 in src/javax/imageio/ImageReadParam.java.'>getSourceMinProgressivePass</a>(), 0);
+<a id='L898' name='L898'></a> 898         <strong class='reserved'>this</strong>.sourceMaxProgressivePass =
+<a id='L899' name='L899'></a> 899             <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(param.<a href='../S/4213.html#L486' title='Defined at 486 in src/javax/imageio/ImageReadParam.java.'>getSourceMaxProgressivePass</a>(), 3);
+<a id='L900' name='L900'></a> 900 
+<a id='L901' name='L901'></a> 901         <strong class='reserved'>this</strong>.destY = destinationRegion.y +
+<a id='L902' name='L902'></a> 902             (streamY - sourceRegion.y)/sourceYSubsampling;
+<a id='L903' name='L903'></a> 903         <a href='../S/6837.html#L433' title='Defined at 433 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>computeDecodeThisRow</a>();
+<a id='L904' name='L904'></a> 904 
+<a id='L905' name='L905'></a> 905         <em class='comment'>// Inform IIOReadProgressListeners of start of image</em>
+<a id='L906' name='L906'></a> 906         <a href='../D/29812.html' title='Multiple defined in 2 places.'>processImageStarted</a>(imageIndex);
+<a id='L907' name='L907'></a> 907         <a href='../S/6837.html#L806' title='Defined at 806 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>startPass</a>(0);
+<a id='L908' name='L908'></a> 908 
+<a id='L909' name='L909'></a> 909         <strong class='reserved'>this</strong>.rowBuf = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a>];
+<a id='L910' name='L910'></a> 910 
+<a id='L911' name='L911'></a> 911         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L912' name='L912'></a> 912             <em class='comment'>// Read and decode the image data, fill in theImage</em>
+<a id='L913' name='L913'></a> 913             <strong class='reserved'>this</strong>.initCodeSize = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L914' name='L914'></a> 914 
+<a id='L915' name='L915'></a> 915             <em class='comment'>// Read first data block</em>
+<a id='L916' name='L916'></a> 916             <strong class='reserved'>this</strong>.blockLength = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30291.html' title='Multiple defined in 8 places.'>readUnsignedByte</a>();
+<a id='L917' name='L917'></a> 917             <strong class='reserved'>int</strong> left = blockLength;
+<a id='L918' name='L918'></a> 918             <strong class='reserved'>int</strong> off = 0;
+<a id='L919' name='L919'></a> 919             <strong class='reserved'>while</strong> (left &gt; 0) <em class='brace'>{</em>
+<a id='L920' name='L920'></a> 920                 <strong class='reserved'>int</strong> nbytes = <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(<a href='../D/11878.html' title='Multiple defined in 4 places.'>block</a>, off, left);
+<a id='L921' name='L921'></a> 921                 left -= nbytes;
+<a id='L922' name='L922'></a> 922                 off += nbytes;
+<a id='L923' name='L923'></a> 923             <em class='brace'>}</em>
+<a id='L924' name='L924'></a> 924 
+<a id='L925' name='L925'></a> 925             <strong class='reserved'>this</strong>.bitPos = 0;
+<a id='L926' name='L926'></a> 926             <strong class='reserved'>this</strong>.<a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a> = 0;
+<a id='L927' name='L927'></a> 927             <strong class='reserved'>this</strong>.lastBlockFound = <strong class='reserved'>false</strong>;
+<a id='L928' name='L928'></a> 928             <strong class='reserved'>this</strong>.interlacePass = 0;
+<a id='L929' name='L929'></a> 929 
+<a id='L930' name='L930'></a> 930             <em class='comment'>// Init 32-bit buffer</em>
+<a id='L931' name='L931'></a> 931             <a href='../S/6837.html#L313' title='Defined at 313 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>initNext32Bits</a>();
+<a id='L932' name='L932'></a> 932 
+<a id='L933' name='L933'></a> 933             <strong class='reserved'>this</strong>.clearCode = 1 &lt;&lt; initCodeSize;
+<a id='L934' name='L934'></a> 934             <strong class='reserved'>this</strong>.eofCode = clearCode + 1;
+<a id='L935' name='L935'></a> 935 
+<a id='L936' name='L936'></a> 936             <strong class='reserved'>int</strong> code, oldCode = 0;
+<a id='L937' name='L937'></a> 937 
+<a id='L938' name='L938'></a> 938             <strong class='reserved'>int</strong>[] <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[4096];
+<a id='L939' name='L939'></a> 939             <strong class='reserved'>byte</strong>[] suffix = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[4096];
+<a id='L940' name='L940'></a> 940             <strong class='reserved'>byte</strong>[] initial = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[4096];
+<a id='L941' name='L941'></a> 941             <strong class='reserved'>int</strong>[] <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[4096];
+<a id='L942' name='L942'></a> 942             <strong class='reserved'>byte</strong>[] <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a> = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[4096];
+<a id='L943' name='L943'></a> 943 
+<a id='L944' name='L944'></a> 944             <a href='../S/6837.html#L365' title='Defined at 365 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>initializeStringTable</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, suffix, initial, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L945' name='L945'></a> 945             <strong class='reserved'>int</strong> tableIndex = (1 &lt;&lt; initCodeSize) + 2;
+<a id='L946' name='L946'></a> 946             <strong class='reserved'>int</strong> codeSize = initCodeSize + 1;
+<a id='L947' name='L947'></a> 947             <strong class='reserved'>int</strong> codeMask = (1 &lt;&lt; codeSize) - 1;
+<a id='L948' name='L948'></a> 948 
+<a id='L949' name='L949'></a> 949             <strong class='reserved'>while</strong> (!<a href='../D/10520.html' title='Multiple defined in 2 places.'>abortRequested</a>()) <em class='brace'>{</em>
+<a id='L950' name='L950'></a> 950                 code = <a href='../D/17746.html' title='Multiple defined in 7 places.'>getCode</a>(codeSize, codeMask);
+<a id='L951' name='L951'></a> 951 
+<a id='L952' name='L952'></a> 952                 <strong class='reserved'>if</strong> (code == clearCode) <em class='brace'>{</em>
+<a id='L953' name='L953'></a> 953                     <a href='../S/6837.html#L365' title='Defined at 365 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>initializeStringTable</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, suffix, initial, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L954' name='L954'></a> 954                     tableIndex = (1 &lt;&lt; initCodeSize) + 2;
+<a id='L955' name='L955'></a> 955                     codeSize = initCodeSize + 1;
+<a id='L956' name='L956'></a> 956                     codeMask = (1 &lt;&lt; codeSize) - 1;
+<a id='L957' name='L957'></a> 957 
+<a id='L958' name='L958'></a> 958                     code = <a href='../D/17746.html' title='Multiple defined in 7 places.'>getCode</a>(codeSize, codeMask);
+<a id='L959' name='L959'></a> 959                     <strong class='reserved'>if</strong> (code == eofCode) <em class='brace'>{</em>
+<a id='L960' name='L960'></a> 960                         <em class='comment'>// Inform IIOReadProgressListeners of end of image</em>
+<a id='L961' name='L961'></a> 961                         <a href='../D/29810.html' title='Multiple defined in 2 places.'>processImageComplete</a>();
+<a id='L962' name='L962'></a> 962                         <strong class='reserved'>return</strong> theImage;
+<a id='L963' name='L963'></a> 963                     <em class='brace'>}</em>
+<a id='L964' name='L964'></a> 964                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (code == eofCode) <em class='brace'>{</em>
+<a id='L965' name='L965'></a> 965                     <em class='comment'>// Inform IIOReadProgressListeners of end of image</em>
+<a id='L966' name='L966'></a> 966                     <a href='../D/29810.html' title='Multiple defined in 2 places.'>processImageComplete</a>();
+<a id='L967' name='L967'></a> 967                     <strong class='reserved'>return</strong> theImage;
+<a id='L968' name='L968'></a> 968                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L969' name='L969'></a> 969                     <strong class='reserved'>int</strong> newSuffixIndex;
+<a id='L970' name='L970'></a> 970                     <strong class='reserved'>if</strong> (code &lt; tableIndex) <em class='brace'>{</em>
+<a id='L971' name='L971'></a> 971                         newSuffixIndex = code;
+<a id='L972' name='L972'></a> 972                     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em> <em class='comment'>// code == tableIndex</em>
+<a id='L973' name='L973'></a> 973                         newSuffixIndex = oldCode;
+<a id='L974' name='L974'></a> 974                         <strong class='reserved'>if</strong> (code != tableIndex) <em class='brace'>{</em>
+<a id='L975' name='L975'></a> 975                             <em class='comment'>// warning - code out of sequence</em>
+<a id='L976' name='L976'></a> 976                             <em class='comment'>// possibly data corruption</em>
+<a id='L977' name='L977'></a> 977                             <a href='../D/29868.html' title='Multiple defined in 4 places.'>processWarningOccurred</a>("Out-of-sequence code!");
+<a id='L978' name='L978'></a> 978                         <em class='brace'>}</em>
+<a id='L979' name='L979'></a> 979                     <em class='brace'>}</em>
+<a id='L980' name='L980'></a> 980 
+<a id='L981' name='L981'></a> 981                     <strong class='reserved'>int</strong> ti = tableIndex;
+<a id='L982' name='L982'></a> 982                     <strong class='reserved'>int</strong> oc = oldCode;
+<a id='L983' name='L983'></a> 983 
+<a id='L984' name='L984'></a> 984                     <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>[ti] = oc;
+<a id='L985' name='L985'></a> 985                     suffix[ti] = initial[newSuffixIndex];
+<a id='L986' name='L986'></a> 986                     initial[ti] = initial[oc];
+<a id='L987' name='L987'></a> 987                     <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>[ti] = <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>[oc] + 1;
+<a id='L988' name='L988'></a> 988 
+<a id='L989' name='L989'></a> 989                     ++tableIndex;
+<a id='L990' name='L990'></a> 990                     <strong class='reserved'>if</strong> ((tableIndex == (1 &lt;&lt; codeSize)) &amp;&amp;
+<a id='L991' name='L991'></a> 991                         (tableIndex &lt; 4096)) <em class='brace'>{</em>
+<a id='L992' name='L992'></a> 992                         ++codeSize;
+<a id='L993' name='L993'></a> 993                         codeMask = (1 &lt;&lt; codeSize) - 1;
+<a id='L994' name='L994'></a> 994                     <em class='brace'>}</em>
+<a id='L995' name='L995'></a> 995                 <em class='brace'>}</em>
+<a id='L996' name='L996'></a> 996 
+<a id='L997' name='L997'></a> 997                 <em class='comment'>// Reverse code</em>
+<a id='L998' name='L998'></a> 998                 <strong class='reserved'>int</strong> <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = code;
+<a id='L999' name='L999'></a> 999                 <strong class='reserved'>int</strong> len = <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>[<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>];
+<a id='L1000' name='L1000'></a>1000                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = len - 1; i &gt;= 0; i--) <em class='brace'>{</em>
+<a id='L1001' name='L1001'></a>1001                     <a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>[i] = suffix[<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>];
+<a id='L1002' name='L1002'></a>1002                     <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> = <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>[<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>];
+<a id='L1003' name='L1003'></a>1003                 <em class='brace'>}</em>
+<a id='L1004' name='L1004'></a>1004 
+<a id='L1005' name='L1005'></a>1005                 <a href='../S/6837.html#L441' title='Defined at 441 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>outputPixels</a>(<a href='../S/4997.html#L463' title='Defined at 463 in src/com/sun/org/apache/xpath/internal/compiler/Compiler.java.'>string</a>, len);
+<a id='L1006' name='L1006'></a>1006                 oldCode = code;
+<a id='L1007' name='L1007'></a>1007             <em class='brace'>}</em>
+<a id='L1008' name='L1008'></a>1008 
+<a id='L1009' name='L1009'></a>1009             <a href='../S/4230.html#L2165' title='Defined at 2165 in src/javax/imageio/ImageReader.java.'>processReadAborted</a>();
+<a id='L1010' name='L1010'></a>1010             <strong class='reserved'>return</strong> theImage;
+<a id='L1011' name='L1011'></a>1011         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> e) <em class='brace'>{</em>
+<a id='L1012' name='L1012'></a>1012             e.<a href='../D/29703.html' title='Multiple defined in 46 places.'>printStackTrace</a>();
+<a id='L1013' name='L1013'></a>1013             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4211.html#L42' title='Defined at 42 in src/javax/imageio/IIOException.java.'>IIOException</a>("I/O error reading image!", e);
+<a id='L1014' name='L1014'></a>1014         <em class='brace'>}</em>
+<a id='L1015' name='L1015'></a>1015     <em class='brace'>}</em>
+<a id='L1016' name='L1016'></a>1016 
+<a id='L1017' name='L1017'></a>1017     <em class='comment'>/**</em>
+<a id='L1018' name='L1018'></a>1018 <em class='comment'>     * Remove all settings including global settings such as</em>
+<a id='L1019' name='L1019'></a>1019 <em class='comment'>     * &lt;code&gt;Locale&lt;/code&gt;s and listeners, as well as stream settings.</em>
+<a id='L1020' name='L1020'></a>1020 <em class='comment'>     */</em>
+<a id='L1021' name='L1021'></a>1021     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>() <em class='brace'>{</em>
+<a id='L1022' name='L1022'></a>1022         <strong class='reserved'>super</strong>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
+<a id='L1023' name='L1023'></a>1023         <a href='../D/31211.html' title='Multiple defined in 2 places.'>resetStreamSettings</a>();
+<a id='L1024' name='L1024'></a>1024     <em class='brace'>}</em>
+<a id='L1025' name='L1025'></a>1025 
+<a id='L1026' name='L1026'></a>1026     <em class='comment'>/**</em>
+<a id='L1027' name='L1027'></a>1027 <em class='comment'>     * Remove local settings based on parsing of a stream.</em>
+<a id='L1028' name='L1028'></a>1028 <em class='comment'>     */</em>
+<a id='L1029' name='L1029'></a>1029     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/26292.html' title='Multiple referred from 4 places.'>resetStreamSettings</a>() <em class='brace'>{</em>
+<a id='L1030' name='L1030'></a>1030         gotHeader = <strong class='reserved'>false</strong>;
+<a id='L1031' name='L1031'></a>1031         streamMetadata = <strong class='reserved'>null</strong>;
+<a id='L1032' name='L1032'></a>1032         currIndex = -1;
+<a id='L1033' name='L1033'></a>1033         imageMetadata = <strong class='reserved'>null</strong>;
+<a id='L1034' name='L1034'></a>1034         imageStartPosition = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>();
+<a id='L1035' name='L1035'></a>1035         numImages = -1;
+<a id='L1036' name='L1036'></a>1036 
+<a id='L1037' name='L1037'></a>1037         <em class='comment'>// No need to reinitialize 'block'</em>
+<a id='L1038' name='L1038'></a>1038         blockLength = 0;
+<a id='L1039' name='L1039'></a>1039         bitPos = 0;
+<a id='L1040' name='L1040'></a>1040         <a href='../D/28137.html' title='Multiple defined in 2 places.'>nextByte</a> = 0;
+<a id='L1041' name='L1041'></a>1041 
+<a id='L1042' name='L1042'></a>1042         next32Bits = 0;
+<a id='L1043' name='L1043'></a>1043         lastBlockFound = <strong class='reserved'>false</strong>;
+<a id='L1044' name='L1044'></a>1044 
+<a id='L1045' name='L1045'></a>1045         theImage = <strong class='reserved'>null</strong>;
+<a id='L1046' name='L1046'></a>1046         theTile = <strong class='reserved'>null</strong>;
+<a id='L1047' name='L1047'></a>1047         <a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> = -1;
+<a id='L1048' name='L1048'></a>1048         <a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> = -1;
+<a id='L1049' name='L1049'></a>1049         streamX = -1;
+<a id='L1050' name='L1050'></a>1050         streamY = -1;
+<a id='L1051' name='L1051'></a>1051         rowsDone = 0;
+<a id='L1052' name='L1052'></a>1052         interlacePass = 0;
+<a id='L1053' name='L1053'></a>1053 
+<a id='L1054' name='L1054'></a>1054         fallbackColorTable = <strong class='reserved'>null</strong>;
+<a id='L1055' name='L1055'></a>1055     <em class='brace'>}</em>
+<a id='L1056' name='L1056'></a>1056 
+<a id='L1057' name='L1057'></a>1057     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>byte</strong>[] defaultPalette = <strong class='reserved'>null</strong>;
+<a id='L1058' name='L1058'></a>1058 
+<a id='L1059' name='L1059'></a>1059     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>synchronized</strong> <strong class='reserved'>byte</strong>[] <a href='../S/6837.html#L254' title='Referred from 254 in src/com/sun/imageio/plugins/gif/GIFImageReader.java.'>getDefaultPalette</a>() <em class='brace'>{</em>
+<a id='L1060' name='L1060'></a>1060         <strong class='reserved'>if</strong> (defaultPalette == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L1061' name='L1061'></a>1061             <a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a> img = <strong class='reserved'>new</strong> <a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a>(1, 1,
+<a id='L1062' name='L1062'></a>1062                     <a href='../S/2258.html#L68' title='Defined at 68 in src/java/awt/image/BufferedImage.java.'>BufferedImage</a>.TYPE_BYTE_INDEXED);
+<a id='L1063' name='L1063'></a>1063             <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a> icm = (<a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>) img.<a href='../D/17790.html' title='Multiple defined in 14 places.'>getColorModel</a>();
+<a id='L1064' name='L1064'></a>1064 
+<a id='L1065' name='L1065'></a>1065             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> = icm.<a href='../S/2242.html#L637' title='Defined at 637 in src/java/awt/image/IndexColorModel.java.'>getMapSize</a>();
+<a id='L1066' name='L1066'></a>1066             <strong class='reserved'>byte</strong>[] r = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>];
+<a id='L1067' name='L1067'></a>1067             <strong class='reserved'>byte</strong>[] g = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>];
+<a id='L1068' name='L1068'></a>1068             <strong class='reserved'>byte</strong>[] b = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>];
+<a id='L1069' name='L1069'></a>1069             icm.<a href='../S/2242.html#L664' title='Defined at 664 in src/java/awt/image/IndexColorModel.java.'>getReds</a>(r);
+<a id='L1070' name='L1070'></a>1070             icm.<a href='../S/2242.html#L677' title='Defined at 677 in src/java/awt/image/IndexColorModel.java.'>getGreens</a>(g);
+<a id='L1071' name='L1071'></a>1071             icm.<a href='../S/2242.html#L690' title='Defined at 690 in src/java/awt/image/IndexColorModel.java.'>getBlues</a>(b);
+<a id='L1072' name='L1072'></a>1072 
+<a id='L1073' name='L1073'></a>1073             defaultPalette = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> * 3];
+<a id='L1074' name='L1074'></a>1074 
+<a id='L1075' name='L1075'></a>1075             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>; i++) <em class='brace'>{</em>
+<a id='L1076' name='L1076'></a>1076                 defaultPalette[3 * i + 0] = r[i];
+<a id='L1077' name='L1077'></a>1077                 defaultPalette[3 * i + 1] = g[i];
+<a id='L1078' name='L1078'></a>1078                 defaultPalette[3 * i + 2] = b[i];
+<a id='L1079' name='L1079'></a>1079             <em class='brace'>}</em>
+<a id='L1080' name='L1080'></a>1080         <em class='brace'>}</em>
+<a id='L1081' name='L1081'></a>1081         <strong class='reserved'>return</strong> defaultPalette;
+<a id='L1082' name='L1082'></a>1082     <em class='brace'>}</em>
+<a id='L1083' name='L1083'></a>1083 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L131'>[^]</a><a href='#L1059'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7728.html'>corba</a>/<a href='../files/7729.html'>se</a>/<a href='../files/7734.html'>impl</a>/<a href='../files/7765.html'>presentation</a>/<a href='../files/7766.html'>rmi</a>/ExceptionHandlerImpl.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L61'>[^]</a><a href='#L291'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L61' title='Defined at 61.'>getExceptionClass</a></li>
+<li><a href='#L63' title='Defined at 63.'>getId</a></li>
+<li><a href='#L65' title='Defined at 65.'>write</a></li>
+<li><a href='#L67' title='Defined at 67.'>read</a></li>
+<li><a href='#L80' title='Defined at 80.'>getExceptionClass</a></li>
+<li><a href='#L85' title='Defined at 85.'>getId</a></li>
+<li><a href='#L90' title='Defined at 90.'>setId</a></li>
+<li><a href='#L135' title='Defined at 135.'>write</a></li>
+<li><a href='#L146' title='Defined at 146.'>read</a></li>
+<li><a href='#L166' title='Defined at 166.'>write</a></li>
+<li><a href='#L172' title='Defined at 172.'>read</a></li>
+<li><a href='#L229' title='Defined at 229.'>findDeclaredException</a></li>
+<li><a href='#L240' title='Defined at 240.'>findDeclaredException</a></li>
+<li><a href='#L256' title='Defined at 256.'>isDeclaredException</a></li>
+<li><a href='#L261' title='Defined at 261.'>writeException</a></li>
+<li><a href='#L271' title='Defined at 271.'>readException</a></li>
+<li><a href='#L291' title='Defined at 291.'>getRMIExceptionRW</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
+<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
+<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
+<a id='L25' name='L25'></a>  25 
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.corba.se.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.presentation.rmi ;
+<a id='L27' name='L27'></a>  27 
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.Serializable ;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.io.Externalizable ;
+<a id='L30' name='L30'></a>  30 
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> javax.rmi.PortableRemoteObject ;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> javax.rmi.CORBA.Util ;
+<a id='L33' name='L33'></a>  33 
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.rmi.RemoteException ;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.rmi.UnexpectedException ;
+<a id='L36' name='L36'></a>  36 
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.omg.CORBA.UserException ;
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.omg.CORBA_2_3.portable.InputStream ;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> org.omg.CORBA_2_3.portable.OutputStream ;
+<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> org.omg.CORBA.portable.ApplicationException ;
+<a id='L42' name='L42'></a>  42 
+<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> java.lang.reflect.Method ;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.corba.se.spi.logging.CORBALogDomains ;
+<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.corba.se.impl.logging.ORBUtilSystemException ;
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../S/7256.html#L364' title='Referred from 364 in src/com/sun/corba/se/impl/presentation/rmi/DynamicMethodMarshallerImpl.java.'>ExceptionHandlerImpl</a> <strong class='reserved'>implements</strong> <a href='../S/7240.html#L33' title='Defined at 33 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandler.java.'>ExceptionHandler</a>
+<a id='L49' name='L49'></a>  49 <em class='brace'>{</em>
+<a id='L50' name='L50'></a>  50     <strong class='reserved'>private</strong> <a href='../S/7244.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRW</a>[] rws ;
+<a id='L51' name='L51'></a>  51 
+<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a> wrapper ;
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54 <em class='comment'>///////////////////////////////////////////////////////////////////////////////</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>// ExceptionRW interface and implementations.</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>// Used to read and write exceptions.</em>
+<a id='L57' name='L57'></a>  57 <em class='comment'>///////////////////////////////////////////////////////////////////////////////</em>
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59     <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/2766.html' title='Multiple referred from 5 places.'>ExceptionRW</a>
+<a id='L60' name='L60'></a>  60     <em class='brace'>{</em>
+<a id='L61' name='L61'></a>  61         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> <a href='../R/16460.html' title='Multiple referred from 3 places.'>getExceptionClass</a>() ;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16968.html' title='Multiple referred from 227 places.'>getId</a>() ;
+<a id='L64' name='L64'></a>  64 
+<a id='L65' name='L65'></a>  65         <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>( <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> os, <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> ) ;
+<a id='L66' name='L66'></a>  66 
+<a id='L67' name='L67'></a>  67         <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/25407.html' title='Multiple referred from 1300 places.'>read</a>( <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a> ) ;
+<a id='L68' name='L68'></a>  68     <em class='brace'>}</em>
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/2767.html' title='Multiple referred from 2 places.'>ExceptionRWBase</a> <strong class='reserved'>implements</strong> <a href='../S/7244.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRW</a>
+<a id='L71' name='L71'></a>  71     <em class='brace'>{</em>
+<a id='L72' name='L72'></a>  72         <strong class='reserved'>private</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls ;
+<a id='L73' name='L73'></a>  73         <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> ;
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75         <strong class='reserved'>public</strong> ExceptionRWBase( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls )
+<a id='L76' name='L76'></a>  76         <em class='brace'>{</em>
+<a id='L77' name='L77'></a>  77             <strong class='reserved'>this</strong>.cls = cls ;
+<a id='L78' name='L78'></a>  78         <em class='brace'>}</em>
+<a id='L79' name='L79'></a>  79 
+<a id='L80' name='L80'></a>  80         <strong class='reserved'>public</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> <a href='../R/16460.html' title='Multiple referred from 3 places.'>getExceptionClass</a>()
+<a id='L81' name='L81'></a>  81         <em class='brace'>{</em>
+<a id='L82' name='L82'></a>  82             <strong class='reserved'>return</strong> cls ;
+<a id='L83' name='L83'></a>  83         <em class='brace'>}</em>
+<a id='L84' name='L84'></a>  84 
+<a id='L85' name='L85'></a>  85         <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/16968.html' title='Multiple referred from 227 places.'>getId</a>()
+<a id='L86' name='L86'></a>  86         <em class='brace'>{</em>
+<a id='L87' name='L87'></a>  87             <strong class='reserved'>return</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> ;
+<a id='L88' name='L88'></a>  88         <em class='brace'>}</em>
+<a id='L89' name='L89'></a>  89 
+<a id='L90' name='L90'></a>  90         <strong class='reserved'>void</strong> <a href='../R/27527.html' title='Multiple referred from 22 places.'>setId</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> )
+<a id='L91' name='L91'></a>  91         <em class='brace'>{</em>
+<a id='L92' name='L92'></a>  92             <strong class='reserved'>this</strong>.<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> ;
+<a id='L93' name='L93'></a>  93         <em class='brace'>}</em>
+<a id='L94' name='L94'></a>  94     <em class='brace'>}</em>
+<a id='L95' name='L95'></a>  95 
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../S/7244.html#L201' title='Referred from 201 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRWIDLImpl</a> <strong class='reserved'>extends</strong> <a href='../S/7244.html#L70' title='Defined at 70 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRWBase</a>
+<a id='L97' name='L97'></a>  97     <em class='brace'>{</em>
+<a id='L98' name='L98'></a>  98         <strong class='reserved'>private</strong> <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> readMethod ;
+<a id='L99' name='L99'></a>  99         <strong class='reserved'>private</strong> <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> <a href='../D/37113.html' title='Multiple defined in 2 places.'>writeMethod</a> ;
+<a id='L100' name='L100'></a> 100 
+<a id='L101' name='L101'></a> 101         <strong class='reserved'>public</strong> ExceptionRWIDLImpl( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls )
+<a id='L102' name='L102'></a> 102         <em class='brace'>{</em>
+<a id='L103' name='L103'></a> 103             <strong class='reserved'>super</strong>( cls ) ;
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> helperName = cls.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() + "Helper" ;
+<a id='L106' name='L106'></a> 106             <a href='../D/1519.html' title='Multiple defined in 2 places.'>ClassLoader</a> loader = cls.<a href='../D/17691.html' title='Multiple defined in 20 places.'>getClassLoader</a>() ;
+<a id='L107' name='L107'></a> 107             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> helperClass ;
+<a id='L108' name='L108'></a> 108 
+<a id='L109' name='L109'></a> 109             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L110' name='L110'></a> 110                 helperClass = <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>.<a href='../D/16518.html' title='Multiple defined in 6 places.'>forName</a>( helperName, <strong class='reserved'>true</strong>, loader ) ;
+<a id='L111' name='L111'></a> 111                 <a href='../D/5605.html' title='Multiple defined in 4 places.'>Method</a> idMethod = helperClass.<a href='../D/18255.html' title='Multiple defined in 2 places.'>getDeclaredMethod</a>( "id", (<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[])<strong class='reserved'>null</strong> ) ;
+<a id='L112' name='L112'></a> 112                 <a href='../D/32884.html' title='Multiple defined in 18 places.'>setId</a>( (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>)idMethod.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>( <strong class='reserved'>null</strong>, (<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[])<strong class='reserved'>null</strong> ) ) ;
+<a id='L113' name='L113'></a> 113             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L114' name='L114'></a> 114                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/11717.html' title='Multiple defined in 4 places.'>badHelperIdMethod</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>, helperName ) ;
+<a id='L115' name='L115'></a> 115             <em class='brace'>}</em>
+<a id='L116' name='L116'></a> 116 
+<a id='L117' name='L117'></a> 117             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L118' name='L118'></a> 118                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] argTypes = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] <em class='brace'>{</em>
+<a id='L119' name='L119'></a> 119                     org.omg.CORBA.portable.<a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a>.<strong class='reserved'>class</strong>, cls <em class='brace'>}</em> ;
+<a id='L120' name='L120'></a> 120                 <a href='../D/37113.html' title='Multiple defined in 2 places.'>writeMethod</a> = helperClass.<a href='../D/18255.html' title='Multiple defined in 2 places.'>getDeclaredMethod</a>( "write",
+<a id='L121' name='L121'></a> 121                     argTypes ) ;
+<a id='L122' name='L122'></a> 122             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L123' name='L123'></a> 123                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/11719.html' title='Multiple defined in 4 places.'>badHelperWriteMethod</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>, helperName ) ;
+<a id='L124' name='L124'></a> 124             <em class='brace'>}</em>
+<a id='L125' name='L125'></a> 125 
+<a id='L126' name='L126'></a> 126             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L127' name='L127'></a> 127                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] argTypes = <strong class='reserved'>new</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128                     org.omg.CORBA.portable.<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a>.<strong class='reserved'>class</strong> <em class='brace'>}</em> ;
+<a id='L129' name='L129'></a> 129                 readMethod = helperClass.<a href='../D/18255.html' title='Multiple defined in 2 places.'>getDeclaredMethod</a>( "read", argTypes ) ;
+<a id='L130' name='L130'></a> 130             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L131' name='L131'></a> 131                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/11718.html' title='Multiple defined in 4 places.'>badHelperReadMethod</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>, helperName ) ;
+<a id='L132' name='L132'></a> 132             <em class='brace'>}</em>
+<a id='L133' name='L133'></a> 133         <em class='brace'>}</em>
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>( <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> os, <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> )
+<a id='L136' name='L136'></a> 136         <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L138' name='L138'></a> 138                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> os, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <em class='brace'>}</em> ;
+<a id='L139' name='L139'></a> 139                 <a href='../D/37113.html' title='Multiple defined in 2 places.'>writeMethod</a>.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>( <strong class='reserved'>null</strong>, args ) ;
+<a id='L140' name='L140'></a> 140             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> exc) <em class='brace'>{</em>
+<a id='L141' name='L141'></a> 141                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/11719.html' title='Multiple defined in 4 places.'>badHelperWriteMethod</a>( exc,
+<a id='L142' name='L142'></a> 142                     <a href='../D/37113.html' title='Multiple defined in 2 places.'>writeMethod</a>.<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() ) ;
+<a id='L143' name='L143'></a> 143             <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144         <em class='brace'>}</em>
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146         <strong class='reserved'>public</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/25407.html' title='Multiple referred from 1300 places.'>read</a>( <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a> )
+<a id='L147' name='L147'></a> 147         <em class='brace'>{</em>
+<a id='L148' name='L148'></a> 148             <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] args = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] <em class='brace'>{</em> <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a> <em class='brace'>}</em> ;
+<a id='L150' name='L150'></a> 150                 <strong class='reserved'>return</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>)readMethod.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>( <strong class='reserved'>null</strong>, args ) ;
+<a id='L151' name='L151'></a> 151             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
+<a id='L152' name='L152'></a> 152                 <strong class='reserved'>throw</strong> wrapper.<a href='../D/11718.html' title='Multiple defined in 4 places.'>badHelperReadMethod</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>,
+<a id='L153' name='L153'></a> 153                     readMethod.<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() ) ;
+<a id='L154' name='L154'></a> 154             <em class='brace'>}</em>
+<a id='L155' name='L155'></a> 155         <em class='brace'>}</em>
+<a id='L156' name='L156'></a> 156     <em class='brace'>}</em>
+<a id='L157' name='L157'></a> 157 
+<a id='L158' name='L158'></a> 158     <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/2769.html' title='Multiple referred from 2 places.'>ExceptionRWRMIImpl</a> <strong class='reserved'>extends</strong> <a href='../S/7244.html#L70' title='Defined at 70 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRWBase</a>
+<a id='L159' name='L159'></a> 159     <em class='brace'>{</em>
+<a id='L160' name='L160'></a> 160         <strong class='reserved'>public</strong> ExceptionRWRMIImpl( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls )
+<a id='L161' name='L161'></a> 161         <em class='brace'>{</em>
+<a id='L162' name='L162'></a> 162             <strong class='reserved'>super</strong>( cls ) ;
+<a id='L163' name='L163'></a> 163             <a href='../D/32884.html' title='Multiple defined in 18 places.'>setId</a>( <a href='../S/7257.html#L53' title='Defined at 53 in src/com/sun/corba/se/impl/presentation/rmi/IDLNameTranslatorImpl.java.'>IDLNameTranslatorImpl</a>.<a href='../S/7257.html#L162' title='Defined at 162 in src/com/sun/corba/se/impl/presentation/rmi/IDLNameTranslatorImpl.java.'>getExceptionId</a>( cls ) ) ;
+<a id='L164' name='L164'></a> 164         <em class='brace'>}</em>
+<a id='L165' name='L165'></a> 165 
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>( <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> os, <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> )
+<a id='L167' name='L167'></a> 167         <em class='brace'>{</em>
+<a id='L168' name='L168'></a> 168             os.<a href='../D/37259.html' title='Multiple defined in 7 places.'>write_string</a>( <a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() ) ;
+<a id='L169' name='L169'></a> 169             os.<a href='../D/37270.html' title='Multiple defined in 28 places.'>write_value</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>, <a href='../D/18895.html' title='Multiple defined in 2 places.'>getExceptionClass</a>() ) ;
+<a id='L170' name='L170'></a> 170         <em class='brace'>}</em>
+<a id='L171' name='L171'></a> 171 
+<a id='L172' name='L172'></a> 172         <strong class='reserved'>public</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/25407.html' title='Multiple referred from 1300 places.'>read</a>( <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a> )
+<a id='L173' name='L173'></a> 173         <em class='brace'>{</em>
+<a id='L174' name='L174'></a> 174             <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>.<a href='../D/30336.html' title='Multiple defined in 9 places.'>read_string</a>() ; <em class='comment'>// read and ignore!</em>
+<a id='L175' name='L175'></a> 175             <strong class='reserved'>return</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a>)<a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>.<a href='../D/30343.html' title='Multiple defined in 39 places.'>read_value</a>( <a href='../D/18895.html' title='Multiple defined in 2 places.'>getExceptionClass</a>() ) ;
+<a id='L176' name='L176'></a> 176         <em class='brace'>}</em>
+<a id='L177' name='L177'></a> 177     <em class='brace'>}</em>
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179 <em class='comment'>///////////////////////////////////////////////////////////////////////////////</em>
+<a id='L180' name='L180'></a> 180 
+<a id='L181' name='L181'></a> 181     <strong class='reserved'>public</strong> ExceptionHandlerImpl( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>[] <a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a> )
+<a id='L182' name='L182'></a> 182     <em class='brace'>{</em>
+<a id='L183' name='L183'></a> 183         wrapper = <a href='../S/7263.html#L38' title='Defined at 38 in src/com/sun/corba/se/impl/logging/ORBUtilSystemException.java.'>ORBUtilSystemException</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(
+<a id='L184' name='L184'></a> 184             <a href='../S/7576.html#L57' title='Defined at 57 in src/com/sun/corba/se/spi/logging/CORBALogDomains.java.'>CORBALogDomains</a>.RPC_PRESENTATION ) ;
+<a id='L185' name='L185'></a> 185 
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>int</strong> <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a> = 0 ;
+<a id='L187' name='L187'></a> 187         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> ctr=0; ctr&lt;<a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ctr++) <em class='brace'>{</em>
+<a id='L188' name='L188'></a> 188             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls = <a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>[ctr] ;
+<a id='L189' name='L189'></a> 189             <strong class='reserved'>if</strong> (!<a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(cls))
+<a id='L190' name='L190'></a> 190                 <a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>++ ;
+<a id='L191' name='L191'></a> 191         <em class='brace'>}</em>
+<a id='L192' name='L192'></a> 192 
+<a id='L193' name='L193'></a> 193         rws = <strong class='reserved'>new</strong> <a href='../S/7244.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRW</a>[<a href='../D/13557.html' title='Multiple defined in 24 places.'>count</a>] ;
+<a id='L194' name='L194'></a> 194 
+<a id='L195' name='L195'></a> 195         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = 0 ;
+<a id='L196' name='L196'></a> 196         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> ctr=0; ctr&lt;<a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ctr++) <em class='brace'>{</em>
+<a id='L197' name='L197'></a> 197             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls = <a href='../D/15786.html' title='Multiple defined in 7 places.'>exceptions</a>[ctr] ;
+<a id='L198' name='L198'></a> 198             <strong class='reserved'>if</strong> (!<a href='../S/2551.html#L49' title='Defined at 49 in src/java/rmi/RemoteException.java.'>RemoteException</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(cls)) <em class='brace'>{</em>
+<a id='L199' name='L199'></a> 199                 <a href='../S/7244.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRW</a> erw = <strong class='reserved'>null</strong> ;
+<a id='L200' name='L200'></a> 200                 <strong class='reserved'>if</strong> (<a href='../S/267.html#L37' title='Defined at 37 in src/org/omg/CORBA/UserException.java.'>UserException</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(cls))
+<a id='L201' name='L201'></a> 201                     erw = <strong class='reserved'>new</strong> <a href='../S/7244.html#L96' title='Defined at 96 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRWIDLImpl</a>( cls ) ;
+<a id='L202' name='L202'></a> 202                 <strong class='reserved'>else</strong>
+<a id='L203' name='L203'></a> 203                     erw = <strong class='reserved'>new</strong> <a href='../S/7244.html#L158' title='Defined at 158 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRWRMIImpl</a>( cls ) ;
+<a id='L204' name='L204'></a> 204 
+<a id='L205' name='L205'></a> 205                 <em class='comment'>/* The following check is not performed</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>                 * in order to maintain compatibility with</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>                 * rmic.  See bug 4989312.</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'></em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>                // Check for duplicate repository ID</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>                String repositoryId = erw.getId() ;</em>
+<a id='L211' name='L211'></a> 211 <em class='comment'>                int duplicateIndex = findDeclaredException( repositoryId ) ;</em>
+<a id='L212' name='L212'></a> 212 <em class='comment'>                if (duplicateIndex &gt; 0) {</em>
+<a id='L213' name='L213'></a> 213 <em class='comment'>                    ExceptionRW duprw = rws[duplicateIndex] ;</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>                    String firstClassName =</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>                        erw.getExceptionClass().getName() ;</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>                    String secondClassName =</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>                        duprw.getExceptionClass().getName() ;</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>                    throw wrapper.duplicateExceptionRepositoryId(</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>                        firstClassName, secondClassName, repositoryId ) ;</em>
+<a id='L220' name='L220'></a> 220 <em class='comment'>                }</em>
+<a id='L221' name='L221'></a> 221 <em class='comment'></em>
+<a id='L222' name='L222'></a> 222 <em class='comment'>                */</em>
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224                 rws[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>++] = erw ;
+<a id='L225' name='L225'></a> 225             <em class='brace'>}</em>
+<a id='L226' name='L226'></a> 226         <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227     <em class='brace'>}</em>
+<a id='L228' name='L228'></a> 228 
+<a id='L229' name='L229'></a> 229     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/14370.html' title='Multiple referred from 3 places.'>findDeclaredException</a>( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls )
+<a id='L230' name='L230'></a> 230     <em class='brace'>{</em>
+<a id='L231' name='L231'></a> 231         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> ctr = 0; ctr &lt; rws.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ctr++) <em class='brace'>{</em>
+<a id='L232' name='L232'></a> 232             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> <a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a> = rws[ctr].<a href='../D/18895.html' title='Multiple defined in 2 places.'>getExceptionClass</a>() ;
+<a id='L233' name='L233'></a> 233             <strong class='reserved'>if</strong> (<a href='../D/28131.html' title='Multiple defined in 273 places.'>next</a>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(cls))
+<a id='L234' name='L234'></a> 234                 <strong class='reserved'>return</strong> ctr ;
+<a id='L235' name='L235'></a> 235         <em class='brace'>}</em>
+<a id='L236' name='L236'></a> 236 
+<a id='L237' name='L237'></a> 237         <strong class='reserved'>return</strong> -1 ;
+<a id='L238' name='L238'></a> 238     <em class='brace'>}</em>
+<a id='L239' name='L239'></a> 239 
+<a id='L240' name='L240'></a> 240     <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../R/14370.html' title='Multiple referred from 3 places.'>findDeclaredException</a>( <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> repositoryId )
+<a id='L241' name='L241'></a> 241     <em class='brace'>{</em>
+<a id='L242' name='L242'></a> 242         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> ctr=0; ctr&lt;rws.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ctr++) <em class='brace'>{</em>
+<a id='L243' name='L243'></a> 243             <em class='comment'>// This may occur when rws has not been fully</em>
+<a id='L244' name='L244'></a> 244             <em class='comment'>// populated, in which case the search should just fail.</em>
+<a id='L245' name='L245'></a> 245             <strong class='reserved'>if</strong> (rws[ctr]==<strong class='reserved'>null</strong>)
+<a id='L246' name='L246'></a> 246                 <strong class='reserved'>return</strong> -1 ;
+<a id='L247' name='L247'></a> 247 
+<a id='L248' name='L248'></a> 248             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> rid = rws[ctr].<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() ;
+<a id='L249' name='L249'></a> 249             <strong class='reserved'>if</strong> (repositoryId.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>( rid ))
+<a id='L250' name='L250'></a> 250                 <strong class='reserved'>return</strong> ctr ;
+<a id='L251' name='L251'></a> 251         <em class='brace'>}</em>
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>return</strong> -1 ;
+<a id='L254' name='L254'></a> 254     <em class='brace'>}</em>
+<a id='L255' name='L255'></a> 255 
+<a id='L256' name='L256'></a> 256     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21330.html' title='Multiple referred from 3 places.'>isDeclaredException</a>( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls )
+<a id='L257' name='L257'></a> 257     <em class='brace'>{</em>
+<a id='L258' name='L258'></a> 258         <strong class='reserved'>return</strong> <a href='../D/16117.html' title='Multiple defined in 2 places.'>findDeclaredException</a>( cls ) &gt;= 0 ;
+<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30619.html' title='Multiple referred from 2 places.'>writeException</a>( <a href='../D/6445.html' title='Multiple defined in 3 places.'>OutputStream</a> os, <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> )
+<a id='L262' name='L262'></a> 262     <em class='brace'>{</em>
+<a id='L263' name='L263'></a> 263         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../D/16117.html' title='Multiple defined in 2 places.'>findDeclaredException</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>() ) ;
+<a id='L264' name='L264'></a> 264         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> &lt; 0)
+<a id='L265' name='L265'></a> 265             <strong class='reserved'>throw</strong> wrapper.<a href='../D/37201.html' title='Multiple defined in 4 places.'>writeUndeclaredException</a>( <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>,
+<a id='L266' name='L266'></a> 266                 <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>.<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>() ) ;
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268         rws[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>].<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>( os, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> ) ;
+<a id='L269' name='L269'></a> 269     <em class='brace'>}</em>
+<a id='L270' name='L270'></a> 270 
+<a id='L271' name='L271'></a> 271     <strong class='reserved'>public</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/25468.html' title='Multiple referred from 2 places.'>readException</a>( <a href='../S/312.html#L32' title='Defined at 32 in src/org/omg/CORBA/portable/ApplicationException.java.'>ApplicationException</a> ae )
+<a id='L272' name='L272'></a> 272     <em class='brace'>{</em>
+<a id='L273' name='L273'></a> 273         <em class='comment'>// Note that the exception ID is present in both ae</em>
+<a id='L274' name='L274'></a> 274         <em class='comment'>// and in the input stream from ae.  The exception</em>
+<a id='L275' name='L275'></a> 275         <em class='comment'>// reader must actually read the exception ID from</em>
+<a id='L276' name='L276'></a> 276         <em class='comment'>// the stream.</em>
+<a id='L277' name='L277'></a> 277         <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a> = (<a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a>)ae.<a href='../D/19744.html' title='Multiple defined in 16 places.'>getInputStream</a>() ;
+<a id='L278' name='L278'></a> 278         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> excName = ae.<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>() ;
+<a id='L279' name='L279'></a> 279         <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> = <a href='../D/16117.html' title='Multiple defined in 2 places.'>findDeclaredException</a>( excName ) ;
+<a id='L280' name='L280'></a> 280         <strong class='reserved'>if</strong> (<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a> &lt; 0) <em class='brace'>{</em>
+<a id='L281' name='L281'></a> 281             excName = <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a>.<a href='../D/30336.html' title='Multiple defined in 9 places.'>read_string</a>() ;
+<a id='L282' name='L282'></a> 282             <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> res = <strong class='reserved'>new</strong> <a href='../S/2556.html#L37' title='Defined at 37 in src/java/rmi/UnexpectedException.java.'>UnexpectedException</a>( excName ) ;
+<a id='L283' name='L283'></a> 283             res.<a href='../D/24507.html' title='Multiple defined in 7 places.'>initCause</a>( ae ) ;
+<a id='L284' name='L284'></a> 284             <strong class='reserved'>return</strong> res ;
+<a id='L285' name='L285'></a> 285         <em class='brace'>}</em>
+<a id='L286' name='L286'></a> 286 
+<a id='L287' name='L287'></a> 287         <strong class='reserved'>return</strong> rws[<a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>].<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>( <a href='../D/25134.html' title='Multiple defined in 5 places.'>is</a> ) ;
+<a id='L288' name='L288'></a> 288     <em class='brace'>}</em>
+<a id='L289' name='L289'></a> 289 
+<a id='L290' name='L290'></a> 290     <em class='comment'>// This is here just for the dynamicrmiiiop test</em>
+<a id='L291' name='L291'></a> 291     <strong class='reserved'>public</strong> <a href='../S/7244.html#L59' title='Defined at 59 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRW</a> getRMIExceptionRW( <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a> cls )
+<a id='L292' name='L292'></a> 292     <em class='brace'>{</em>
+<a id='L293' name='L293'></a> 293         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/7244.html#L158' title='Defined at 158 in src/com/sun/corba/se/impl/presentation/rmi/ExceptionHandlerImpl.java.'>ExceptionRWRMIImpl</a>( cls ) ;
+<a id='L294' name='L294'></a> 294     <em class='brace'>}</em>
+<a id='L295' name='L295'></a> 295 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L61'>[^]</a><a href='#L291'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

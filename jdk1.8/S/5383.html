@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xerces/internal/xpointer/XPointerPart.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7920.html'>xpointer</a>/XPointerPart.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L130'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L57' title='Defined at 57.'>parseXPointer</a></li>
+<li><a href='#L74' title='Defined at 74.'>resolveXPointer</a></li>
+<li><a href='#L86' title='Defined at 86.'>isFragmentResolved</a></li>
+<li><a href='#L97' title='Defined at 97.'>isChildFragmentResolved</a></li>
+<li><a href='#L106' title='Defined at 106.'>getSchemeName</a></li>
+<li><a href='#L114' title='Defined at 114.'>getSchemeData</a></li>
+<li><a href='#L122' title='Defined at 122.'>setSchemeName</a></li>
+<li><a href='#L130' title='Defined at 130.'>setSchemeData</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2005 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.xpointer;
+<a id='L21' name='L21'></a>  21 
+<a id='L22' name='L22'></a>  22 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.Augmentations;
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.QName;
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XMLAttributes;
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XNIException;
+<a id='L26' name='L26'></a>  26 
+<a id='L27' name='L27'></a>  27 <em class='comment'>/**</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> * &lt;p&gt;</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * Used for scheme specific parsing and evaluation of an XPointer expression.</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> * This interface applies to both ShortHand and SchemeBased XPointer</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * expressions.</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * &lt;/p&gt;</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> *</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * @xerces.internal</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> *</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> */</em>
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/9157.html' title='Multiple referred from 15 places.'>XPointerPart</a> <em class='brace'>{</em>
+<a id='L38' name='L38'></a>  38 
+<a id='L39' name='L39'></a>  39     <em class='comment'>// The start element event</em>
+<a id='L40' name='L40'></a>  40     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> EVENT_ELEMENT_START = 0;
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42     <em class='comment'>// The end element event</em>
+<a id='L43' name='L43'></a>  43     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> EVENT_ELEMENT_END = 1;
+<a id='L44' name='L44'></a>  44 
+<a id='L45' name='L45'></a>  45     <em class='comment'>// The empty element event</em>
+<a id='L46' name='L46'></a>  46     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> EVENT_ELEMENT_EMPTY = 2;
+<a id='L47' name='L47'></a>  47 
+<a id='L48' name='L48'></a>  48     <em class='comment'>/**</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'>     * Provides scheme specific parsing of a XPointer expression i.e.</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'>     * the PointerPart or ShortHandPointer.</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'>     *</em>
+<a id='L52' name='L52'></a>  52 <em class='comment'>     * @param  xpointer A String representing the PointerPart or ShortHandPointer.</em>
+<a id='L53' name='L53'></a>  53 <em class='comment'>     * @throws XNIException Thrown if the PointerPart string does not conform to</em>
+<a id='L54' name='L54'></a>  54 <em class='comment'>     *         the syntax defined by its scheme.</em>
+<a id='L55' name='L55'></a>  55 <em class='comment'>     *</em>
+<a id='L56' name='L56'></a>  56 <em class='comment'>     */</em>
+<a id='L57' name='L57'></a>  57     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/24646.html' title='Multiple referred from 2 places.'>parseXPointer</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> part) <strong class='reserved'>throws</strong> <a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a>;
+<a id='L58' name='L58'></a>  58 
+<a id='L59' name='L59'></a>  59     <em class='comment'>/**</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>     * Evaluates an XML resource with respect to an XPointer expressions</em>
+<a id='L61' name='L61'></a>  61 <em class='comment'>     * by checking if it's element and attributes parameters match the</em>
+<a id='L62' name='L62'></a>  62 <em class='comment'>     * criteria specified in the xpointer expression.</em>
+<a id='L63' name='L63'></a>  63 <em class='comment'>     *</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>     * @param element - The name of the element.</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>     * @param attributes - The element attributes.</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>     * @param augs - Additional information that may include infoset augmentations</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>     * @param event - An integer indicating</em>
+<a id='L68' name='L68'></a>  68 <em class='comment'>     *                0 - The start of an element</em>
+<a id='L69' name='L69'></a>  69 <em class='comment'>     *                1 - The end of an element</em>
+<a id='L70' name='L70'></a>  70 <em class='comment'>     *                2 - An empty element call</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>     * @throws XNIException Thrown to signal an error</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>     *</em>
+<a id='L73' name='L73'></a>  73 <em class='comment'>     */</em>
+<a id='L74' name='L74'></a>  74     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/26404.html' title='Multiple referred from 6 places.'>resolveXPointer</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5520.html#L79' title='Defined at 79 in src/com/sun/org/apache/xerces/internal/xni/XMLAttributes.java.'>XMLAttributes</a> <a href='../S/1947.html#L156' title='Defined at 156 in src/java/nio/file/FileTreeWalker.java.'>attributes</a>,
+<a id='L75' name='L75'></a>  75             <a href='../S/5490.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/xni/Augmentations.java.'>Augmentations</a> augs, <strong class='reserved'>int</strong> event) <strong class='reserved'>throws</strong> <a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a>;
+<a id='L76' name='L76'></a>  76 
+<a id='L77' name='L77'></a>  77     <em class='comment'>/**</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>     * Returns true if the XPointer expression resolves to a resource fragment</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>     * specified as input else returns false.</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>     *</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>     * @return True if the xpointer expression matches a fragment in the resource</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     *         else returns false.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     * @throws XNIException Thrown to signal an error</em>
+<a id='L84' name='L84'></a>  84 <em class='comment'>     *</em>
+<a id='L85' name='L85'></a>  85 <em class='comment'>     */</em>
+<a id='L86' name='L86'></a>  86     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../S/5386.html#L330' title='Referred from 330 in src/com/sun/org/apache/xerces/internal/xpointer/XPointerHandler.java.'>isFragmentResolved</a>() <strong class='reserved'>throws</strong> <a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a>;
+<a id='L87' name='L87'></a>  87 
+<a id='L88' name='L88'></a>  88     <em class='comment'>/**</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>     * Returns true if the XPointer expression resolves to a non-element child</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>     * of the current resource fragment.</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>     *</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>     * @return True if the XPointer expression resolves to a non-element child</em>
+<a id='L93' name='L93'></a>  93 <em class='comment'>     *         of the current resource fragment.</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * @throws XNIException Thrown to signal an error</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     *</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>     */</em>
+<a id='L97' name='L97'></a>  97     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21249.html' title='Multiple referred from 8 places.'>isChildFragmentResolved</a>() <strong class='reserved'>throws</strong> <a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a>;
+<a id='L98' name='L98'></a>  98 
+<a id='L99' name='L99'></a>  99     <em class='comment'>/**</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>     * Returns a String containing the scheme name of the PointerPart</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * or the name of the ShortHand Pointer.</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     *</em>
+<a id='L103' name='L103'></a> 103 <em class='comment'>     * @return A String containing the scheme name of the PointerPart.</em>
+<a id='L104' name='L104'></a> 104 <em class='comment'>     *</em>
+<a id='L105' name='L105'></a> 105 <em class='comment'>     */</em>
+<a id='L106' name='L106'></a> 106     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> getSchemeName();
+<a id='L107' name='L107'></a> 107 
+<a id='L108' name='L108'></a> 108     <em class='comment'>/**</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>     * Returns a String containing the scheme data of the PointerPart.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>     *</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>     * @return A String containing the scheme data of the PointerPart.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>     *</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>     */</em>
+<a id='L114' name='L114'></a> 114     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> getSchemeData();
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116     <em class='comment'>/**</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * Sets the scheme name of the PointerPart or the ShortHand Pointer name.</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     *</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>     * @param schemeName A String containing the scheme name of the PointerPart.</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>     *</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>     */</em>
+<a id='L122' name='L122'></a> 122     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28109.html' title='Multiple referred from 3 places.'>setSchemeName</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> schemeName);
+<a id='L123' name='L123'></a> 123 
+<a id='L124' name='L124'></a> 124     <em class='comment'>/**</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>     * Sets the scheme data of the PointerPart.</em>
+<a id='L126' name='L126'></a> 126 <em class='comment'>     *</em>
+<a id='L127' name='L127'></a> 127 <em class='comment'>     * @param schemeData A String containing the scheme data of the PointerPart.</em>
+<a id='L128' name='L128'></a> 128 <em class='comment'>     *</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>     */</em>
+<a id='L130' name='L130'></a> 130     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../S/5386.html#L254' title='Referred from 254 in src/com/sun/org/apache/xerces/internal/xpointer/XPointerHandler.java.'>setSchemeData</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> schemeData);
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L130'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

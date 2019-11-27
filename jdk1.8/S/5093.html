@@ -1,0 +1,425 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7892.html'>impl</a>/<a href='../files/7904.html'>xs</a>/<a href='../files/7908.html'>traversers</a>/SchemaContentHandler.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L89'>[^]</a><a href='#L371'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L89' title='Defined at 89.'>getDocument</a></li>
+<li><a href='#L96' title='Defined at 96.'>setDocumentLocator</a></li>
+<li><a href='#L103' title='Defined at 103.'>startDocument</a></li>
+<li><a href='#L119' title='Defined at 119.'>endDocument</a></li>
+<li><a href='#L135' title='Defined at 135.'>startPrefixMapping</a></li>
+<li><a href='#L158' title='Defined at 158.'>endPrefixMapping</a></li>
+<li><a href='#L165' title='Defined at 165.'>startElement</a></li>
+<li><a href='#L197' title='Defined at 197.'>endElement</a></li>
+<li><a href='#L216' title='Defined at 216.'>characters</a></li>
+<li><a href='#L232' title='Defined at 232.'>ignorableWhitespace</a></li>
+<li><a href='#L248' title='Defined at 248.'>processingInstruction</a></li>
+<li><a href='#L264' title='Defined at 264.'>skippedEntity</a></li>
+<li><a href='#L272' title='Defined at 272.'>fillQName</a></li>
+<li><a href='#L305' title='Defined at 305.'>fillXMLAttributes</a></li>
+<li><a href='#L316' title='Defined at 316.'>addNamespaceDeclarations</a></li>
+<li><a href='#L340' title='Defined at 340.'>reset</a></li>
+<li><a href='#L352' title='Defined at 352.'>convertToSAXParseException</a></li>
+<li><a href='#L371' title='Defined at 371.'>convertToSAXException</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2005 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 
+<a id='L21' name='L21'></a>  21 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.xs.traversers;
+<a id='L22' name='L22'></a>  22 
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.impl.xs.opti.SchemaDOMParser;
+<a id='L24' name='L24'></a>  24 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.NamespaceSupport;
+<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.SAXLocatorWrapper;
+<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.SymbolTable;
+<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
+<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.util.XMLSymbols;
+<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.QName;
+<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XMLString;
+<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.XNIException;
+<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
+<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.w3c.dom.Document;
+<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.xml.sax.Attributes;
+<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> org.xml.sax.ContentHandler;
+<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> org.xml.sax.Locator;
+<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> org.xml.sax.SAXException;
+<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> org.xml.sax.SAXParseException;
+<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> org.xml.sax.helpers.LocatorImpl;
+<a id='L41' name='L41'></a>  41 
+<a id='L42' name='L42'></a>  42 <em class='comment'>/**</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * &lt;p&gt;SchemaContentHandler converts SAX events into XNI</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * and passes them directly to the SchemaDOMParser.&lt;/p&gt;</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> *</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * @xerces.internal</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> *</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * @author Michael Glavassevich, IBM</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> * @author Jack Z. Wang, IBM</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> *</em>
+<a id='L51' name='L51'></a>  51 <em class='comment'> */</em>
+<a id='L52' name='L52'></a>  52 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/6925.html' title='Multiple referred from 2 places.'>SchemaContentHandler</a> <strong class='reserved'>implements</strong> <a href='../D/1853.html' title='Multiple defined in 2 places.'>ContentHandler</a> <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54     <em class='comment'>/** Symbol table **/</em>
+<a id='L55' name='L55'></a>  55     <strong class='reserved'>private</strong> <a href='../D/8572.html' title='Multiple defined in 2 places.'>SymbolTable</a> fSymbolTable;
+<a id='L56' name='L56'></a>  56 
+<a id='L57' name='L57'></a>  57     <em class='comment'>/** SchemaDOMParser, events will be delegated to SchemaDOMParser to pass */</em>
+<a id='L58' name='L58'></a>  58     <strong class='reserved'>private</strong> <a href='../S/5116.html#L51' title='Defined at 51 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOMParser.java.'>SchemaDOMParser</a> fSchemaDOMParser;
+<a id='L59' name='L59'></a>  59 
+<a id='L60' name='L60'></a>  60     <em class='comment'>/** XML Locator wrapper for SAX. **/</em>
+<a id='L61' name='L61'></a>  61     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/5307.html#L35' title='Defined at 35 in src/com/sun/org/apache/xerces/internal/util/SAXLocatorWrapper.java.'>SAXLocatorWrapper</a> fSAXLocatorWrapper = <strong class='reserved'>new</strong> <a href='../S/5307.html#L35' title='Defined at 35 in src/com/sun/org/apache/xerces/internal/util/SAXLocatorWrapper.java.'>SAXLocatorWrapper</a>();
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63     <em class='comment'>/** The namespace context of this document: stores namespaces in scope */</em>
+<a id='L64' name='L64'></a>  64     <strong class='reserved'>private</strong> <a href='../D/5978.html' title='Multiple defined in 2 places.'>NamespaceSupport</a> fNamespaceContext = <strong class='reserved'>new</strong> <a href='../D/5978.html' title='Multiple defined in 2 places.'>NamespaceSupport</a>();
+<a id='L65' name='L65'></a>  65 
+<a id='L66' name='L66'></a>  66     <em class='comment'>/** Indicate if push NamespaceContest is needed */</em>
+<a id='L67' name='L67'></a>  67     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> fNeedPushNSContext;
+<a id='L68' name='L68'></a>  68 
+<a id='L69' name='L69'></a>  69     <em class='comment'>/** Flag used to track whether namespace declarations are reported as attributes. */</em>
+<a id='L70' name='L70'></a>  70     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> fNamespacePrefixes = <strong class='reserved'>false</strong>;
+<a id='L71' name='L71'></a>  71 
+<a id='L72' name='L72'></a>  72     <em class='comment'>/** Flag used to track whether XML names and Namespace URIs have been internalized. */</em>
+<a id='L73' name='L73'></a>  73     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> fStringsInternalized = <strong class='reserved'>false</strong>;
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75     <em class='comment'>/** Fields for start element, end element and characters. */</em>
+<a id='L76' name='L76'></a>  76     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> fElementQName = <strong class='reserved'>new</strong> <a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a>();
+<a id='L77' name='L77'></a>  77     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> fAttributeQName = <strong class='reserved'>new</strong> <a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a>();
+<a id='L78' name='L78'></a>  78     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/5286.html#L88' title='Defined at 88 in src/com/sun/org/apache/xerces/internal/util/XMLAttributesImpl.java.'>XMLAttributesImpl</a> fAttributes = <strong class='reserved'>new</strong> <a href='../S/5286.html#L88' title='Defined at 88 in src/com/sun/org/apache/xerces/internal/util/XMLAttributesImpl.java.'>XMLAttributesImpl</a>();
+<a id='L79' name='L79'></a>  79     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a> fTempString = <strong class='reserved'>new</strong> <a href='../D/10017.html' title='Multiple defined in 2 places.'>XMLString</a>();
+<a id='L80' name='L80'></a>  80 
+<a id='L81' name='L81'></a>  81     <em class='comment'>/**</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>     * &lt;p&gt;Constructs an SchemaContentHandler.&lt;/p&gt;</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>     */</em>
+<a id='L84' name='L84'></a>  84     <strong class='reserved'>public</strong> SchemaContentHandler() <em class='brace'>{</em><em class='brace'>}</em>
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86     <em class='comment'>/*</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>     * @see org.xml.sax.ContentHandler#setDocumentLocator(org.xml.sax.Locator)</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>     */</em>
+<a id='L89' name='L89'></a>  89     <strong class='reserved'>public</strong> <a href='../D/2543.html' title='Multiple defined in 2 places.'>Document</a> <a href='../R/16214.html' title='Multiple referred from 348 places.'>getDocument</a>() <em class='brace'>{</em>
+<a id='L90' name='L90'></a>  90         <strong class='reserved'>return</strong> fSchemaDOMParser.<a href='../D/18553.html' title='Multiple defined in 33 places.'>getDocument</a>();
+<a id='L91' name='L91'></a>  91     <em class='brace'>}</em>
+<a id='L92' name='L92'></a>  92 
+<a id='L93' name='L93'></a>  93     <em class='comment'>/*</em>
+<a id='L94' name='L94'></a>  94 <em class='comment'>     * @see org.xml.sax.ContentHandler#setDocumentLocator(org.xml.sax.Locator)</em>
+<a id='L95' name='L95'></a>  95 <em class='comment'>     */</em>
+<a id='L96' name='L96'></a>  96     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27270.html' title='Multiple referred from 45 places.'>setDocumentLocator</a>(<a href='../D/5191.html' title='Multiple defined in 3 places.'>Locator</a> locator) <em class='brace'>{</em>
+<a id='L97' name='L97'></a>  97         fSAXLocatorWrapper.<a href='../D/33138.html' title='Multiple defined in 4 places.'>setLocator</a>(locator);
+<a id='L98' name='L98'></a>  98     <em class='brace'>}</em>
+<a id='L99' name='L99'></a>  99 
+<a id='L100' name='L100'></a> 100     <em class='comment'>/*</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>     * @see org.xml.sax.ContentHandler#startDocument()</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>     */</em>
+<a id='L103' name='L103'></a> 103     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28800.html' title='Multiple referred from 67 places.'>startDocument</a>() <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L104' name='L104'></a> 104         fNeedPushNSContext = <strong class='reserved'>true</strong>;
+<a id='L105' name='L105'></a> 105         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L106' name='L106'></a> 106             fSchemaDOMParser.<a href='../D/34768.html' title='Multiple defined in 61 places.'>startDocument</a>(fSAXLocatorWrapper, <strong class='reserved'>null</strong>, fNamespaceContext, <strong class='reserved'>null</strong>);
+<a id='L107' name='L107'></a> 107         <em class='brace'>}</em>
+<a id='L108' name='L108'></a> 108         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L109' name='L109'></a> 109             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L110' name='L110'></a> 110         <em class='brace'>}</em>
+<a id='L111' name='L111'></a> 111         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L112' name='L112'></a> 112             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L113' name='L113'></a> 113         <em class='brace'>}</em>
+<a id='L114' name='L114'></a> 114     <em class='brace'>}</em>
+<a id='L115' name='L115'></a> 115 
+<a id='L116' name='L116'></a> 116     <em class='comment'>/*</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>     * @see org.xml.sax.ContentHandler#endDocument()</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>     */</em>
+<a id='L119' name='L119'></a> 119     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13761.html' title='Multiple referred from 58 places.'>endDocument</a>() <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L120' name='L120'></a> 120         fSAXLocatorWrapper.<a href='../D/33138.html' title='Multiple defined in 4 places.'>setLocator</a>(<strong class='reserved'>null</strong>);
+<a id='L121' name='L121'></a> 121         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L122' name='L122'></a> 122             fSchemaDOMParser.<a href='../D/15443.html' title='Multiple defined in 65 places.'>endDocument</a>(<strong class='reserved'>null</strong>);
+<a id='L123' name='L123'></a> 123         <em class='brace'>}</em>
+<a id='L124' name='L124'></a> 124         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L125' name='L125'></a> 125             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L126' name='L126'></a> 126         <em class='brace'>}</em>
+<a id='L127' name='L127'></a> 127         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L128' name='L128'></a> 128             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L129' name='L129'></a> 129         <em class='brace'>}</em>
+<a id='L130' name='L130'></a> 130     <em class='brace'>}</em>
+<a id='L131' name='L131'></a> 131 
+<a id='L132' name='L132'></a> 132     <em class='comment'>/*</em>
+<a id='L133' name='L133'></a> 133 <em class='comment'>     * @see org.xml.sax.ContentHandler#startPrefixMapping(java.lang.String, java.lang.String)</em>
+<a id='L134' name='L134'></a> 134 <em class='comment'>     */</em>
+<a id='L135' name='L135'></a> 135     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28846.html' title='Multiple referred from 46 places.'>startPrefixMapping</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L136' name='L136'></a> 136         <strong class='reserved'>if</strong> (fNeedPushNSContext) <em class='brace'>{</em>
+<a id='L137' name='L137'></a> 137             fNeedPushNSContext = <strong class='reserved'>false</strong>;
+<a id='L138' name='L138'></a> 138             fNamespaceContext.<a href='../D/29939.html' title='Multiple defined in 10 places.'>pushContext</a>();
+<a id='L139' name='L139'></a> 139         <em class='brace'>}</em>
+<a id='L140' name='L140'></a> 140         <strong class='reserved'>if</strong> (!fStringsInternalized) <em class='brace'>{</em>
+<a id='L141' name='L141'></a> 141             <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = (<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> != <strong class='reserved'>null</strong>) ? fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>) : <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L142' name='L142'></a> 142             uri = (uri != <strong class='reserved'>null</strong> &amp;&amp; uri.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; 0) ? fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(uri) : <strong class='reserved'>null</strong>;
+<a id='L143' name='L143'></a> 143         <em class='brace'>}</em>
+<a id='L144' name='L144'></a> 144         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L145' name='L145'></a> 145             <strong class='reserved'>if</strong> (<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L146' name='L146'></a> 146                 <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L147' name='L147'></a> 147             <em class='brace'>}</em>
+<a id='L148' name='L148'></a> 148             <strong class='reserved'>if</strong> (uri != <strong class='reserved'>null</strong> &amp;&amp; uri.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() == 0) <em class='brace'>{</em>
+<a id='L149' name='L149'></a> 149                 uri = <strong class='reserved'>null</strong>;
+<a id='L150' name='L150'></a> 150             <em class='brace'>}</em>
+<a id='L151' name='L151'></a> 151         <em class='brace'>}</em>
+<a id='L152' name='L152'></a> 152         fNamespaceContext.<a href='../D/14512.html' title='Multiple defined in 8 places.'>declarePrefix</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, uri);
+<a id='L153' name='L153'></a> 153     <em class='brace'>}</em>
+<a id='L154' name='L154'></a> 154 
+<a id='L155' name='L155'></a> 155     <em class='comment'>/*</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>     * @see org.xml.sax.ContentHandler#endPrefixMapping(java.lang.String)</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>     */</em>
+<a id='L158' name='L158'></a> 158     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13786.html' title='Multiple referred from 22 places.'>endPrefixMapping</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L159' name='L159'></a> 159         <em class='comment'>// do nothing</em>
+<a id='L160' name='L160'></a> 160     <em class='brace'>}</em>
+<a id='L161' name='L161'></a> 161 
+<a id='L162' name='L162'></a> 162     <em class='comment'>/*</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>     * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>     */</em>
+<a id='L165' name='L165'></a> 165     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28813.html' title='Multiple referred from 116 places.'>startElement</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> qName, <a href='../D/601.html' title='Multiple defined in 4 places.'>Attributes</a> atts) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L166' name='L166'></a> 166         <strong class='reserved'>if</strong> (fNeedPushNSContext) <em class='brace'>{</em>
+<a id='L167' name='L167'></a> 167             fNamespaceContext.<a href='../D/29939.html' title='Multiple defined in 10 places.'>pushContext</a>();
+<a id='L168' name='L168'></a> 168         <em class='brace'>}</em>
+<a id='L169' name='L169'></a> 169         fNeedPushNSContext = <strong class='reserved'>true</strong>;
+<a id='L170' name='L170'></a> 170 
+<a id='L171' name='L171'></a> 171         <em class='comment'>// Fill element QName and XMLAttributes</em>
+<a id='L172' name='L172'></a> 172         <a href='../D/16051.html' title='Multiple defined in 5 places.'>fillQName</a>(fElementQName, uri, <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, qName);
+<a id='L173' name='L173'></a> 173         <a href='../D/16058.html' title='Multiple defined in 4 places.'>fillXMLAttributes</a>(atts);
+<a id='L174' name='L174'></a> 174 
+<a id='L175' name='L175'></a> 175         <em class='comment'>// Add namespace declarations if necessary</em>
+<a id='L176' name='L176'></a> 176         <strong class='reserved'>if</strong> (!fNamespacePrefixes) <em class='brace'>{</em>
+<a id='L177' name='L177'></a> 177             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> prefixCount = fNamespaceContext.<a href='../D/18259.html' title='Multiple defined in 4 places.'>getDeclaredPrefixCount</a>();
+<a id='L178' name='L178'></a> 178             <strong class='reserved'>if</strong> (prefixCount &gt; 0) <em class='brace'>{</em>
+<a id='L179' name='L179'></a> 179                 <a href='../D/10952.html' title='Multiple defined in 2 places.'>addNamespaceDeclarations</a>(prefixCount);
+<a id='L180' name='L180'></a> 180             <em class='brace'>}</em>
+<a id='L181' name='L181'></a> 181         <em class='brace'>}</em>
+<a id='L182' name='L182'></a> 182 
+<a id='L183' name='L183'></a> 183         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L184' name='L184'></a> 184             fSchemaDOMParser.<a href='../D/34781.html' title='Multiple defined in 105 places.'>startElement</a>(fElementQName, fAttributes, <strong class='reserved'>null</strong>);
+<a id='L185' name='L185'></a> 185         <em class='brace'>}</em>
+<a id='L186' name='L186'></a> 186         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L187' name='L187'></a> 187             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L188' name='L188'></a> 188         <em class='brace'>}</em>
+<a id='L189' name='L189'></a> 189         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L190' name='L190'></a> 190             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L191' name='L191'></a> 191         <em class='brace'>}</em>
+<a id='L192' name='L192'></a> 192     <em class='brace'>}</em>
+<a id='L193' name='L193'></a> 193 
+<a id='L194' name='L194'></a> 194     <em class='comment'>/*</em>
+<a id='L195' name='L195'></a> 195 <em class='comment'>     * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)</em>
+<a id='L196' name='L196'></a> 196 <em class='comment'>     */</em>
+<a id='L197' name='L197'></a> 197     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13766.html' title='Multiple referred from 95 places.'>endElement</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> qName) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L198' name='L198'></a> 198         <a href='../D/16051.html' title='Multiple defined in 5 places.'>fillQName</a>(fElementQName, uri, <a href='../D/27005.html' title='Multiple defined in 2 places.'>localName</a>, qName);
+<a id='L199' name='L199'></a> 199         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L200' name='L200'></a> 200             fSchemaDOMParser.<a href='../D/15448.html' title='Multiple defined in 90 places.'>endElement</a>(fElementQName, <strong class='reserved'>null</strong>);
+<a id='L201' name='L201'></a> 201         <em class='brace'>}</em>
+<a id='L202' name='L202'></a> 202         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L203' name='L203'></a> 203             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L204' name='L204'></a> 204         <em class='brace'>}</em>
+<a id='L205' name='L205'></a> 205         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L206' name='L206'></a> 206             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L207' name='L207'></a> 207         <em class='brace'>}</em>
+<a id='L208' name='L208'></a> 208         <strong class='reserved'>finally</strong> <em class='brace'>{</em>
+<a id='L209' name='L209'></a> 209             fNamespaceContext.<a href='../D/29421.html' title='Multiple defined in 9 places.'>popContext</a>();
+<a id='L210' name='L210'></a> 210         <em class='brace'>}</em>
+<a id='L211' name='L211'></a> 211     <em class='brace'>}</em>
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213     <em class='comment'>/*</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>     * @see org.xml.sax.ContentHandler#characters(char[], int, int)</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>     */</em>
+<a id='L216' name='L216'></a> 216     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11056.html' title='Multiple referred from 150 places.'>characters</a>(<strong class='reserved'>char</strong>[] ch, <strong class='reserved'>int</strong> <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L217' name='L217'></a> 217         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L218' name='L218'></a> 218             fTempString.<a href='../D/34272.html' title='Multiple defined in 29 places.'>setValues</a>(ch, <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L219' name='L219'></a> 219             fSchemaDOMParser.<a href='../D/12339.html' title='Multiple defined in 98 places.'>characters</a>(fTempString, <strong class='reserved'>null</strong>);
+<a id='L220' name='L220'></a> 220         <em class='brace'>}</em>
+<a id='L221' name='L221'></a> 221         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L222' name='L222'></a> 222             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L223' name='L223'></a> 223         <em class='brace'>}</em>
+<a id='L224' name='L224'></a> 224         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L225' name='L225'></a> 225             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L226' name='L226'></a> 226         <em class='brace'>}</em>
+<a id='L227' name='L227'></a> 227     <em class='brace'>}</em>
+<a id='L228' name='L228'></a> 228 
+<a id='L229' name='L229'></a> 229     <em class='comment'>/*</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>     * @see org.xml.sax.ContentHandler#ignorableWhitespace(char[], int, int)</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>     */</em>
+<a id='L232' name='L232'></a> 232     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/20375.html' title='Multiple referred from 42 places.'>ignorableWhitespace</a>(<strong class='reserved'>char</strong>[] ch, <strong class='reserved'>int</strong> <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L233' name='L233'></a> 233         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L234' name='L234'></a> 234             fTempString.<a href='../D/34272.html' title='Multiple defined in 29 places.'>setValues</a>(ch, <a href='../D/34747.html' title='Multiple defined in 52 places.'>start</a>, <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
+<a id='L235' name='L235'></a> 235             fSchemaDOMParser.<a href='../D/24316.html' title='Multiple defined in 59 places.'>ignorableWhitespace</a>(fTempString, <strong class='reserved'>null</strong>);
+<a id='L236' name='L236'></a> 236         <em class='brace'>}</em>
+<a id='L237' name='L237'></a> 237         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L238' name='L238'></a> 238             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L239' name='L239'></a> 239         <em class='brace'>}</em>
+<a id='L240' name='L240'></a> 240         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L241' name='L241'></a> 241             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L242' name='L242'></a> 242         <em class='brace'>}</em>
+<a id='L243' name='L243'></a> 243     <em class='brace'>}</em>
+<a id='L244' name='L244'></a> 244 
+<a id='L245' name='L245'></a> 245     <em class='comment'>/*</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>     * @see org.xml.sax.ContentHandler#processingInstruction(java.lang.String, java.lang.String)</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>     */</em>
+<a id='L248' name='L248'></a> 248     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/25204.html' title='Multiple referred from 66 places.'>processingInstruction</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L249' name='L249'></a> 249         <strong class='reserved'>try</strong> <em class='brace'>{</em>
+<a id='L250' name='L250'></a> 250             fTempString.<a href='../D/34272.html' title='Multiple defined in 29 places.'>setValues</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/35368.html' title='Multiple defined in 3 places.'>toCharArray</a>(), 0, <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>());
+<a id='L251' name='L251'></a> 251             fSchemaDOMParser.<a href='../D/29876.html' title='Multiple defined in 72 places.'>processingInstruction</a>(<a href='../D/35216.html' title='Multiple defined in 4 places.'>target</a>, fTempString, <strong class='reserved'>null</strong>);
+<a id='L252' name='L252'></a> 252         <em class='brace'>}</em>
+<a id='L253' name='L253'></a> 253         <strong class='reserved'>catch</strong> (<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <em class='brace'>{</em>
+<a id='L254' name='L254'></a> 254             <a href='../S/5093.html#L352' title='Defined at 352 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXParseException</a>(e);
+<a id='L255' name='L255'></a> 255         <em class='brace'>}</em>
+<a id='L256' name='L256'></a> 256         <strong class='reserved'>catch</strong> (<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <em class='brace'>{</em>
+<a id='L257' name='L257'></a> 257             <a href='../S/5093.html#L371' title='Defined at 371 in src/com/sun/org/apache/xerces/internal/impl/xs/traversers/SchemaContentHandler.java.'>convertToSAXException</a>(e);
+<a id='L258' name='L258'></a> 258         <em class='brace'>}</em>
+<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>
+<a id='L260' name='L260'></a> 260 
+<a id='L261' name='L261'></a> 261     <em class='comment'>/*</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>     * @see org.xml.sax.ContentHandler#skippedEntity(java.lang.String)</em>
+<a id='L263' name='L263'></a> 263 <em class='comment'>     */</em>
+<a id='L264' name='L264'></a> 264     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28670.html' title='Multiple referred from 11 places.'>skippedEntity</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/11479.html' title='Multiple defined in 2 places.'>arg</a>) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L265' name='L265'></a> 265         <em class='comment'>// do-nothing</em>
+<a id='L266' name='L266'></a> 266     <em class='brace'>}</em>
+<a id='L267' name='L267'></a> 267 
+<a id='L268' name='L268'></a> 268     <em class='comment'>/*</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>     * Other methods</em>
+<a id='L270' name='L270'></a> 270 <em class='comment'>     */</em>
+<a id='L271' name='L271'></a> 271 
+<a id='L272' name='L272'></a> 272     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/14311.html' title='Multiple referred from 17 places.'>fillQName</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> toFill, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> localpart, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> rawname) <em class='brace'>{</em>
+<a id='L273' name='L273'></a> 273         <strong class='reserved'>if</strong> (!fStringsInternalized) <em class='brace'>{</em>
+<a id='L274' name='L274'></a> 274             uri = (uri != <strong class='reserved'>null</strong> &amp;&amp; uri.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; 0) ? fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(uri) : <strong class='reserved'>null</strong>;
+<a id='L275' name='L275'></a> 275             localpart = (localpart != <strong class='reserved'>null</strong>) ? fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(localpart) : <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L276' name='L276'></a> 276             rawname = (rawname != <strong class='reserved'>null</strong>) ? fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(rawname) : <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L277' name='L277'></a> 277         <em class='brace'>}</em>
+<a id='L278' name='L278'></a> 278         <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L279' name='L279'></a> 279             <strong class='reserved'>if</strong> (uri != <strong class='reserved'>null</strong> &amp;&amp; uri.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() == 0) <em class='brace'>{</em>
+<a id='L280' name='L280'></a> 280                 uri = <strong class='reserved'>null</strong>;
+<a id='L281' name='L281'></a> 281             <em class='brace'>}</em>
+<a id='L282' name='L282'></a> 282             <strong class='reserved'>if</strong> (localpart == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L283' name='L283'></a> 283                 localpart = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L284' name='L284'></a> 284             <em class='brace'>}</em>
+<a id='L285' name='L285'></a> 285             <strong class='reserved'>if</strong> (rawname == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L286' name='L286'></a> 286                 rawname = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L287' name='L287'></a> 287             <em class='brace'>}</em>
+<a id='L288' name='L288'></a> 288         <em class='brace'>}</em>
+<a id='L289' name='L289'></a> 289         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L290' name='L290'></a> 290         <strong class='reserved'>int</strong> prefixIdx = rawname.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>(':');
+<a id='L291' name='L291'></a> 291         <strong class='reserved'>if</strong> (prefixIdx != -1) <em class='brace'>{</em>
+<a id='L292' name='L292'></a> 292             <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(rawname.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(0, prefixIdx));
+<a id='L293' name='L293'></a> 293             <em class='comment'>// local part may be an empty string if this is a namespace declaration</em>
+<a id='L294' name='L294'></a> 294             <strong class='reserved'>if</strong> (localpart == <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING) <em class='brace'>{</em>
+<a id='L295' name='L295'></a> 295                 localpart = fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(rawname.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(prefixIdx + 1));
+<a id='L296' name='L296'></a> 296             <em class='brace'>}</em>
+<a id='L297' name='L297'></a> 297         <em class='brace'>}</em>
+<a id='L298' name='L298'></a> 298         <em class='comment'>// local part may be an empty string if this is a namespace declaration</em>
+<a id='L299' name='L299'></a> 299         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (localpart == <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING) <em class='brace'>{</em>
+<a id='L300' name='L300'></a> 300             localpart = rawname;
+<a id='L301' name='L301'></a> 301         <em class='brace'>}</em>
+<a id='L302' name='L302'></a> 302         toFill.<a href='../D/34272.html' title='Multiple defined in 29 places.'>setValues</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, localpart, rawname, uri);
+<a id='L303' name='L303'></a> 303     <em class='brace'>}</em>
+<a id='L304' name='L304'></a> 304 
+<a id='L305' name='L305'></a> 305     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/14318.html' title='Multiple referred from 4 places.'>fillXMLAttributes</a>(<a href='../D/601.html' title='Multiple defined in 4 places.'>Attributes</a> atts) <em class='brace'>{</em>
+<a id='L306' name='L306'></a> 306         fAttributes.<a href='../D/30687.html' title='Multiple defined in 4 places.'>removeAllAttributes</a>();
+<a id='L307' name='L307'></a> 307         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> attrCount = atts.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
+<a id='L308' name='L308'></a> 308         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; attrCount; ++i) <em class='brace'>{</em>
+<a id='L309' name='L309'></a> 309             <a href='../D/16051.html' title='Multiple defined in 5 places.'>fillQName</a>(fAttributeQName, atts.<a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(i), atts.<a href='../D/20201.html' title='Multiple defined in 44 places.'>getLocalName</a>(i), atts.<a href='../D/21788.html' title='Multiple defined in 20 places.'>getQName</a>(i));
+<a id='L310' name='L310'></a> 310             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = atts.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(i);
+<a id='L311' name='L311'></a> 311             fAttributes.<a href='../S/5286.html#L767' title='Defined at 767 in src/com/sun/org/apache/xerces/internal/util/XMLAttributesImpl.java.'>addAttributeNS</a>(fAttributeQName, (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != <strong class='reserved'>null</strong>) ? <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> : <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.fCDATASymbol, atts.<a href='../D/23531.html' title='Multiple defined in 212 places.'>getValue</a>(i));
+<a id='L312' name='L312'></a> 312             fAttributes.<a href='../D/33986.html' title='Multiple defined in 5 places.'>setSpecified</a>(i, <strong class='reserved'>true</strong>);
+<a id='L313' name='L313'></a> 313         <em class='brace'>}</em>
+<a id='L314' name='L314'></a> 314     <em class='brace'>}</em>
+<a id='L315' name='L315'></a> 315 
+<a id='L316' name='L316'></a> 316     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/9862.html' title='Multiple referred from 3 places.'>addNamespaceDeclarations</a>(<strong class='reserved'>final</strong> <strong class='reserved'>int</strong> prefixCount) <em class='brace'>{</em>
+<a id='L317' name='L317'></a> 317         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <strong class='reserved'>null</strong>;
+<a id='L318' name='L318'></a> 318         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> localpart = <strong class='reserved'>null</strong>;
+<a id='L319' name='L319'></a> 319         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> rawname = <strong class='reserved'>null</strong>;
+<a id='L320' name='L320'></a> 320         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> nsPrefix = <strong class='reserved'>null</strong>;
+<a id='L321' name='L321'></a> 321         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> nsURI = <strong class='reserved'>null</strong>;
+<a id='L322' name='L322'></a> 322         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; prefixCount; ++i) <em class='brace'>{</em>
+<a id='L323' name='L323'></a> 323             nsPrefix = fNamespaceContext.<a href='../D/18258.html' title='Multiple defined in 4 places.'>getDeclaredPrefixAt</a>(i);
+<a id='L324' name='L324'></a> 324             nsURI = fNamespaceContext.<a href='../D/23369.html' title='Multiple defined in 43 places.'>getURI</a>(nsPrefix);
+<a id='L325' name='L325'></a> 325             <strong class='reserved'>if</strong> (nsPrefix.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>() &gt; 0) <em class='brace'>{</em>
+<a id='L326' name='L326'></a> 326                 <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.PREFIX_XMLNS;
+<a id='L327' name='L327'></a> 327                 localpart = nsPrefix;
+<a id='L328' name='L328'></a> 328                 rawname = fSymbolTable.<a href='../D/11099.html' title='Multiple defined in 6 places.'>addSymbol</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> + ":" + localpart);
+<a id='L329' name='L329'></a> 329             <em class='brace'>}</em>
+<a id='L330' name='L330'></a> 330             <strong class='reserved'>else</strong> <em class='brace'>{</em>
+<a id='L331' name='L331'></a> 331                 <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.EMPTY_STRING;
+<a id='L332' name='L332'></a> 332                 localpart = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.PREFIX_XMLNS;
+<a id='L333' name='L333'></a> 333                 rawname = <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.PREFIX_XMLNS;
+<a id='L334' name='L334'></a> 334             <em class='brace'>}</em>
+<a id='L335' name='L335'></a> 335             fAttributeQName.<a href='../D/34272.html' title='Multiple defined in 29 places.'>setValues</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, localpart, rawname, <a href='../D/5973.html' title='Multiple defined in 2 places.'>NamespaceContext</a>.XMLNS_URI);
+<a id='L336' name='L336'></a> 336             fAttributes.<a href='../D/10660.html' title='Multiple defined in 56 places.'>addAttribute</a>(fAttributeQName, <a href='../S/5315.html#L28' title='Defined at 28 in src/com/sun/org/apache/xerces/internal/util/XMLSymbols.java.'>XMLSymbols</a>.fCDATASymbol, nsURI);
+<a id='L337' name='L337'></a> 337         <em class='brace'>}</em>
+<a id='L338' name='L338'></a> 338     <em class='brace'>}</em>
+<a id='L339' name='L339'></a> 339 
+<a id='L340' name='L340'></a> 340     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>(<a href='../S/5116.html#L51' title='Defined at 51 in src/com/sun/org/apache/xerces/internal/impl/xs/opti/SchemaDOMParser.java.'>SchemaDOMParser</a> schemaDOMParser, <a href='../D/8572.html' title='Multiple defined in 2 places.'>SymbolTable</a> symbolTable,
+<a id='L341' name='L341'></a> 341             <strong class='reserved'>boolean</strong> namespacePrefixes, <strong class='reserved'>boolean</strong> stringsInternalized) <em class='brace'>{</em>
+<a id='L342' name='L342'></a> 342         fSchemaDOMParser = schemaDOMParser;
+<a id='L343' name='L343'></a> 343         fSymbolTable = symbolTable;
+<a id='L344' name='L344'></a> 344         fNamespacePrefixes = namespacePrefixes;
+<a id='L345' name='L345'></a> 345         fStringsInternalized = stringsInternalized;
+<a id='L346' name='L346'></a> 346     <em class='brace'>}</em>
+<a id='L347' name='L347'></a> 347 
+<a id='L348' name='L348'></a> 348     <em class='comment'>/*</em>
+<a id='L349' name='L349'></a> 349 <em class='comment'>     * Static methods</em>
+<a id='L350' name='L350'></a> 350 <em class='comment'>     */</em>
+<a id='L351' name='L351'></a> 351 
+<a id='L352' name='L352'></a> 352     <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/12080.html' title='Multiple referred from 7 places.'>convertToSAXParseException</a>(<a href='../D/9978.html' title='Multiple defined in 2 places.'>XMLParseException</a> e) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L353' name='L353'></a> 353         <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> = e.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
+<a id='L354' name='L354'></a> 354         <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L355' name='L355'></a> 355             <em class='comment'>// must be a parser exception; mine it for locator info and throw</em>
+<a id='L356' name='L356'></a> 356             <em class='comment'>// a SAXParseException</em>
+<a id='L357' name='L357'></a> 357             <a href='../S/736.html#L76' title='Defined at 76 in src/org/xml/sax/helpers/LocatorImpl.java.'>LocatorImpl</a> locatorImpl = <strong class='reserved'>new</strong> <a href='../S/736.html#L76' title='Defined at 76 in src/org/xml/sax/helpers/LocatorImpl.java.'>LocatorImpl</a>();
+<a id='L358' name='L358'></a> 358             locatorImpl.<a href='../D/33634.html' title='Multiple defined in 14 places.'>setPublicId</a>(e.<a href='../D/21781.html' title='Multiple defined in 41 places.'>getPublicId</a>());
+<a id='L359' name='L359'></a> 359             locatorImpl.<a href='../D/34059.html' title='Multiple defined in 31 places.'>setSystemId</a>(e.<a href='../D/18928.html' title='Multiple defined in 10 places.'>getExpandedSystemId</a>());
+<a id='L360' name='L360'></a> 360             locatorImpl.<a href='../D/33092.html' title='Multiple defined in 9 places.'>setLineNumber</a>(e.<a href='../D/20122.html' title='Multiple defined in 41 places.'>getLineNumber</a>());
+<a id='L361' name='L361'></a> 361             locatorImpl.<a href='../D/32196.html' title='Multiple defined in 5 places.'>setColumnNumber</a>(e.<a href='../D/17813.html' title='Multiple defined in 33 places.'>getColumnNumber</a>());
+<a id='L362' name='L362'></a> 362             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/712.html#L62' title='Defined at 62 in src/org/xml/sax/SAXParseException.java.'>SAXParseException</a>(e.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>(), locatorImpl);
+<a id='L363' name='L363'></a> 363         <em class='brace'>}</em>
+<a id='L364' name='L364'></a> 364         <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>) <em class='brace'>{</em>
+<a id='L365' name='L365'></a> 365             <em class='comment'>// why did we create an XMLParseException?</em>
+<a id='L366' name='L366'></a> 366             <strong class='reserved'>throw</strong> (<a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>) <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L367' name='L367'></a> 367         <em class='brace'>}</em>
+<a id='L368' name='L368'></a> 368         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L369' name='L369'></a> 369     <em class='brace'>}</em>
+<a id='L370' name='L370'></a> 370 
+<a id='L371' name='L371'></a> 371     <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/12079.html' title='Multiple referred from 7 places.'>convertToSAXException</a>(<a href='../S/5491.html#L37' title='Defined at 37 in src/com/sun/org/apache/xerces/internal/xni/XNIException.java.'>XNIException</a> e) <strong class='reserved'>throws</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <em class='brace'>{</em>
+<a id='L372' name='L372'></a> 372         <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> = e.<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
+<a id='L373' name='L373'></a> 373         <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
+<a id='L374' name='L374'></a> 374             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>(e.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
+<a id='L375' name='L375'></a> 375         <em class='brace'>}</em>
+<a id='L376' name='L376'></a> 376         <strong class='reserved'>if</strong> (<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a> <strong class='reserved'>instanceof</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>) <em class='brace'>{</em>
+<a id='L377' name='L377'></a> 377             <strong class='reserved'>throw</strong> (<a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>) <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>;
+<a id='L378' name='L378'></a> 378         <em class='brace'>}</em>
+<a id='L379' name='L379'></a> 379         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
+<a id='L380' name='L380'></a> 380     <em class='brace'>}</em>
+<a id='L381' name='L381'></a> 381 
+<a id='L382' name='L382'></a> 382 <em class='brace'>}</em> <em class='comment'>// SchemaContentHandler</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L89'>[^]</a><a href='#L371'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>

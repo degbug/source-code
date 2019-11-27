@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>src/com/sun/org/apache/xml/internal/dtm/DTMIterator.java</title>
+<meta name='robots' content='noindex,nofollow' />
+<meta name='generator' content='GLOBAL-6.6.3' />
+<meta http-equiv='Content-Style-Type' content='text/css' />
+<link rel='stylesheet' type='text/css' href='../style.css' />
+</head>
+<body>
+<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7923.html'>xml</a>/<a href='../files/7924.html'>internal</a>/<a href='../files/7925.html'>dtm</a>/DTMIterator.java</h2>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L84'>[^]</a><a href='#L344'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+<hr />
+<h2 class='header'>DEFINITIONS</h2>
+This source file includes following definitions.
+<ol>
+<li><a href='#L84' title='Defined at 84.'>getDTM</a></li>
+<li><a href='#L93' title='Defined at 93.'>getDTMManager</a></li>
+<li><a href='#L103' title='Defined at 103.'>getRoot</a></li>
+<li><a href='#L126' title='Defined at 126.'>setRoot</a></li>
+<li><a href='#L133' title='Defined at 133.'>reset</a></li>
+<li><a href='#L144' title='Defined at 144.'>getWhatToShow</a></li>
+<li><a href='#L166' title='Defined at 166.'>getExpandEntityReferences</a></li>
+<li><a href='#L177' title='Defined at 177.'>nextNode</a></li>
+<li><a href='#L185' title='Defined at 185.'>previousNode</a></li>
+<li><a href='#L194' title='Defined at 194.'>detach</a></li>
+<li><a href='#L202' title='Defined at 202.'>allowDetachToRelease</a></li>
+<li><a href='#L211' title='Defined at 211.'>getCurrentNode</a></li>
+<li><a href='#L220' title='Defined at 220.'>isFresh</a></li>
+<li><a href='#L234' title='Defined at 234.'>setShouldCacheNodes</a></li>
+<li><a href='#L242' title='Defined at 242.'>isMutable</a></li>
+<li><a href='#L251' title='Defined at 251.'>getCurrentPos</a></li>
+<li><a href='#L263' title='Defined at 263.'>runTo</a></li>
+<li><a href='#L270' title='Defined at 270.'>setCurrentPos</a></li>
+<li><a href='#L282' title='Defined at 282.'>item</a></li>
+<li><a href='#L297' title='Defined at 297.'>setItem</a></li>
+<li><a href='#L306' title='Defined at 306.'>getLength</a></li>
+<li><a href='#L317' title='Defined at 317.'>cloneWithReset</a></li>
+<li><a href='#L327' title='Defined at 327.'>clone</a></li>
+<li><a href='#L336' title='Defined at 336.'>isDocOrdered</a></li>
+<li><a href='#L344' title='Defined at 344.'>getAxis</a></li>
+</ol>
+<hr />
+<pre>
+<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
+<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
+<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
+<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 1999-2004 The Apache Software Foundation.</em>
+<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
+<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
+<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
+<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
+<a id='L12' name='L12'></a>  12 <em class='comment'> *     http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
+<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
+<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
+<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
+<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
+<a id='L20' name='L20'></a>  20 <em class='comment'>/*</em>
+<a id='L21' name='L21'></a>  21 <em class='comment'> * $Id: DTMIterator.java,v 1.2.4.1 2005/09/15 08:14:54 suresh_emailid Exp $</em>
+<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
+<a id='L23' name='L23'></a>  23 <strong class='reserved'>package</strong> com.sun.org.apache.xml.internal.dtm;
+<a id='L24' name='L24'></a>  24 
+<a id='L25' name='L25'></a>  25 <em class='comment'>/**</em>
+<a id='L26' name='L26'></a>  26 <em class='comment'></em>
+<a id='L27' name='L27'></a>  27 <em class='comment'> * &lt;code&gt;DTMIterators&lt;/code&gt; are used to step through a (possibly</em>
+<a id='L28' name='L28'></a>  28 <em class='comment'> * filtered) set of nodes.  Their API is modeled largely after the DOM</em>
+<a id='L29' name='L29'></a>  29 <em class='comment'> * NodeIterator.</em>
+<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
+<a id='L31' name='L31'></a>  31 <em class='comment'> * &lt;p&gt;A DTMIterator is a somewhat unusual type of iterator, in that it</em>
+<a id='L32' name='L32'></a>  32 <em class='comment'> * can serve both single node iteration and random access.&lt;/p&gt;</em>
+<a id='L33' name='L33'></a>  33 <em class='comment'> *</em>
+<a id='L34' name='L34'></a>  34 <em class='comment'> * &lt;p&gt;The DTMIterator's traversal semantics, i.e. how it walks the tree,</em>
+<a id='L35' name='L35'></a>  35 <em class='comment'> * are specified when it is created, possibly and probably by an XPath</em>
+<a id='L36' name='L36'></a>  36 <em class='comment'> * &lt;a href="http://www.w3.org/TR/xpath#NT-LocationPath&gt;LocationPath&lt;/a&gt; or</em>
+<a id='L37' name='L37'></a>  37 <em class='comment'> * a &lt;a href="http://www.w3.org/TR/xpath#NT-UnionExpr"&gt;UnionExpr&lt;/a&gt;.&lt;/p&gt;</em>
+<a id='L38' name='L38'></a>  38 <em class='comment'> *</em>
+<a id='L39' name='L39'></a>  39 <em class='comment'> * &lt;p&gt;A DTMIterator is meant to be created once as a master static object, and</em>
+<a id='L40' name='L40'></a>  40 <em class='comment'> * then cloned many times for runtime use.  Or the master object itself may</em>
+<a id='L41' name='L41'></a>  41 <em class='comment'> * be used for simpler use cases.&lt;/p&gt;</em>
+<a id='L42' name='L42'></a>  42 <em class='comment'> *</em>
+<a id='L43' name='L43'></a>  43 <em class='comment'> * &lt;p&gt;At this time, we do not expect DTMIterator to emulate</em>
+<a id='L44' name='L44'></a>  44 <em class='comment'> * NodeIterator's "maintain relative position" semantics under</em>
+<a id='L45' name='L45'></a>  45 <em class='comment'> * document mutation.  It's likely to respond more like the</em>
+<a id='L46' name='L46'></a>  46 <em class='comment'> * TreeWalker's "current node" semantics. However, since the base DTM</em>
+<a id='L47' name='L47'></a>  47 <em class='comment'> * is immutable, this issue currently makes no practical</em>
+<a id='L48' name='L48'></a>  48 <em class='comment'> * difference.&lt;/p&gt;</em>
+<a id='L49' name='L49'></a>  49 <em class='comment'> *</em>
+<a id='L50' name='L50'></a>  50 <em class='comment'> * &lt;p&gt;State: In progress!!&lt;/p&gt; */</em>
+<a id='L51' name='L51'></a>  51 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../R/1962.html' title='Multiple referred from 152 places.'>DTMIterator</a>
+<a id='L52' name='L52'></a>  52 <em class='brace'>{</em>
+<a id='L53' name='L53'></a>  53 
+<a id='L54' name='L54'></a>  54   <em class='comment'>// Constants returned by acceptNode, borrowed from the DOM Traversal chapter</em>
+<a id='L55' name='L55'></a>  55   <em class='comment'>// %REVIEW% Should we explicitly initialize them from, eg,</em>
+<a id='L56' name='L56'></a>  56   <em class='comment'>// org.w3c.dom.traversal.NodeFilter.FILTER_ACCEPT?</em>
+<a id='L57' name='L57'></a>  57 
+<a id='L58' name='L58'></a>  58   <em class='comment'>/**</em>
+<a id='L59' name='L59'></a>  59 <em class='comment'>   * Accept the node.</em>
+<a id='L60' name='L60'></a>  60 <em class='comment'>   */</em>
+<a id='L61' name='L61'></a>  61   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>short</strong> FILTER_ACCEPT = 1;
+<a id='L62' name='L62'></a>  62 
+<a id='L63' name='L63'></a>  63   <em class='comment'>/**</em>
+<a id='L64' name='L64'></a>  64 <em class='comment'>   * Reject the node. Same behavior as FILTER_SKIP. (In the DOM these</em>
+<a id='L65' name='L65'></a>  65 <em class='comment'>   * differ when applied to a TreeWalker but have the same result when</em>
+<a id='L66' name='L66'></a>  66 <em class='comment'>   * applied to a NodeIterator).</em>
+<a id='L67' name='L67'></a>  67 <em class='comment'>   */</em>
+<a id='L68' name='L68'></a>  68   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>short</strong> FILTER_REJECT = 2;
+<a id='L69' name='L69'></a>  69 
+<a id='L70' name='L70'></a>  70   <em class='comment'>/**</em>
+<a id='L71' name='L71'></a>  71 <em class='comment'>   * Skip this single node.</em>
+<a id='L72' name='L72'></a>  72 <em class='comment'>   */</em>
+<a id='L73' name='L73'></a>  73   <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>short</strong> FILTER_SKIP = 3;
+<a id='L74' name='L74'></a>  74 
+<a id='L75' name='L75'></a>  75   <em class='comment'>/**</em>
+<a id='L76' name='L76'></a>  76 <em class='comment'>   * Get an instance of a DTM that "owns" a node handle.  Since a node</em>
+<a id='L77' name='L77'></a>  77 <em class='comment'>   * iterator may be passed without a DTMManager, this allows the</em>
+<a id='L78' name='L78'></a>  78 <em class='comment'>   * caller to easily get the DTM using just the iterator.</em>
+<a id='L79' name='L79'></a>  79 <em class='comment'>   *</em>
+<a id='L80' name='L80'></a>  80 <em class='comment'>   * @param nodeHandle the nodeHandle.</em>
+<a id='L81' name='L81'></a>  81 <em class='comment'>   *</em>
+<a id='L82' name='L82'></a>  82 <em class='comment'>   * @return a non-null DTM reference.</em>
+<a id='L83' name='L83'></a>  83 <em class='comment'>   */</em>
+<a id='L84' name='L84'></a>  84   <strong class='reserved'>public</strong> <a href='../S/5924.html#L80' title='Defined at 80 in src/com/sun/org/apache/xml/internal/dtm/DTM.java.'>DTM</a> <a href='../R/15933.html' title='Multiple referred from 85 places.'>getDTM</a>(<strong class='reserved'>int</strong> nodeHandle);
+<a id='L85' name='L85'></a>  85 
+<a id='L86' name='L86'></a>  86   <em class='comment'>/**</em>
+<a id='L87' name='L87'></a>  87 <em class='comment'>   * Get an instance of the DTMManager.  Since a node</em>
+<a id='L88' name='L88'></a>  88 <em class='comment'>   * iterator may be passed without a DTMManager, this allows the</em>
+<a id='L89' name='L89'></a>  89 <em class='comment'>   * caller to easily get the DTMManager using just the iterator.</em>
+<a id='L90' name='L90'></a>  90 <em class='comment'>   *</em>
+<a id='L91' name='L91'></a>  91 <em class='comment'>   * @return a non-null DTMManager reference.</em>
+<a id='L92' name='L92'></a>  92 <em class='comment'>   */</em>
+<a id='L93' name='L93'></a>  93   <strong class='reserved'>public</strong> <a href='../S/5920.html#L52' title='Defined at 52 in src/com/sun/org/apache/xml/internal/dtm/DTMManager.java.'>DTMManager</a> <a href='../R/15939.html' title='Multiple referred from 22 places.'>getDTMManager</a>();
+<a id='L94' name='L94'></a>  94 
+<a id='L95' name='L95'></a>  95   <em class='comment'>/**</em>
+<a id='L96' name='L96'></a>  96 <em class='comment'>   * The root node of the &lt;code&gt;DTMIterator&lt;/code&gt;, as specified when it</em>
+<a id='L97' name='L97'></a>  97 <em class='comment'>   * was created.  Note the root node is not the root node of the</em>
+<a id='L98' name='L98'></a>  98 <em class='comment'>   * document tree, but the context node from where the iteration</em>
+<a id='L99' name='L99'></a>  99 <em class='comment'>   * begins and ends.</em>
+<a id='L100' name='L100'></a> 100 <em class='comment'>   *</em>
+<a id='L101' name='L101'></a> 101 <em class='comment'>   * @return nodeHandle int Handle of the context node.</em>
+<a id='L102' name='L102'></a> 102 <em class='comment'>   */</em>
+<a id='L103' name='L103'></a> 103   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/18758.html' title='Multiple referred from 54 places.'>getRoot</a>();
+<a id='L104' name='L104'></a> 104 
+<a id='L105' name='L105'></a> 105   <em class='comment'>/**</em>
+<a id='L106' name='L106'></a> 106 <em class='comment'>   * Reset the root node of the &lt;code&gt;DTMIterator&lt;/code&gt;, overriding</em>
+<a id='L107' name='L107'></a> 107 <em class='comment'>   * the value specified when it was created.  Note the root node is</em>
+<a id='L108' name='L108'></a> 108 <em class='comment'>   * not the root node of the document tree, but the context node from</em>
+<a id='L109' name='L109'></a> 109 <em class='comment'>   * where the iteration begins.</em>
+<a id='L110' name='L110'></a> 110 <em class='comment'>   *</em>
+<a id='L111' name='L111'></a> 111 <em class='comment'>   * @param nodeHandle int Handle of the context node.</em>
+<a id='L112' name='L112'></a> 112 <em class='comment'>   * @param environment The environment object.</em>
+<a id='L113' name='L113'></a> 113 <em class='comment'>   * The environment in which this iterator operates, which should provide:</em>
+<a id='L114' name='L114'></a> 114 <em class='comment'>   * &lt;ul&gt;</em>
+<a id='L115' name='L115'></a> 115 <em class='comment'>   * &lt;li&gt;a node (the context node... same value as "root" defined below) &lt;/li&gt;</em>
+<a id='L116' name='L116'></a> 116 <em class='comment'>   * &lt;li&gt;a pair of non-zero positive integers (the context position and the context size) &lt;/li&gt;</em>
+<a id='L117' name='L117'></a> 117 <em class='comment'>   * &lt;li&gt;a set of variable bindings &lt;/li&gt;</em>
+<a id='L118' name='L118'></a> 118 <em class='comment'>   * &lt;li&gt;a function library &lt;/li&gt;</em>
+<a id='L119' name='L119'></a> 119 <em class='comment'>   * &lt;li&gt;the set of namespace declarations in scope for the expression.&lt;/li&gt;</em>
+<a id='L120' name='L120'></a> 120 <em class='comment'>   * &lt;ul&gt;</em>
+<a id='L121' name='L121'></a> 121 <em class='comment'>   *</em>
+<a id='L122' name='L122'></a> 122 <em class='comment'>   * &lt;p&gt;At this time the exact implementation of this environment is application</em>
+<a id='L123' name='L123'></a> 123 <em class='comment'>   * dependent.  Probably a proper interface will be created fairly soon.&lt;/p&gt;</em>
+<a id='L124' name='L124'></a> 124 <em class='comment'>   *</em>
+<a id='L125' name='L125'></a> 125 <em class='comment'>   */</em>
+<a id='L126' name='L126'></a> 126   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28067.html' title='Multiple referred from 27 places.'>setRoot</a>(<strong class='reserved'>int</strong> nodeHandle, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/15666.html' title='Multiple defined in 3 places.'>environment</a>);
+<a id='L127' name='L127'></a> 127 
+<a id='L128' name='L128'></a> 128   <em class='comment'>/**</em>
+<a id='L129' name='L129'></a> 129 <em class='comment'>   * Reset the iterator to the start. After resetting, the next node returned</em>
+<a id='L130' name='L130'></a> 130 <em class='comment'>   * will be the root node -- or, if that's filtered out, the first node</em>
+<a id='L131' name='L131'></a> 131 <em class='comment'>   * within the root's subtree which is _not_ skipped by the filters.</em>
+<a id='L132' name='L132'></a> 132 <em class='comment'>   */</em>
+<a id='L133' name='L133'></a> 133   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>();
+<a id='L134' name='L134'></a> 134 
+<a id='L135' name='L135'></a> 135   <em class='comment'>/**</em>
+<a id='L136' name='L136'></a> 136 <em class='comment'>   * This attribute determines which node types are presented via the</em>
+<a id='L137' name='L137'></a> 137 <em class='comment'>   * iterator. The available set of constants is defined above.</em>
+<a id='L138' name='L138'></a> 138 <em class='comment'>   * Nodes not accepted by</em>
+<a id='L139' name='L139'></a> 139 <em class='comment'>   * &lt;code&gt;whatToShow&lt;/code&gt; will be skipped, but their children may still</em>
+<a id='L140' name='L140'></a> 140 <em class='comment'>   * be considered.</em>
+<a id='L141' name='L141'></a> 141 <em class='comment'>   *</em>
+<a id='L142' name='L142'></a> 142 <em class='comment'>   * @return one of the SHOW_XXX constants, or several ORed together.</em>
+<a id='L143' name='L143'></a> 143 <em class='comment'>   */</em>
+<a id='L144' name='L144'></a> 144   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/19853.html' title='Multiple referred from 27 places.'>getWhatToShow</a>();
+<a id='L145' name='L145'></a> 145 
+<a id='L146' name='L146'></a> 146   <em class='comment'>/**</em>
+<a id='L147' name='L147'></a> 147 <em class='comment'>   * &lt;p&gt;The value of this flag determines whether the children of entity</em>
+<a id='L148' name='L148'></a> 148 <em class='comment'>   * reference nodes are visible to the iterator. If false, they  and</em>
+<a id='L149' name='L149'></a> 149 <em class='comment'>   * their descendants will be rejected. Note that this rejection takes</em>
+<a id='L150' name='L150'></a> 150 <em class='comment'>   * precedence over &lt;code&gt;whatToShow&lt;/code&gt; and the filter. &lt;/p&gt;</em>
+<a id='L151' name='L151'></a> 151 <em class='comment'>   *</em>
+<a id='L152' name='L152'></a> 152 <em class='comment'>   * &lt;p&gt; To produce a view of the document that has entity references</em>
+<a id='L153' name='L153'></a> 153 <em class='comment'>   * expanded and does not expose the entity reference node itself, use</em>
+<a id='L154' name='L154'></a> 154 <em class='comment'>   * the &lt;code&gt;whatToShow&lt;/code&gt; flags to hide the entity reference node</em>
+<a id='L155' name='L155'></a> 155 <em class='comment'>   * and set &lt;code&gt;expandEntityReferences&lt;/code&gt; to true when creating the</em>
+<a id='L156' name='L156'></a> 156 <em class='comment'>   * iterator. To produce a view of the document that has entity reference</em>
+<a id='L157' name='L157'></a> 157 <em class='comment'>   * nodes but no entity expansion, use the &lt;code&gt;whatToShow&lt;/code&gt; flags</em>
+<a id='L158' name='L158'></a> 158 <em class='comment'>   * to show the entity reference node and set</em>
+<a id='L159' name='L159'></a> 159 <em class='comment'>   * &lt;code&gt;expandEntityReferences&lt;/code&gt; to false.&lt;/p&gt;</em>
+<a id='L160' name='L160'></a> 160 <em class='comment'>   *</em>
+<a id='L161' name='L161'></a> 161 <em class='comment'>   * &lt;p&gt;NOTE: In Xalan's use of DTM we will generally have fully expanded</em>
+<a id='L162' name='L162'></a> 162 <em class='comment'>   * entity references when the document tree was built, and thus this</em>
+<a id='L163' name='L163'></a> 163 <em class='comment'>   * flag will have no effect.&lt;/p&gt;</em>
+<a id='L164' name='L164'></a> 164 <em class='comment'>   *</em>
+<a id='L165' name='L165'></a> 165 <em class='comment'>   * @return true if entity references will be expanded.  */</em>
+<a id='L166' name='L166'></a> 166   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../S/4889.html#L311' title='Referred from 311 in src/com/sun/org/apache/xpath/internal/axes/NodeSequence.java.'>getExpandEntityReferences</a>();
+<a id='L167' name='L167'></a> 167 
+<a id='L168' name='L168'></a> 168   <em class='comment'>/**</em>
+<a id='L169' name='L169'></a> 169 <em class='comment'>   * Returns the next node in the set and advances the position of the</em>
+<a id='L170' name='L170'></a> 170 <em class='comment'>   * iterator in the set. After a &lt;code&gt;DTMIterator&lt;/code&gt; has setRoot called,</em>
+<a id='L171' name='L171'></a> 171 <em class='comment'>   * the first call to &lt;code&gt;nextNode()&lt;/code&gt; returns that root or (if it</em>
+<a id='L172' name='L172'></a> 172 <em class='comment'>   * is rejected by the filters) the first node within its subtree which is</em>
+<a id='L173' name='L173'></a> 173 <em class='comment'>   * not filtered out.</em>
+<a id='L174' name='L174'></a> 174 <em class='comment'>   * @return The next node handle in the set being iterated over, or</em>
+<a id='L175' name='L175'></a> 175 <em class='comment'>   *  &lt;code&gt;DTM.NULL&lt;/code&gt; if there are no more members in that set.</em>
+<a id='L176' name='L176'></a> 176 <em class='comment'>   */</em>
+<a id='L177' name='L177'></a> 177   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/23682.html' title='Multiple referred from 192 places.'>nextNode</a>();
+<a id='L178' name='L178'></a> 178 
+<a id='L179' name='L179'></a> 179   <em class='comment'>/**</em>
+<a id='L180' name='L180'></a> 180 <em class='comment'>   * Returns the previous node in the set and moves the position of the</em>
+<a id='L181' name='L181'></a> 181 <em class='comment'>   * &lt;code&gt;DTMIterator&lt;/code&gt; backwards in the set.</em>
+<a id='L182' name='L182'></a> 182 <em class='comment'>   * @return The previous node handle in the set being iterated over,</em>
+<a id='L183' name='L183'></a> 183 <em class='comment'>   *   or &lt;code&gt;DTM.NULL&lt;/code&gt; if there are no more members in that set.</em>
+<a id='L184' name='L184'></a> 184 <em class='comment'>   */</em>
+<a id='L185' name='L185'></a> 185   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/24966.html' title='Multiple referred from 15 places.'>previousNode</a>();
+<a id='L186' name='L186'></a> 186 
+<a id='L187' name='L187'></a> 187   <em class='comment'>/**</em>
+<a id='L188' name='L188'></a> 188 <em class='comment'>   * Detaches the &lt;code&gt;DTMIterator&lt;/code&gt; from the set which it iterated</em>
+<a id='L189' name='L189'></a> 189 <em class='comment'>   * over, releasing any computational resources and placing the iterator</em>
+<a id='L190' name='L190'></a> 190 <em class='comment'>   * in the INVALID state. After &lt;code&gt;detach&lt;/code&gt; has been invoked,</em>
+<a id='L191' name='L191'></a> 191 <em class='comment'>   * calls to &lt;code&gt;nextNode&lt;/code&gt; or &lt;code&gt;previousNode&lt;/code&gt; will</em>
+<a id='L192' name='L192'></a> 192 <em class='comment'>   * raise a runtime exception.</em>
+<a id='L193' name='L193'></a> 193 <em class='comment'>   */</em>
+<a id='L194' name='L194'></a> 194   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/13275.html' title='Multiple referred from 37 places.'>detach</a>();
+<a id='L195' name='L195'></a> 195 
+<a id='L196' name='L196'></a> 196   <em class='comment'>/**</em>
+<a id='L197' name='L197'></a> 197 <em class='comment'>   * Specify if it's OK for detach to release the iterator for reuse.</em>
+<a id='L198' name='L198'></a> 198 <em class='comment'>   *</em>
+<a id='L199' name='L199'></a> 199 <em class='comment'>   * @param allowRelease true if it is OK for detach to release this iterator</em>
+<a id='L200' name='L200'></a> 200 <em class='comment'>   * for pooling.</em>
+<a id='L201' name='L201'></a> 201 <em class='comment'>   */</em>
+<a id='L202' name='L202'></a> 202   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/10150.html' title='Multiple referred from 6 places.'>allowDetachToRelease</a>(<strong class='reserved'>boolean</strong> allowRelease);
+<a id='L203' name='L203'></a> 203 
+<a id='L204' name='L204'></a> 204   <em class='comment'>/**</em>
+<a id='L205' name='L205'></a> 205 <em class='comment'>   * Get the current node in the iterator. Note that this differs from</em>
+<a id='L206' name='L206'></a> 206 <em class='comment'>   * the DOM's NodeIterator, where the current position lies between two</em>
+<a id='L207' name='L207'></a> 207 <em class='comment'>   * nodes (as part of the maintain-relative-position semantic).</em>
+<a id='L208' name='L208'></a> 208 <em class='comment'>   *</em>
+<a id='L209' name='L209'></a> 209 <em class='comment'>   * @return The current node handle, or -1.</em>
+<a id='L210' name='L210'></a> 210 <em class='comment'>   */</em>
+<a id='L211' name='L211'></a> 211   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/15897.html' title='Multiple referred from 27 places.'>getCurrentNode</a>();
+<a id='L212' name='L212'></a> 212 
+<a id='L213' name='L213'></a> 213   <em class='comment'>/**</em>
+<a id='L214' name='L214'></a> 214 <em class='comment'>   * Tells if this NodeSetDTM is "fresh", in other words, if</em>
+<a id='L215' name='L215'></a> 215 <em class='comment'>   * the first nextNode() that is called will return the</em>
+<a id='L216' name='L216'></a> 216 <em class='comment'>   * first node in the set.</em>
+<a id='L217' name='L217'></a> 217 <em class='comment'>   *</em>
+<a id='L218' name='L218'></a> 218 <em class='comment'>   * @return true if the iteration of this list has not yet begun.</em>
+<a id='L219' name='L219'></a> 219 <em class='comment'>   */</em>
+<a id='L220' name='L220'></a> 220   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21499.html' title='Multiple referred from 2 places.'>isFresh</a>();
+<a id='L221' name='L221'></a> 221 
+<a id='L222' name='L222'></a> 222   <em class='comment'>//========= Random Access ==========</em>
+<a id='L223' name='L223'></a> 223 
+<a id='L224' name='L224'></a> 224   <em class='comment'>/**</em>
+<a id='L225' name='L225'></a> 225 <em class='comment'>   * If setShouldCacheNodes(true) is called, then nodes will</em>
+<a id='L226' name='L226'></a> 226 <em class='comment'>   * be cached, enabling random access, and giving the ability to do</em>
+<a id='L227' name='L227'></a> 227 <em class='comment'>   * sorts and the like.  They are not cached by default.</em>
+<a id='L228' name='L228'></a> 228 <em class='comment'>   *</em>
+<a id='L229' name='L229'></a> 229 <em class='comment'>   * %REVIEW% Shouldn't the other random-access methods throw an exception</em>
+<a id='L230' name='L230'></a> 230 <em class='comment'>   * if they're called on a DTMIterator with this flag set false?</em>
+<a id='L231' name='L231'></a> 231 <em class='comment'>   *</em>
+<a id='L232' name='L232'></a> 232 <em class='comment'>   * @param b true if the nodes should be cached.</em>
+<a id='L233' name='L233'></a> 233 <em class='comment'>   */</em>
+<a id='L234' name='L234'></a> 234   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/28175.html' title='Multiple referred from 15 places.'>setShouldCacheNodes</a>(<strong class='reserved'>boolean</strong> b);
+<a id='L235' name='L235'></a> 235 
+<a id='L236' name='L236'></a> 236   <em class='comment'>/**</em>
+<a id='L237' name='L237'></a> 237 <em class='comment'>   * Tells if this iterator can have nodes added to it or set via</em>
+<a id='L238' name='L238'></a> 238 <em class='comment'>   * the &lt;code&gt;setItem(int node, int index)&lt;/code&gt; method.</em>
+<a id='L239' name='L239'></a> 239 <em class='comment'>   *</em>
+<a id='L240' name='L240'></a> 240 <em class='comment'>   * @return True if the nodelist can be mutated.</em>
+<a id='L241' name='L241'></a> 241 <em class='comment'>   */</em>
+<a id='L242' name='L242'></a> 242   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> isMutable();
+<a id='L243' name='L243'></a> 243 
+<a id='L244' name='L244'></a> 244   <em class='comment'>/** Get the current position within the cached list, which is one</em>
+<a id='L245' name='L245'></a> 245 <em class='comment'>   * less than the next nextNode() call will retrieve.  i.e. if you</em>
+<a id='L246' name='L246'></a> 246 <em class='comment'>   * call getCurrentPos() and the return is 0, the next fetch will</em>
+<a id='L247' name='L247'></a> 247 <em class='comment'>   * take place at index 1.</em>
+<a id='L248' name='L248'></a> 248 <em class='comment'>   *</em>
+<a id='L249' name='L249'></a> 249 <em class='comment'>   * @return The position of the iteration.</em>
+<a id='L250' name='L250'></a> 250 <em class='comment'>   */</em>
+<a id='L251' name='L251'></a> 251   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/15900.html' title='Multiple referred from 15 places.'>getCurrentPos</a>();
+<a id='L252' name='L252'></a> 252 
+<a id='L253' name='L253'></a> 253   <em class='comment'>/**</em>
+<a id='L254' name='L254'></a> 254 <em class='comment'>   * If an index is requested, NodeSetDTM will call this method</em>
+<a id='L255' name='L255'></a> 255 <em class='comment'>   * to run the iterator to the index.  By default this sets</em>
+<a id='L256' name='L256'></a> 256 <em class='comment'>   * m_next to the index.  If the index argument is -1, this</em>
+<a id='L257' name='L257'></a> 257 <em class='comment'>   * signals that the iterator should be run to the end and</em>
+<a id='L258' name='L258'></a> 258 <em class='comment'>   * completely fill the cache.</em>
+<a id='L259' name='L259'></a> 259 <em class='comment'>   *</em>
+<a id='L260' name='L260'></a> 260 <em class='comment'>   * @param index The index to run to, or -1 if the iterator should be run</em>
+<a id='L261' name='L261'></a> 261 <em class='comment'>   *              to the end.</em>
+<a id='L262' name='L262'></a> 262 <em class='comment'>   */</em>
+<a id='L263' name='L263'></a> 263   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26561.html' title='Multiple referred from 15 places.'>runTo</a>(<strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L264' name='L264'></a> 264 
+<a id='L265' name='L265'></a> 265   <em class='comment'>/**</em>
+<a id='L266' name='L266'></a> 266 <em class='comment'>   * Set the current position in the node set.</em>
+<a id='L267' name='L267'></a> 267 <em class='comment'>   *</em>
+<a id='L268' name='L268'></a> 268 <em class='comment'>   * @param i Must be a valid index.</em>
+<a id='L269' name='L269'></a> 269 <em class='comment'>   */</em>
+<a id='L270' name='L270'></a> 270   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27137.html' title='Multiple referred from 3 places.'>setCurrentPos</a>(<strong class='reserved'>int</strong> i);
+<a id='L271' name='L271'></a> 271 
+<a id='L272' name='L272'></a> 272   <em class='comment'>/**</em>
+<a id='L273' name='L273'></a> 273 <em class='comment'>   * Returns the &lt;code&gt;node handle&lt;/code&gt; of an item in the collection. If</em>
+<a id='L274' name='L274'></a> 274 <em class='comment'>   * &lt;code&gt;index&lt;/code&gt; is greater than or equal to the number of nodes in</em>
+<a id='L275' name='L275'></a> 275 <em class='comment'>   * the list, this returns &lt;code&gt;null&lt;/code&gt;.</em>
+<a id='L276' name='L276'></a> 276 <em class='comment'>   *</em>
+<a id='L277' name='L277'></a> 277 <em class='comment'>   * @param index of the item.</em>
+<a id='L278' name='L278'></a> 278 <em class='comment'>   * @return The node handle at the &lt;code&gt;index&lt;/code&gt;th position in the</em>
+<a id='L279' name='L279'></a> 279 <em class='comment'>   *   &lt;code&gt;DTMIterator&lt;/code&gt;, or &lt;code&gt;-1&lt;/code&gt; if that is not a valid</em>
+<a id='L280' name='L280'></a> 280 <em class='comment'>   *   index.</em>
+<a id='L281' name='L281'></a> 281 <em class='comment'>   */</em>
+<a id='L282' name='L282'></a> 282   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/22287.html' title='Multiple referred from 822 places.'>item</a>(<strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L283' name='L283'></a> 283 
+<a id='L284' name='L284'></a> 284   <em class='comment'>/**</em>
+<a id='L285' name='L285'></a> 285 <em class='comment'>   * Sets the node at the specified index of this vector to be the</em>
+<a id='L286' name='L286'></a> 286 <em class='comment'>   * specified node. The previous component at that position is discarded.</em>
+<a id='L287' name='L287'></a> 287 <em class='comment'>   *</em>
+<a id='L288' name='L288'></a> 288 <em class='comment'>   * &lt;p&gt;The index must be a value greater than or equal to 0 and less</em>
+<a id='L289' name='L289'></a> 289 <em class='comment'>   * than the current size of the vector.</em>
+<a id='L290' name='L290'></a> 290 <em class='comment'>   * The iterator must be in cached mode.&lt;/p&gt;</em>
+<a id='L291' name='L291'></a> 291 <em class='comment'>   *</em>
+<a id='L292' name='L292'></a> 292 <em class='comment'>   * &lt;p&gt;Meant to be used for sorted iterators.&lt;/p&gt;</em>
+<a id='L293' name='L293'></a> 293 <em class='comment'>   *</em>
+<a id='L294' name='L294'></a> 294 <em class='comment'>   * @param node Node to set</em>
+<a id='L295' name='L295'></a> 295 <em class='comment'>   * @param index Index of where to set the node</em>
+<a id='L296' name='L296'></a> 296 <em class='comment'>   */</em>
+<a id='L297' name='L297'></a> 297   <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27608.html' title='Multiple referred from 8 places.'>setItem</a>(<strong class='reserved'>int</strong> <a href='../D/28235.html' title='Multiple defined in 11 places.'>node</a>, <strong class='reserved'>int</strong> <a href='../D/24461.html' title='Multiple defined in 6 places.'>index</a>);
+<a id='L298' name='L298'></a> 298 
+<a id='L299' name='L299'></a> 299   <em class='comment'>/**</em>
+<a id='L300' name='L300'></a> 300 <em class='comment'>   * The number of nodes in the list. The range of valid child node indices</em>
+<a id='L301' name='L301'></a> 301 <em class='comment'>   * is 0 to &lt;code&gt;length-1&lt;/code&gt; inclusive. Note that this requires running</em>
+<a id='L302' name='L302'></a> 302 <em class='comment'>   * the iterator to completion, and presumably filling the cache.</em>
+<a id='L303' name='L303'></a> 303 <em class='comment'>   *</em>
+<a id='L304' name='L304'></a> 304 <em class='comment'>   * @return The number of nodes in the list.</em>
+<a id='L305' name='L305'></a> 305 <em class='comment'>   */</em>
+<a id='L306' name='L306'></a> 306   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/17335.html' title='Multiple referred from 644 places.'>getLength</a>();
+<a id='L307' name='L307'></a> 307 
+<a id='L308' name='L308'></a> 308   <em class='comment'>//=========== Cloning operations. ============</em>
+<a id='L309' name='L309'></a> 309 
+<a id='L310' name='L310'></a> 310   <em class='comment'>/**</em>
+<a id='L311' name='L311'></a> 311 <em class='comment'>   * Get a cloned Iterator that is reset to the start of the iteration.</em>
+<a id='L312' name='L312'></a> 312 <em class='comment'>   *</em>
+<a id='L313' name='L313'></a> 313 <em class='comment'>   * @return A clone of this iteration that has been reset.</em>
+<a id='L314' name='L314'></a> 314 <em class='comment'>   *</em>
+<a id='L315' name='L315'></a> 315 <em class='comment'>   * @throws CloneNotSupportedException</em>
+<a id='L316' name='L316'></a> 316 <em class='comment'>   */</em>
+<a id='L317' name='L317'></a> 317   <strong class='reserved'>public</strong> <a href='../S/5921.html#L51' title='Defined at 51 in src/com/sun/org/apache/xml/internal/dtm/DTMIterator.java.'>DTMIterator</a> <a href='../R/11583.html' title='Multiple referred from 10 places.'>cloneWithReset</a>() <strong class='reserved'>throws</strong> <a href='../S/1725.html#L45' title='Defined at 45 in src/java/lang/CloneNotSupportedException.java.'>CloneNotSupportedException</a>;
+<a id='L318' name='L318'></a> 318 
+<a id='L319' name='L319'></a> 319   <em class='comment'>/**</em>
+<a id='L320' name='L320'></a> 320 <em class='comment'>   * Get a clone of this iterator, but don't reset the iteration in the</em>
+<a id='L321' name='L321'></a> 321 <em class='comment'>   * process, so that it may be used from the current position.</em>
+<a id='L322' name='L322'></a> 322 <em class='comment'>   *</em>
+<a id='L323' name='L323'></a> 323 <em class='comment'>   * @return A clone of this object.</em>
+<a id='L324' name='L324'></a> 324 <em class='comment'>   *</em>
+<a id='L325' name='L325'></a> 325 <em class='comment'>   * @throws CloneNotSupportedException</em>
+<a id='L326' name='L326'></a> 326 <em class='comment'>   */</em>
+<a id='L327' name='L327'></a> 327   <strong class='reserved'>public</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../R/11555.html' title='Multiple referred from 1378 places.'>clone</a>() <strong class='reserved'>throws</strong> <a href='../S/1725.html#L45' title='Defined at 45 in src/java/lang/CloneNotSupportedException.java.'>CloneNotSupportedException</a>;
+<a id='L328' name='L328'></a> 328 
+<a id='L329' name='L329'></a> 329   <em class='comment'>/**</em>
+<a id='L330' name='L330'></a> 330 <em class='comment'>   * Returns true if all the nodes in the iteration well be returned in document</em>
+<a id='L331' name='L331'></a> 331 <em class='comment'>   * order.</em>
+<a id='L332' name='L332'></a> 332 <em class='comment'>   *</em>
+<a id='L333' name='L333'></a> 333 <em class='comment'>   * @return true if all the nodes in the iteration well be returned in document</em>
+<a id='L334' name='L334'></a> 334 <em class='comment'>   * order.</em>
+<a id='L335' name='L335'></a> 335 <em class='comment'>   */</em>
+<a id='L336' name='L336'></a> 336   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/21373.html' title='Multiple referred from 8 places.'>isDocOrdered</a>();
+<a id='L337' name='L337'></a> 337 
+<a id='L338' name='L338'></a> 338   <em class='comment'>/**</em>
+<a id='L339' name='L339'></a> 339 <em class='comment'>   * Returns the axis being iterated, if it is known.</em>
+<a id='L340' name='L340'></a> 340 <em class='comment'>   *</em>
+<a id='L341' name='L341'></a> 341 <em class='comment'>   * @return Axis.CHILD, etc., or -1 if the axis is not known or is of multiple</em>
+<a id='L342' name='L342'></a> 342 <em class='comment'>   * types.</em>
+<a id='L343' name='L343'></a> 343 <em class='comment'>   */</em>
+<a id='L344' name='L344'></a> 344   <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/15203.html' title='Multiple referred from 33 places.'>getAxis</a>();
+<a id='L345' name='L345'></a> 345 
+<a id='L346' name='L346'></a> 346 <em class='brace'>}</em>
+</pre>
+<hr />
+<a id='BOTTOM' name='BOTTOM'></a>
+<em class='comment'>/* [&lt;][&gt;]<a href='#L84'>[^]</a><a href='#L344'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
+</body>
+</html>
