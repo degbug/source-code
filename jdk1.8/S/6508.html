@@ -1,549 +1,547 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/com/sun/jmx/remote/internal/ServerNotifForwarder.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7844.html'>remote</a>/<a href='../files/7845.html'>internal</a>/ServerNotifForwarder.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L77'>[^]</a><a href='#L470'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7840.html">jmx</a>/<a href="../files/7844.html">remote</a>/<a href="../files/7845.html">internal</a>/ServerNotifForwarder.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L77">[^]</a><a href="#L470">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L77' title='Defined at 77.'>addNotificationListener</a></li>
-<li><a href='#L147' title='Defined at 147.'>removeNotificationListener</a></li>
-<li><a href='#L183' title='Defined at 183.'>removeNotificationListener</a></li>
-<li><a href='#L232' title='Defined at 232.'>apply</a></li>
-<li><a href='#L261' title='Defined at 261.'>fetchNotifs</a></li>
-<li><a href='#L293' title='Defined at 293.'>snoopOnUnregister</a></li>
-<li><a href='#L322' title='Defined at 322.'>terminate</a></li>
-<li><a href='#L348' title='Defined at 348.'>getSubject</a></li>
-<li><a href='#L352' title='Defined at 352.'>checkState</a></li>
-<li><a href='#L360' title='Defined at 360.'>getListenerID</a></li>
-<li><a href='#L370' title='Defined at 370.'>checkMBeanPermission</a></li>
-<li><a href='#L376' title='Defined at 376.'>checkMBeanPermission</a></li>
-<li><a href='#L408' title='Defined at 408.'>allowNotificationEmission</a></li>
-<li><a href='#L440' title='Defined at 440.'>extractException</a></li>
-<li><a href='#L456' title='Defined at 456.'>getId</a></li>
-<li><a href='#L460' title='Defined at 460.'>getFilter</a></li>
-<li><a href='#L465' title='Defined at 465.'>hashCode</a></li>
-<li><a href='#L470' title='Defined at 470.'>equals</a></li>
+<li><a href="#L77" title="Defined at 77.">addNotificationListener</a></li>
+<li><a href="#L147" title="Defined at 147.">removeNotificationListener</a></li>
+<li><a href="#L183" title="Defined at 183.">removeNotificationListener</a></li>
+<li><a href="#L232" title="Defined at 232.">apply</a></li>
+<li><a href="#L261" title="Defined at 261.">fetchNotifs</a></li>
+<li><a href="#L293" title="Defined at 293.">snoopOnUnregister</a></li>
+<li><a href="#L322" title="Defined at 322.">terminate</a></li>
+<li><a href="#L348" title="Defined at 348.">getSubject</a></li>
+<li><a href="#L352" title="Defined at 352.">checkState</a></li>
+<li><a href="#L360" title="Defined at 360.">getListenerID</a></li>
+<li><a href="#L370" title="Defined at 370.">checkMBeanPermission</a></li>
+<li><a href="#L376" title="Defined at 376.">checkMBeanPermission</a></li>
+<li><a href="#L408" title="Defined at 408.">allowNotificationEmission</a></li>
+<li><a href="#L440" title="Defined at 440.">extractException</a></li>
+<li><a href="#L456" title="Defined at 456.">getId</a></li>
+<li><a href="#L460" title="Defined at 460.">getFilter</a></li>
+<li><a href="#L465" title="Defined at 465.">hashCode</a></li>
+<li><a href="#L470" title="Defined at 470.">equals</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.jmx.remote.internal;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> com.sun.jmx.remote.security.NotificationAccessController;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> com.sun.jmx.remote.util.ClassLogger;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> com.sun.jmx.remote.util.EnvHelp;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.io.IOException;
-<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.security.AccessControlContext;
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.security.AccessController;
-<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.security.PrivilegedActionException;
-<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.security.PrivilegedExceptionAction;
-<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.util.ArrayList;
-<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.util.Collections;
-<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.HashMap;
-<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.util.HashSet;
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.util.List;
-<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> java.util.Map;
-<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> java.util.Set;
-<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> javax.management.InstanceNotFoundException;
-<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> javax.management.ListenerNotFoundException;
-<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> javax.management.MBeanPermission;
-<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> javax.management.MBeanServer;
-<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> javax.management.MBeanServerDelegate;
-<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> javax.management.MBeanServerNotification;
-<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> javax.management.Notification;
-<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> javax.management.NotificationBroadcaster;
-<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> javax.management.NotificationFilter;
-<a id='L52' name='L52'></a>  52 <strong class='reserved'>import</strong> javax.management.ObjectInstance;
-<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> javax.management.ObjectName;
-<a id='L54' name='L54'></a>  54 <strong class='reserved'>import</strong> javax.management.remote.NotificationResult;
-<a id='L55' name='L55'></a>  55 <strong class='reserved'>import</strong> javax.management.remote.TargetedNotification;
-<a id='L56' name='L56'></a>  56 <strong class='reserved'>import</strong> javax.management.MalformedObjectNameException;
-<a id='L57' name='L57'></a>  57 <strong class='reserved'>import</strong> javax.security.auth.Subject;
-<a id='L58' name='L58'></a>  58 
-<a id='L59' name='L59'></a>  59 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/7120.html' title='Multiple referred from 6 places.'>ServerNotifForwarder</a> <em class='brace'>{</em>
-<a id='L60' name='L60'></a>  60 
-<a id='L61' name='L61'></a>  61 
-<a id='L62' name='L62'></a>  62     <strong class='reserved'>public</strong> ServerNotifForwarder(<a href='../S/3578.html#L260' title='Defined at 260 in src/javax/management/MBeanServer.java.'>MBeanServer</a> mbeanServer,
-<a id='L63' name='L63'></a>  63                                 <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>, ?&gt; <a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>,
-<a id='L64' name='L64'></a>  64                                 <a href='../S/6509.html#L33' title='Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBuffer.java.'>NotificationBuffer</a> notifBuffer,
-<a id='L65' name='L65'></a>  65                                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> connectionId) <em class='brace'>{</em>
-<a id='L66' name='L66'></a>  66         <strong class='reserved'>this</strong>.mbeanServer = mbeanServer;
-<a id='L67' name='L67'></a>  67         <strong class='reserved'>this</strong>.notifBuffer = notifBuffer;
-<a id='L68' name='L68'></a>  68         <strong class='reserved'>this</strong>.connectionId = connectionId;
-<a id='L69' name='L69'></a>  69         connectionTimeout = <a href='../S/6493.html#L55' title='Defined at 55 in src/com/sun/jmx/remote/util/EnvHelp.java.'>EnvHelp</a>.<a href='../S/6493.html#L643' title='Defined at 643 in src/com/sun/jmx/remote/util/EnvHelp.java.'>getServerConnectionTimeout</a>(<a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>);
-<a id='L70' name='L70'></a>  70 
-<a id='L71' name='L71'></a>  71         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> stringBoolean = (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>) <a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>("jmx.remote.x.check.notification.emission");
-<a id='L72' name='L72'></a>  72         checkNotificationEmission = <a href='../S/6493.html#L55' title='Defined at 55 in src/com/sun/jmx/remote/util/EnvHelp.java.'>EnvHelp</a>.<a href='../D/13167.html' title='Multiple defined in 2 places.'>computeBooleanFromString</a>( stringBoolean );
-<a id='L73' name='L73'></a>  73         notificationAccessController =
-<a id='L74' name='L74'></a>  74                 <a href='../S/6493.html#L55' title='Defined at 55 in src/com/sun/jmx/remote/util/EnvHelp.java.'>EnvHelp</a>.<a href='../S/6493.html#L364' title='Defined at 364 in src/com/sun/jmx/remote/util/EnvHelp.java.'>getNotificationAccessController</a>(<a href='../D/15665.html' title='Multiple defined in 2 places.'>env</a>);
-<a id='L75' name='L75'></a>  75     <em class='brace'>}</em>
-<a id='L76' name='L76'></a>  76 
-<a id='L77' name='L77'></a>  77     <strong class='reserved'>public</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../R/9880.html' title='Multiple referred from 25 places.'>addNotificationListener</a>(<strong class='reserved'>final</strong> <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
-<a id='L78' name='L78'></a>  78         <strong class='reserved'>final</strong> <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>)
-<a id='L79' name='L79'></a>  79         <strong class='reserved'>throws</strong> <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>, <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
-<a id='L80' name='L80'></a>  80 
-<a id='L81' name='L81'></a>  81         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L82' name='L82'></a>  82             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("addNotificationListener",
-<a id='L83' name='L83'></a>  83                 "Add a listener at " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L84' name='L84'></a>  84         <em class='brace'>}</em>
-<a id='L85' name='L85'></a>  85 
-<a id='L86' name='L86'></a>  86         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>();
-<a id='L87' name='L87'></a>  87 
-<a id='L88' name='L88'></a>  88         <em class='comment'>// Explicitly check MBeanPermission for addNotificationListener</em>
-<a id='L89' name='L89'></a>  89         <em class='comment'>//</em>
-<a id='L90' name='L90'></a>  90         <a href='../D/12526.html' title='Multiple defined in 7 places.'>checkMBeanPermission</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, "addNotificationListener");
-<a id='L91' name='L91'></a>  91         <strong class='reserved'>if</strong> (notificationAccessController != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L92' name='L92'></a>  92             notificationAccessController.<a href='../D/10974.html' title='Multiple defined in 26 places.'>addNotificationListener</a>(
-<a id='L93' name='L93'></a>  93                 connectionId, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/22833.html' title='Multiple defined in 5 places.'>getSubject</a>());
-<a id='L94' name='L94'></a>  94         <em class='brace'>}</em>
-<a id='L95' name='L95'></a>  95         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L96' name='L96'></a>  96             <strong class='reserved'>boolean</strong> <a href='../D/24874.html' title='Multiple defined in 5 places.'>instanceOf</a> =
-<a id='L97' name='L97'></a>  97             <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
-<a id='L98' name='L98'></a>  98                     <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a>&gt;() <em class='brace'>{</em>
-<a id='L99' name='L99'></a>  99                         <strong class='reserved'>public</strong> <a href='../S/1770.html#L43' title='Defined at 43 in src/java/lang/Boolean.java.'>Boolean</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <strong class='reserved'>throws</strong> <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a> <em class='brace'>{</em>
-<a id='L100' name='L100'></a> 100                             <strong class='reserved'>return</strong> mbeanServer.<a href='../D/25730.html' title='Multiple defined in 12 places.'>isInstanceOf</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, broadcasterClass);
-<a id='L101' name='L101'></a> 101                         <em class='brace'>}</em>
-<a id='L102' name='L102'></a> 102             <em class='brace'>}</em>);
-<a id='L103' name='L103'></a> 103             <strong class='reserved'>if</strong> (!<a href='../D/24874.html' title='Multiple defined in 5 places.'>instanceOf</a>) <em class='brace'>{</em>
-<a id='L104' name='L104'></a> 104                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("The specified MBean [" +
-<a id='L105' name='L105'></a> 105                     <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> + "] is not a " +
-<a id='L106' name='L106'></a> 106                     "NotificationBroadcaster " +
-<a id='L107' name='L107'></a> 107                     "object.");
-<a id='L108' name='L108'></a> 108             <em class='brace'>}</em>
-<a id='L109' name='L109'></a> 109         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a> e) <em class='brace'>{</em>
-<a id='L110' name='L110'></a> 110             <strong class='reserved'>throw</strong> (<a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>) <a href='../D/15928.html' title='Multiple defined in 3 places.'>extractException</a>(e);
-<a id='L111' name='L111'></a> 111         <em class='brace'>}</em>
-<a id='L112' name='L112'></a> 112 
-<a id='L113' name='L113'></a> 113         <strong class='reserved'>final</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = <a href='../D/20165.html' title='Multiple defined in 3 places.'>getListenerID</a>();
-<a id='L114' name='L114'></a> 114 
-<a id='L115' name='L115'></a> 115         <em class='comment'>// 6238731: set the default domain if no domain is set.</em>
-<a id='L116' name='L116'></a> 116         <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> nn = <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>;
-<a id='L117' name='L117'></a> 117         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/18576.html' title='Multiple defined in 5 places.'>getDomain</a>() == <strong class='reserved'>null</strong> || <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/18576.html' title='Multiple defined in 5 places.'>getDomain</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("")) <em class='brace'>{</em>
-<a id='L118' name='L118'></a> 118             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L119' name='L119'></a> 119                 nn = <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(mbeanServer.<a href='../D/18300.html' title='Multiple defined in 9 places.'>getDefaultDomain</a>(),
-<a id='L120' name='L120'></a> 120                                             <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../S/3486.html#L1623' title='Defined at 1623 in src/javax/management/ObjectName.java.'>getKeyPropertyList</a>());
-<a id='L121' name='L121'></a> 121             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/3529.html#L35' title='Defined at 35 in src/javax/management/MalformedObjectNameException.java.'>MalformedObjectNameException</a> mfoe) <em class='brace'>{</em>
-<a id='L122' name='L122'></a> 122                 <em class='comment'>// impossible, but...</em>
-<a id='L123' name='L123'></a> 123                 <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> ioe = <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>(mfoe.<a href='../D/20565.html' title='Multiple defined in 56 places.'>getMessage</a>());
-<a id='L124' name='L124'></a> 124                 ioe.<a href='../D/24507.html' title='Multiple defined in 7 places.'>initCause</a>(mfoe);
-<a id='L125' name='L125'></a> 125                 <strong class='reserved'>throw</strong> ioe;
-<a id='L126' name='L126'></a> 126             <em class='brace'>}</em>
-<a id='L127' name='L127'></a> 127         <em class='brace'>}</em>
-<a id='L128' name='L128'></a> 128 
-<a id='L129' name='L129'></a> 129         <strong class='reserved'>synchronized</strong> (listenerMap) <em class='brace'>{</em>
-<a id='L130' name='L130'></a> 130             <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a> idaf = <strong class='reserved'>new</strong> <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>(<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>, <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>);
-<a id='L131' name='L131'></a> 131             <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt; <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> = listenerMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(nn);
-<a id='L132' name='L132'></a> 132             <em class='comment'>// Tread carefully because if set.size() == 1 it may be the</em>
-<a id='L133' name='L133'></a> 133             <em class='comment'>// Collections.singleton we make here, which is unmodifiable.</em>
-<a id='L134' name='L134'></a> 134             <strong class='reserved'>if</strong> (<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> == <strong class='reserved'>null</strong>)
-<a id='L135' name='L135'></a> 135                 <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> = <a href='../S/1147.html#L80' title='Defined at 80 in src/java/util/Collections.java.'>Collections</a>.<a href='../D/34585.html' title='Multiple defined in 2 places.'>singleton</a>(idaf);
-<a id='L136' name='L136'></a> 136             <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L137' name='L137'></a> 137                 <strong class='reserved'>if</strong> (<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() == 1)
-<a id='L138' name='L138'></a> 138                     <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> = <strong class='reserved'>new</strong> <a href='../S/1136.html#L89' title='Defined at 89 in src/java/util/HashSet.java.'>HashSet</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt;(<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>);
-<a id='L139' name='L139'></a> 139                 <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(idaf);
-<a id='L140' name='L140'></a> 140             <em class='brace'>}</em>
-<a id='L141' name='L141'></a> 141             listenerMap.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(nn, <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>);
-<a id='L142' name='L142'></a> 142         <em class='brace'>}</em>
-<a id='L143' name='L143'></a> 143 
-<a id='L144' name='L144'></a> 144         <strong class='reserved'>return</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>;
-<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
-<a id='L146' name='L146'></a> 146 
-<a id='L147' name='L147'></a> 147     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26036.html' title='Multiple referred from 45 places.'>removeNotificationListener</a>(<a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
-<a id='L148' name='L148'></a> 148         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a>[] listenerIDs)
-<a id='L149' name='L149'></a> 149         <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <em class='brace'>{</em>
-<a id='L150' name='L150'></a> 150 
-<a id='L151' name='L151'></a> 151         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L152' name='L152'></a> 152             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("removeNotificationListener",
-<a id='L153' name='L153'></a> 153                 "Remove some listeners from " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L154' name='L154'></a> 154         <em class='brace'>}</em>
-<a id='L155' name='L155'></a> 155 
-<a id='L156' name='L156'></a> 156         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>();
-<a id='L157' name='L157'></a> 157 
-<a id='L158' name='L158'></a> 158         <em class='comment'>// Explicitly check MBeanPermission for removeNotificationListener</em>
-<a id='L159' name='L159'></a> 159         <em class='comment'>//</em>
-<a id='L160' name='L160'></a> 160         <a href='../D/12526.html' title='Multiple defined in 7 places.'>checkMBeanPermission</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, "removeNotificationListener");
-<a id='L161' name='L161'></a> 161         <strong class='reserved'>if</strong> (notificationAccessController != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L162' name='L162'></a> 162             notificationAccessController.<a href='../D/30900.html' title='Multiple defined in 49 places.'>removeNotificationListener</a>(
-<a id='L163' name='L163'></a> 163                 connectionId, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/22833.html' title='Multiple defined in 5 places.'>getSubject</a>());
-<a id='L164' name='L164'></a> 164         <em class='brace'>}</em>
-<a id='L165' name='L165'></a> 165 
-<a id='L166' name='L166'></a> 166         <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> re = <strong class='reserved'>null</strong>;
-<a id='L167' name='L167'></a> 167         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0 ; i &lt; listenerIDs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> ; i++) <em class='brace'>{</em>
-<a id='L168' name='L168'></a> 168             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L169' name='L169'></a> 169                 <a href='../D/30900.html' title='Multiple defined in 49 places.'>removeNotificationListener</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, listenerIDs[i]);
-<a id='L170' name='L170'></a> 170             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
-<a id='L171' name='L171'></a> 171                 <em class='comment'>// Give back the first exception</em>
-<a id='L172' name='L172'></a> 172                 <em class='comment'>//</em>
-<a id='L173' name='L173'></a> 173                 <strong class='reserved'>if</strong> (re != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L174' name='L174'></a> 174                     re = e;
-<a id='L175' name='L175'></a> 175                 <em class='brace'>}</em>
-<a id='L176' name='L176'></a> 176             <em class='brace'>}</em>
-<a id='L177' name='L177'></a> 177         <em class='brace'>}</em>
-<a id='L178' name='L178'></a> 178         <strong class='reserved'>if</strong> (re != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L179' name='L179'></a> 179             <strong class='reserved'>throw</strong> re;
-<a id='L180' name='L180'></a> 180         <em class='brace'>}</em>
-<a id='L181' name='L181'></a> 181     <em class='brace'>}</em>
-<a id='L182' name='L182'></a> 182 
-<a id='L183' name='L183'></a> 183     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26036.html' title='Multiple referred from 45 places.'>removeNotificationListener</a>(<a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> listenerID)
-<a id='L184' name='L184'></a> 184     <strong class='reserved'>throws</strong>
-<a id='L185' name='L185'></a> 185         <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>,
-<a id='L186' name='L186'></a> 186         <a href='../S/3606.html#L34' title='Defined at 34 in src/javax/management/ListenerNotFoundException.java.'>ListenerNotFoundException</a>,
-<a id='L187' name='L187'></a> 187         <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
-<a id='L188' name='L188'></a> 188 
-<a id='L189' name='L189'></a> 189         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L190' name='L190'></a> 190             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("removeNotificationListener",
-<a id='L191' name='L191'></a> 191                 "Remove the listener " + listenerID + " from " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L192' name='L192'></a> 192         <em class='brace'>}</em>
-<a id='L193' name='L193'></a> 193 
-<a id='L194' name='L194'></a> 194         <a href='../D/12672.html' title='Multiple defined in 5 places.'>checkState</a>();
-<a id='L195' name='L195'></a> 195 
-<a id='L196' name='L196'></a> 196         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> != <strong class='reserved'>null</strong> &amp;&amp; !<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../S/3486.html#L1445' title='Defined at 1445 in src/javax/management/ObjectName.java.'>isPattern</a>()) <em class='brace'>{</em>
-<a id='L197' name='L197'></a> 197             <strong class='reserved'>if</strong> (!mbeanServer.<a href='../D/26142.html' title='Multiple defined in 12 places.'>isRegistered</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>)) <em class='brace'>{</em>
-<a id='L198' name='L198'></a> 198                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>("The MBean " + <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> +
-<a id='L199' name='L199'></a> 199                     " is not registered.");
-<a id='L200' name='L200'></a> 200             <em class='brace'>}</em>
-<a id='L201' name='L201'></a> 201         <em class='brace'>}</em>
-<a id='L202' name='L202'></a> 202 
-<a id='L203' name='L203'></a> 203         <strong class='reserved'>synchronized</strong> (listenerMap) <em class='brace'>{</em>
-<a id='L204' name='L204'></a> 204             <em class='comment'>// Tread carefully because if set.size() == 1 it may be a</em>
-<a id='L205' name='L205'></a> 205             <em class='comment'>// Collections.singleton, which is unmodifiable.</em>
-<a id='L206' name='L206'></a> 206             <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt; <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> = listenerMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L207' name='L207'></a> 207             <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a> idaf = <strong class='reserved'>new</strong> <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>(listenerID, <strong class='reserved'>null</strong>);
-<a id='L208' name='L208'></a> 208             <strong class='reserved'>if</strong> (<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> == <strong class='reserved'>null</strong> || !<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>(idaf))
-<a id='L209' name='L209'></a> 209                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/3606.html#L34' title='Defined at 34 in src/javax/management/ListenerNotFoundException.java.'>ListenerNotFoundException</a>("Listener not found");
-<a id='L210' name='L210'></a> 210             <strong class='reserved'>if</strong> (<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>() == 1)
-<a id='L211' name='L211'></a> 211                 listenerMap.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L212' name='L212'></a> 212             <strong class='reserved'>else</strong>
-<a id='L213' name='L213'></a> 213                 <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(idaf);
-<a id='L214' name='L214'></a> 214         <em class='brace'>}</em>
-<a id='L215' name='L215'></a> 215     <em class='brace'>}</em>
-<a id='L216' name='L216'></a> 216 
-<a id='L217' name='L217'></a> 217     <em class='comment'>/* This is the object that will apply our filtering to candidate</em>
-<a id='L218' name='L218'></a> 218 <em class='comment'>     * notifications.  First of all, if there are no listeners for the</em>
-<a id='L219' name='L219'></a> 219 <em class='comment'>     * ObjectName that the notification is coming from, we go no further.</em>
-<a id='L220' name='L220'></a> 220 <em class='comment'>     * Then, for each listener, we must apply the corresponding filter (if any)</em>
-<a id='L221' name='L221'></a> 221 <em class='comment'>     * and ignore the listener if the filter rejects.  Finally, we apply</em>
-<a id='L222' name='L222'></a> 222 <em class='comment'>     * some access checks which may also reject the listener.</em>
-<a id='L223' name='L223'></a> 223 <em class='comment'>     *</em>
-<a id='L224' name='L224'></a> 224 <em class='comment'>     * A given notification may trigger several listeners on the same MBean,</em>
-<a id='L225' name='L225'></a> 225 <em class='comment'>     * which is why listenerMap is a Map&lt;ObjectName, Set&lt;IdAndFilter&gt;&gt; and</em>
-<a id='L226' name='L226'></a> 226 <em class='comment'>     * why we add the found notifications to a supplied List rather than</em>
-<a id='L227' name='L227'></a> 227 <em class='comment'>     * just returning a boolean.</em>
-<a id='L228' name='L228'></a> 228 <em class='comment'>     */</em>
-<a id='L229' name='L229'></a> 229     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/6508.html#L231' title='Defined at 231 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>NotifForwarderBufferFilter</a> bufferFilter = <strong class='reserved'>new</strong> <a href='../S/6508.html#L231' title='Defined at 231 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>NotifForwarderBufferFilter</a>();
-<a id='L230' name='L230'></a> 230 
-<a id='L231' name='L231'></a> 231     <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/5609.html' title='Multiple referred from 2 places.'>NotifForwarderBufferFilter</a> <strong class='reserved'>implements</strong> <a href='../S/6504.html#L33' title='Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBufferFilter.java.'>NotificationBufferFilter</a> <em class='brace'>{</em>
-<a id='L232' name='L232'></a> 232         <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/10262.html' title='Multiple referred from 190 places.'>apply</a>(<a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>&lt;<a href='../S/3618.html#L42' title='Defined at 42 in src/javax/management/remote/TargetedNotification.java.'>TargetedNotification</a>&gt; targetedNotifs,
-<a id='L233' name='L233'></a> 233                           <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>, <a href='../S/3507.html#L57' title='Defined at 57 in src/javax/management/Notification.java.'>Notification</a> notif) <em class='brace'>{</em>
-<a id='L234' name='L234'></a> 234             <em class='comment'>// We proceed in two stages here, to avoid holding the listenerMap</em>
-<a id='L235' name='L235'></a> 235             <em class='comment'>// lock while invoking the filters (which are user code).</em>
-<a id='L236' name='L236'></a> 236             <strong class='reserved'>final</strong> <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>[] candidates;
-<a id='L237' name='L237'></a> 237             <strong class='reserved'>synchronized</strong> (listenerMap) <em class='brace'>{</em>
-<a id='L238' name='L238'></a> 238                 <strong class='reserved'>final</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt; <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> = listenerMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>);
-<a id='L239' name='L239'></a> 239                 <strong class='reserved'>if</strong> (<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L240' name='L240'></a> 240                     <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>("bufferFilter", "no listeners for this name");
-<a id='L241' name='L241'></a> 241                     <strong class='reserved'>return</strong>;
-<a id='L242' name='L242'></a> 242                 <em class='brace'>}</em>
-<a id='L243' name='L243'></a> 243                 candidates = <strong class='reserved'>new</strong> <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>[<a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()];
-<a id='L244' name='L244'></a> 244                 <a href='../D/31832.html' title='Multiple defined in 134 places.'>set</a>.<a href='../D/35348.html' title='Multiple defined in 117 places.'>toArray</a>(candidates);
-<a id='L245' name='L245'></a> 245             <em class='brace'>}</em>
-<a id='L246' name='L246'></a> 246             <em class='comment'>// We don't synchronize on targetedNotifs, because it is a local</em>
-<a id='L247' name='L247'></a> 247             <em class='comment'>// variable of our caller and no other thread can see it.</em>
-<a id='L248' name='L248'></a> 248             <strong class='reserved'>for</strong> (<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a> idaf : candidates) <em class='brace'>{</em>
-<a id='L249' name='L249'></a> 249                 <strong class='reserved'>final</strong> <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> nf = idaf.<a href='../D/19071.html' title='Multiple defined in 17 places.'>getFilter</a>();
-<a id='L250' name='L250'></a> 250                 <strong class='reserved'>if</strong> (nf == <strong class='reserved'>null</strong> || nf.<a href='../D/25966.html' title='Multiple defined in 4 places.'>isNotificationEnabled</a>(notif)) <em class='brace'>{</em>
-<a id='L251' name='L251'></a> 251                     <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>("bufferFilter", "filter matches");
-<a id='L252' name='L252'></a> 252                     <strong class='reserved'>final</strong> <a href='../S/3618.html#L42' title='Defined at 42 in src/javax/management/remote/TargetedNotification.java.'>TargetedNotification</a> tn =
-<a id='L253' name='L253'></a> 253                             <strong class='reserved'>new</strong> <a href='../S/3618.html#L42' title='Defined at 42 in src/javax/management/remote/TargetedNotification.java.'>TargetedNotification</a>(notif, idaf.<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>());
-<a id='L254' name='L254'></a> 254                     <strong class='reserved'>if</strong> (<a href='../S/6508.html#L408' title='Defined at 408 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>allowNotificationEmission</a>(<a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>, tn))
-<a id='L255' name='L255'></a> 255                         targetedNotifs.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(tn);
-<a id='L256' name='L256'></a> 256                 <em class='brace'>}</em>
-<a id='L257' name='L257'></a> 257             <em class='brace'>}</em>
-<a id='L258' name='L258'></a> 258         <em class='brace'>}</em>
-<a id='L259' name='L259'></a> 259     <em class='brace'>}</em>;
-<a id='L260' name='L260'></a> 260 
-<a id='L261' name='L261'></a> 261     <strong class='reserved'>public</strong> <a href='../S/3614.html#L59' title='Defined at 59 in src/javax/management/remote/NotificationResult.java.'>NotificationResult</a> <a href='../R/14266.html' title='Multiple referred from 6 places.'>fetchNotifs</a>(<strong class='reserved'>long</strong> startSequenceNumber,
-<a id='L262' name='L262'></a> 262         <strong class='reserved'>long</strong> timeout,
-<a id='L263' name='L263'></a> 263         <strong class='reserved'>int</strong> maxNotifications) <em class='brace'>{</em>
-<a id='L264' name='L264'></a> 264         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L265' name='L265'></a> 265             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("fetchNotifs", "Fetching notifications, the " +
-<a id='L266' name='L266'></a> 266                 "startSequenceNumber is " + startSequenceNumber +
-<a id='L267' name='L267'></a> 267                 ", the timeout is " + timeout +
-<a id='L268' name='L268'></a> 268                 ", the maxNotifications is " + maxNotifications);
-<a id='L269' name='L269'></a> 269         <em class='brace'>}</em>
-<a id='L270' name='L270'></a> 270 
-<a id='L271' name='L271'></a> 271         <a href='../S/3614.html#L59' title='Defined at 59 in src/javax/management/remote/NotificationResult.java.'>NotificationResult</a> nr;
-<a id='L272' name='L272'></a> 272         <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> t = <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/27697.html' title='Multiple defined in 28 places.'>min</a>(connectionTimeout, timeout);
-<a id='L273' name='L273'></a> 273         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L274' name='L274'></a> 274             nr = notifBuffer.<a href='../D/15997.html' title='Multiple defined in 5 places.'>fetchNotifications</a>(bufferFilter,
-<a id='L275' name='L275'></a> 275                 startSequenceNumber,
-<a id='L276' name='L276'></a> 276                 t, maxNotifications);
-<a id='L277' name='L277'></a> 277             <a href='../S/6508.html#L293' title='Defined at 293 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>snoopOnUnregister</a>(nr);
-<a id='L278' name='L278'></a> 278         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1730.html#L50' title='Defined at 50 in src/java/lang/InterruptedException.java.'>InterruptedException</a> ire) <em class='brace'>{</em>
-<a id='L279' name='L279'></a> 279             nr = <strong class='reserved'>new</strong> <a href='../S/3614.html#L59' title='Defined at 59 in src/javax/management/remote/NotificationResult.java.'>NotificationResult</a>(0L, 0L, <strong class='reserved'>new</strong> <a href='../S/3618.html#L42' title='Defined at 42 in src/javax/management/remote/TargetedNotification.java.'>TargetedNotification</a>[0]);
-<a id='L280' name='L280'></a> 280         <em class='brace'>}</em>
-<a id='L281' name='L281'></a> 281 
-<a id='L282' name='L282'></a> 282         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L283' name='L283'></a> 283             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("fetchNotifs", "Forwarding the notifs: "+nr);
-<a id='L284' name='L284'></a> 284         <em class='brace'>}</em>
-<a id='L285' name='L285'></a> 285 
-<a id='L286' name='L286'></a> 286         <strong class='reserved'>return</strong> nr;
-<a id='L287' name='L287'></a> 287     <em class='brace'>}</em>
-<a id='L288' name='L288'></a> 288 
-<a id='L289' name='L289'></a> 289     <em class='comment'>// The standard RMI connector client will register a listener on the MBeanServerDelegate</em>
-<a id='L290' name='L290'></a> 290     <em class='comment'>// in order to be told when MBeans are unregistered.  We snoop on fetched notifications</em>
-<a id='L291' name='L291'></a> 291     <em class='comment'>// so that we can know too, and remove the corresponding entry from the listenerMap.</em>
-<a id='L292' name='L292'></a> 292     <em class='comment'>// See 6957378.</em>
-<a id='L293' name='L293'></a> 293     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6508.html#L277' title='Referred from 277 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>snoopOnUnregister</a>(<a href='../S/3614.html#L59' title='Defined at 59 in src/javax/management/remote/NotificationResult.java.'>NotificationResult</a> nr) <em class='brace'>{</em>
-<a id='L294' name='L294'></a> 294         <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt; <a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a> = <strong class='reserved'>null</strong>;
-<a id='L295' name='L295'></a> 295         <strong class='reserved'>synchronized</strong> (listenerMap) <em class='brace'>{</em>
-<a id='L296' name='L296'></a> 296             <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt; delegateSet = listenerMap.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/3539.html#L39' title='Defined at 39 in src/javax/management/MBeanServerDelegate.java.'>MBeanServerDelegate</a>.DELEGATE_NAME);
-<a id='L297' name='L297'></a> 297             <strong class='reserved'>if</strong> (delegateSet == <strong class='reserved'>null</strong> || delegateSet.<a href='../D/25493.html' title='Multiple defined in 113 places.'>isEmpty</a>()) <em class='brace'>{</em>
-<a id='L298' name='L298'></a> 298                 <strong class='reserved'>return</strong>;
-<a id='L299' name='L299'></a> 299             <em class='brace'>}</em>
-<a id='L300' name='L300'></a> 300             <a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a> = <strong class='reserved'>new</strong> <a href='../D/498.html' title='Multiple defined in 2 places.'>ArrayList</a>&lt;&gt;(delegateSet);
-<a id='L301' name='L301'></a> 301         <em class='brace'>}</em>
-<a id='L302' name='L302'></a> 302 
-<a id='L303' name='L303'></a> 303         <strong class='reserved'>for</strong> (<a href='../S/3618.html#L42' title='Defined at 42 in src/javax/management/remote/TargetedNotification.java.'>TargetedNotification</a> tn : nr.<a href='../S/3614.html#L117' title='Defined at 117 in src/javax/management/remote/NotificationResult.java.'>getTargetedNotifications</a>()) <em class='brace'>{</em>
-<a id='L304' name='L304'></a> 304             <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = tn.<a href='../D/20165.html' title='Multiple defined in 3 places.'>getListenerID</a>();
-<a id='L305' name='L305'></a> 305             <strong class='reserved'>for</strong> (<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a> idaf : <a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a>) <em class='brace'>{</em>
-<a id='L306' name='L306'></a> 306                 <strong class='reserved'>if</strong> (idaf.<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> == <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>) <em class='brace'>{</em>
-<a id='L307' name='L307'></a> 307                     <em class='comment'>// This is a notification from the MBeanServerDelegate.</em>
-<a id='L308' name='L308'></a> 308                     <a href='../S/3507.html#L57' title='Defined at 57 in src/javax/management/Notification.java.'>Notification</a> n = tn.<a href='../D/21029.html' title='Multiple defined in 4 places.'>getNotification</a>();
-<a id='L309' name='L309'></a> 309                     <strong class='reserved'>if</strong> (n <strong class='reserved'>instanceof</strong> <a href='../S/3447.html#L98' title='Defined at 98 in src/javax/management/MBeanServerNotification.java.'>MBeanServerNotification</a> &amp;&amp;
-<a id='L310' name='L310'></a> 310                             n.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../S/3447.html#L98' title='Defined at 98 in src/javax/management/MBeanServerNotification.java.'>MBeanServerNotification</a>.UNREGISTRATION_NOTIFICATION)) <em class='brace'>{</em>
-<a id='L311' name='L311'></a> 311                         <a href='../S/3447.html#L98' title='Defined at 98 in src/javax/management/MBeanServerNotification.java.'>MBeanServerNotification</a> mbsn = (<a href='../S/3447.html#L98' title='Defined at 98 in src/javax/management/MBeanServerNotification.java.'>MBeanServerNotification</a>) n;
-<a id='L312' name='L312'></a> 312                         <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> gone = mbsn.<a href='../S/3447.html#L148' title='Defined at 148 in src/javax/management/MBeanServerNotification.java.'>getMBeanName</a>();
-<a id='L313' name='L313'></a> 313                         <strong class='reserved'>synchronized</strong> (listenerMap) <em class='brace'>{</em>
-<a id='L314' name='L314'></a> 314                             listenerMap.<a href='../D/30677.html' title='Multiple defined in 356 places.'>remove</a>(gone);
-<a id='L315' name='L315'></a> 315                         <em class='brace'>}</em>
-<a id='L316' name='L316'></a> 316                     <em class='brace'>}</em>
-<a id='L317' name='L317'></a> 317                 <em class='brace'>}</em>
-<a id='L318' name='L318'></a> 318             <em class='brace'>}</em>
-<a id='L319' name='L319'></a> 319         <em class='brace'>}</em>
-<a id='L320' name='L320'></a> 320     <em class='brace'>}</em>
-<a id='L321' name='L321'></a> 321 
-<a id='L322' name='L322'></a> 322     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/29125.html' title='Multiple referred from 15 places.'>terminate</a>() <em class='brace'>{</em>
-<a id='L323' name='L323'></a> 323         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L324' name='L324'></a> 324             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("terminate", "Be called.");
-<a id='L325' name='L325'></a> 325         <em class='brace'>}</em>
-<a id='L326' name='L326'></a> 326 
-<a id='L327' name='L327'></a> 327         <strong class='reserved'>synchronized</strong>(terminationLock) <em class='brace'>{</em>
-<a id='L328' name='L328'></a> 328             <strong class='reserved'>if</strong> (<a href='../S/1117.html#L1997' title='Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.'>terminated</a>) <em class='brace'>{</em>
-<a id='L329' name='L329'></a> 329                 <strong class='reserved'>return</strong>;
-<a id='L330' name='L330'></a> 330             <em class='brace'>}</em>
-<a id='L331' name='L331'></a> 331 
-<a id='L332' name='L332'></a> 332             <a href='../S/1117.html#L1997' title='Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.'>terminated</a> = <strong class='reserved'>true</strong>;
-<a id='L333' name='L333'></a> 333 
-<a id='L334' name='L334'></a> 334             <strong class='reserved'>synchronized</strong>(listenerMap) <em class='brace'>{</em>
-<a id='L335' name='L335'></a> 335                 listenerMap.<a href='../D/12817.html' title='Multiple defined in 199 places.'>clear</a>();
-<a id='L336' name='L336'></a> 336             <em class='brace'>}</em>
-<a id='L337' name='L337'></a> 337         <em class='brace'>}</em>
-<a id='L338' name='L338'></a> 338 
-<a id='L339' name='L339'></a> 339         <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L61' title='Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.'>traceOn</a>()) <em class='brace'>{</em>
-<a id='L340' name='L340'></a> 340             <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/35559.html' title='Multiple defined in 6 places.'>trace</a>("terminate", "Terminated.");
-<a id='L341' name='L341'></a> 341         <em class='brace'>}</em>
-<a id='L342' name='L342'></a> 342     <em class='brace'>}</em>
-<a id='L343' name='L343'></a> 343 
-<a id='L344' name='L344'></a> 344     <em class='comment'>//----------------</em>
-<a id='L345' name='L345'></a> 345     <em class='comment'>// PRIVATE METHODS</em>
-<a id='L346' name='L346'></a> 346     <em class='comment'>//----------------</em>
-<a id='L347' name='L347'></a> 347 
-<a id='L348' name='L348'></a> 348     <strong class='reserved'>private</strong> <a href='../S/2639.html#L100' title='Defined at 100 in src/javax/security/auth/Subject.java.'>Subject</a> <a href='../R/19265.html' title='Multiple referred from 8 places.'>getSubject</a>() <em class='brace'>{</em>
-<a id='L349' name='L349'></a> 349         <strong class='reserved'>return</strong> <a href='../S/2639.html#L100' title='Defined at 100 in src/javax/security/auth/Subject.java.'>Subject</a>.<a href='../D/22833.html' title='Multiple defined in 5 places.'>getSubject</a>(<a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>());
-<a id='L350' name='L350'></a> 350     <em class='brace'>}</em>
-<a id='L351' name='L351'></a> 351 
-<a id='L352' name='L352'></a> 352     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/11370.html' title='Multiple referred from 32 places.'>checkState</a>() <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
-<a id='L353' name='L353'></a> 353         <strong class='reserved'>synchronized</strong>(terminationLock) <em class='brace'>{</em>
-<a id='L354' name='L354'></a> 354             <strong class='reserved'>if</strong> (<a href='../S/1117.html#L1997' title='Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.'>terminated</a>) <em class='brace'>{</em>
-<a id='L355' name='L355'></a> 355                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>("The connection has been terminated.");
-<a id='L356' name='L356'></a> 356             <em class='brace'>}</em>
-<a id='L357' name='L357'></a> 357         <em class='brace'>}</em>
-<a id='L358' name='L358'></a> 358     <em class='brace'>}</em>
-<a id='L359' name='L359'></a> 359 
-<a id='L360' name='L360'></a> 360     <strong class='reserved'>private</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../R/17390.html' title='Multiple referred from 11 places.'>getListenerID</a>() <em class='brace'>{</em>
-<a id='L361' name='L361'></a> 361         <strong class='reserved'>synchronized</strong>(listenerCounterLock) <em class='brace'>{</em>
-<a id='L362' name='L362'></a> 362             <strong class='reserved'>return</strong> listenerCounter++;
-<a id='L363' name='L363'></a> 363         <em class='brace'>}</em>
-<a id='L364' name='L364'></a> 364     <em class='brace'>}</em>
-<a id='L365' name='L365'></a> 365 
-<a id='L366' name='L366'></a> 366     <em class='comment'>/**</em>
-<a id='L367' name='L367'></a> 367 <em class='comment'>     * Explicitly check the MBeanPermission for</em>
-<a id='L368' name='L368'></a> 368 <em class='comment'>     * the current access control context.</em>
-<a id='L369' name='L369'></a> 369 <em class='comment'>     */</em>
-<a id='L370' name='L370'></a> 370     <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>void</strong> <a href='../R/11231.html' title='Multiple referred from 41 places.'>checkMBeanPermission</a>(
-<a id='L371' name='L371'></a> 371             <strong class='reserved'>final</strong> <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>)
-<a id='L372' name='L372'></a> 372             <strong class='reserved'>throws</strong> <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>, <a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a> <em class='brace'>{</em>
-<a id='L373' name='L373'></a> 373         <a href='../D/12526.html' title='Multiple defined in 7 places.'>checkMBeanPermission</a>(mbeanServer,<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,<a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>);
-<a id='L374' name='L374'></a> 374     <em class='brace'>}</em>
-<a id='L375' name='L375'></a> 375 
-<a id='L376' name='L376'></a> 376     <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../R/11231.html' title='Multiple referred from 41 places.'>checkMBeanPermission</a>(
-<a id='L377' name='L377'></a> 377             <strong class='reserved'>final</strong> <a href='../S/3578.html#L260' title='Defined at 260 in src/javax/management/MBeanServer.java.'>MBeanServer</a> mbs, <strong class='reserved'>final</strong> <a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>)
-<a id='L378' name='L378'></a> 378             <strong class='reserved'>throws</strong> <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>, <a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a> <em class='brace'>{</em>
-<a id='L379' name='L379'></a> 379 
-<a id='L380' name='L380'></a> 380         <a href='../D/7682.html' title='Multiple defined in 2 places.'>SecurityManager</a> sm = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>();
-<a id='L381' name='L381'></a> 381         <strong class='reserved'>if</strong> (sm != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L382' name='L382'></a> 382             <a href='../S/1212.html#L77' title='Defined at 77 in src/java/security/AccessControlContext.java.'>AccessControlContext</a> acc = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
-<a id='L383' name='L383'></a> 383             <a href='../S/3437.html#L42' title='Defined at 42 in src/javax/management/ObjectInstance.java.'>ObjectInstance</a> oi;
-<a id='L384' name='L384'></a> 384             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L385' name='L385'></a> 385                 oi = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
-<a id='L386' name='L386'></a> 386                     <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../S/3437.html#L42' title='Defined at 42 in src/javax/management/ObjectInstance.java.'>ObjectInstance</a>&gt;() <em class='brace'>{</em>
-<a id='L387' name='L387'></a> 387                         <strong class='reserved'>public</strong> <a href='../S/3437.html#L42' title='Defined at 42 in src/javax/management/ObjectInstance.java.'>ObjectInstance</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>()
-<a id='L388' name='L388'></a> 388                         <strong class='reserved'>throws</strong> <a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a> <em class='brace'>{</em>
-<a id='L389' name='L389'></a> 389                             <strong class='reserved'>return</strong> mbs.<a href='../D/21142.html' title='Multiple defined in 12 places.'>getObjectInstance</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L390' name='L390'></a> 390                         <em class='brace'>}</em>
-<a id='L391' name='L391'></a> 391                 <em class='brace'>}</em>);
-<a id='L392' name='L392'></a> 392             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a> e) <em class='brace'>{</em>
-<a id='L393' name='L393'></a> 393                 <strong class='reserved'>throw</strong> (<a href='../S/3436.html#L34' title='Defined at 34 in src/javax/management/InstanceNotFoundException.java.'>InstanceNotFoundException</a>) <a href='../D/15928.html' title='Multiple defined in 3 places.'>extractException</a>(e);
-<a id='L394' name='L394'></a> 394             <em class='brace'>}</em>
-<a id='L395' name='L395'></a> 395             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> classname = oi.<a href='../D/17698.html' title='Multiple defined in 41 places.'>getClassName</a>();
-<a id='L396' name='L396'></a> 396             <a href='../S/3504.html#L163' title='Defined at 163 in src/javax/management/MBeanPermission.java.'>MBeanPermission</a> perm = <strong class='reserved'>new</strong> <a href='../S/3504.html#L163' title='Defined at 163 in src/javax/management/MBeanPermission.java.'>MBeanPermission</a>(
-<a id='L397' name='L397'></a> 397                 classname,
-<a id='L398' name='L398'></a> 398                 <strong class='reserved'>null</strong>,
-<a id='L399' name='L399'></a> 399                 <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
-<a id='L400' name='L400'></a> 400                 <a href='../D/10596.html' title='Multiple defined in 2 places.'>actions</a>);
-<a id='L401' name='L401'></a> 401             sm.<a href='../D/12594.html' title='Multiple defined in 22 places.'>checkPermission</a>(perm, acc);
-<a id='L402' name='L402'></a> 402         <em class='brace'>}</em>
-<a id='L403' name='L403'></a> 403     <em class='brace'>}</em>
-<a id='L404' name='L404'></a> 404 
-<a id='L405' name='L405'></a> 405     <em class='comment'>/**</em>
-<a id='L406' name='L406'></a> 406 <em class='comment'>     * Check if the caller has the right to get the following notifications.</em>
-<a id='L407' name='L407'></a> 407 <em class='comment'>     */</em>
-<a id='L408' name='L408'></a> 408     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../S/6508.html#L254' title='Referred from 254 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>allowNotificationEmission</a>(<a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
-<a id='L409' name='L409'></a> 409                                               <a href='../S/3618.html#L42' title='Defined at 42 in src/javax/management/remote/TargetedNotification.java.'>TargetedNotification</a> tn) <em class='brace'>{</em>
-<a id='L410' name='L410'></a> 410         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L411' name='L411'></a> 411             <strong class='reserved'>if</strong> (checkNotificationEmission) <em class='brace'>{</em>
-<a id='L412' name='L412'></a> 412                 <a href='../D/12526.html' title='Multiple defined in 7 places.'>checkMBeanPermission</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, "addNotificationListener");
-<a id='L413' name='L413'></a> 413             <em class='brace'>}</em>
-<a id='L414' name='L414'></a> 414             <strong class='reserved'>if</strong> (notificationAccessController != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L415' name='L415'></a> 415                 notificationAccessController.<a href='../S/6499.html#L105' title='Defined at 105 in src/com/sun/jmx/remote/security/NotificationAccessController.java.'>fetchNotification</a>(
-<a id='L416' name='L416'></a> 416                         connectionId, <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>, tn.<a href='../D/21029.html' title='Multiple defined in 4 places.'>getNotification</a>(), <a href='../D/22833.html' title='Multiple defined in 5 places.'>getSubject</a>());
-<a id='L417' name='L417'></a> 417             <em class='brace'>}</em>
-<a id='L418' name='L418'></a> 418             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L419' name='L419'></a> 419         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a> e) <em class='brace'>{</em>
-<a id='L420' name='L420'></a> 420             <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L65' title='Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.'>debugOn</a>()) <em class='brace'>{</em>
-<a id='L421' name='L421'></a> 421                 <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>("fetchNotifs", "Notification " +
-<a id='L422' name='L422'></a> 422                         tn.<a href='../D/21029.html' title='Multiple defined in 4 places.'>getNotification</a>() + " not forwarded: the " +
-<a id='L423' name='L423'></a> 423                         "caller didn't have the required access rights");
-<a id='L424' name='L424'></a> 424             <em class='brace'>}</em>
-<a id='L425' name='L425'></a> 425             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L426' name='L426'></a> 426         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
-<a id='L427' name='L427'></a> 427             <strong class='reserved'>if</strong> (<a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../S/6492.html#L65' title='Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.'>debugOn</a>()) <em class='brace'>{</em>
-<a id='L428' name='L428'></a> 428                 <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a>.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>("fetchNotifs", "Notification " +
-<a id='L429' name='L429'></a> 429                         tn.<a href='../D/21029.html' title='Multiple defined in 4 places.'>getNotification</a>() + " not forwarded: " +
-<a id='L430' name='L430'></a> 430                         "got an unexpected exception: " + e);
-<a id='L431' name='L431'></a> 431             <em class='brace'>}</em>
-<a id='L432' name='L432'></a> 432             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L433' name='L433'></a> 433         <em class='brace'>}</em>
-<a id='L434' name='L434'></a> 434     <em class='brace'>}</em>
-<a id='L435' name='L435'></a> 435 
-<a id='L436' name='L436'></a> 436     <em class='comment'>/**</em>
-<a id='L437' name='L437'></a> 437 <em class='comment'>     * Iterate until we extract the real exception</em>
-<a id='L438' name='L438'></a> 438 <em class='comment'>     * from a stack of PrivilegedActionExceptions.</em>
-<a id='L439' name='L439'></a> 439 <em class='comment'>     */</em>
-<a id='L440' name='L440'></a> 440     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../R/14201.html' title='Multiple referred from 32 places.'>extractException</a>(<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
-<a id='L441' name='L441'></a> 441         <strong class='reserved'>while</strong> (e <strong class='reserved'>instanceof</strong> <a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a>) <em class='brace'>{</em>
-<a id='L442' name='L442'></a> 442             e = ((<a href='../S/1259.html#L50' title='Defined at 50 in src/java/security/PrivilegedActionException.java.'>PrivilegedActionException</a>)e).<a href='../D/18894.html' title='Multiple defined in 26 places.'>getException</a>();
-<a id='L443' name='L443'></a> 443         <em class='brace'>}</em>
-<a id='L444' name='L444'></a> 444         <strong class='reserved'>return</strong> e;
-<a id='L445' name='L445'></a> 445     <em class='brace'>}</em>
-<a id='L446' name='L446'></a> 446 
-<a id='L447' name='L447'></a> 447     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/3644.html' title='Multiple referred from 16 places.'>IdAndFilter</a> <em class='brace'>{</em>
-<a id='L448' name='L448'></a> 448         <strong class='reserved'>private</strong> <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>;
-<a id='L449' name='L449'></a> 449         <strong class='reserved'>private</strong> <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>;
-<a id='L450' name='L450'></a> 450 
-<a id='L451' name='L451'></a> 451         IdAndFilter(<a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>, <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>) <em class='brace'>{</em>
-<a id='L452' name='L452'></a> 452             <strong class='reserved'>this</strong>.<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a> = <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>;
-<a id='L453' name='L453'></a> 453             <strong class='reserved'>this</strong>.<a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a> = <a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>;
-<a id='L454' name='L454'></a> 454         <em class='brace'>}</em>
-<a id='L455' name='L455'></a> 455 
-<a id='L456' name='L456'></a> 456         <a href='../D/4299.html' title='Multiple defined in 4 places.'>Integer</a> <a href='../R/16968.html' title='Multiple referred from 227 places.'>getId</a>() <em class='brace'>{</em>
-<a id='L457' name='L457'></a> 457             <strong class='reserved'>return</strong> <strong class='reserved'>this</strong>.<a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>;
-<a id='L458' name='L458'></a> 458         <em class='brace'>}</em>
-<a id='L459' name='L459'></a> 459 
-<a id='L460' name='L460'></a> 460         <a href='../S/3548.html#L35' title='Defined at 35 in src/javax/management/NotificationFilter.java.'>NotificationFilter</a> <a href='../R/16590.html' title='Multiple referred from 6 places.'>getFilter</a>() <em class='brace'>{</em>
-<a id='L461' name='L461'></a> 461             <strong class='reserved'>return</strong> <strong class='reserved'>this</strong>.<a href='../D/16061.html' title='Multiple defined in 29 places.'>filter</a>;
-<a id='L462' name='L462'></a> 462         <em class='brace'>}</em>
-<a id='L463' name='L463'></a> 463 
-<a id='L464' name='L464'></a> 464         @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L465' name='L465'></a> 465         <strong class='reserved'>public</strong> <strong class='reserved'>int</strong> <a href='../R/20298.html' title='Multiple referred from 715 places.'>hashCode</a>() <em class='brace'>{</em>
-<a id='L466' name='L466'></a> 466             <strong class='reserved'>return</strong> <a href='../D/24291.html' title='Multiple defined in 202 places.'>id</a>.<a href='../D/24220.html' title='Multiple defined in 552 places.'>hashCode</a>();
-<a id='L467' name='L467'></a> 467         <em class='brace'>}</em>
-<a id='L468' name='L468'></a> 468 
-<a id='L469' name='L469'></a> 469         @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L470' name='L470'></a> 470         <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> <a href='../R/13992.html' title='Multiple referred from 5400 places.'>equals</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../S/986.html#L3177' title='Defined at 3177 in src/java/util/regex/Pattern.java.'>o</a>) <em class='brace'>{</em>
-<a id='L471' name='L471'></a> 471             <strong class='reserved'>return</strong> ((<a href='../S/986.html#L3177' title='Defined at 3177 in src/java/util/regex/Pattern.java.'>o</a> <strong class='reserved'>instanceof</strong> <a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>) &amp;&amp;
-<a id='L472' name='L472'></a> 472                     ((<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>) <a href='../S/986.html#L3177' title='Defined at 3177 in src/java/util/regex/Pattern.java.'>o</a>).<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(<a href='../D/19565.html' title='Multiple defined in 69 places.'>getId</a>()));
-<a id='L473' name='L473'></a> 473         <em class='brace'>}</em>
-<a id='L474' name='L474'></a> 474     <em class='brace'>}</em>
-<a id='L475' name='L475'></a> 475 
-<a id='L476' name='L476'></a> 476 
-<a id='L477' name='L477'></a> 477     <em class='comment'>//------------------</em>
-<a id='L478' name='L478'></a> 478     <em class='comment'>// PRIVATE VARIABLES</em>
-<a id='L479' name='L479'></a> 479     <em class='comment'>//------------------</em>
-<a id='L480' name='L480'></a> 480 
-<a id='L481' name='L481'></a> 481     <strong class='reserved'>private</strong> <a href='../S/3578.html#L260' title='Defined at 260 in src/javax/management/MBeanServer.java.'>MBeanServer</a> mbeanServer;
-<a id='L482' name='L482'></a> 482 
-<a id='L483' name='L483'></a> 483     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> connectionId;
-<a id='L484' name='L484'></a> 484 
-<a id='L485' name='L485'></a> 485     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>long</strong> connectionTimeout;
-<a id='L486' name='L486'></a> 486 
-<a id='L487' name='L487'></a> 487     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> listenerCounter = 0;
-<a id='L488' name='L488'></a> 488     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong>[] listenerCounterLock = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[0];
-<a id='L489' name='L489'></a> 489 
-<a id='L490' name='L490'></a> 490     <strong class='reserved'>private</strong> <a href='../S/6509.html#L33' title='Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBuffer.java.'>NotificationBuffer</a> notifBuffer;
-<a id='L491' name='L491'></a> 491     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a>, <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt;&gt; listenerMap =
-<a id='L492' name='L492'></a> 492             <strong class='reserved'>new</strong> <a href='../S/867.html#L137' title='Defined at 137 in src/java/util/HashMap.java.'>HashMap</a>&lt;<a href='../S/3486.html#L223' title='Defined at 223 in src/javax/management/ObjectName.java.'>ObjectName</a>, <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/6508.html#L447' title='Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.'>IdAndFilter</a>&gt;&gt;();
-<a id='L493' name='L493'></a> 493 
-<a id='L494' name='L494'></a> 494     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../S/1117.html#L1997' title='Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.'>terminated</a> = <strong class='reserved'>false</strong>;
-<a id='L495' name='L495'></a> 495     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>[] terminationLock = <strong class='reserved'>new</strong> <strong class='reserved'>int</strong>[0];
-<a id='L496' name='L496'></a> 496 
-<a id='L497' name='L497'></a> 497     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> broadcasterClass =
-<a id='L498' name='L498'></a> 498         <a href='../S/3441.html#L73' title='Defined at 73 in src/javax/management/NotificationBroadcaster.java.'>NotificationBroadcaster</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
-<a id='L499' name='L499'></a> 499 
-<a id='L500' name='L500'></a> 500     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> checkNotificationEmission;
-<a id='L501' name='L501'></a> 501 
-<a id='L502' name='L502'></a> 502     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/6499.html#L46' title='Defined at 46 in src/com/sun/jmx/remote/security/NotificationAccessController.java.'>NotificationAccessController</a> notificationAccessController;
-<a id='L503' name='L503'></a> 503 
-<a id='L504' name='L504'></a> 504     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/6492.html#L30' title='Defined at 30 in src/com/sun/jmx/remote/util/ClassLogger.java.'>ClassLogger</a> <a href='../S/835.html#L1128' title='Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.'>logger</a> =
-<a id='L505' name='L505'></a> 505         <strong class='reserved'>new</strong> <a href='../S/6492.html#L30' title='Defined at 30 in src/com/sun/jmx/remote/util/ClassLogger.java.'>ClassLogger</a>("javax.management.remote.misc", "ServerNotifForwarder");
-<a id='L506' name='L506'></a> 506 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> com.sun.jmx.remote.internal;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> com.sun.jmx.remote.security.NotificationAccessController;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> com.sun.jmx.remote.util.ClassLogger;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> com.sun.jmx.remote.util.EnvHelp;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> java.io.IOException;
+<a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> java.security.AccessControlContext;
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.security.AccessController;
+<a id="L34" name="L34"></a>  34 <strong class="reserved">import</strong> java.security.PrivilegedActionException;
+<a id="L35" name="L35"></a>  35 <strong class="reserved">import</strong> java.security.PrivilegedExceptionAction;
+<a id="L36" name="L36"></a>  36 <strong class="reserved">import</strong> java.util.ArrayList;
+<a id="L37" name="L37"></a>  37 <strong class="reserved">import</strong> java.util.Collections;
+<a id="L38" name="L38"></a>  38 <strong class="reserved">import</strong> java.util.HashMap;
+<a id="L39" name="L39"></a>  39 <strong class="reserved">import</strong> java.util.HashSet;
+<a id="L40" name="L40"></a>  40 <strong class="reserved">import</strong> java.util.List;
+<a id="L41" name="L41"></a>  41 <strong class="reserved">import</strong> java.util.Map;
+<a id="L42" name="L42"></a>  42 <strong class="reserved">import</strong> java.util.Set;
+<a id="L43" name="L43"></a>  43 <strong class="reserved">import</strong> javax.management.InstanceNotFoundException;
+<a id="L44" name="L44"></a>  44 <strong class="reserved">import</strong> javax.management.ListenerNotFoundException;
+<a id="L45" name="L45"></a>  45 <strong class="reserved">import</strong> javax.management.MBeanPermission;
+<a id="L46" name="L46"></a>  46 <strong class="reserved">import</strong> javax.management.MBeanServer;
+<a id="L47" name="L47"></a>  47 <strong class="reserved">import</strong> javax.management.MBeanServerDelegate;
+<a id="L48" name="L48"></a>  48 <strong class="reserved">import</strong> javax.management.MBeanServerNotification;
+<a id="L49" name="L49"></a>  49 <strong class="reserved">import</strong> javax.management.Notification;
+<a id="L50" name="L50"></a>  50 <strong class="reserved">import</strong> javax.management.NotificationBroadcaster;
+<a id="L51" name="L51"></a>  51 <strong class="reserved">import</strong> javax.management.NotificationFilter;
+<a id="L52" name="L52"></a>  52 <strong class="reserved">import</strong> javax.management.ObjectInstance;
+<a id="L53" name="L53"></a>  53 <strong class="reserved">import</strong> javax.management.ObjectName;
+<a id="L54" name="L54"></a>  54 <strong class="reserved">import</strong> javax.management.remote.NotificationResult;
+<a id="L55" name="L55"></a>  55 <strong class="reserved">import</strong> javax.management.remote.TargetedNotification;
+<a id="L56" name="L56"></a>  56 <strong class="reserved">import</strong> javax.management.MalformedObjectNameException;
+<a id="L57" name="L57"></a>  57 <strong class="reserved">import</strong> javax.security.auth.Subject;
+<a id="L58" name="L58"></a>  58 
+<a id="L59" name="L59"></a>  59 <strong class="reserved">public</strong> <strong class="reserved">class</strong> <a href="../R/7120.html" title="Multiple referred from 6 places.">ServerNotifForwarder</a> <em class="brace">{</em>
+<a id="L60" name="L60"></a>  60 
+<a id="L61" name="L61"></a>  61 
+<a id="L62" name="L62"></a>  62     <strong class="reserved">public</strong> ServerNotifForwarder(<a href="../S/3578.html#L260" title="Defined at 260 in src/javax/management/MBeanServer.java.">MBeanServer</a> mbeanServer,
+<a id="L63" name="L63"></a>  63                                 <a href="../D/5398.html" title="Multiple defined in 3 places.">Map</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>, ?&gt; <a href="../D/15665.html" title="Multiple defined in 2 places.">env</a>,
+<a id="L64" name="L64"></a>  64                                 <a href="../S/6509.html#L33" title="Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBuffer.java.">NotificationBuffer</a> notifBuffer,
+<a id="L65" name="L65"></a>  65                                 <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> connectionId) <em class="brace">{</em>
+<a id="L66" name="L66"></a>  66         <strong class="reserved">this</strong>.mbeanServer = mbeanServer;
+<a id="L67" name="L67"></a>  67         <strong class="reserved">this</strong>.notifBuffer = notifBuffer;
+<a id="L68" name="L68"></a>  68         <strong class="reserved">this</strong>.connectionId = connectionId;
+<a id="L69" name="L69"></a>  69         connectionTimeout = <a href="../S/6493.html#L55" title="Defined at 55 in src/com/sun/jmx/remote/util/EnvHelp.java.">EnvHelp</a>.<a href="../S/6493.html#L643" title="Defined at 643 in src/com/sun/jmx/remote/util/EnvHelp.java.">getServerConnectionTimeout</a>(<a href="../D/15665.html" title="Multiple defined in 2 places.">env</a>);
+<a id="L70" name="L70"></a>  70 
+<a id="L71" name="L71"></a>  71         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> stringBoolean = (<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>) <a href="../D/15665.html" title="Multiple defined in 2 places.">env</a>.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>("jmx.remote.x.check.notification.emission");
+<a id="L72" name="L72"></a>  72         checkNotificationEmission = <a href="../S/6493.html#L55" title="Defined at 55 in src/com/sun/jmx/remote/util/EnvHelp.java.">EnvHelp</a>.<a href="../D/13167.html" title="Multiple defined in 2 places.">computeBooleanFromString</a>( stringBoolean );
+<a id="L73" name="L73"></a>  73         notificationAccessController =
+<a id="L74" name="L74"></a>  74                 <a href="../S/6493.html#L55" title="Defined at 55 in src/com/sun/jmx/remote/util/EnvHelp.java.">EnvHelp</a>.<a href="../S/6493.html#L364" title="Defined at 364 in src/com/sun/jmx/remote/util/EnvHelp.java.">getNotificationAccessController</a>(<a href="../D/15665.html" title="Multiple defined in 2 places.">env</a>);
+<a id="L75" name="L75"></a>  75     <em class="brace">}</em>
+<a id="L76" name="L76"></a>  76 
+<a id="L77" name="L77"></a>  77     <strong class="reserved">public</strong> <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../R/9880.html" title="Multiple referred from 25 places.">addNotificationListener</a>(<strong class="reserved">final</strong> <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,
+<a id="L78" name="L78"></a>  78         <strong class="reserved">final</strong> <a href="../S/3548.html#L35" title="Defined at 35 in src/javax/management/NotificationFilter.java.">NotificationFilter</a> <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>)
+<a id="L79" name="L79"></a>  79         <strong class="reserved">throws</strong> <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>, <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> <em class="brace">{</em>
+<a id="L80" name="L80"></a>  80 
+<a id="L81" name="L81"></a>  81         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L82" name="L82"></a>  82             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("addNotificationListener",
+<a id="L83" name="L83"></a>  83                 "Add a listener at " + <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L84" name="L84"></a>  84         <em class="brace">}</em>
+<a id="L85" name="L85"></a>  85 
+<a id="L86" name="L86"></a>  86         <a href="../D/12672.html" title="Multiple defined in 5 places.">checkState</a>();
+<a id="L87" name="L87"></a>  87 
+<a id="L88" name="L88"></a>  88         <em class="comment">// Explicitly check MBeanPermission for addNotificationListener</em>
+<a id="L89" name="L89"></a>  89         <em class="comment">//</em>
+<a id="L90" name="L90"></a>  90         <a href="../D/12526.html" title="Multiple defined in 7 places.">checkMBeanPermission</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, "addNotificationListener");
+<a id="L91" name="L91"></a>  91         <strong class="reserved">if</strong> (notificationAccessController != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L92" name="L92"></a>  92             notificationAccessController.<a href="../D/10974.html" title="Multiple defined in 26 places.">addNotificationListener</a>(
+<a id="L93" name="L93"></a>  93                 connectionId, <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, <a href="../D/22833.html" title="Multiple defined in 5 places.">getSubject</a>());
+<a id="L94" name="L94"></a>  94         <em class="brace">}</em>
+<a id="L95" name="L95"></a>  95         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L96" name="L96"></a>  96             <strong class="reserved">boolean</strong> <a href="../D/24874.html" title="Multiple defined in 5 places.">instanceOf</a> =
+<a id="L97" name="L97"></a>  97             <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(
+<a id="L98" name="L98"></a>  98                     <strong class="reserved">new</strong> <a href="../S/1263.html#L45" title="Defined at 45 in src/java/security/PrivilegedExceptionAction.java.">PrivilegedExceptionAction</a>&lt;<a href="../S/1770.html#L43" title="Defined at 43 in src/java/lang/Boolean.java.">Boolean</a>&gt;() <em class="brace">{</em>
+<a id="L99" name="L99"></a>  99                         <strong class="reserved">public</strong> <a href="../S/1770.html#L43" title="Defined at 43 in src/java/lang/Boolean.java.">Boolean</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <strong class="reserved">throws</strong> <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a> <em class="brace">{</em>
+<a id="L100" name="L100"></a> 100                             <strong class="reserved">return</strong> mbeanServer.<a href="../D/25730.html" title="Multiple defined in 12 places.">isInstanceOf</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, broadcasterClass);
+<a id="L101" name="L101"></a> 101                         <em class="brace">}</em>
+<a id="L102" name="L102"></a> 102             <em class="brace">}</em>);
+<a id="L103" name="L103"></a> 103             <strong class="reserved">if</strong> (!<a href="../D/24874.html" title="Multiple defined in 5 places.">instanceOf</a>) <em class="brace">{</em>
+<a id="L104" name="L104"></a> 104                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>("The specified MBean [" +
+<a id="L105" name="L105"></a> 105                     <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a> + "] is not a " +
+<a id="L106" name="L106"></a> 106                     "NotificationBroadcaster " +
+<a id="L107" name="L107"></a> 107                     "object.");
+<a id="L108" name="L108"></a> 108             <em class="brace">}</em>
+<a id="L109" name="L109"></a> 109         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1259.html#L50" title="Defined at 50 in src/java/security/PrivilegedActionException.java.">PrivilegedActionException</a> e) <em class="brace">{</em>
+<a id="L110" name="L110"></a> 110             <strong class="reserved">throw</strong> (<a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>) <a href="../D/15928.html" title="Multiple defined in 3 places.">extractException</a>(e);
+<a id="L111" name="L111"></a> 111         <em class="brace">}</em>
+<a id="L112" name="L112"></a> 112 
+<a id="L113" name="L113"></a> 113         <strong class="reserved">final</strong> <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a> = <a href="../D/20165.html" title="Multiple defined in 3 places.">getListenerID</a>();
+<a id="L114" name="L114"></a> 114 
+<a id="L115" name="L115"></a> 115         <em class="comment">// 6238731: set the default domain if no domain is set.</em>
+<a id="L116" name="L116"></a> 116         <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> nn = <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>;
+<a id="L117" name="L117"></a> 117         <strong class="reserved">if</strong> (<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>.<a href="../D/18576.html" title="Multiple defined in 5 places.">getDomain</a>() == <strong class="reserved">null</strong> || <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>.<a href="../D/18576.html" title="Multiple defined in 5 places.">getDomain</a>().<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>("")) <em class="brace">{</em>
+<a id="L118" name="L118"></a> 118             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L119" name="L119"></a> 119                 nn = <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a>.<a href="../D/19762.html" title="Multiple defined in 157 places.">getInstance</a>(mbeanServer.<a href="../D/18300.html" title="Multiple defined in 9 places.">getDefaultDomain</a>(),
+<a id="L120" name="L120"></a> 120                                             <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>.<a href="../S/3486.html#L1623" title="Defined at 1623 in src/javax/management/ObjectName.java.">getKeyPropertyList</a>());
+<a id="L121" name="L121"></a> 121             <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/3529.html#L35" title="Defined at 35 in src/javax/management/MalformedObjectNameException.java.">MalformedObjectNameException</a> mfoe) <em class="brace">{</em>
+<a id="L122" name="L122"></a> 122                 <em class="comment">// impossible, but...</em>
+<a id="L123" name="L123"></a> 123                 <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> ioe = <strong class="reserved">new</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>(mfoe.<a href="../D/20565.html" title="Multiple defined in 56 places.">getMessage</a>());
+<a id="L124" name="L124"></a> 124                 ioe.<a href="../D/24507.html" title="Multiple defined in 7 places.">initCause</a>(mfoe);
+<a id="L125" name="L125"></a> 125                 <strong class="reserved">throw</strong> ioe;
+<a id="L126" name="L126"></a> 126             <em class="brace">}</em>
+<a id="L127" name="L127"></a> 127         <em class="brace">}</em>
+<a id="L128" name="L128"></a> 128 
+<a id="L129" name="L129"></a> 129         <strong class="reserved">synchronized</strong> (listenerMap) <em class="brace">{</em>
+<a id="L130" name="L130"></a> 130             <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a> idaf = <strong class="reserved">new</strong> <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>(<a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>, <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>);
+<a id="L131" name="L131"></a> 131             <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt; <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> = listenerMap.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(nn);
+<a id="L132" name="L132"></a> 132             <em class="comment">// Tread carefully because if set.size() == 1 it may be the</em>
+<a id="L133" name="L133"></a> 133             <em class="comment">// Collections.singleton we make here, which is unmodifiable.</em>
+<a id="L134" name="L134"></a> 134             <strong class="reserved">if</strong> (<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> == <strong class="reserved">null</strong>)
+<a id="L135" name="L135"></a> 135                 <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> = <a href="../S/1147.html#L80" title="Defined at 80 in src/java/util/Collections.java.">Collections</a>.<a href="../D/34585.html" title="Multiple defined in 2 places.">singleton</a>(idaf);
+<a id="L136" name="L136"></a> 136             <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L137" name="L137"></a> 137                 <strong class="reserved">if</strong> (<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>() == 1)
+<a id="L138" name="L138"></a> 138                     <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> = <strong class="reserved">new</strong> <a href="../S/1136.html#L89" title="Defined at 89 in src/java/util/HashSet.java.">HashSet</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt;(<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>);
+<a id="L139" name="L139"></a> 139                 <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/10632.html" title="Multiple defined in 301 places.">add</a>(idaf);
+<a id="L140" name="L140"></a> 140             <em class="brace">}</em>
+<a id="L141" name="L141"></a> 141             listenerMap.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(nn, <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>);
+<a id="L142" name="L142"></a> 142         <em class="brace">}</em>
+<a id="L143" name="L143"></a> 143 
+<a id="L144" name="L144"></a> 144         <strong class="reserved">return</strong> <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>;
+<a id="L145" name="L145"></a> 145     <em class="brace">}</em>
+<a id="L146" name="L146"></a> 146 
+<a id="L147" name="L147"></a> 147     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/26036.html" title="Multiple referred from 45 places.">removeNotificationListener</a>(<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,
+<a id="L148" name="L148"></a> 148         <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a>[] listenerIDs)
+<a id="L149" name="L149"></a> 149         <strong class="reserved">throws</strong> <a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <em class="brace">{</em>
+<a id="L150" name="L150"></a> 150 
+<a id="L151" name="L151"></a> 151         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L152" name="L152"></a> 152             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("removeNotificationListener",
+<a id="L153" name="L153"></a> 153                 "Remove some listeners from " + <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L154" name="L154"></a> 154         <em class="brace">}</em>
+<a id="L155" name="L155"></a> 155 
+<a id="L156" name="L156"></a> 156         <a href="../D/12672.html" title="Multiple defined in 5 places.">checkState</a>();
+<a id="L157" name="L157"></a> 157 
+<a id="L158" name="L158"></a> 158         <em class="comment">// Explicitly check MBeanPermission for removeNotificationListener</em>
+<a id="L159" name="L159"></a> 159         <em class="comment">//</em>
+<a id="L160" name="L160"></a> 160         <a href="../D/12526.html" title="Multiple defined in 7 places.">checkMBeanPermission</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, "removeNotificationListener");
+<a id="L161" name="L161"></a> 161         <strong class="reserved">if</strong> (notificationAccessController != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L162" name="L162"></a> 162             notificationAccessController.<a href="../D/30900.html" title="Multiple defined in 49 places.">removeNotificationListener</a>(
+<a id="L163" name="L163"></a> 163                 connectionId, <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, <a href="../D/22833.html" title="Multiple defined in 5 places.">getSubject</a>());
+<a id="L164" name="L164"></a> 164         <em class="brace">}</em>
+<a id="L165" name="L165"></a> 165 
+<a id="L166" name="L166"></a> 166         <a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> re = <strong class="reserved">null</strong>;
+<a id="L167" name="L167"></a> 167         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0 ; i &lt; listenerIDs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> ; i++) <em class="brace">{</em>
+<a id="L168" name="L168"></a> 168             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L169" name="L169"></a> 169                 <a href="../D/30900.html" title="Multiple defined in 49 places.">removeNotificationListener</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, listenerIDs[i]);
+<a id="L170" name="L170"></a> 170             <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
+<a id="L171" name="L171"></a> 171                 <em class="comment">// Give back the first exception</em>
+<a id="L172" name="L172"></a> 172                 <em class="comment">//</em>
+<a id="L173" name="L173"></a> 173                 <strong class="reserved">if</strong> (re != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L174" name="L174"></a> 174                     re = e;
+<a id="L175" name="L175"></a> 175                 <em class="brace">}</em>
+<a id="L176" name="L176"></a> 176             <em class="brace">}</em>
+<a id="L177" name="L177"></a> 177         <em class="brace">}</em>
+<a id="L178" name="L178"></a> 178         <strong class="reserved">if</strong> (re != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L179" name="L179"></a> 179             <strong class="reserved">throw</strong> re;
+<a id="L180" name="L180"></a> 180         <em class="brace">}</em>
+<a id="L181" name="L181"></a> 181     <em class="brace">}</em>
+<a id="L182" name="L182"></a> 182 
+<a id="L183" name="L183"></a> 183     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/26036.html" title="Multiple referred from 45 places.">removeNotificationListener</a>(<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> listenerID)
+<a id="L184" name="L184"></a> 184     <strong class="reserved">throws</strong>
+<a id="L185" name="L185"></a> 185         <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>,
+<a id="L186" name="L186"></a> 186         <a href="../S/3606.html#L34" title="Defined at 34 in src/javax/management/ListenerNotFoundException.java.">ListenerNotFoundException</a>,
+<a id="L187" name="L187"></a> 187         <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> <em class="brace">{</em>
+<a id="L188" name="L188"></a> 188 
+<a id="L189" name="L189"></a> 189         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L190" name="L190"></a> 190             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("removeNotificationListener",
+<a id="L191" name="L191"></a> 191                 "Remove the listener " + listenerID + " from " + <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L192" name="L192"></a> 192         <em class="brace">}</em>
+<a id="L193" name="L193"></a> 193 
+<a id="L194" name="L194"></a> 194         <a href="../D/12672.html" title="Multiple defined in 5 places.">checkState</a>();
+<a id="L195" name="L195"></a> 195 
+<a id="L196" name="L196"></a> 196         <strong class="reserved">if</strong> (<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a> != <strong class="reserved">null</strong> &amp;&amp; !<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>.<a href="../S/3486.html#L1445" title="Defined at 1445 in src/javax/management/ObjectName.java.">isPattern</a>()) <em class="brace">{</em>
+<a id="L197" name="L197"></a> 197             <strong class="reserved">if</strong> (!mbeanServer.<a href="../D/26142.html" title="Multiple defined in 12 places.">isRegistered</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>)) <em class="brace">{</em>
+<a id="L198" name="L198"></a> 198                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>("The MBean " + <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a> +
+<a id="L199" name="L199"></a> 199                     " is not registered.");
+<a id="L200" name="L200"></a> 200             <em class="brace">}</em>
+<a id="L201" name="L201"></a> 201         <em class="brace">}</em>
+<a id="L202" name="L202"></a> 202 
+<a id="L203" name="L203"></a> 203         <strong class="reserved">synchronized</strong> (listenerMap) <em class="brace">{</em>
+<a id="L204" name="L204"></a> 204             <em class="comment">// Tread carefully because if set.size() == 1 it may be a</em>
+<a id="L205" name="L205"></a> 205             <em class="comment">// Collections.singleton, which is unmodifiable.</em>
+<a id="L206" name="L206"></a> 206             <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt; <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> = listenerMap.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L207" name="L207"></a> 207             <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a> idaf = <strong class="reserved">new</strong> <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>(listenerID, <strong class="reserved">null</strong>);
+<a id="L208" name="L208"></a> 208             <strong class="reserved">if</strong> (<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> == <strong class="reserved">null</strong> || !<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/13313.html" title="Multiple defined in 245 places.">contains</a>(idaf))
+<a id="L209" name="L209"></a> 209                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/3606.html#L34" title="Defined at 34 in src/javax/management/ListenerNotFoundException.java.">ListenerNotFoundException</a>("Listener not found");
+<a id="L210" name="L210"></a> 210             <strong class="reserved">if</strong> (<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>() == 1)
+<a id="L211" name="L211"></a> 211                 listenerMap.<a href="../D/30677.html" title="Multiple defined in 356 places.">remove</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L212" name="L212"></a> 212             <strong class="reserved">else</strong>
+<a id="L213" name="L213"></a> 213                 <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/30677.html" title="Multiple defined in 356 places.">remove</a>(idaf);
+<a id="L214" name="L214"></a> 214         <em class="brace">}</em>
+<a id="L215" name="L215"></a> 215     <em class="brace">}</em>
+<a id="L216" name="L216"></a> 216 
+<a id="L217" name="L217"></a> 217     <em class="comment">/* This is the object that will apply our filtering to candidate</em>
+<a id="L218" name="L218"></a> 218 <em class="comment">     * notifications.  First of all, if there are no listeners for the</em>
+<a id="L219" name="L219"></a> 219 <em class="comment">     * ObjectName that the notification is coming from, we go no further.</em>
+<a id="L220" name="L220"></a> 220 <em class="comment">     * Then, for each listener, we must apply the corresponding filter (if any)</em>
+<a id="L221" name="L221"></a> 221 <em class="comment">     * and ignore the listener if the filter rejects.  Finally, we apply</em>
+<a id="L222" name="L222"></a> 222 <em class="comment">     * some access checks which may also reject the listener.</em>
+<a id="L223" name="L223"></a> 223 <em class="comment">     *</em>
+<a id="L224" name="L224"></a> 224 <em class="comment">     * A given notification may trigger several listeners on the same MBean,</em>
+<a id="L225" name="L225"></a> 225 <em class="comment">     * which is why listenerMap is a Map<objectname, set<idandfilter>&gt; and</objectname,></em>
+<a id="L226" name="L226"></a> 226 <em class="comment">     * why we add the found notifications to a supplied List rather than</em>
+<a id="L227" name="L227"></a> 227 <em class="comment">     * just returning a boolean.</em>
+<a id="L228" name="L228"></a> 228 <em class="comment">     */</em>
+<a id="L229" name="L229"></a> 229     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/6508.html#L231" title="Defined at 231 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">NotifForwarderBufferFilter</a> bufferFilter = <strong class="reserved">new</strong> <a href="../S/6508.html#L231" title="Defined at 231 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">NotifForwarderBufferFilter</a>();
+<a id="L230" name="L230"></a> 230 
+<a id="L231" name="L231"></a> 231     <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../R/5609.html" title="Multiple referred from 2 places.">NotifForwarderBufferFilter</a> <strong class="reserved">implements</strong> <a href="../S/6504.html#L33" title="Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBufferFilter.java.">NotificationBufferFilter</a> <em class="brace">{</em>
+<a id="L232" name="L232"></a> 232         <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/10262.html" title="Multiple referred from 190 places.">apply</a>(<a href="../D/5090.html" title="Multiple defined in 5 places.">List</a>&lt;<a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>&gt; targetedNotifs,
+<a id="L233" name="L233"></a> 233                           <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>, <a href="../S/3507.html#L57" title="Defined at 57 in src/javax/management/Notification.java.">Notification</a> notif) <em class="brace">{</em>
+<a id="L234" name="L234"></a> 234             <em class="comment">// We proceed in two stages here, to avoid holding the listenerMap</em>
+<a id="L235" name="L235"></a> 235             <em class="comment">// lock while invoking the filters (which are user code).</em>
+<a id="L236" name="L236"></a> 236             <strong class="reserved">final</strong> <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>[] candidates;
+<a id="L237" name="L237"></a> 237             <strong class="reserved">synchronized</strong> (listenerMap) <em class="brace">{</em>
+<a id="L238" name="L238"></a> 238                 <strong class="reserved">final</strong> <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt; <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> = listenerMap.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>);
+<a id="L239" name="L239"></a> 239                 <strong class="reserved">if</strong> (<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a> == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L240" name="L240"></a> 240                     <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("bufferFilter", "no listeners for this name");
+<a id="L241" name="L241"></a> 241                     <strong class="reserved">return</strong>;
+<a id="L242" name="L242"></a> 242                 <em class="brace">}</em>
+<a id="L243" name="L243"></a> 243                 candidates = <strong class="reserved">new</strong> <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>[<a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>()];
+<a id="L244" name="L244"></a> 244                 <a href="../D/31832.html" title="Multiple defined in 134 places.">set</a>.<a href="../D/35348.html" title="Multiple defined in 117 places.">toArray</a>(candidates);
+<a id="L245" name="L245"></a> 245             <em class="brace">}</em>
+<a id="L246" name="L246"></a> 246             <em class="comment">// We don't synchronize on targetedNotifs, because it is a local</em>
+<a id="L247" name="L247"></a> 247             <em class="comment">// variable of our caller and no other thread can see it.</em>
+<a id="L248" name="L248"></a> 248             <strong class="reserved">for</strong> (<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a> idaf : candidates) <em class="brace">{</em>
+<a id="L249" name="L249"></a> 249                 <strong class="reserved">final</strong> <a href="../S/3548.html#L35" title="Defined at 35 in src/javax/management/NotificationFilter.java.">NotificationFilter</a> nf = idaf.<a href="../D/19071.html" title="Multiple defined in 17 places.">getFilter</a>();
+<a id="L250" name="L250"></a> 250                 <strong class="reserved">if</strong> (nf == <strong class="reserved">null</strong> || nf.<a href="../D/25966.html" title="Multiple defined in 4 places.">isNotificationEnabled</a>(notif)) <em class="brace">{</em>
+<a id="L251" name="L251"></a> 251                     <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("bufferFilter", "filter matches");
+<a id="L252" name="L252"></a> 252                     <strong class="reserved">final</strong> <a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a> tn =
+<a id="L253" name="L253"></a> 253                             <strong class="reserved">new</strong> <a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>(notif, idaf.<a href="../D/19565.html" title="Multiple defined in 69 places.">getId</a>());
+<a id="L254" name="L254"></a> 254                     <strong class="reserved">if</strong> (<a href="../S/6508.html#L408" title="Defined at 408 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">allowNotificationEmission</a>(<a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>, tn))
+<a id="L255" name="L255"></a> 255                         targetedNotifs.<a href="../D/10632.html" title="Multiple defined in 301 places.">add</a>(tn);
+<a id="L256" name="L256"></a> 256                 <em class="brace">}</em>
+<a id="L257" name="L257"></a> 257             <em class="brace">}</em>
+<a id="L258" name="L258"></a> 258         <em class="brace">}</em>
+<a id="L259" name="L259"></a> 259     <em class="brace">}</em>;
+<a id="L260" name="L260"></a> 260 
+<a id="L261" name="L261"></a> 261     <strong class="reserved">public</strong> <a href="../S/3614.html#L59" title="Defined at 59 in src/javax/management/remote/NotificationResult.java.">NotificationResult</a> <a href="../R/14266.html" title="Multiple referred from 6 places.">fetchNotifs</a>(<strong class="reserved">long</strong> startSequenceNumber,
+<a id="L262" name="L262"></a> 262         <strong class="reserved">long</strong> timeout,
+<a id="L263" name="L263"></a> 263         <strong class="reserved">int</strong> maxNotifications) <em class="brace">{</em>
+<a id="L264" name="L264"></a> 264         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L265" name="L265"></a> 265             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("fetchNotifs", "Fetching notifications, the " +
+<a id="L266" name="L266"></a> 266                 "startSequenceNumber is " + startSequenceNumber +
+<a id="L267" name="L267"></a> 267                 ", the timeout is " + timeout +
+<a id="L268" name="L268"></a> 268                 ", the maxNotifications is " + maxNotifications);
+<a id="L269" name="L269"></a> 269         <em class="brace">}</em>
+<a id="L270" name="L270"></a> 270 
+<a id="L271" name="L271"></a> 271         <a href="../S/3614.html#L59" title="Defined at 59 in src/javax/management/remote/NotificationResult.java.">NotificationResult</a> nr;
+<a id="L272" name="L272"></a> 272         <strong class="reserved">final</strong> <strong class="reserved">long</strong> t = <a href="../S/1768.html#L105" title="Defined at 105 in src/java/lang/Math.java.">Math</a>.<a href="../D/27697.html" title="Multiple defined in 28 places.">min</a>(connectionTimeout, timeout);
+<a id="L273" name="L273"></a> 273         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L274" name="L274"></a> 274             nr = notifBuffer.<a href="../D/15997.html" title="Multiple defined in 5 places.">fetchNotifications</a>(bufferFilter,
+<a id="L275" name="L275"></a> 275                 startSequenceNumber,
+<a id="L276" name="L276"></a> 276                 t, maxNotifications);
+<a id="L277" name="L277"></a> 277             <a href="../S/6508.html#L293" title="Defined at 293 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">snoopOnUnregister</a>(nr);
+<a id="L278" name="L278"></a> 278         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1730.html#L50" title="Defined at 50 in src/java/lang/InterruptedException.java.">InterruptedException</a> ire) <em class="brace">{</em>
+<a id="L279" name="L279"></a> 279             nr = <strong class="reserved">new</strong> <a href="../S/3614.html#L59" title="Defined at 59 in src/javax/management/remote/NotificationResult.java.">NotificationResult</a>(0L, 0L, <strong class="reserved">new</strong> <a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>[0]);
+<a id="L280" name="L280"></a> 280         <em class="brace">}</em>
+<a id="L281" name="L281"></a> 281 
+<a id="L282" name="L282"></a> 282         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L283" name="L283"></a> 283             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("fetchNotifs", "Forwarding the notifs: "+nr);
+<a id="L284" name="L284"></a> 284         <em class="brace">}</em>
+<a id="L285" name="L285"></a> 285 
+<a id="L286" name="L286"></a> 286         <strong class="reserved">return</strong> nr;
+<a id="L287" name="L287"></a> 287     <em class="brace">}</em>
+<a id="L288" name="L288"></a> 288 
+<a id="L289" name="L289"></a> 289     <em class="comment">// The standard RMI connector client will register a listener on the MBeanServerDelegate</em>
+<a id="L290" name="L290"></a> 290     <em class="comment">// in order to be told when MBeans are unregistered.  We snoop on fetched notifications</em>
+<a id="L291" name="L291"></a> 291     <em class="comment">// so that we can know too, and remove the corresponding entry from the listenerMap.</em>
+<a id="L292" name="L292"></a> 292     <em class="comment">// See 6957378.</em>
+<a id="L293" name="L293"></a> 293     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/6508.html#L277" title="Referred from 277 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">snoopOnUnregister</a>(<a href="../S/3614.html#L59" title="Defined at 59 in src/javax/management/remote/NotificationResult.java.">NotificationResult</a> nr) <em class="brace">{</em>
+<a id="L294" name="L294"></a> 294         <a href="../D/5090.html" title="Multiple defined in 5 places.">List</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt; <a href="../D/13475.html" title="Multiple defined in 92 places.">copy</a> = <strong class="reserved">null</strong>;
+<a id="L295" name="L295"></a> 295         <strong class="reserved">synchronized</strong> (listenerMap) <em class="brace">{</em>
+<a id="L296" name="L296"></a> 296             <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt; delegateSet = listenerMap.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../S/3539.html#L39" title="Defined at 39 in src/javax/management/MBeanServerDelegate.java.">MBeanServerDelegate</a>.DELEGATE_NAME);
+<a id="L297" name="L297"></a> 297             <strong class="reserved">if</strong> (delegateSet == <strong class="reserved">null</strong> || delegateSet.<a href="../D/25493.html" title="Multiple defined in 113 places.">isEmpty</a>()) <em class="brace">{</em>
+<a id="L298" name="L298"></a> 298                 <strong class="reserved">return</strong>;
+<a id="L299" name="L299"></a> 299             <em class="brace">}</em>
+<a id="L300" name="L300"></a> 300             <a href="../D/13475.html" title="Multiple defined in 92 places.">copy</a> = <strong class="reserved">new</strong> <a href="../D/498.html" title="Multiple defined in 2 places.">ArrayList</a>&lt;&gt;(delegateSet);
+<a id="L301" name="L301"></a> 301         <em class="brace">}</em>
+<a id="L302" name="L302"></a> 302 
+<a id="L303" name="L303"></a> 303         <strong class="reserved">for</strong> (<a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a> tn : nr.<a href="../S/3614.html#L117" title="Defined at 117 in src/javax/management/remote/NotificationResult.java.">getTargetedNotifications</a>()) <em class="brace">{</em>
+<a id="L304" name="L304"></a> 304             <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a> = tn.<a href="../D/20165.html" title="Multiple defined in 3 places.">getListenerID</a>();
+<a id="L305" name="L305"></a> 305             <strong class="reserved">for</strong> (<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a> idaf : <a href="../D/13475.html" title="Multiple defined in 92 places.">copy</a>) <em class="brace">{</em>
+<a id="L306" name="L306"></a> 306                 <strong class="reserved">if</strong> (idaf.<a href="../D/24291.html" title="Multiple defined in 202 places.">id</a> == <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>) <em class="brace">{</em>
+<a id="L307" name="L307"></a> 307                     <em class="comment">// This is a notification from the MBeanServerDelegate.</em>
+<a id="L308" name="L308"></a> 308                     <a href="../S/3507.html#L57" title="Defined at 57 in src/javax/management/Notification.java.">Notification</a> n = tn.<a href="../D/21029.html" title="Multiple defined in 4 places.">getNotification</a>();
+<a id="L309" name="L309"></a> 309                     <strong class="reserved">if</strong> (n <strong class="reserved">instanceof</strong> <a href="../S/3447.html#L98" title="Defined at 98 in src/javax/management/MBeanServerNotification.java.">MBeanServerNotification</a> &amp;&amp;
+<a id="L310" name="L310"></a> 310                             n.<a href="../D/23311.html" title="Multiple defined in 232 places.">getType</a>().<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(<a href="../S/3447.html#L98" title="Defined at 98 in src/javax/management/MBeanServerNotification.java.">MBeanServerNotification</a>.UNREGISTRATION_NOTIFICATION)) <em class="brace">{</em>
+<a id="L311" name="L311"></a> 311                         <a href="../S/3447.html#L98" title="Defined at 98 in src/javax/management/MBeanServerNotification.java.">MBeanServerNotification</a> mbsn = (<a href="../S/3447.html#L98" title="Defined at 98 in src/javax/management/MBeanServerNotification.java.">MBeanServerNotification</a>) n;
+<a id="L312" name="L312"></a> 312                         <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> gone = mbsn.<a href="../S/3447.html#L148" title="Defined at 148 in src/javax/management/MBeanServerNotification.java.">getMBeanName</a>();
+<a id="L313" name="L313"></a> 313                         <strong class="reserved">synchronized</strong> (listenerMap) <em class="brace">{</em>
+<a id="L314" name="L314"></a> 314                             listenerMap.<a href="../D/30677.html" title="Multiple defined in 356 places.">remove</a>(gone);
+<a id="L315" name="L315"></a> 315                         <em class="brace">}</em>
+<a id="L316" name="L316"></a> 316                     <em class="brace">}</em>
+<a id="L317" name="L317"></a> 317                 <em class="brace">}</em>
+<a id="L318" name="L318"></a> 318             <em class="brace">}</em>
+<a id="L319" name="L319"></a> 319         <em class="brace">}</em>
+<a id="L320" name="L320"></a> 320     <em class="brace">}</em>
+<a id="L321" name="L321"></a> 321 
+<a id="L322" name="L322"></a> 322     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/29125.html" title="Multiple referred from 15 places.">terminate</a>() <em class="brace">{</em>
+<a id="L323" name="L323"></a> 323         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L324" name="L324"></a> 324             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("terminate", "Be called.");
+<a id="L325" name="L325"></a> 325         <em class="brace">}</em>
+<a id="L326" name="L326"></a> 326 
+<a id="L327" name="L327"></a> 327         <strong class="reserved">synchronized</strong>(terminationLock) <em class="brace">{</em>
+<a id="L328" name="L328"></a> 328             <strong class="reserved">if</strong> (<a href="../S/1117.html#L1997" title="Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.">terminated</a>) <em class="brace">{</em>
+<a id="L329" name="L329"></a> 329                 <strong class="reserved">return</strong>;
+<a id="L330" name="L330"></a> 330             <em class="brace">}</em>
+<a id="L331" name="L331"></a> 331 
+<a id="L332" name="L332"></a> 332             <a href="../S/1117.html#L1997" title="Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.">terminated</a> = <strong class="reserved">true</strong>;
+<a id="L333" name="L333"></a> 333 
+<a id="L334" name="L334"></a> 334             <strong class="reserved">synchronized</strong>(listenerMap) <em class="brace">{</em>
+<a id="L335" name="L335"></a> 335                 listenerMap.<a href="../D/12817.html" title="Multiple defined in 199 places.">clear</a>();
+<a id="L336" name="L336"></a> 336             <em class="brace">}</em>
+<a id="L337" name="L337"></a> 337         <em class="brace">}</em>
+<a id="L338" name="L338"></a> 338 
+<a id="L339" name="L339"></a> 339         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L61" title="Defined at 61 in src/com/sun/jmx/remote/util/ClassLogger.java.">traceOn</a>()) <em class="brace">{</em>
+<a id="L340" name="L340"></a> 340             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("terminate", "Terminated.");
+<a id="L341" name="L341"></a> 341         <em class="brace">}</em>
+<a id="L342" name="L342"></a> 342     <em class="brace">}</em>
+<a id="L343" name="L343"></a> 343 
+<a id="L344" name="L344"></a> 344     <em class="comment">//----------------</em>
+<a id="L345" name="L345"></a> 345     <em class="comment">// PRIVATE METHODS</em>
+<a id="L346" name="L346"></a> 346     <em class="comment">//----------------</em>
+<a id="L347" name="L347"></a> 347 
+<a id="L348" name="L348"></a> 348     <strong class="reserved">private</strong> <a href="../S/2639.html#L100" title="Defined at 100 in src/javax/security/auth/Subject.java.">Subject</a> <a href="../R/19265.html" title="Multiple referred from 8 places.">getSubject</a>() <em class="brace">{</em>
+<a id="L349" name="L349"></a> 349         <strong class="reserved">return</strong> <a href="../S/2639.html#L100" title="Defined at 100 in src/javax/security/auth/Subject.java.">Subject</a>.<a href="../D/22833.html" title="Multiple defined in 5 places.">getSubject</a>(<a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/17976.html" title="Multiple defined in 99 places.">getContext</a>());
+<a id="L350" name="L350"></a> 350     <em class="brace">}</em>
+<a id="L351" name="L351"></a> 351 
+<a id="L352" name="L352"></a> 352     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../R/11370.html" title="Multiple referred from 32 places.">checkState</a>() <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> <em class="brace">{</em>
+<a id="L353" name="L353"></a> 353         <strong class="reserved">synchronized</strong>(terminationLock) <em class="brace">{</em>
+<a id="L354" name="L354"></a> 354             <strong class="reserved">if</strong> (<a href="../S/1117.html#L1997" title="Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.">terminated</a>) <em class="brace">{</em>
+<a id="L355" name="L355"></a> 355                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>("The connection has been terminated.");
+<a id="L356" name="L356"></a> 356             <em class="brace">}</em>
+<a id="L357" name="L357"></a> 357         <em class="brace">}</em>
+<a id="L358" name="L358"></a> 358     <em class="brace">}</em>
+<a id="L359" name="L359"></a> 359 
+<a id="L360" name="L360"></a> 360     <strong class="reserved">private</strong> <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../R/17390.html" title="Multiple referred from 11 places.">getListenerID</a>() <em class="brace">{</em>
+<a id="L361" name="L361"></a> 361         <strong class="reserved">synchronized</strong>(listenerCounterLock) <em class="brace">{</em>
+<a id="L362" name="L362"></a> 362             <strong class="reserved">return</strong> listenerCounter++;
+<a id="L363" name="L363"></a> 363         <em class="brace">}</em>
+<a id="L364" name="L364"></a> 364     <em class="brace">}</em>
+<a id="L365" name="L365"></a> 365 
+<a id="L366" name="L366"></a> 366     <em class="comment">/**</em>
+<a id="L367" name="L367"></a> 367 <em class="comment">     * Explicitly check the MBeanPermission for</em>
+<a id="L368" name="L368"></a> 368 <em class="comment">     * the current access control context.</em>
+<a id="L369" name="L369"></a> 369 <em class="comment">     */</em>
+<a id="L370" name="L370"></a> 370     <strong class="reserved">public</strong> <strong class="reserved">final</strong> <strong class="reserved">void</strong> <a href="../R/11231.html" title="Multiple referred from 41 places.">checkMBeanPermission</a>(
+<a id="L371" name="L371"></a> 371             <strong class="reserved">final</strong> <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/10596.html" title="Multiple defined in 2 places.">actions</a>)
+<a id="L372" name="L372"></a> 372             <strong class="reserved">throws</strong> <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>, <a href="../S/1580.html#L34" title="Defined at 34 in src/java/lang/SecurityException.java.">SecurityException</a> <em class="brace">{</em>
+<a id="L373" name="L373"></a> 373         <a href="../D/12526.html" title="Multiple defined in 7 places.">checkMBeanPermission</a>(mbeanServer,<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,<a href="../D/10596.html" title="Multiple defined in 2 places.">actions</a>);
+<a id="L374" name="L374"></a> 374     <em class="brace">}</em>
+<a id="L375" name="L375"></a> 375 
+<a id="L376" name="L376"></a> 376     <strong class="reserved">static</strong> <strong class="reserved">void</strong> <a href="../R/11231.html" title="Multiple referred from 41 places.">checkMBeanPermission</a>(
+<a id="L377" name="L377"></a> 377             <strong class="reserved">final</strong> <a href="../S/3578.html#L260" title="Defined at 260 in src/javax/management/MBeanServer.java.">MBeanServer</a> mbs, <strong class="reserved">final</strong> <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/10596.html" title="Multiple defined in 2 places.">actions</a>)
+<a id="L378" name="L378"></a> 378             <strong class="reserved">throws</strong> <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>, <a href="../S/1580.html#L34" title="Defined at 34 in src/java/lang/SecurityException.java.">SecurityException</a> <em class="brace">{</em>
+<a id="L379" name="L379"></a> 379 
+<a id="L380" name="L380"></a> 380         <a href="../D/7682.html" title="Multiple defined in 2 places.">SecurityManager</a> sm = <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L333" title="Defined at 333 in src/java/lang/System.java.">getSecurityManager</a>();
+<a id="L381" name="L381"></a> 381         <strong class="reserved">if</strong> (sm != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L382" name="L382"></a> 382             <a href="../S/1212.html#L77" title="Defined at 77 in src/java/security/AccessControlContext.java.">AccessControlContext</a> acc = <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/17976.html" title="Multiple defined in 99 places.">getContext</a>();
+<a id="L383" name="L383"></a> 383             <a href="../S/3437.html#L42" title="Defined at 42 in src/javax/management/ObjectInstance.java.">ObjectInstance</a> oi;
+<a id="L384" name="L384"></a> 384             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L385" name="L385"></a> 385                 oi = <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(
+<a id="L386" name="L386"></a> 386                     <strong class="reserved">new</strong> <a href="../S/1263.html#L45" title="Defined at 45 in src/java/security/PrivilegedExceptionAction.java.">PrivilegedExceptionAction</a>&lt;<a href="../S/3437.html#L42" title="Defined at 42 in src/javax/management/ObjectInstance.java.">ObjectInstance</a>&gt;() <em class="brace">{</em>
+<a id="L387" name="L387"></a> 387                         <strong class="reserved">public</strong> <a href="../S/3437.html#L42" title="Defined at 42 in src/javax/management/ObjectInstance.java.">ObjectInstance</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>()
+<a id="L388" name="L388"></a> 388                         <strong class="reserved">throws</strong> <a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a> <em class="brace">{</em>
+<a id="L389" name="L389"></a> 389                             <strong class="reserved">return</strong> mbs.<a href="../D/21142.html" title="Multiple defined in 12 places.">getObjectInstance</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L390" name="L390"></a> 390                         <em class="brace">}</em>
+<a id="L391" name="L391"></a> 391                 <em class="brace">}</em>);
+<a id="L392" name="L392"></a> 392             <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1259.html#L50" title="Defined at 50 in src/java/security/PrivilegedActionException.java.">PrivilegedActionException</a> e) <em class="brace">{</em>
+<a id="L393" name="L393"></a> 393                 <strong class="reserved">throw</strong> (<a href="../S/3436.html#L34" title="Defined at 34 in src/javax/management/InstanceNotFoundException.java.">InstanceNotFoundException</a>) <a href="../D/15928.html" title="Multiple defined in 3 places.">extractException</a>(e);
+<a id="L394" name="L394"></a> 394             <em class="brace">}</em>
+<a id="L395" name="L395"></a> 395             <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> classname = oi.<a href="../D/17698.html" title="Multiple defined in 41 places.">getClassName</a>();
+<a id="L396" name="L396"></a> 396             <a href="../S/3504.html#L163" title="Defined at 163 in src/javax/management/MBeanPermission.java.">MBeanPermission</a> perm = <strong class="reserved">new</strong> <a href="../S/3504.html#L163" title="Defined at 163 in src/javax/management/MBeanPermission.java.">MBeanPermission</a>(
+<a id="L397" name="L397"></a> 397                 classname,
+<a id="L398" name="L398"></a> 398                 <strong class="reserved">null</strong>,
+<a id="L399" name="L399"></a> 399                 <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,
+<a id="L400" name="L400"></a> 400                 <a href="../D/10596.html" title="Multiple defined in 2 places.">actions</a>);
+<a id="L401" name="L401"></a> 401             sm.<a href="../D/12594.html" title="Multiple defined in 22 places.">checkPermission</a>(perm, acc);
+<a id="L402" name="L402"></a> 402         <em class="brace">}</em>
+<a id="L403" name="L403"></a> 403     <em class="brace">}</em>
+<a id="L404" name="L404"></a> 404 
+<a id="L405" name="L405"></a> 405     <em class="comment">/**</em>
+<a id="L406" name="L406"></a> 406 <em class="comment">     * Check if the caller has the right to get the following notifications.</em>
+<a id="L407" name="L407"></a> 407 <em class="comment">     */</em>
+<a id="L408" name="L408"></a> 408     <strong class="reserved">private</strong> <strong class="reserved">boolean</strong> <a href="../S/6508.html#L254" title="Referred from 254 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">allowNotificationEmission</a>(<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,
+<a id="L409" name="L409"></a> 409                                               <a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a> tn) <em class="brace">{</em>
+<a id="L410" name="L410"></a> 410         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L411" name="L411"></a> 411             <strong class="reserved">if</strong> (checkNotificationEmission) <em class="brace">{</em>
+<a id="L412" name="L412"></a> 412                 <a href="../D/12526.html" title="Multiple defined in 7 places.">checkMBeanPermission</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, "addNotificationListener");
+<a id="L413" name="L413"></a> 413             <em class="brace">}</em>
+<a id="L414" name="L414"></a> 414             <strong class="reserved">if</strong> (notificationAccessController != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L415" name="L415"></a> 415                 notificationAccessController.<a href="../S/6499.html#L105" title="Defined at 105 in src/com/sun/jmx/remote/security/NotificationAccessController.java.">fetchNotification</a>(
+<a id="L416" name="L416"></a> 416                         connectionId, <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, tn.<a href="../D/21029.html" title="Multiple defined in 4 places.">getNotification</a>(), <a href="../D/22833.html" title="Multiple defined in 5 places.">getSubject</a>());
+<a id="L417" name="L417"></a> 417             <em class="brace">}</em>
+<a id="L418" name="L418"></a> 418             <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L419" name="L419"></a> 419         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1580.html#L34" title="Defined at 34 in src/java/lang/SecurityException.java.">SecurityException</a> e) <em class="brace">{</em>
+<a id="L420" name="L420"></a> 420             <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L65" title="Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.">debugOn</a>()) <em class="brace">{</em>
+<a id="L421" name="L421"></a> 421                 <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifs", "Notification " +
+<a id="L422" name="L422"></a> 422                         tn.<a href="../D/21029.html" title="Multiple defined in 4 places.">getNotification</a>() + " not forwarded: the " +
+<a id="L423" name="L423"></a> 423                         "caller didn't have the required access rights");
+<a id="L424" name="L424"></a> 424             <em class="brace">}</em>
+<a id="L425" name="L425"></a> 425             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L426" name="L426"></a> 426         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
+<a id="L427" name="L427"></a> 427             <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L65" title="Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.">debugOn</a>()) <em class="brace">{</em>
+<a id="L428" name="L428"></a> 428                 <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifs", "Notification " +
+<a id="L429" name="L429"></a> 429                         tn.<a href="../D/21029.html" title="Multiple defined in 4 places.">getNotification</a>() + " not forwarded: " +
+<a id="L430" name="L430"></a> 430                         "got an unexpected exception: " + e);
+<a id="L431" name="L431"></a> 431             <em class="brace">}</em>
+<a id="L432" name="L432"></a> 432             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L433" name="L433"></a> 433         <em class="brace">}</em>
+<a id="L434" name="L434"></a> 434     <em class="brace">}</em>
+<a id="L435" name="L435"></a> 435 
+<a id="L436" name="L436"></a> 436     <em class="comment">/**</em>
+<a id="L437" name="L437"></a> 437 <em class="comment">     * Iterate until we extract the real exception</em>
+<a id="L438" name="L438"></a> 438 <em class="comment">     * from a stack of PrivilegedActionExceptions.</em>
+<a id="L439" name="L439"></a> 439 <em class="comment">     */</em>
+<a id="L440" name="L440"></a> 440     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <a href="../R/14201.html" title="Multiple referred from 32 places.">extractException</a>(<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
+<a id="L441" name="L441"></a> 441         <strong class="reserved">while</strong> (e <strong class="reserved">instanceof</strong> <a href="../S/1259.html#L50" title="Defined at 50 in src/java/security/PrivilegedActionException.java.">PrivilegedActionException</a>) <em class="brace">{</em>
+<a id="L442" name="L442"></a> 442             e = ((<a href="../S/1259.html#L50" title="Defined at 50 in src/java/security/PrivilegedActionException.java.">PrivilegedActionException</a>)e).<a href="../D/18894.html" title="Multiple defined in 26 places.">getException</a>();
+<a id="L443" name="L443"></a> 443         <em class="brace">}</em>
+<a id="L444" name="L444"></a> 444         <strong class="reserved">return</strong> e;
+<a id="L445" name="L445"></a> 445     <em class="brace">}</em>
+<a id="L446" name="L446"></a> 446 
+<a id="L447" name="L447"></a> 447     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">class</strong> <a href="../R/3644.html" title="Multiple referred from 16 places.">IdAndFilter</a> <em class="brace">{</em>
+<a id="L448" name="L448"></a> 448         <strong class="reserved">private</strong> <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>;
+<a id="L449" name="L449"></a> 449         <strong class="reserved">private</strong> <a href="../S/3548.html#L35" title="Defined at 35 in src/javax/management/NotificationFilter.java.">NotificationFilter</a> <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>;
+<a id="L450" name="L450"></a> 450 
+<a id="L451" name="L451"></a> 451         IdAndFilter(<a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>, <a href="../S/3548.html#L35" title="Defined at 35 in src/javax/management/NotificationFilter.java.">NotificationFilter</a> <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>) <em class="brace">{</em>
+<a id="L452" name="L452"></a> 452             <strong class="reserved">this</strong>.<a href="../D/24291.html" title="Multiple defined in 202 places.">id</a> = <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>;
+<a id="L453" name="L453"></a> 453             <strong class="reserved">this</strong>.<a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a> = <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>;
+<a id="L454" name="L454"></a> 454         <em class="brace">}</em>
+<a id="L455" name="L455"></a> 455 
+<a id="L456" name="L456"></a> 456         <a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a> <a href="../R/16968.html" title="Multiple referred from 227 places.">getId</a>() <em class="brace">{</em>
+<a id="L457" name="L457"></a> 457             <strong class="reserved">return</strong> <strong class="reserved">this</strong>.<a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>;
+<a id="L458" name="L458"></a> 458         <em class="brace">}</em>
+<a id="L459" name="L459"></a> 459 
+<a id="L460" name="L460"></a> 460         <a href="../S/3548.html#L35" title="Defined at 35 in src/javax/management/NotificationFilter.java.">NotificationFilter</a> <a href="../R/16590.html" title="Multiple referred from 6 places.">getFilter</a>() <em class="brace">{</em>
+<a id="L461" name="L461"></a> 461             <strong class="reserved">return</strong> <strong class="reserved">this</strong>.<a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>;
+<a id="L462" name="L462"></a> 462         <em class="brace">}</em>
+<a id="L463" name="L463"></a> 463 
+<a id="L464" name="L464"></a> 464         @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L465" name="L465"></a> 465         <strong class="reserved">public</strong> <strong class="reserved">int</strong> <a href="../R/20298.html" title="Multiple referred from 715 places.">hashCode</a>() <em class="brace">{</em>
+<a id="L466" name="L466"></a> 466             <strong class="reserved">return</strong> <a href="../D/24291.html" title="Multiple defined in 202 places.">id</a>.<a href="../D/24220.html" title="Multiple defined in 552 places.">hashCode</a>();
+<a id="L467" name="L467"></a> 467         <em class="brace">}</em>
+<a id="L468" name="L468"></a> 468 
+<a id="L469" name="L469"></a> 469         @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L470" name="L470"></a> 470         <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> <a href="../R/13992.html" title="Multiple referred from 5400 places.">equals</a>(<a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> <a href="../S/986.html#L3177" title="Defined at 3177 in src/java/util/regex/Pattern.java.">o</a>) <em class="brace">{</em>
+<a id="L471" name="L471"></a> 471             <strong class="reserved">return</strong> ((<a href="../S/986.html#L3177" title="Defined at 3177 in src/java/util/regex/Pattern.java.">o</a> <strong class="reserved">instanceof</strong> <a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>) &amp;&amp;
+<a id="L472" name="L472"></a> 472                     ((<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>) <a href="../S/986.html#L3177" title="Defined at 3177 in src/java/util/regex/Pattern.java.">o</a>).<a href="../D/19565.html" title="Multiple defined in 69 places.">getId</a>().<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(<a href="../D/19565.html" title="Multiple defined in 69 places.">getId</a>()));
+<a id="L473" name="L473"></a> 473         <em class="brace">}</em>
+<a id="L474" name="L474"></a> 474     <em class="brace">}</em>
+<a id="L475" name="L475"></a> 475 
+<a id="L476" name="L476"></a> 476 
+<a id="L477" name="L477"></a> 477     <em class="comment">//------------------</em>
+<a id="L478" name="L478"></a> 478     <em class="comment">// PRIVATE VARIABLES</em>
+<a id="L479" name="L479"></a> 479     <em class="comment">//------------------</em>
+<a id="L480" name="L480"></a> 480 
+<a id="L481" name="L481"></a> 481     <strong class="reserved">private</strong> <a href="../S/3578.html#L260" title="Defined at 260 in src/javax/management/MBeanServer.java.">MBeanServer</a> mbeanServer;
+<a id="L482" name="L482"></a> 482 
+<a id="L483" name="L483"></a> 483     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> connectionId;
+<a id="L484" name="L484"></a> 484 
+<a id="L485" name="L485"></a> 485     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">long</strong> connectionTimeout;
+<a id="L486" name="L486"></a> 486 
+<a id="L487" name="L487"></a> 487     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">int</strong> listenerCounter = 0;
+<a id="L488" name="L488"></a> 488     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">static</strong> <strong class="reserved">int</strong>[] listenerCounterLock = <strong class="reserved">new</strong> <strong class="reserved">int</strong>[0];
+<a id="L489" name="L489"></a> 489 
+<a id="L490" name="L490"></a> 490     <strong class="reserved">private</strong> <a href="../S/6509.html#L33" title="Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBuffer.java.">NotificationBuffer</a> notifBuffer;
+<a id="L491" name="L491"></a> 491     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/5398.html" title="Multiple defined in 3 places.">Map</a>&lt;<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a>, <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt;&gt; listenerMap =
+<a id="L492" name="L492"></a> 492             <strong class="reserved">new</strong> <a href="../S/867.html#L137" title="Defined at 137 in src/java/util/HashMap.java.">HashMap</a>&lt;<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a>, <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/6508.html#L447" title="Defined at 447 in src/com/sun/jmx/remote/internal/ServerNotifForwarder.java.">IdAndFilter</a>&gt;&gt;();
+<a id="L493" name="L493"></a> 493 
+<a id="L494" name="L494"></a> 494     <strong class="reserved">private</strong> <strong class="reserved">boolean</strong> <a href="../S/1117.html#L1997" title="Defined at 1997 in src/java/util/concurrent/ThreadPoolExecutor.java.">terminated</a> = <strong class="reserved">false</strong>;
+<a id="L495" name="L495"></a> 495     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>[] terminationLock = <strong class="reserved">new</strong> <strong class="reserved">int</strong>[0];
+<a id="L496" name="L496"></a> 496 
+<a id="L497" name="L497"></a> 497     <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> broadcasterClass =
+<a id="L498" name="L498"></a> 498         <a href="../S/3441.html#L73" title="Defined at 73 in src/javax/management/NotificationBroadcaster.java.">NotificationBroadcaster</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>();
+<a id="L499" name="L499"></a> 499 
+<a id="L500" name="L500"></a> 500     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">boolean</strong> checkNotificationEmission;
+<a id="L501" name="L501"></a> 501 
+<a id="L502" name="L502"></a> 502     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/6499.html#L46" title="Defined at 46 in src/com/sun/jmx/remote/security/NotificationAccessController.java.">NotificationAccessController</a> notificationAccessController;
+<a id="L503" name="L503"></a> 503 
+<a id="L504" name="L504"></a> 504     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/6492.html#L30" title="Defined at 30 in src/com/sun/jmx/remote/util/ClassLogger.java.">ClassLogger</a> <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a> =
+<a id="L505" name="L505"></a> 505         <strong class="reserved">new</strong> <a href="../S/6492.html#L30" title="Defined at 30 in src/com/sun/jmx/remote/util/ClassLogger.java.">ClassLogger</a>("javax.management.remote.misc", "ServerNotifForwarder");
+<a id="L506" name="L506"></a> 506 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L77'>[^]</a><a href='#L470'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L77">[^]</a><a href="#L470">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

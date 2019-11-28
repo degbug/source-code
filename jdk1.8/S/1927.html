@@ -1,204 +1,202 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/java/nio/file/TempFileHelper.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8012.html'>nio</a>/<a href='../files/8017.html'>file</a>/TempFileHelper.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L168'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8012.html">nio</a>/<a href="../files/8017.html">file</a>/TempFileHelper.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L57">[^]</a><a href="#L168">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L57' title='Defined at 57.'>generatePath</a></li>
-<li><a href='#L80' title='Defined at 80.'>create</a></li>
-<li><a href='#L155' title='Defined at 155.'>createTempFile</a></li>
-<li><a href='#L168' title='Defined at 168.'>createTempDirectory</a></li>
+<li><a href="#L57" title="Defined at 57.">generatePath</a></li>
+<li><a href="#L80" title="Defined at 80.">create</a></li>
+<li><a href="#L155" title="Defined at 155.">createTempFile</a></li>
+<li><a href="#L168" title="Defined at 168.">createTempDirectory</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.nio.<a href='../D/16022.html' title='Multiple defined in 3 places.'>file</a>;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Set;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.EnumSet;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.security.SecureRandom;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> static java.security.AccessController.*;
-<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.io.IOException;
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.nio.file.attribute.FileAttribute;
-<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.nio.file.attribute.PosixFilePermission;
-<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.nio.file.attribute.PosixFilePermissions;
-<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> static java.nio.file.attribute.PosixFilePermission.*;
-<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> sun.security.action.GetPropertyAction;
-<a id='L38' name='L38'></a>  38 
-<a id='L39' name='L39'></a>  39 
-<a id='L40' name='L40'></a>  40 <em class='comment'>/**</em>
-<a id='L41' name='L41'></a>  41 <em class='comment'> * Helper class to support creation of temporary files and directories with</em>
-<a id='L42' name='L42'></a>  42 <em class='comment'> * initial attributes.</em>
-<a id='L43' name='L43'></a>  43 <em class='comment'> */</em>
-<a id='L44' name='L44'></a>  44 
-<a id='L45' name='L45'></a>  45 <strong class='reserved'>class</strong> <a href='../R/8043.html' title='Multiple referred from 4 places.'>TempFileHelper</a> <em class='brace'>{</em>
-<a id='L46' name='L46'></a>  46     <strong class='reserved'>private</strong> TempFileHelper() <em class='brace'>{</em> <em class='brace'>}</em>
-<a id='L47' name='L47'></a>  47 
-<a id='L48' name='L48'></a>  48     <em class='comment'>// temporary directory location</em>
-<a id='L49' name='L49'></a>  49     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> tmpdir =
-<a id='L50' name='L50'></a>  50         <a href='../S/1917.html#L38' title='Defined at 38 in src/java/nio/file/Paths.java.'>Paths</a>.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../D/3576.html' title='Multiple defined in 3 places.'>GetPropertyAction</a>("java.io.tmpdir")));
-<a id='L51' name='L51'></a>  51 
-<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> isPosix =
-<a id='L53' name='L53'></a>  53         <a href='../S/1925.html#L84' title='Defined at 84 in src/java/nio/file/FileSystems.java.'>FileSystems</a>.<a href='../D/18273.html' title='Multiple defined in 13 places.'>getDefault</a>().<a href='../S/1881.html#L243' title='Defined at 243 in src/java/nio/file/FileSystem.java.'>supportedFileAttributeViews</a>().<a href='../D/13313.html' title='Multiple defined in 245 places.'>contains</a>("posix");
-<a id='L54' name='L54'></a>  54 
-<a id='L55' name='L55'></a>  55     <em class='comment'>// file name generation, same as java.io.File for now</em>
-<a id='L56' name='L56'></a>  56     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1198.html#L94' title='Defined at 94 in src/java/security/SecureRandom.java.'>SecureRandom</a> <a href='../D/30092.html' title='Multiple defined in 3 places.'>random</a> = <strong class='reserved'>new</strong> <a href='../S/1198.html#L94' title='Defined at 94 in src/java/security/SecureRandom.java.'>SecureRandom</a>();
-<a id='L57' name='L57'></a>  57     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../S/1927.html#L127' title='Referred from 127 in src/java/nio/file/TempFileHelper.java.'>generatePath</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> suffix, <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> dir) <em class='brace'>{</em>
-<a id='L58' name='L58'></a>  58         <strong class='reserved'>long</strong> n = <a href='../D/30092.html' title='Multiple defined in 3 places.'>random</a>.<a href='../D/28165.html' title='Multiple defined in 11 places.'>nextLong</a>();
-<a id='L59' name='L59'></a>  59         n = (n == <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>.MIN_VALUE) ? 0 : <a href='../S/1768.html#L105' title='Defined at 105 in src/java/lang/Math.java.'>Math</a>.<a href='../D/10523.html' title='Multiple defined in 14 places.'>abs</a>(n);
-<a id='L60' name='L60'></a>  60         <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a> = dir.<a href='../D/19064.html' title='Multiple defined in 4 places.'>getFileSystem</a>().<a href='../D/21434.html' title='Multiple defined in 38 places.'>getPath</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> + <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>(n) + suffix);
-<a id='L61' name='L61'></a>  61         <em class='comment'>// the generated name should be a simple file name</em>
-<a id='L62' name='L62'></a>  62         <strong class='reserved'>if</strong> (<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>.<a href='../D/21392.html' title='Multiple defined in 42 places.'>getParent</a>() != <strong class='reserved'>null</strong>)
-<a id='L63' name='L63'></a>  63             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Invalid prefix or suffix");
-<a id='L64' name='L64'></a>  64         <strong class='reserved'>return</strong> dir.<a href='../D/31237.html' title='Multiple defined in 38 places.'>resolve</a>(<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>);
-<a id='L65' name='L65'></a>  65     <em class='brace'>}</em>
-<a id='L66' name='L66'></a>  66 
-<a id='L67' name='L67'></a>  67     <em class='comment'>// default file and directory permissions (lazily initialized)</em>
-<a id='L68' name='L68'></a>  68     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>class</strong> <a href='../R/6174.html' title='Multiple referred from 4 places.'>PosixPermissions</a> <em class='brace'>{</em>
-<a id='L69' name='L69'></a>  69         <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt;&gt; filePermissions =
-<a id='L70' name='L70'></a>  70             <a href='../S/1890.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermissions.java.'>PosixFilePermissions</a>.<a href='../S/1890.html#L159' title='Defined at 159 in src/java/nio/file/attribute/PosixFilePermissions.java.'>asFileAttribute</a>(<a href='../S/1149.html#L80' title='Defined at 80 in src/java/util/EnumSet.java.'>EnumSet</a>.<a href='../D/28425.html' title='Multiple defined in 123 places.'>of</a>(OWNER_READ, OWNER_WRITE));
-<a id='L71' name='L71'></a>  71         <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;<a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../S/1887.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.'>PosixFilePermission</a>&gt;&gt; dirPermissions =
-<a id='L72' name='L72'></a>  72             <a href='../S/1890.html#L38' title='Defined at 38 in src/java/nio/file/attribute/PosixFilePermissions.java.'>PosixFilePermissions</a>.<a href='../S/1890.html#L159' title='Defined at 159 in src/java/nio/file/attribute/PosixFilePermissions.java.'>asFileAttribute</a>(<a href='../S/1149.html#L80' title='Defined at 80 in src/java/util/EnumSet.java.'>EnumSet</a>
-<a id='L73' name='L73'></a>  73                 .<a href='../D/28425.html' title='Multiple defined in 123 places.'>of</a>(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE));
-<a id='L74' name='L74'></a>  74     <em class='brace'>}</em>
-<a id='L75' name='L75'></a>  75 
-<a id='L76' name='L76'></a>  76     <em class='comment'>/**</em>
-<a id='L77' name='L77'></a>  77 <em class='comment'>     * Creates a file or directory in in the given given directory (or in the</em>
-<a id='L78' name='L78'></a>  78 <em class='comment'>     * temporary directory if dir is {@code null}).</em>
-<a id='L79' name='L79'></a>  79 <em class='comment'>     */</em>
-<a id='L80' name='L80'></a>  80     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/12190.html' title='Multiple referred from 234 places.'>create</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> dir,
-<a id='L81' name='L81'></a>  81                                <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>,
-<a id='L82' name='L82'></a>  82                                <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> suffix,
-<a id='L83' name='L83'></a>  83                                <strong class='reserved'>boolean</strong> <a href='../D/13805.html' title='Multiple defined in 4 places.'>createDirectory</a>,
-<a id='L84' name='L84'></a>  84                                <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;?&gt;[] attrs)
-<a id='L85' name='L85'></a>  85         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>
-<a id='L86' name='L86'></a>  86     <em class='brace'>{</em>
-<a id='L87' name='L87'></a>  87         <strong class='reserved'>if</strong> (<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> == <strong class='reserved'>null</strong>)
-<a id='L88' name='L88'></a>  88             <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a> = "";
-<a id='L89' name='L89'></a>  89         <strong class='reserved'>if</strong> (suffix == <strong class='reserved'>null</strong>)
-<a id='L90' name='L90'></a>  90             suffix = (<a href='../D/13805.html' title='Multiple defined in 4 places.'>createDirectory</a>) ? "" : ".tmp";
-<a id='L91' name='L91'></a>  91         <strong class='reserved'>if</strong> (dir == <strong class='reserved'>null</strong>)
-<a id='L92' name='L92'></a>  92             dir = tmpdir;
-<a id='L93' name='L93'></a>  93 
-<a id='L94' name='L94'></a>  94         <em class='comment'>// in POSIX environments use default file and directory permissions</em>
-<a id='L95' name='L95'></a>  95         <em class='comment'>// if initial permissions not given by caller.</em>
-<a id='L96' name='L96'></a>  96         <strong class='reserved'>if</strong> (isPosix &amp;&amp; (dir.<a href='../D/19064.html' title='Multiple defined in 4 places.'>getFileSystem</a>() == <a href='../S/1925.html#L84' title='Defined at 84 in src/java/nio/file/FileSystems.java.'>FileSystems</a>.<a href='../D/18273.html' title='Multiple defined in 13 places.'>getDefault</a>())) <em class='brace'>{</em>
-<a id='L97' name='L97'></a>  97             <strong class='reserved'>if</strong> (attrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 0) <em class='brace'>{</em>
-<a id='L98' name='L98'></a>  98                 <em class='comment'>// no attributes so use default permissions</em>
-<a id='L99' name='L99'></a>  99                 attrs = <strong class='reserved'>new</strong> <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;?&gt;[1];
-<a id='L100' name='L100'></a> 100                 attrs[0] = (<a href='../D/13805.html' title='Multiple defined in 4 places.'>createDirectory</a>) ? <a href='../S/1927.html#L68' title='Defined at 68 in src/java/nio/file/TempFileHelper.java.'>PosixPermissions</a>.dirPermissions :
-<a id='L101' name='L101'></a> 101                                                <a href='../S/1927.html#L68' title='Defined at 68 in src/java/nio/file/TempFileHelper.java.'>PosixPermissions</a>.filePermissions;
-<a id='L102' name='L102'></a> 102             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L103' name='L103'></a> 103                 <em class='comment'>// check if posix permissions given; if not use default</em>
-<a id='L104' name='L104'></a> 104                 <strong class='reserved'>boolean</strong> hasPermissions = <strong class='reserved'>false</strong>;
-<a id='L105' name='L105'></a> 105                 <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i&lt;attrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
-<a id='L106' name='L106'></a> 106                     <strong class='reserved'>if</strong> (attrs[i].<a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>().<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>("posix:permissions")) <em class='brace'>{</em>
-<a id='L107' name='L107'></a> 107                         hasPermissions = <strong class='reserved'>true</strong>;
-<a id='L108' name='L108'></a> 108                         <strong class='reserved'>break</strong>;
-<a id='L109' name='L109'></a> 109                     <em class='brace'>}</em>
-<a id='L110' name='L110'></a> 110                 <em class='brace'>}</em>
-<a id='L111' name='L111'></a> 111                 <strong class='reserved'>if</strong> (!hasPermissions) <em class='brace'>{</em>
-<a id='L112' name='L112'></a> 112                     <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;?&gt;[] <a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a> = <strong class='reserved'>new</strong> <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;?&gt;[attrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>+1];
-<a id='L113' name='L113'></a> 113                     <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(attrs, 0, <a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a>, 0, attrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
-<a id='L114' name='L114'></a> 114                     attrs = <a href='../D/13475.html' title='Multiple defined in 92 places.'>copy</a>;
-<a id='L115' name='L115'></a> 115                     attrs[attrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>-1] = (<a href='../D/13805.html' title='Multiple defined in 4 places.'>createDirectory</a>) ?
-<a id='L116' name='L116'></a> 116                         <a href='../S/1927.html#L68' title='Defined at 68 in src/java/nio/file/TempFileHelper.java.'>PosixPermissions</a>.dirPermissions :
-<a id='L117' name='L117'></a> 117                         <a href='../S/1927.html#L68' title='Defined at 68 in src/java/nio/file/TempFileHelper.java.'>PosixPermissions</a>.filePermissions;
-<a id='L118' name='L118'></a> 118                 <em class='brace'>}</em>
-<a id='L119' name='L119'></a> 119             <em class='brace'>}</em>
-<a id='L120' name='L120'></a> 120         <em class='brace'>}</em>
-<a id='L121' name='L121'></a> 121 
-<a id='L122' name='L122'></a> 122         <em class='comment'>// loop generating random names until file or directory can be created</em>
-<a id='L123' name='L123'></a> 123         <a href='../D/7682.html' title='Multiple defined in 2 places.'>SecurityManager</a> sm = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>();
-<a id='L124' name='L124'></a> 124         <strong class='reserved'>for</strong> (;;) <em class='brace'>{</em>
-<a id='L125' name='L125'></a> 125             <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> f;
-<a id='L126' name='L126'></a> 126             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L127' name='L127'></a> 127                 f = <a href='../S/1927.html#L57' title='Defined at 57 in src/java/nio/file/TempFileHelper.java.'>generatePath</a>(<a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, suffix, dir);
-<a id='L128' name='L128'></a> 128             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1909.html#L34' title='Defined at 34 in src/java/nio/file/InvalidPathException.java.'>InvalidPathException</a> e) <em class='brace'>{</em>
-<a id='L129' name='L129'></a> 129                 <em class='comment'>// don't reveal temporary directory location</em>
-<a id='L130' name='L130'></a> 130                 <strong class='reserved'>if</strong> (sm != <strong class='reserved'>null</strong>)
-<a id='L131' name='L131'></a> 131                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>("Invalid prefix or suffix");
-<a id='L132' name='L132'></a> 132                 <strong class='reserved'>throw</strong> e;
-<a id='L133' name='L133'></a> 133             <em class='brace'>}</em>
-<a id='L134' name='L134'></a> 134             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L135' name='L135'></a> 135                 <strong class='reserved'>if</strong> (<a href='../D/13805.html' title='Multiple defined in 4 places.'>createDirectory</a>) <em class='brace'>{</em>
-<a id='L136' name='L136'></a> 136                     <strong class='reserved'>return</strong> <a href='../S/1915.html#L90' title='Defined at 90 in src/java/nio/file/Files.java.'>Files</a>.<a href='../D/13805.html' title='Multiple defined in 4 places.'>createDirectory</a>(f, attrs);
-<a id='L137' name='L137'></a> 137                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L138' name='L138'></a> 138                     <strong class='reserved'>return</strong> <a href='../S/1915.html#L90' title='Defined at 90 in src/java/nio/file/Files.java.'>Files</a>.<a href='../S/1915.html#L627' title='Defined at 627 in src/java/nio/file/Files.java.'>createFile</a>(f, attrs);
-<a id='L139' name='L139'></a> 139                 <em class='brace'>}</em>
-<a id='L140' name='L140'></a> 140             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a> e) <em class='brace'>{</em>
-<a id='L141' name='L141'></a> 141                 <em class='comment'>// don't reveal temporary directory location</em>
-<a id='L142' name='L142'></a> 142                 <strong class='reserved'>if</strong> (dir == tmpdir &amp;&amp; sm != <strong class='reserved'>null</strong>)
-<a id='L143' name='L143'></a> 143                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a>("Unable to create temporary file or directory");
-<a id='L144' name='L144'></a> 144                 <strong class='reserved'>throw</strong> e;
-<a id='L145' name='L145'></a> 145             <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1876.html#L35' title='Defined at 35 in src/java/nio/file/FileAlreadyExistsException.java.'>FileAlreadyExistsException</a> e) <em class='brace'>{</em>
-<a id='L146' name='L146'></a> 146                 <em class='comment'>// ignore</em>
-<a id='L147' name='L147'></a> 147             <em class='brace'>}</em>
-<a id='L148' name='L148'></a> 148         <em class='brace'>}</em>
-<a id='L149' name='L149'></a> 149     <em class='brace'>}</em>
-<a id='L150' name='L150'></a> 150 
-<a id='L151' name='L151'></a> 151     <em class='comment'>/**</em>
-<a id='L152' name='L152'></a> 152 <em class='comment'>     * Creates a temporary file in the given directory, or in in the</em>
-<a id='L153' name='L153'></a> 153 <em class='comment'>     * temporary directory if dir is {@code null}.</em>
-<a id='L154' name='L154'></a> 154 <em class='comment'>     */</em>
-<a id='L155' name='L155'></a> 155     <strong class='reserved'>static</strong> <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/12722.html' title='Multiple referred from 11 places.'>createTempFile</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> dir,
-<a id='L156' name='L156'></a> 156                                <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>,
-<a id='L157' name='L157'></a> 157                                <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> suffix,
-<a id='L158' name='L158'></a> 158                                <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;?&gt;[] attrs)
-<a id='L159' name='L159'></a> 159         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>
-<a id='L160' name='L160'></a> 160     <em class='brace'>{</em>
-<a id='L161' name='L161'></a> 161         <strong class='reserved'>return</strong> <a href='../D/13587.html' title='Multiple defined in 90 places.'>create</a>(dir, <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, suffix, <strong class='reserved'>false</strong>, attrs);
-<a id='L162' name='L162'></a> 162     <em class='brace'>}</em>
-<a id='L163' name='L163'></a> 163 
-<a id='L164' name='L164'></a> 164     <em class='comment'>/**</em>
-<a id='L165' name='L165'></a> 165 <em class='comment'>     * Creates a temporary directory in the given directory, or in in the</em>
-<a id='L166' name='L166'></a> 166 <em class='comment'>     * temporary directory if dir is {@code null}.</em>
-<a id='L167' name='L167'></a> 167 <em class='comment'>     */</em>
-<a id='L168' name='L168'></a> 168     <strong class='reserved'>static</strong> <a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> <a href='../R/12721.html' title='Multiple referred from 2 places.'>createTempDirectory</a>(<a href='../S/1949.html#L98' title='Defined at 98 in src/java/nio/file/Path.java.'>Path</a> dir,
-<a id='L169' name='L169'></a> 169                                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>,
-<a id='L170' name='L170'></a> 170                                     <a href='../S/1903.html#L40' title='Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.'>FileAttribute</a>&lt;?&gt;[] attrs)
-<a id='L171' name='L171'></a> 171         <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>
-<a id='L172' name='L172'></a> 172     <em class='brace'>{</em>
-<a id='L173' name='L173'></a> 173         <strong class='reserved'>return</strong> <a href='../D/13587.html' title='Multiple defined in 90 places.'>create</a>(dir, <a href='../S/3963.html#L53' title='Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.'>prefix</a>, <strong class='reserved'>null</strong>, <strong class='reserved'>true</strong>, attrs);
-<a id='L174' name='L174'></a> 174     <em class='brace'>}</em>
-<a id='L175' name='L175'></a> 175 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.nio.<a href="../D/16022.html" title="Multiple defined in 3 places.">file</a>;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.util.Set;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> java.util.EnumSet;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> java.security.SecureRandom;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> static java.security.AccessController.*;
+<a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> java.io.IOException;
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.nio.file.attribute.FileAttribute;
+<a id="L34" name="L34"></a>  34 <strong class="reserved">import</strong> java.nio.file.attribute.PosixFilePermission;
+<a id="L35" name="L35"></a>  35 <strong class="reserved">import</strong> java.nio.file.attribute.PosixFilePermissions;
+<a id="L36" name="L36"></a>  36 <strong class="reserved">import</strong> static java.nio.file.attribute.PosixFilePermission.*;
+<a id="L37" name="L37"></a>  37 <strong class="reserved">import</strong> sun.security.action.GetPropertyAction;
+<a id="L38" name="L38"></a>  38 
+<a id="L39" name="L39"></a>  39 
+<a id="L40" name="L40"></a>  40 <em class="comment">/**</em>
+<a id="L41" name="L41"></a>  41 <em class="comment"> * Helper class to support creation of temporary files and directories with</em>
+<a id="L42" name="L42"></a>  42 <em class="comment"> * initial attributes.</em>
+<a id="L43" name="L43"></a>  43 <em class="comment"> */</em>
+<a id="L44" name="L44"></a>  44 
+<a id="L45" name="L45"></a>  45 <strong class="reserved">class</strong> <a href="../R/8043.html" title="Multiple referred from 4 places.">TempFileHelper</a> <em class="brace">{</em>
+<a id="L46" name="L46"></a>  46     <strong class="reserved">private</strong> TempFileHelper() <em class="brace">{</em> <em class="brace">}</em>
+<a id="L47" name="L47"></a>  47 
+<a id="L48" name="L48"></a>  48     <em class="comment">// temporary directory location</em>
+<a id="L49" name="L49"></a>  49     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> tmpdir =
+<a id="L50" name="L50"></a>  50         <a href="../S/1917.html#L38" title="Defined at 38 in src/java/nio/file/Paths.java.">Paths</a>.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(<strong class="reserved">new</strong> <a href="../D/3576.html" title="Multiple defined in 3 places.">GetPropertyAction</a>("java.io.tmpdir")));
+<a id="L51" name="L51"></a>  51 
+<a id="L52" name="L52"></a>  52     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">boolean</strong> isPosix =
+<a id="L53" name="L53"></a>  53         <a href="../S/1925.html#L84" title="Defined at 84 in src/java/nio/file/FileSystems.java.">FileSystems</a>.<a href="../D/18273.html" title="Multiple defined in 13 places.">getDefault</a>().<a href="../S/1881.html#L243" title="Defined at 243 in src/java/nio/file/FileSystem.java.">supportedFileAttributeViews</a>().<a href="../D/13313.html" title="Multiple defined in 245 places.">contains</a>("posix");
+<a id="L54" name="L54"></a>  54 
+<a id="L55" name="L55"></a>  55     <em class="comment">// file name generation, same as java.io.File for now</em>
+<a id="L56" name="L56"></a>  56     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/1198.html#L94" title="Defined at 94 in src/java/security/SecureRandom.java.">SecureRandom</a> <a href="../D/30092.html" title="Multiple defined in 3 places.">random</a> = <strong class="reserved">new</strong> <a href="../S/1198.html#L94" title="Defined at 94 in src/java/security/SecureRandom.java.">SecureRandom</a>();
+<a id="L57" name="L57"></a>  57     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> <a href="../S/1927.html#L127" title="Referred from 127 in src/java/nio/file/TempFileHelper.java.">generatePath</a>(<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> suffix, <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> dir) <em class="brace">{</em>
+<a id="L58" name="L58"></a>  58         <strong class="reserved">long</strong> n = <a href="../D/30092.html" title="Multiple defined in 3 places.">random</a>.<a href="../D/28165.html" title="Multiple defined in 11 places.">nextLong</a>();
+<a id="L59" name="L59"></a>  59         n = (n == <a href="../S/1720.html#L54" title="Defined at 54 in src/java/lang/Long.java.">Long</a>.MIN_VALUE) ? 0 : <a href="../S/1768.html#L105" title="Defined at 105 in src/java/lang/Math.java.">Math</a>.<a href="../D/10523.html" title="Multiple defined in 14 places.">abs</a>(n);
+<a id="L60" name="L60"></a>  60         <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a> = dir.<a href="../D/19064.html" title="Multiple defined in 4 places.">getFileSystem</a>().<a href="../D/21434.html" title="Multiple defined in 38 places.">getPath</a>(<a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a> + <a href="../S/1720.html#L54" title="Defined at 54 in src/java/lang/Long.java.">Long</a>.<a href="../D/35493.html" title="Multiple defined in 1021 places.">toString</a>(n) + suffix);
+<a id="L61" name="L61"></a>  61         <em class="comment">// the generated name should be a simple file name</em>
+<a id="L62" name="L62"></a>  62         <strong class="reserved">if</strong> (<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>.<a href="../D/21392.html" title="Multiple defined in 42 places.">getParent</a>() != <strong class="reserved">null</strong>)
+<a id="L63" name="L63"></a>  63             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>("Invalid prefix or suffix");
+<a id="L64" name="L64"></a>  64         <strong class="reserved">return</strong> dir.<a href="../D/31237.html" title="Multiple defined in 38 places.">resolve</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
+<a id="L65" name="L65"></a>  65     <em class="brace">}</em>
+<a id="L66" name="L66"></a>  66 
+<a id="L67" name="L67"></a>  67     <em class="comment">// default file and directory permissions (lazily initialized)</em>
+<a id="L68" name="L68"></a>  68     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">class</strong> <a href="../R/6174.html" title="Multiple referred from 4 places.">PosixPermissions</a> <em class="brace">{</em>
+<a id="L69" name="L69"></a>  69         <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;<a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/1887.html#L38" title="Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.">PosixFilePermission</a>&gt;&gt; filePermissions =
+<a id="L70" name="L70"></a>  70             <a href="../S/1890.html#L38" title="Defined at 38 in src/java/nio/file/attribute/PosixFilePermissions.java.">PosixFilePermissions</a>.<a href="../S/1890.html#L159" title="Defined at 159 in src/java/nio/file/attribute/PosixFilePermissions.java.">asFileAttribute</a>(<a href="../S/1149.html#L80" title="Defined at 80 in src/java/util/EnumSet.java.">EnumSet</a>.<a href="../D/28425.html" title="Multiple defined in 123 places.">of</a>(OWNER_READ, OWNER_WRITE));
+<a id="L71" name="L71"></a>  71         <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;<a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/1887.html#L38" title="Defined at 38 in src/java/nio/file/attribute/PosixFilePermission.java.">PosixFilePermission</a>&gt;&gt; dirPermissions =
+<a id="L72" name="L72"></a>  72             <a href="../S/1890.html#L38" title="Defined at 38 in src/java/nio/file/attribute/PosixFilePermissions.java.">PosixFilePermissions</a>.<a href="../S/1890.html#L159" title="Defined at 159 in src/java/nio/file/attribute/PosixFilePermissions.java.">asFileAttribute</a>(<a href="../S/1149.html#L80" title="Defined at 80 in src/java/util/EnumSet.java.">EnumSet</a>
+<a id="L73" name="L73"></a>  73                 .<a href="../D/28425.html" title="Multiple defined in 123 places.">of</a>(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE));
+<a id="L74" name="L74"></a>  74     <em class="brace">}</em>
+<a id="L75" name="L75"></a>  75 
+<a id="L76" name="L76"></a>  76     <em class="comment">/**</em>
+<a id="L77" name="L77"></a>  77 <em class="comment">     * Creates a file or directory in in the given given directory (or in the</em>
+<a id="L78" name="L78"></a>  78 <em class="comment">     * temporary directory if dir is {@code null}).</em>
+<a id="L79" name="L79"></a>  79 <em class="comment">     */</em>
+<a id="L80" name="L80"></a>  80     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> <a href="../R/12190.html" title="Multiple referred from 234 places.">create</a>(<a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> dir,
+<a id="L81" name="L81"></a>  81                                <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>,
+<a id="L82" name="L82"></a>  82                                <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> suffix,
+<a id="L83" name="L83"></a>  83                                <strong class="reserved">boolean</strong> <a href="../D/13805.html" title="Multiple defined in 4 places.">createDirectory</a>,
+<a id="L84" name="L84"></a>  84                                <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;?&gt;[] attrs)
+<a id="L85" name="L85"></a>  85         <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>
+<a id="L86" name="L86"></a>  86     <em class="brace">{</em>
+<a id="L87" name="L87"></a>  87         <strong class="reserved">if</strong> (<a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a> == <strong class="reserved">null</strong>)
+<a id="L88" name="L88"></a>  88             <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a> = "";
+<a id="L89" name="L89"></a>  89         <strong class="reserved">if</strong> (suffix == <strong class="reserved">null</strong>)
+<a id="L90" name="L90"></a>  90             suffix = (<a href="../D/13805.html" title="Multiple defined in 4 places.">createDirectory</a>) ? "" : ".tmp";
+<a id="L91" name="L91"></a>  91         <strong class="reserved">if</strong> (dir == <strong class="reserved">null</strong>)
+<a id="L92" name="L92"></a>  92             dir = tmpdir;
+<a id="L93" name="L93"></a>  93 
+<a id="L94" name="L94"></a>  94         <em class="comment">// in POSIX environments use default file and directory permissions</em>
+<a id="L95" name="L95"></a>  95         <em class="comment">// if initial permissions not given by caller.</em>
+<a id="L96" name="L96"></a>  96         <strong class="reserved">if</strong> (isPosix &amp;&amp; (dir.<a href="../D/19064.html" title="Multiple defined in 4 places.">getFileSystem</a>() == <a href="../S/1925.html#L84" title="Defined at 84 in src/java/nio/file/FileSystems.java.">FileSystems</a>.<a href="../D/18273.html" title="Multiple defined in 13 places.">getDefault</a>())) <em class="brace">{</em>
+<a id="L97" name="L97"></a>  97             <strong class="reserved">if</strong> (attrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> == 0) <em class="brace">{</em>
+<a id="L98" name="L98"></a>  98                 <em class="comment">// no attributes so use default permissions</em>
+<a id="L99" name="L99"></a>  99                 attrs = <strong class="reserved">new</strong> <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;?&gt;[1];
+<a id="L100" name="L100"></a> 100                 attrs[0] = (<a href="../D/13805.html" title="Multiple defined in 4 places.">createDirectory</a>) ? <a href="../S/1927.html#L68" title="Defined at 68 in src/java/nio/file/TempFileHelper.java.">PosixPermissions</a>.dirPermissions :
+<a id="L101" name="L101"></a> 101                                                <a href="../S/1927.html#L68" title="Defined at 68 in src/java/nio/file/TempFileHelper.java.">PosixPermissions</a>.filePermissions;
+<a id="L102" name="L102"></a> 102             <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L103" name="L103"></a> 103                 <em class="comment">// check if posix permissions given; if not use default</em>
+<a id="L104" name="L104"></a> 104                 <strong class="reserved">boolean</strong> hasPermissions = <strong class="reserved">false</strong>;
+<a id="L105" name="L105"></a> 105                 <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i=0; i&lt;attrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>; i++) <em class="brace">{</em>
+<a id="L106" name="L106"></a> 106                     <strong class="reserved">if</strong> (attrs[i].<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>().<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>("posix:permissions")) <em class="brace">{</em>
+<a id="L107" name="L107"></a> 107                         hasPermissions = <strong class="reserved">true</strong>;
+<a id="L108" name="L108"></a> 108                         <strong class="reserved">break</strong>;
+<a id="L109" name="L109"></a> 109                     <em class="brace">}</em>
+<a id="L110" name="L110"></a> 110                 <em class="brace">}</em>
+<a id="L111" name="L111"></a> 111                 <strong class="reserved">if</strong> (!hasPermissions) <em class="brace">{</em>
+<a id="L112" name="L112"></a> 112                     <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;?&gt;[] <a href="../D/13475.html" title="Multiple defined in 92 places.">copy</a> = <strong class="reserved">new</strong> <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;?&gt;[attrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>+1];
+<a id="L113" name="L113"></a> 113                     <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L493" title="Defined at 493 in src/java/lang/System.java.">arraycopy</a>(attrs, 0, <a href="../D/13475.html" title="Multiple defined in 92 places.">copy</a>, 0, attrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>);
+<a id="L114" name="L114"></a> 114                     attrs = <a href="../D/13475.html" title="Multiple defined in 92 places.">copy</a>;
+<a id="L115" name="L115"></a> 115                     attrs[attrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>-1] = (<a href="../D/13805.html" title="Multiple defined in 4 places.">createDirectory</a>) ?
+<a id="L116" name="L116"></a> 116                         <a href="../S/1927.html#L68" title="Defined at 68 in src/java/nio/file/TempFileHelper.java.">PosixPermissions</a>.dirPermissions :
+<a id="L117" name="L117"></a> 117                         <a href="../S/1927.html#L68" title="Defined at 68 in src/java/nio/file/TempFileHelper.java.">PosixPermissions</a>.filePermissions;
+<a id="L118" name="L118"></a> 118                 <em class="brace">}</em>
+<a id="L119" name="L119"></a> 119             <em class="brace">}</em>
+<a id="L120" name="L120"></a> 120         <em class="brace">}</em>
+<a id="L121" name="L121"></a> 121 
+<a id="L122" name="L122"></a> 122         <em class="comment">// loop generating random names until file or directory can be created</em>
+<a id="L123" name="L123"></a> 123         <a href="../D/7682.html" title="Multiple defined in 2 places.">SecurityManager</a> sm = <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L333" title="Defined at 333 in src/java/lang/System.java.">getSecurityManager</a>();
+<a id="L124" name="L124"></a> 124         <strong class="reserved">for</strong> (;;) <em class="brace">{</em>
+<a id="L125" name="L125"></a> 125             <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> f;
+<a id="L126" name="L126"></a> 126             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L127" name="L127"></a> 127                 f = <a href="../S/1927.html#L57" title="Defined at 57 in src/java/nio/file/TempFileHelper.java.">generatePath</a>(<a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>, suffix, dir);
+<a id="L128" name="L128"></a> 128             <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1909.html#L34" title="Defined at 34 in src/java/nio/file/InvalidPathException.java.">InvalidPathException</a> e) <em class="brace">{</em>
+<a id="L129" name="L129"></a> 129                 <em class="comment">// don't reveal temporary directory location</em>
+<a id="L130" name="L130"></a> 130                 <strong class="reserved">if</strong> (sm != <strong class="reserved">null</strong>)
+<a id="L131" name="L131"></a> 131                     <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>("Invalid prefix or suffix");
+<a id="L132" name="L132"></a> 132                 <strong class="reserved">throw</strong> e;
+<a id="L133" name="L133"></a> 133             <em class="brace">}</em>
+<a id="L134" name="L134"></a> 134             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L135" name="L135"></a> 135                 <strong class="reserved">if</strong> (<a href="../D/13805.html" title="Multiple defined in 4 places.">createDirectory</a>) <em class="brace">{</em>
+<a id="L136" name="L136"></a> 136                     <strong class="reserved">return</strong> <a href="../S/1915.html#L90" title="Defined at 90 in src/java/nio/file/Files.java.">Files</a>.<a href="../D/13805.html" title="Multiple defined in 4 places.">createDirectory</a>(f, attrs);
+<a id="L137" name="L137"></a> 137                 <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L138" name="L138"></a> 138                     <strong class="reserved">return</strong> <a href="../S/1915.html#L90" title="Defined at 90 in src/java/nio/file/Files.java.">Files</a>.<a href="../S/1915.html#L627" title="Defined at 627 in src/java/nio/file/Files.java.">createFile</a>(f, attrs);
+<a id="L139" name="L139"></a> 139                 <em class="brace">}</em>
+<a id="L140" name="L140"></a> 140             <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1580.html#L34" title="Defined at 34 in src/java/lang/SecurityException.java.">SecurityException</a> e) <em class="brace">{</em>
+<a id="L141" name="L141"></a> 141                 <em class="comment">// don't reveal temporary directory location</em>
+<a id="L142" name="L142"></a> 142                 <strong class="reserved">if</strong> (dir == tmpdir &amp;&amp; sm != <strong class="reserved">null</strong>)
+<a id="L143" name="L143"></a> 143                     <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1580.html#L34" title="Defined at 34 in src/java/lang/SecurityException.java.">SecurityException</a>("Unable to create temporary file or directory");
+<a id="L144" name="L144"></a> 144                 <strong class="reserved">throw</strong> e;
+<a id="L145" name="L145"></a> 145             <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1876.html#L35" title="Defined at 35 in src/java/nio/file/FileAlreadyExistsException.java.">FileAlreadyExistsException</a> e) <em class="brace">{</em>
+<a id="L146" name="L146"></a> 146                 <em class="comment">// ignore</em>
+<a id="L147" name="L147"></a> 147             <em class="brace">}</em>
+<a id="L148" name="L148"></a> 148         <em class="brace">}</em>
+<a id="L149" name="L149"></a> 149     <em class="brace">}</em>
+<a id="L150" name="L150"></a> 150 
+<a id="L151" name="L151"></a> 151     <em class="comment">/**</em>
+<a id="L152" name="L152"></a> 152 <em class="comment">     * Creates a temporary file in the given directory, or in in the</em>
+<a id="L153" name="L153"></a> 153 <em class="comment">     * temporary directory if dir is {@code null}.</em>
+<a id="L154" name="L154"></a> 154 <em class="comment">     */</em>
+<a id="L155" name="L155"></a> 155     <strong class="reserved">static</strong> <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> <a href="../R/12722.html" title="Multiple referred from 11 places.">createTempFile</a>(<a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> dir,
+<a id="L156" name="L156"></a> 156                                <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>,
+<a id="L157" name="L157"></a> 157                                <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> suffix,
+<a id="L158" name="L158"></a> 158                                <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;?&gt;[] attrs)
+<a id="L159" name="L159"></a> 159         <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>
+<a id="L160" name="L160"></a> 160     <em class="brace">{</em>
+<a id="L161" name="L161"></a> 161         <strong class="reserved">return</strong> <a href="../D/13587.html" title="Multiple defined in 90 places.">create</a>(dir, <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>, suffix, <strong class="reserved">false</strong>, attrs);
+<a id="L162" name="L162"></a> 162     <em class="brace">}</em>
+<a id="L163" name="L163"></a> 163 
+<a id="L164" name="L164"></a> 164     <em class="comment">/**</em>
+<a id="L165" name="L165"></a> 165 <em class="comment">     * Creates a temporary directory in the given directory, or in in the</em>
+<a id="L166" name="L166"></a> 166 <em class="comment">     * temporary directory if dir is {@code null}.</em>
+<a id="L167" name="L167"></a> 167 <em class="comment">     */</em>
+<a id="L168" name="L168"></a> 168     <strong class="reserved">static</strong> <a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> <a href="../R/12721.html" title="Multiple referred from 2 places.">createTempDirectory</a>(<a href="../S/1949.html#L98" title="Defined at 98 in src/java/nio/file/Path.java.">Path</a> dir,
+<a id="L169" name="L169"></a> 169                                     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>,
+<a id="L170" name="L170"></a> 170                                     <a href="../S/1903.html#L40" title="Defined at 40 in src/java/nio/file/attribute/FileAttribute.java.">FileAttribute</a>&lt;?&gt;[] attrs)
+<a id="L171" name="L171"></a> 171         <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>
+<a id="L172" name="L172"></a> 172     <em class="brace">{</em>
+<a id="L173" name="L173"></a> 173         <strong class="reserved">return</strong> <a href="../D/13587.html" title="Multiple defined in 90 places.">create</a>(dir, <a href="../S/3963.html#L53" title="Defined at 53 in src/javax/xml/bind/annotation/XmlNs.java.">prefix</a>, <strong class="reserved">null</strong>, <strong class="reserved">true</strong>, attrs);
+<a id="L174" name="L174"></a> 174     <em class="brace">}</em>
+<a id="L175" name="L175"></a> 175 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L57'>[^]</a><a href='#L168'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L57">[^]</a><a href="#L168">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

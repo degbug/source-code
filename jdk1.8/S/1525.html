@@ -1,236 +1,234 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/java/time/zone/TzdbZoneRulesProvider.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8033.html'>time</a>/<a href='../files/8037.html'>zone</a>/TzdbZoneRulesProvider.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L121'>[^]</a><a href='#L203'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8033.html">time</a>/<a href="../files/8037.html">zone</a>/TzdbZoneRulesProvider.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L121">[^]</a><a href="#L203">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L121' title='Defined at 121.'>provideZoneIds</a></li>
-<li><a href='#L126' title='Defined at 126.'>provideRules</a></li>
-<li><a href='#L146' title='Defined at 146.'>provideVersions</a></li>
-<li><a href='#L161' title='Defined at 161.'>load</a></li>
-<li><a href='#L203' title='Defined at 203.'>toString</a></li>
+<li><a href="#L121" title="Defined at 121.">provideZoneIds</a></li>
+<li><a href="#L126" title="Defined at 126.">provideRules</a></li>
+<li><a href="#L146" title="Defined at 146.">provideVersions</a></li>
+<li><a href="#L161" title="Defined at 161.">load</a></li>
+<li><a href="#L203" title="Defined at 203.">toString</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <em class='comment'>/*</em>
-<a id='L27' name='L27'></a>  27 <em class='comment'> *</em>
-<a id='L28' name='L28'></a>  28 <em class='comment'> *</em>
-<a id='L29' name='L29'></a>  29 <em class='comment'> *</em>
-<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
-<a id='L31' name='L31'></a>  31 <em class='comment'> *</em>
-<a id='L32' name='L32'></a>  32 <em class='comment'> * Copyright (c) 2009-2012, Stephen Colebourne &amp; Michael Nascimento Santos</em>
-<a id='L33' name='L33'></a>  33 <em class='comment'> *</em>
-<a id='L34' name='L34'></a>  34 <em class='comment'> * All rights reserved.</em>
-<a id='L35' name='L35'></a>  35 <em class='comment'> *</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> * Redistribution and use in source and binary forms, with or without</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> * modification, are permitted provided that the following conditions are met:</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> *</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> *  * Redistributions of source code must retain the above copyright notice,</em>
-<a id='L40' name='L40'></a>  40 <em class='comment'> *    this list of conditions and the following disclaimer.</em>
-<a id='L41' name='L41'></a>  41 <em class='comment'> *</em>
-<a id='L42' name='L42'></a>  42 <em class='comment'> *  * Redistributions in binary form must reproduce the above copyright notice,</em>
-<a id='L43' name='L43'></a>  43 <em class='comment'> *    this list of conditions and the following disclaimer in the documentation</em>
-<a id='L44' name='L44'></a>  44 <em class='comment'> *    and/or other materials provided with the distribution.</em>
-<a id='L45' name='L45'></a>  45 <em class='comment'> *</em>
-<a id='L46' name='L46'></a>  46 <em class='comment'> *  * Neither the name of JSR-310 nor the names of its contributors</em>
-<a id='L47' name='L47'></a>  47 <em class='comment'> *    may be used to endorse or promote products derived from this software</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'> *    without specific prior written permission.</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'> *</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'> * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</em>
-<a id='L52' name='L52'></a>  52 <em class='comment'> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</em>
-<a id='L53' name='L53'></a>  53 <em class='comment'> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR</em>
-<a id='L54' name='L54'></a>  54 <em class='comment'> * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</em>
-<a id='L55' name='L55'></a>  55 <em class='comment'> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'> * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'> * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'> * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'> * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'> * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'> */</em>
-<a id='L62' name='L62'></a>  62 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.<a href='../D/35330.html' title='Multiple defined in 2 places.'>time</a>.<a href='../S/1481.html#L267' title='Defined at 267 in src/java/time/temporal/TemporalQueries.java.'>zone</a>;
-<a id='L63' name='L63'></a>  63 
-<a id='L64' name='L64'></a>  64 <strong class='reserved'>import</strong> java.io.ByteArrayInputStream;
-<a id='L65' name='L65'></a>  65 <strong class='reserved'>import</strong> java.io.BufferedInputStream;
-<a id='L66' name='L66'></a>  66 <strong class='reserved'>import</strong> java.io.DataInputStream;
-<a id='L67' name='L67'></a>  67 <strong class='reserved'>import</strong> java.io.File;
-<a id='L68' name='L68'></a>  68 <strong class='reserved'>import</strong> java.io.FileInputStream;
-<a id='L69' name='L69'></a>  69 <strong class='reserved'>import</strong> java.io.IOException;
-<a id='L70' name='L70'></a>  70 <strong class='reserved'>import</strong> java.io.StreamCorruptedException;
-<a id='L71' name='L71'></a>  71 <strong class='reserved'>import</strong> java.util.Arrays;
-<a id='L72' name='L72'></a>  72 <strong class='reserved'>import</strong> java.util.HashSet;
-<a id='L73' name='L73'></a>  73 <strong class='reserved'>import</strong> java.util.List;
-<a id='L74' name='L74'></a>  74 <strong class='reserved'>import</strong> java.util.Map;
-<a id='L75' name='L75'></a>  75 <strong class='reserved'>import</strong> java.util.NavigableMap;
-<a id='L76' name='L76'></a>  76 <strong class='reserved'>import</strong> java.util.Objects;
-<a id='L77' name='L77'></a>  77 <strong class='reserved'>import</strong> java.util.Set;
-<a id='L78' name='L78'></a>  78 <strong class='reserved'>import</strong> java.util.TreeMap;
-<a id='L79' name='L79'></a>  79 <strong class='reserved'>import</strong> java.util.concurrent.ConcurrentHashMap;
-<a id='L80' name='L80'></a>  80 
-<a id='L81' name='L81'></a>  81 <em class='comment'>/**</em>
-<a id='L82' name='L82'></a>  82 <em class='comment'> * Loads time-zone rules for 'TZDB'.</em>
-<a id='L83' name='L83'></a>  83 <em class='comment'> *</em>
-<a id='L84' name='L84'></a>  84 <em class='comment'> * @since 1.8</em>
-<a id='L85' name='L85'></a>  85 <em class='comment'> */</em>
-<a id='L86' name='L86'></a>  86 <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../S/1519.html#L157' title='Referred from 157 in src/java/time/zone/ZoneRulesProvider.java.'>TzdbZoneRulesProvider</a> <strong class='reserved'>extends</strong> <a href='../S/1519.html#L129' title='Defined at 129 in src/java/time/zone/ZoneRulesProvider.java.'>ZoneRulesProvider</a> <em class='brace'>{</em>
-<a id='L87' name='L87'></a>  87 
-<a id='L88' name='L88'></a>  88     <em class='comment'>/**</em>
-<a id='L89' name='L89'></a>  89 <em class='comment'>     * All the regions that are available.</em>
-<a id='L90' name='L90'></a>  90 <em class='comment'>     */</em>
-<a id='L91' name='L91'></a>  91     <strong class='reserved'>private</strong> <a href='../D/5090.html' title='Multiple defined in 5 places.'>List</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt; regionIds;
-<a id='L92' name='L92'></a>  92     <em class='comment'>/**</em>
-<a id='L93' name='L93'></a>  93 <em class='comment'>     * Version Id of this tzdb rules</em>
-<a id='L94' name='L94'></a>  94 <em class='comment'>     */</em>
-<a id='L95' name='L95'></a>  95     <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> versionId;
-<a id='L96' name='L96'></a>  96     <em class='comment'>/**</em>
-<a id='L97' name='L97'></a>  97 <em class='comment'>     * Region to rules mapping</em>
-<a id='L98' name='L98'></a>  98 <em class='comment'>     */</em>
-<a id='L99' name='L99'></a>  99     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/5398.html' title='Multiple defined in 3 places.'>Map</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>, <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>&gt; regionToRules = <strong class='reserved'>new</strong> <a href='../S/1074.html#L267' title='Defined at 267 in src/java/util/concurrent/ConcurrentHashMap.java.'>ConcurrentHashMap</a>&lt;&gt;();
-<a id='L100' name='L100'></a> 100 
-<a id='L101' name='L101'></a> 101     <em class='comment'>/**</em>
-<a id='L102' name='L102'></a> 102 <em class='comment'>     * Creates an instance.</em>
-<a id='L103' name='L103'></a> 103 <em class='comment'>     * Created by the {@code ServiceLoader}.</em>
-<a id='L104' name='L104'></a> 104 <em class='comment'>     *</em>
-<a id='L105' name='L105'></a> 105 <em class='comment'>     * @throws ZoneRulesException if unable to load</em>
-<a id='L106' name='L106'></a> 106 <em class='comment'>     */</em>
-<a id='L107' name='L107'></a> 107     <strong class='reserved'>public</strong> TzdbZoneRulesProvider() <em class='brace'>{</em>
-<a id='L108' name='L108'></a> 108         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L109' name='L109'></a> 109             <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> libDir = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../D/21720.html' title='Multiple defined in 77 places.'>getProperty</a>("java.home") + <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a>.<a href='../D/31774.html' title='Multiple defined in 7 places.'>separator</a> + "lib";
-<a id='L110' name='L110'></a> 110             <strong class='reserved'>try</strong> (<a href='../D/2185.html' title='Multiple defined in 2 places.'>DataInputStream</a> dis = <strong class='reserved'>new</strong> <a href='../D/2185.html' title='Multiple defined in 2 places.'>DataInputStream</a>(
-<a id='L111' name='L111'></a> 111                      <strong class='reserved'>new</strong> <a href='../S/1411.html#L51' title='Defined at 51 in src/java/io/BufferedInputStream.java.'>BufferedInputStream</a>(<strong class='reserved'>new</strong> <a href='../S/1386.html#L49' title='Defined at 49 in src/java/io/FileInputStream.java.'>FileInputStream</a>(
-<a id='L112' name='L112'></a> 112                          <strong class='reserved'>new</strong> <a href='../S/1433.html#L149' title='Defined at 149 in src/java/io/File.java.'>File</a>(libDir, "tzdb.dat"))))) <em class='brace'>{</em>
-<a id='L113' name='L113'></a> 113                 <a href='../D/26888.html' title='Multiple defined in 27 places.'>load</a>(dis);
-<a id='L114' name='L114'></a> 114             <em class='brace'>}</em>
-<a id='L115' name='L115'></a> 115         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
-<a id='L116' name='L116'></a> 116             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1523.html#L72' title='Defined at 72 in src/java/time/zone/ZoneRulesException.java.'>ZoneRulesException</a>("Unable to load TZDB time-zone rules", <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
-<a id='L117' name='L117'></a> 117         <em class='brace'>}</em>
-<a id='L118' name='L118'></a> 118     <em class='brace'>}</em>
-<a id='L119' name='L119'></a> 119 
-<a id='L120' name='L120'></a> 120     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L121' name='L121'></a> 121     <strong class='reserved'>protected</strong> <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt; <a href='../S/1519.html#L306' title='Referred from 306 in src/java/time/zone/ZoneRulesProvider.java.'>provideZoneIds</a>() <em class='brace'>{</em>
-<a id='L122' name='L122'></a> 122         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1136.html#L89' title='Defined at 89 in src/java/util/HashSet.java.'>HashSet</a>&lt;&gt;(regionIds);
-<a id='L123' name='L123'></a> 123     <em class='brace'>}</em>
-<a id='L124' name='L124'></a> 124 
-<a id='L125' name='L125'></a> 125     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L126' name='L126'></a> 126     <strong class='reserved'>protected</strong> <a href='../S/1522.html#L110' title='Defined at 110 in src/java/time/zone/ZoneRules.java.'>ZoneRules</a> <a href='../S/1519.html#L227' title='Referred from 227 in src/java/time/zone/ZoneRulesProvider.java.'>provideRules</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a>, <strong class='reserved'>boolean</strong> forCaching) <em class='brace'>{</em>
-<a id='L127' name='L127'></a> 127         <em class='comment'>// forCaching flag is ignored because this is not a dynamic provider</em>
-<a id='L128' name='L128'></a> 128         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> obj = regionToRules.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a>);
-<a id='L129' name='L129'></a> 129         <strong class='reserved'>if</strong> (obj == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L130' name='L130'></a> 130             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1523.html#L72' title='Defined at 72 in src/java/time/zone/ZoneRulesException.java.'>ZoneRulesException</a>("Unknown time-zone ID: " + <a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a>);
-<a id='L131' name='L131'></a> 131         <em class='brace'>}</em>
-<a id='L132' name='L132'></a> 132         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L133' name='L133'></a> 133             <strong class='reserved'>if</strong> (obj <strong class='reserved'>instanceof</strong> <strong class='reserved'>byte</strong>[]) <em class='brace'>{</em>
-<a id='L134' name='L134'></a> 134                 <strong class='reserved'>byte</strong>[] bytes = (<strong class='reserved'>byte</strong>[]) obj;
-<a id='L135' name='L135'></a> 135                 <a href='../D/2185.html' title='Multiple defined in 2 places.'>DataInputStream</a> dis = <strong class='reserved'>new</strong> <a href='../D/2185.html' title='Multiple defined in 2 places.'>DataInputStream</a>(<strong class='reserved'>new</strong> <a href='../S/1443.html#L44' title='Defined at 44 in src/java/io/ByteArrayInputStream.java.'>ByteArrayInputStream</a>(bytes));
-<a id='L136' name='L136'></a> 136                 obj = <a href='../D/7725.html' title='Multiple defined in 3 places.'>Ser</a>.<a href='../D/30105.html' title='Multiple defined in 434 places.'>read</a>(dis);
-<a id='L137' name='L137'></a> 137                 regionToRules.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a>, obj);
-<a id='L138' name='L138'></a> 138             <em class='brace'>}</em>
-<a id='L139' name='L139'></a> 139             <strong class='reserved'>return</strong> (<a href='../S/1522.html#L110' title='Defined at 110 in src/java/time/zone/ZoneRules.java.'>ZoneRules</a>) obj;
-<a id='L140' name='L140'></a> 140         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
-<a id='L141' name='L141'></a> 141             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1523.html#L72' title='Defined at 72 in src/java/time/zone/ZoneRulesException.java.'>ZoneRulesException</a>("Invalid binary time-zone data: TZDB:" + <a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a> + ", version: " + versionId, <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
-<a id='L142' name='L142'></a> 142         <em class='brace'>}</em>
-<a id='L143' name='L143'></a> 143     <em class='brace'>}</em>
-<a id='L144' name='L144'></a> 144 
-<a id='L145' name='L145'></a> 145     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L146' name='L146'></a> 146     <strong class='reserved'>protected</strong> <a href='../S/862.html#L95' title='Defined at 95 in src/java/util/NavigableMap.java.'>NavigableMap</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>, <a href='../S/1522.html#L110' title='Defined at 110 in src/java/time/zone/ZoneRules.java.'>ZoneRules</a>&gt; <a href='../S/1519.html#L256' title='Referred from 256 in src/java/time/zone/ZoneRulesProvider.java.'>provideVersions</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a>) <em class='brace'>{</em>
-<a id='L147' name='L147'></a> 147         <a href='../S/847.html#L111' title='Defined at 111 in src/java/util/TreeMap.java.'>TreeMap</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>, <a href='../S/1522.html#L110' title='Defined at 110 in src/java/time/zone/ZoneRules.java.'>ZoneRules</a>&gt; <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a> = <strong class='reserved'>new</strong> <a href='../S/847.html#L111' title='Defined at 111 in src/java/util/TreeMap.java.'>TreeMap</a>&lt;&gt;();
-<a id='L148' name='L148'></a> 148         <a href='../S/1522.html#L110' title='Defined at 110 in src/java/time/zone/ZoneRules.java.'>ZoneRules</a> rules = <a href='../D/22187.html' title='Multiple defined in 8 places.'>getRules</a>(<a href='../S/1481.html#L167' title='Defined at 167 in src/java/time/temporal/TemporalQueries.java.'>zoneId</a>, <strong class='reserved'>false</strong>);
-<a id='L149' name='L149'></a> 149         <strong class='reserved'>if</strong> (rules != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L150' name='L150'></a> 150             <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(versionId, rules);
-<a id='L151' name='L151'></a> 151         <em class='brace'>}</em>
-<a id='L152' name='L152'></a> 152         <strong class='reserved'>return</strong> <a href='../D/27441.html' title='Multiple defined in 12 places.'>map</a>;
-<a id='L153' name='L153'></a> 153     <em class='brace'>}</em>
-<a id='L154' name='L154'></a> 154 
-<a id='L155' name='L155'></a> 155     <em class='comment'>/**</em>
-<a id='L156' name='L156'></a> 156 <em class='comment'>     * Loads the rules from a DateInputStream, often in a jar file.</em>
-<a id='L157' name='L157'></a> 157 <em class='comment'>     *</em>
-<a id='L158' name='L158'></a> 158 <em class='comment'>     * @param dis  the DateInputStream to load, not null</em>
-<a id='L159' name='L159'></a> 159 <em class='comment'>     * @throws Exception if an error occurs</em>
-<a id='L160' name='L160'></a> 160 <em class='comment'>     */</em>
-<a id='L161' name='L161'></a> 161     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/22543.html' title='Multiple referred from 196 places.'>load</a>(<a href='../D/2185.html' title='Multiple defined in 2 places.'>DataInputStream</a> dis) <strong class='reserved'>throws</strong> <a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <em class='brace'>{</em>
-<a id='L162' name='L162'></a> 162         <strong class='reserved'>if</strong> (dis.<a href='../D/30138.html' title='Multiple defined in 10 places.'>readByte</a>() != 1) <em class='brace'>{</em>
-<a id='L163' name='L163'></a> 163             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1414.html#L35' title='Defined at 35 in src/java/io/StreamCorruptedException.java.'>StreamCorruptedException</a>("File format not recognised");
-<a id='L164' name='L164'></a> 164         <em class='brace'>}</em>
-<a id='L165' name='L165'></a> 165         <em class='comment'>// group</em>
-<a id='L166' name='L166'></a> 166         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> groupId = dis.<a href='../D/30284.html' title='Multiple defined in 9 places.'>readUTF</a>();
-<a id='L167' name='L167'></a> 167         <strong class='reserved'>if</strong> ("TZDB".<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(groupId) == <strong class='reserved'>false</strong>) <em class='brace'>{</em>
-<a id='L168' name='L168'></a> 168             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1414.html#L35' title='Defined at 35 in src/java/io/StreamCorruptedException.java.'>StreamCorruptedException</a>("File format not recognised");
-<a id='L169' name='L169'></a> 169         <em class='brace'>}</em>
-<a id='L170' name='L170'></a> 170         <em class='comment'>// versions</em>
-<a id='L171' name='L171'></a> 171         <strong class='reserved'>int</strong> versionCount = dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>();
-<a id='L172' name='L172'></a> 172         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; versionCount; i++) <em class='brace'>{</em>
-<a id='L173' name='L173'></a> 173             versionId = dis.<a href='../D/30284.html' title='Multiple defined in 9 places.'>readUTF</a>();
-<a id='L174' name='L174'></a> 174         <em class='brace'>}</em>
-<a id='L175' name='L175'></a> 175         <em class='comment'>// regions</em>
-<a id='L176' name='L176'></a> 176         <strong class='reserved'>int</strong> regionCount = dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>();
-<a id='L177' name='L177'></a> 177         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] regionArray = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[regionCount];
-<a id='L178' name='L178'></a> 178         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; regionCount; i++) <em class='brace'>{</em>
-<a id='L179' name='L179'></a> 179             regionArray[i] = dis.<a href='../D/30284.html' title='Multiple defined in 9 places.'>readUTF</a>();
-<a id='L180' name='L180'></a> 180         <em class='brace'>}</em>
-<a id='L181' name='L181'></a> 181         regionIds = <a href='../S/1150.html#L71' title='Defined at 71 in src/java/util/Arrays.java.'>Arrays</a>.<a href='../D/11544.html' title='Multiple defined in 4 places.'>asList</a>(regionArray);
-<a id='L182' name='L182'></a> 182         <em class='comment'>// rules</em>
-<a id='L183' name='L183'></a> 183         <strong class='reserved'>int</strong> ruleCount = dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>();
-<a id='L184' name='L184'></a> 184         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[] ruleArray = <strong class='reserved'>new</strong> <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[ruleCount];
-<a id='L185' name='L185'></a> 185         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; ruleCount; i++) <em class='brace'>{</em>
-<a id='L186' name='L186'></a> 186             <strong class='reserved'>byte</strong>[] bytes = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>()];
-<a id='L187' name='L187'></a> 187             dis.<a href='../D/30189.html' title='Multiple defined in 33 places.'>readFully</a>(bytes);
-<a id='L188' name='L188'></a> 188             ruleArray[i] = bytes;
-<a id='L189' name='L189'></a> 189         <em class='brace'>}</em>
-<a id='L190' name='L190'></a> 190         <em class='comment'>// link version-region-rules</em>
-<a id='L191' name='L191'></a> 191         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; versionCount; i++) <em class='brace'>{</em>
-<a id='L192' name='L192'></a> 192             <strong class='reserved'>int</strong> versionRegionCount = dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>();
-<a id='L193' name='L193'></a> 193             regionToRules.<a href='../D/12817.html' title='Multiple defined in 199 places.'>clear</a>();
-<a id='L194' name='L194'></a> 194             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> j = 0; j &lt; versionRegionCount; j++) <em class='brace'>{</em>
-<a id='L195' name='L195'></a> 195                 <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../S/985.html#L1034' title='Defined at 1034 in src/java/util/regex/Matcher.java.'>region</a> = regionArray[dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>()];
-<a id='L196' name='L196'></a> 196                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> rule = ruleArray[dis.<a href='../D/30259.html' title='Multiple defined in 10 places.'>readShort</a>() &amp; 0xffff];
-<a id='L197' name='L197'></a> 197                 regionToRules.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../S/985.html#L1034' title='Defined at 1034 in src/java/util/regex/Matcher.java.'>region</a>, rule);
-<a id='L198' name='L198'></a> 198             <em class='brace'>}</em>
-<a id='L199' name='L199'></a> 199         <em class='brace'>}</em>
-<a id='L200' name='L200'></a> 200     <em class='brace'>}</em>
-<a id='L201' name='L201'></a> 201 
-<a id='L202' name='L202'></a> 202     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L203' name='L203'></a> 203     <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/29337.html' title='Multiple referred from 3013 places.'>toString</a>() <em class='brace'>{</em>
-<a id='L204' name='L204'></a> 204         <strong class='reserved'>return</strong> "TZDB[" + versionId + "]";
-<a id='L205' name='L205'></a> 205     <em class='brace'>}</em>
-<a id='L206' name='L206'></a> 206 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <em class="comment">/*</em>
+<a id="L27" name="L27"></a>  27 <em class="comment"> *</em>
+<a id="L28" name="L28"></a>  28 <em class="comment"> *</em>
+<a id="L29" name="L29"></a>  29 <em class="comment"> *</em>
+<a id="L30" name="L30"></a>  30 <em class="comment"> *</em>
+<a id="L31" name="L31"></a>  31 <em class="comment"> *</em>
+<a id="L32" name="L32"></a>  32 <em class="comment"> * Copyright (c) 2009-2012, Stephen Colebourne &amp; Michael Nascimento Santos</em>
+<a id="L33" name="L33"></a>  33 <em class="comment"> *</em>
+<a id="L34" name="L34"></a>  34 <em class="comment"> * All rights reserved.</em>
+<a id="L35" name="L35"></a>  35 <em class="comment"> *</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> * Redistribution and use in source and binary forms, with or without</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> * modification, are permitted provided that the following conditions are met:</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> *</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> *  * Redistributions of source code must retain the above copyright notice,</em>
+<a id="L40" name="L40"></a>  40 <em class="comment"> *    this list of conditions and the following disclaimer.</em>
+<a id="L41" name="L41"></a>  41 <em class="comment"> *</em>
+<a id="L42" name="L42"></a>  42 <em class="comment"> *  * Redistributions in binary form must reproduce the above copyright notice,</em>
+<a id="L43" name="L43"></a>  43 <em class="comment"> *    this list of conditions and the following disclaimer in the documentation</em>
+<a id="L44" name="L44"></a>  44 <em class="comment"> *    and/or other materials provided with the distribution.</em>
+<a id="L45" name="L45"></a>  45 <em class="comment"> *</em>
+<a id="L46" name="L46"></a>  46 <em class="comment"> *  * Neither the name of JSR-310 nor the names of its contributors</em>
+<a id="L47" name="L47"></a>  47 <em class="comment"> *    may be used to endorse or promote products derived from this software</em>
+<a id="L48" name="L48"></a>  48 <em class="comment"> *    without specific prior written permission.</em>
+<a id="L49" name="L49"></a>  49 <em class="comment"> *</em>
+<a id="L50" name="L50"></a>  50 <em class="comment"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</em>
+<a id="L51" name="L51"></a>  51 <em class="comment"> * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</em>
+<a id="L52" name="L52"></a>  52 <em class="comment"> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</em>
+<a id="L53" name="L53"></a>  53 <em class="comment"> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR</em>
+<a id="L54" name="L54"></a>  54 <em class="comment"> * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</em>
+<a id="L55" name="L55"></a>  55 <em class="comment"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</em>
+<a id="L56" name="L56"></a>  56 <em class="comment"> * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</em>
+<a id="L57" name="L57"></a>  57 <em class="comment"> * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF</em>
+<a id="L58" name="L58"></a>  58 <em class="comment"> * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING</em>
+<a id="L59" name="L59"></a>  59 <em class="comment"> * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS</em>
+<a id="L60" name="L60"></a>  60 <em class="comment"> * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</em>
+<a id="L61" name="L61"></a>  61 <em class="comment"> */</em>
+<a id="L62" name="L62"></a>  62 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.<a href="../D/35330.html" title="Multiple defined in 2 places.">time</a>.<a href="../S/1481.html#L267" title="Defined at 267 in src/java/time/temporal/TemporalQueries.java.">zone</a>;
+<a id="L63" name="L63"></a>  63 
+<a id="L64" name="L64"></a>  64 <strong class="reserved">import</strong> java.io.ByteArrayInputStream;
+<a id="L65" name="L65"></a>  65 <strong class="reserved">import</strong> java.io.BufferedInputStream;
+<a id="L66" name="L66"></a>  66 <strong class="reserved">import</strong> java.io.DataInputStream;
+<a id="L67" name="L67"></a>  67 <strong class="reserved">import</strong> java.io.File;
+<a id="L68" name="L68"></a>  68 <strong class="reserved">import</strong> java.io.FileInputStream;
+<a id="L69" name="L69"></a>  69 <strong class="reserved">import</strong> java.io.IOException;
+<a id="L70" name="L70"></a>  70 <strong class="reserved">import</strong> java.io.StreamCorruptedException;
+<a id="L71" name="L71"></a>  71 <strong class="reserved">import</strong> java.util.Arrays;
+<a id="L72" name="L72"></a>  72 <strong class="reserved">import</strong> java.util.HashSet;
+<a id="L73" name="L73"></a>  73 <strong class="reserved">import</strong> java.util.List;
+<a id="L74" name="L74"></a>  74 <strong class="reserved">import</strong> java.util.Map;
+<a id="L75" name="L75"></a>  75 <strong class="reserved">import</strong> java.util.NavigableMap;
+<a id="L76" name="L76"></a>  76 <strong class="reserved">import</strong> java.util.Objects;
+<a id="L77" name="L77"></a>  77 <strong class="reserved">import</strong> java.util.Set;
+<a id="L78" name="L78"></a>  78 <strong class="reserved">import</strong> java.util.TreeMap;
+<a id="L79" name="L79"></a>  79 <strong class="reserved">import</strong> java.util.concurrent.ConcurrentHashMap;
+<a id="L80" name="L80"></a>  80 
+<a id="L81" name="L81"></a>  81 <em class="comment">/**</em>
+<a id="L82" name="L82"></a>  82 <em class="comment"> * Loads time-zone rules for 'TZDB'.</em>
+<a id="L83" name="L83"></a>  83 <em class="comment"> *</em>
+<a id="L84" name="L84"></a>  84 <em class="comment"> * @since 1.8</em>
+<a id="L85" name="L85"></a>  85 <em class="comment"> */</em>
+<a id="L86" name="L86"></a>  86 <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../S/1519.html#L157" title="Referred from 157 in src/java/time/zone/ZoneRulesProvider.java.">TzdbZoneRulesProvider</a> <strong class="reserved">extends</strong> <a href="../S/1519.html#L129" title="Defined at 129 in src/java/time/zone/ZoneRulesProvider.java.">ZoneRulesProvider</a> <em class="brace">{</em>
+<a id="L87" name="L87"></a>  87 
+<a id="L88" name="L88"></a>  88     <em class="comment">/**</em>
+<a id="L89" name="L89"></a>  89 <em class="comment">     * All the regions that are available.</em>
+<a id="L90" name="L90"></a>  90 <em class="comment">     */</em>
+<a id="L91" name="L91"></a>  91     <strong class="reserved">private</strong> <a href="../D/5090.html" title="Multiple defined in 5 places.">List</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>&gt; regionIds;
+<a id="L92" name="L92"></a>  92     <em class="comment">/**</em>
+<a id="L93" name="L93"></a>  93 <em class="comment">     * Version Id of this tzdb rules</em>
+<a id="L94" name="L94"></a>  94 <em class="comment">     */</em>
+<a id="L95" name="L95"></a>  95     <strong class="reserved">private</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> versionId;
+<a id="L96" name="L96"></a>  96     <em class="comment">/**</em>
+<a id="L97" name="L97"></a>  97 <em class="comment">     * Region to rules mapping</em>
+<a id="L98" name="L98"></a>  98 <em class="comment">     */</em>
+<a id="L99" name="L99"></a>  99     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/5398.html" title="Multiple defined in 3 places.">Map</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>, <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a>&gt; regionToRules = <strong class="reserved">new</strong> <a href="../S/1074.html#L267" title="Defined at 267 in src/java/util/concurrent/ConcurrentHashMap.java.">ConcurrentHashMap</a>&lt;&gt;();
+<a id="L100" name="L100"></a> 100 
+<a id="L101" name="L101"></a> 101     <em class="comment">/**</em>
+<a id="L102" name="L102"></a> 102 <em class="comment">     * Creates an instance.</em>
+<a id="L103" name="L103"></a> 103 <em class="comment">     * Created by the {@code ServiceLoader}.</em>
+<a id="L104" name="L104"></a> 104 <em class="comment">     *</em>
+<a id="L105" name="L105"></a> 105 <em class="comment">     * @throws ZoneRulesException if unable to load</em>
+<a id="L106" name="L106"></a> 106 <em class="comment">     */</em>
+<a id="L107" name="L107"></a> 107     <strong class="reserved">public</strong> TzdbZoneRulesProvider() <em class="brace">{</em>
+<a id="L108" name="L108"></a> 108         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L109" name="L109"></a> 109             <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> libDir = <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../D/21720.html" title="Multiple defined in 77 places.">getProperty</a>("java.home") + <a href="../S/1433.html#L149" title="Defined at 149 in src/java/io/File.java.">File</a>.<a href="../D/31774.html" title="Multiple defined in 7 places.">separator</a> + "lib";
+<a id="L110" name="L110"></a> 110             <strong class="reserved">try</strong> (<a href="../D/2185.html" title="Multiple defined in 2 places.">DataInputStream</a> dis = <strong class="reserved">new</strong> <a href="../D/2185.html" title="Multiple defined in 2 places.">DataInputStream</a>(
+<a id="L111" name="L111"></a> 111                      <strong class="reserved">new</strong> <a href="../S/1411.html#L51" title="Defined at 51 in src/java/io/BufferedInputStream.java.">BufferedInputStream</a>(<strong class="reserved">new</strong> <a href="../S/1386.html#L49" title="Defined at 49 in src/java/io/FileInputStream.java.">FileInputStream</a>(
+<a id="L112" name="L112"></a> 112                          <strong class="reserved">new</strong> <a href="../S/1433.html#L149" title="Defined at 149 in src/java/io/File.java.">File</a>(libDir, "tzdb.dat"))))) <em class="brace">{</em>
+<a id="L113" name="L113"></a> 113                 <a href="../D/26888.html" title="Multiple defined in 27 places.">load</a>(dis);
+<a id="L114" name="L114"></a> 114             <em class="brace">}</em>
+<a id="L115" name="L115"></a> 115         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>) <em class="brace">{</em>
+<a id="L116" name="L116"></a> 116             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1523.html#L72" title="Defined at 72 in src/java/time/zone/ZoneRulesException.java.">ZoneRulesException</a>("Unable to load TZDB time-zone rules", <a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>);
+<a id="L117" name="L117"></a> 117         <em class="brace">}</em>
+<a id="L118" name="L118"></a> 118     <em class="brace">}</em>
+<a id="L119" name="L119"></a> 119 
+<a id="L120" name="L120"></a> 120     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L121" name="L121"></a> 121     <strong class="reserved">protected</strong> <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>&gt; <a href="../S/1519.html#L306" title="Referred from 306 in src/java/time/zone/ZoneRulesProvider.java.">provideZoneIds</a>() <em class="brace">{</em>
+<a id="L122" name="L122"></a> 122         <strong class="reserved">return</strong> <strong class="reserved">new</strong> <a href="../S/1136.html#L89" title="Defined at 89 in src/java/util/HashSet.java.">HashSet</a>&lt;&gt;(regionIds);
+<a id="L123" name="L123"></a> 123     <em class="brace">}</em>
+<a id="L124" name="L124"></a> 124 
+<a id="L125" name="L125"></a> 125     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L126" name="L126"></a> 126     <strong class="reserved">protected</strong> <a href="../S/1522.html#L110" title="Defined at 110 in src/java/time/zone/ZoneRules.java.">ZoneRules</a> <a href="../S/1519.html#L227" title="Referred from 227 in src/java/time/zone/ZoneRulesProvider.java.">provideRules</a>(<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a>, <strong class="reserved">boolean</strong> forCaching) <em class="brace">{</em>
+<a id="L127" name="L127"></a> 127         <em class="comment">// forCaching flag is ignored because this is not a dynamic provider</em>
+<a id="L128" name="L128"></a> 128         <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> obj = regionToRules.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a>);
+<a id="L129" name="L129"></a> 129         <strong class="reserved">if</strong> (obj == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L130" name="L130"></a> 130             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1523.html#L72" title="Defined at 72 in src/java/time/zone/ZoneRulesException.java.">ZoneRulesException</a>("Unknown time-zone ID: " + <a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a>);
+<a id="L131" name="L131"></a> 131         <em class="brace">}</em>
+<a id="L132" name="L132"></a> 132         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L133" name="L133"></a> 133             <strong class="reserved">if</strong> (obj <strong class="reserved">instanceof</strong> <strong class="reserved">byte</strong>[]) <em class="brace">{</em>
+<a id="L134" name="L134"></a> 134                 <strong class="reserved">byte</strong>[] bytes = (<strong class="reserved">byte</strong>[]) obj;
+<a id="L135" name="L135"></a> 135                 <a href="../D/2185.html" title="Multiple defined in 2 places.">DataInputStream</a> dis = <strong class="reserved">new</strong> <a href="../D/2185.html" title="Multiple defined in 2 places.">DataInputStream</a>(<strong class="reserved">new</strong> <a href="../S/1443.html#L44" title="Defined at 44 in src/java/io/ByteArrayInputStream.java.">ByteArrayInputStream</a>(bytes));
+<a id="L136" name="L136"></a> 136                 obj = <a href="../D/7725.html" title="Multiple defined in 3 places.">Ser</a>.<a href="../D/30105.html" title="Multiple defined in 434 places.">read</a>(dis);
+<a id="L137" name="L137"></a> 137                 regionToRules.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(<a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a>, obj);
+<a id="L138" name="L138"></a> 138             <em class="brace">}</em>
+<a id="L139" name="L139"></a> 139             <strong class="reserved">return</strong> (<a href="../S/1522.html#L110" title="Defined at 110 in src/java/time/zone/ZoneRules.java.">ZoneRules</a>) obj;
+<a id="L140" name="L140"></a> 140         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>) <em class="brace">{</em>
+<a id="L141" name="L141"></a> 141             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1523.html#L72" title="Defined at 72 in src/java/time/zone/ZoneRulesException.java.">ZoneRulesException</a>("Invalid binary time-zone data: TZDB:" + <a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a> + ", version: " + versionId, <a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>);
+<a id="L142" name="L142"></a> 142         <em class="brace">}</em>
+<a id="L143" name="L143"></a> 143     <em class="brace">}</em>
+<a id="L144" name="L144"></a> 144 
+<a id="L145" name="L145"></a> 145     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L146" name="L146"></a> 146     <strong class="reserved">protected</strong> <a href="../S/862.html#L95" title="Defined at 95 in src/java/util/NavigableMap.java.">NavigableMap</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>, <a href="../S/1522.html#L110" title="Defined at 110 in src/java/time/zone/ZoneRules.java.">ZoneRules</a>&gt; <a href="../S/1519.html#L256" title="Referred from 256 in src/java/time/zone/ZoneRulesProvider.java.">provideVersions</a>(<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a>) <em class="brace">{</em>
+<a id="L147" name="L147"></a> 147         <a href="../S/847.html#L111" title="Defined at 111 in src/java/util/TreeMap.java.">TreeMap</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>, <a href="../S/1522.html#L110" title="Defined at 110 in src/java/time/zone/ZoneRules.java.">ZoneRules</a>&gt; <a href="../D/27441.html" title="Multiple defined in 12 places.">map</a> = <strong class="reserved">new</strong> <a href="../S/847.html#L111" title="Defined at 111 in src/java/util/TreeMap.java.">TreeMap</a>&lt;&gt;();
+<a id="L148" name="L148"></a> 148         <a href="../S/1522.html#L110" title="Defined at 110 in src/java/time/zone/ZoneRules.java.">ZoneRules</a> rules = <a href="../D/22187.html" title="Multiple defined in 8 places.">getRules</a>(<a href="../S/1481.html#L167" title="Defined at 167 in src/java/time/temporal/TemporalQueries.java.">zoneId</a>, <strong class="reserved">false</strong>);
+<a id="L149" name="L149"></a> 149         <strong class="reserved">if</strong> (rules != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L150" name="L150"></a> 150             <a href="../D/27441.html" title="Multiple defined in 12 places.">map</a>.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(versionId, rules);
+<a id="L151" name="L151"></a> 151         <em class="brace">}</em>
+<a id="L152" name="L152"></a> 152         <strong class="reserved">return</strong> <a href="../D/27441.html" title="Multiple defined in 12 places.">map</a>;
+<a id="L153" name="L153"></a> 153     <em class="brace">}</em>
+<a id="L154" name="L154"></a> 154 
+<a id="L155" name="L155"></a> 155     <em class="comment">/**</em>
+<a id="L156" name="L156"></a> 156 <em class="comment">     * Loads the rules from a DateInputStream, often in a jar file.</em>
+<a id="L157" name="L157"></a> 157 <em class="comment">     *</em>
+<a id="L158" name="L158"></a> 158 <em class="comment">     * @param dis  the DateInputStream to load, not null</em>
+<a id="L159" name="L159"></a> 159 <em class="comment">     * @throws Exception if an error occurs</em>
+<a id="L160" name="L160"></a> 160 <em class="comment">     */</em>
+<a id="L161" name="L161"></a> 161     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../R/22543.html" title="Multiple referred from 196 places.">load</a>(<a href="../D/2185.html" title="Multiple defined in 2 places.">DataInputStream</a> dis) <strong class="reserved">throws</strong> <a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <em class="brace">{</em>
+<a id="L162" name="L162"></a> 162         <strong class="reserved">if</strong> (dis.<a href="../D/30138.html" title="Multiple defined in 10 places.">readByte</a>() != 1) <em class="brace">{</em>
+<a id="L163" name="L163"></a> 163             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1414.html#L35" title="Defined at 35 in src/java/io/StreamCorruptedException.java.">StreamCorruptedException</a>("File format not recognised");
+<a id="L164" name="L164"></a> 164         <em class="brace">}</em>
+<a id="L165" name="L165"></a> 165         <em class="comment">// group</em>
+<a id="L166" name="L166"></a> 166         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> groupId = dis.<a href="../D/30284.html" title="Multiple defined in 9 places.">readUTF</a>();
+<a id="L167" name="L167"></a> 167         <strong class="reserved">if</strong> ("TZDB".<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(groupId) == <strong class="reserved">false</strong>) <em class="brace">{</em>
+<a id="L168" name="L168"></a> 168             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1414.html#L35" title="Defined at 35 in src/java/io/StreamCorruptedException.java.">StreamCorruptedException</a>("File format not recognised");
+<a id="L169" name="L169"></a> 169         <em class="brace">}</em>
+<a id="L170" name="L170"></a> 170         <em class="comment">// versions</em>
+<a id="L171" name="L171"></a> 171         <strong class="reserved">int</strong> versionCount = dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>();
+<a id="L172" name="L172"></a> 172         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; versionCount; i++) <em class="brace">{</em>
+<a id="L173" name="L173"></a> 173             versionId = dis.<a href="../D/30284.html" title="Multiple defined in 9 places.">readUTF</a>();
+<a id="L174" name="L174"></a> 174         <em class="brace">}</em>
+<a id="L175" name="L175"></a> 175         <em class="comment">// regions</em>
+<a id="L176" name="L176"></a> 176         <strong class="reserved">int</strong> regionCount = dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>();
+<a id="L177" name="L177"></a> 177         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] regionArray = <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[regionCount];
+<a id="L178" name="L178"></a> 178         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; regionCount; i++) <em class="brace">{</em>
+<a id="L179" name="L179"></a> 179             regionArray[i] = dis.<a href="../D/30284.html" title="Multiple defined in 9 places.">readUTF</a>();
+<a id="L180" name="L180"></a> 180         <em class="brace">}</em>
+<a id="L181" name="L181"></a> 181         regionIds = <a href="../S/1150.html#L71" title="Defined at 71 in src/java/util/Arrays.java.">Arrays</a>.<a href="../D/11544.html" title="Multiple defined in 4 places.">asList</a>(regionArray);
+<a id="L182" name="L182"></a> 182         <em class="comment">// rules</em>
+<a id="L183" name="L183"></a> 183         <strong class="reserved">int</strong> ruleCount = dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>();
+<a id="L184" name="L184"></a> 184         <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a>[] ruleArray = <strong class="reserved">new</strong> <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a>[ruleCount];
+<a id="L185" name="L185"></a> 185         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; ruleCount; i++) <em class="brace">{</em>
+<a id="L186" name="L186"></a> 186             <strong class="reserved">byte</strong>[] bytes = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>()];
+<a id="L187" name="L187"></a> 187             dis.<a href="../D/30189.html" title="Multiple defined in 33 places.">readFully</a>(bytes);
+<a id="L188" name="L188"></a> 188             ruleArray[i] = bytes;
+<a id="L189" name="L189"></a> 189         <em class="brace">}</em>
+<a id="L190" name="L190"></a> 190         <em class="comment">// link version-region-rules</em>
+<a id="L191" name="L191"></a> 191         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; versionCount; i++) <em class="brace">{</em>
+<a id="L192" name="L192"></a> 192             <strong class="reserved">int</strong> versionRegionCount = dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>();
+<a id="L193" name="L193"></a> 193             regionToRules.<a href="../D/12817.html" title="Multiple defined in 199 places.">clear</a>();
+<a id="L194" name="L194"></a> 194             <strong class="reserved">for</strong> (<strong class="reserved">int</strong> j = 0; j &lt; versionRegionCount; j++) <em class="brace">{</em>
+<a id="L195" name="L195"></a> 195                 <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../S/985.html#L1034" title="Defined at 1034 in src/java/util/regex/Matcher.java.">region</a> = regionArray[dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>()];
+<a id="L196" name="L196"></a> 196                 <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> rule = ruleArray[dis.<a href="../D/30259.html" title="Multiple defined in 10 places.">readShort</a>() &amp; 0xffff];
+<a id="L197" name="L197"></a> 197                 regionToRules.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(<a href="../S/985.html#L1034" title="Defined at 1034 in src/java/util/regex/Matcher.java.">region</a>, rule);
+<a id="L198" name="L198"></a> 198             <em class="brace">}</em>
+<a id="L199" name="L199"></a> 199         <em class="brace">}</em>
+<a id="L200" name="L200"></a> 200     <em class="brace">}</em>
+<a id="L201" name="L201"></a> 201 
+<a id="L202" name="L202"></a> 202     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L203" name="L203"></a> 203     <strong class="reserved">public</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../R/29337.html" title="Multiple referred from 3013 places.">toString</a>() <em class="brace">{</em>
+<a id="L204" name="L204"></a> 204         <strong class="reserved">return</strong> "TZDB[" + versionId + "]";
+<a id="L205" name="L205"></a> 205     <em class="brace">}</em>
+<a id="L206" name="L206"></a> 206 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L121'>[^]</a><a href='#L203'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L121">[^]</a><a href="#L203">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

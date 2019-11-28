@@ -1,322 +1,320 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/javax/sql/rowset/JdbcRowSet.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8103.html'>sql</a>/<a href='../files/8104.html'>rowset</a>/JdbcRowSet.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L150'>[^]</a><a href='#L287'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/8050.html">javax</a>/<a href="../files/8103.html">sql</a>/<a href="../files/8104.html">rowset</a>/JdbcRowSet.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L150">[^]</a><a href="#L287">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L150' title='Defined at 150.'>getShowDeleted</a></li>
-<li><a href='#L172' title='Defined at 172.'>setShowDeleted</a></li>
-<li><a href='#L207' title='Defined at 207.'>getRowSetWarnings</a></li>
-<li><a href='#L224' title='Defined at 224.'>commit</a></li>
-<li><a href='#L245' title='Defined at 245.'>getAutoCommit</a></li>
-<li><a href='#L260' title='Defined at 260.'>setAutoCommit</a></li>
-<li><a href='#L273' title='Defined at 273.'>rollback</a></li>
-<li><a href='#L287' title='Defined at 287.'>rollback</a></li>
+<li><a href="#L150" title="Defined at 150.">getShowDeleted</a></li>
+<li><a href="#L172" title="Defined at 172.">setShowDeleted</a></li>
+<li><a href="#L207" title="Defined at 207.">getRowSetWarnings</a></li>
+<li><a href="#L224" title="Defined at 224.">commit</a></li>
+<li><a href="#L245" title="Defined at 245.">getAutoCommit</a></li>
+<li><a href="#L260" title="Defined at 260.">setAutoCommit</a></li>
+<li><a href="#L273" title="Defined at 273.">rollback</a></li>
+<li><a href="#L287" title="Defined at 287.">rollback</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.sql.rowset;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.sql.*;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> javax.sql.*;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> javax.naming.*;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.io.*;
-<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.math.*;
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.io.*;
-<a id='L34' name='L34'></a>  34 
-<a id='L35' name='L35'></a>  35 <em class='comment'>/**</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> * The standard interface that all standard implementations of</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> * &lt;code&gt;JdbcRowSet&lt;/code&gt; must implement.</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> *</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> * &lt;h3&gt;1.0 Overview&lt;/h3&gt;</em>
-<a id='L40' name='L40'></a>  40 <em class='comment'> * A wrapper around a &lt;code&gt;ResultSet&lt;/code&gt; object that makes it possible</em>
-<a id='L41' name='L41'></a>  41 <em class='comment'> * to use the result set as a JavaBeans&amp;trade;</em>
-<a id='L42' name='L42'></a>  42 <em class='comment'> * component.  Thus, a &lt;code&gt;JdbcRowSet&lt;/code&gt; object can be one of the Beans that</em>
-<a id='L43' name='L43'></a>  43 <em class='comment'> * a tool makes available for composing an application.  Because</em>
-<a id='L44' name='L44'></a>  44 <em class='comment'> * a &lt;code&gt;JdbcRowSet&lt;/code&gt; is a connected rowset, that is, it continually</em>
-<a id='L45' name='L45'></a>  45 <em class='comment'> * maintains its connection to a database using a JDBC technology-enabled</em>
-<a id='L46' name='L46'></a>  46 <em class='comment'> * driver, it also effectively makes the driver a JavaBeans component.</em>
-<a id='L47' name='L47'></a>  47 <em class='comment'> * &lt;P&gt;</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'> * Because it is always connected to its database, an instance of</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;code&gt;JdbcRowSet&lt;/code&gt;</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'> * can simply take calls invoked on it and in turn call them on its</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;code&gt;ResultSet&lt;/code&gt; object. As a consequence, a result set can, for</em>
-<a id='L52' name='L52'></a>  52 <em class='comment'> * example, be a component in a Swing application.</em>
-<a id='L53' name='L53'></a>  53 <em class='comment'> * &lt;P&gt;</em>
-<a id='L54' name='L54'></a>  54 <em class='comment'> * Another advantage of a &lt;code&gt;JdbcRowSet&lt;/code&gt; object is that it can be</em>
-<a id='L55' name='L55'></a>  55 <em class='comment'> * used to make a &lt;code&gt;ResultSet&lt;/code&gt; object scrollable and updatable.  All</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'> * &lt;code&gt;RowSet&lt;/code&gt; objects are by default scrollable and updatable. If</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'> * the driver and database being used do not support scrolling and/or updating</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'> * of result sets, an application can populate a &lt;code&gt;JdbcRowSet&lt;/code&gt; object</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'> * with the data of a &lt;code&gt;ResultSet&lt;/code&gt; object and then operate on the</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'> * &lt;code&gt;JdbcRowSet&lt;/code&gt; object as if it were the &lt;code&gt;ResultSet&lt;/code&gt;</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'> * object.</em>
-<a id='L62' name='L62'></a>  62 <em class='comment'> *</em>
-<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;h3&gt;2.0 Creating a &lt;code&gt;JdbcRowSet&lt;/code&gt; Object&lt;/h3&gt;</em>
-<a id='L64' name='L64'></a>  64 <em class='comment'> * The reference implementation of the &lt;code&gt;JdbcRowSet&lt;/code&gt; interface,</em>
-<a id='L65' name='L65'></a>  65 <em class='comment'> * &lt;code&gt;JdbcRowSetImpl&lt;/code&gt;, provides an implementation of</em>
-<a id='L66' name='L66'></a>  66 <em class='comment'> * the default constructor.  A new instance is initialized with</em>
-<a id='L67' name='L67'></a>  67 <em class='comment'> * default values, which can be set with new values as needed. A</em>
-<a id='L68' name='L68'></a>  68 <em class='comment'> * new instance is not really functional until its &lt;code&gt;execute&lt;/code&gt;</em>
-<a id='L69' name='L69'></a>  69 <em class='comment'> * method is called. In general, this method does the following:</em>
-<a id='L70' name='L70'></a>  70 <em class='comment'> * &lt;UL&gt;</em>
-<a id='L71' name='L71'></a>  71 <em class='comment'> *   &lt;LI&gt; establishes a connection with a database</em>
-<a id='L72' name='L72'></a>  72 <em class='comment'> *   &lt;LI&gt; creates a &lt;code&gt;PreparedStatement&lt;/code&gt; object and sets any of its</em>
-<a id='L73' name='L73'></a>  73 <em class='comment'> *        placeholder parameters</em>
-<a id='L74' name='L74'></a>  74 <em class='comment'> *   &lt;LI&gt; executes the statement to create a &lt;code&gt;ResultSet&lt;/code&gt; object</em>
-<a id='L75' name='L75'></a>  75 <em class='comment'> * &lt;/UL&gt;</em>
-<a id='L76' name='L76'></a>  76 <em class='comment'> * If the &lt;code&gt;execute&lt;/code&gt; method is successful, it will set the</em>
-<a id='L77' name='L77'></a>  77 <em class='comment'> * appropriate private &lt;code&gt;JdbcRowSet&lt;/code&gt; fields with the following:</em>
-<a id='L78' name='L78'></a>  78 <em class='comment'> * &lt;UL&gt;</em>
-<a id='L79' name='L79'></a>  79 <em class='comment'> *  &lt;LI&gt; a &lt;code&gt;Connection&lt;/code&gt; object -- the connection between the rowset</em>
-<a id='L80' name='L80'></a>  80 <em class='comment'> *       and the database</em>
-<a id='L81' name='L81'></a>  81 <em class='comment'> *  &lt;LI&gt; a &lt;code&gt;PreparedStatement&lt;/code&gt; object -- the query that produces</em>
-<a id='L82' name='L82'></a>  82 <em class='comment'> *       the result set</em>
-<a id='L83' name='L83'></a>  83 <em class='comment'> *  &lt;LI&gt; a &lt;code&gt;ResultSet&lt;/code&gt; object -- the result set that the rowset's</em>
-<a id='L84' name='L84'></a>  84 <em class='comment'> *       command produced and that is being made, in effect, a JavaBeans</em>
-<a id='L85' name='L85'></a>  85 <em class='comment'> *       component</em>
-<a id='L86' name='L86'></a>  86 <em class='comment'> * &lt;/UL&gt;</em>
-<a id='L87' name='L87'></a>  87 <em class='comment'> * If these fields have not been set, meaning that the &lt;code&gt;execute&lt;/code&gt;</em>
-<a id='L88' name='L88'></a>  88 <em class='comment'> * method has not executed successfully, no methods other than</em>
-<a id='L89' name='L89'></a>  89 <em class='comment'> * &lt;code&gt;execute&lt;/code&gt; and &lt;code&gt;close&lt;/code&gt; may be called on the</em>
-<a id='L90' name='L90'></a>  90 <em class='comment'> * rowset.  All other public methods will throw an exception.</em>
-<a id='L91' name='L91'></a>  91 <em class='comment'> * &lt;P&gt;</em>
-<a id='L92' name='L92'></a>  92 <em class='comment'> * Before calling the &lt;code&gt;execute&lt;/code&gt; method, however, the command</em>
-<a id='L93' name='L93'></a>  93 <em class='comment'> * and properties needed for establishing a connection must be set.</em>
-<a id='L94' name='L94'></a>  94 <em class='comment'> * The following code fragment creates a &lt;code&gt;JdbcRowSetImpl&lt;/code&gt; object,</em>
-<a id='L95' name='L95'></a>  95 <em class='comment'> * sets the command and connection properties, sets the placeholder parameter,</em>
-<a id='L96' name='L96'></a>  96 <em class='comment'> * and then invokes the method &lt;code&gt;execute&lt;/code&gt;.</em>
-<a id='L97' name='L97'></a>  97 <em class='comment'> * &lt;PRE&gt;</em>
-<a id='L98' name='L98'></a>  98 <em class='comment'> *     JdbcRowSetImpl jrs = new JdbcRowSetImpl();</em>
-<a id='L99' name='L99'></a>  99 <em class='comment'> *     jrs.setCommand("SELECT * FROM TITLES WHERE TYPE = ?");</em>
-<a id='L100' name='L100'></a> 100 <em class='comment'> *     jrs.setURL("jdbc:myDriver:myAttribute");</em>
-<a id='L101' name='L101'></a> 101 <em class='comment'> *     jrs.setUsername("cervantes");</em>
-<a id='L102' name='L102'></a> 102 <em class='comment'> *     jrs.setPassword("sancho");</em>
-<a id='L103' name='L103'></a> 103 <em class='comment'> *     jrs.setString(1, "BIOGRAPHY");</em>
-<a id='L104' name='L104'></a> 104 <em class='comment'> *     jrs.execute();</em>
-<a id='L105' name='L105'></a> 105 <em class='comment'> * &lt;/PRE&gt;</em>
-<a id='L106' name='L106'></a> 106 <em class='comment'> * The variable &lt;code&gt;jrs&lt;/code&gt; now represents an instance of</em>
-<a id='L107' name='L107'></a> 107 <em class='comment'> * &lt;code&gt;JdbcRowSetImpl&lt;/code&gt; that is a thin wrapper around the</em>
-<a id='L108' name='L108'></a> 108 <em class='comment'> * &lt;code&gt;ResultSet&lt;/code&gt; object containing all the rows in the</em>
-<a id='L109' name='L109'></a> 109 <em class='comment'> * table &lt;code&gt;TITLES&lt;/code&gt; where the type of book is biography.</em>
-<a id='L110' name='L110'></a> 110 <em class='comment'> * At this point, operations called on &lt;code&gt;jrs&lt;/code&gt; will</em>
-<a id='L111' name='L111'></a> 111 <em class='comment'> * affect the rows in the result set, which is effectively a JavaBeans</em>
-<a id='L112' name='L112'></a> 112 <em class='comment'> * component.</em>
-<a id='L113' name='L113'></a> 113 <em class='comment'> * &lt;P&gt;</em>
-<a id='L114' name='L114'></a> 114 <em class='comment'> * The implementation of the &lt;code&gt;RowSet&lt;/code&gt; method &lt;code&gt;execute&lt;/code&gt; in the</em>
-<a id='L115' name='L115'></a> 115 <em class='comment'> * &lt;code&gt;JdbcRowSet&lt;/code&gt; reference implementation differs from that in the</em>
-<a id='L116' name='L116'></a> 116 <em class='comment'> * &lt;code&gt;CachedRowSet&lt;/code&gt;&amp;trade;</em>
-<a id='L117' name='L117'></a> 117 <em class='comment'> * reference implementation to account for the different</em>
-<a id='L118' name='L118'></a> 118 <em class='comment'> * requirements of connected and disconnected &lt;code&gt;RowSet&lt;/code&gt; objects.</em>
-<a id='L119' name='L119'></a> 119 <em class='comment'> * &lt;p&gt;</em>
-<a id='L120' name='L120'></a> 120 <em class='comment'> *</em>
-<a id='L121' name='L121'></a> 121 <em class='comment'> * @author Jonathan Bruce</em>
-<a id='L122' name='L122'></a> 122 <em class='comment'> */</em>
-<a id='L123' name='L123'></a> 123 
-<a id='L124' name='L124'></a> 124 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../S/4467.html#L73' title='Referred from 73 in src/javax/sql/rowset/RowSetFactory.java.'>JdbcRowSet</a> <strong class='reserved'>extends</strong> <a href='../S/4481.html#L87' title='Defined at 87 in src/javax/sql/RowSet.java.'>RowSet</a>, <a href='../S/4465.html#L133' title='Defined at 133 in src/javax/sql/rowset/Joinable.java.'>Joinable</a> <em class='brace'>{</em>
-<a id='L125' name='L125'></a> 125 
-<a id='L126' name='L126'></a> 126     <em class='comment'>/**</em>
-<a id='L127' name='L127'></a> 127 <em class='comment'>     * Retrieves a &lt;code&gt;boolean&lt;/code&gt; indicating whether rows marked</em>
-<a id='L128' name='L128'></a> 128 <em class='comment'>     * for deletion appear in the set of current rows. If &lt;code&gt;true&lt;/code&gt; is</em>
-<a id='L129' name='L129'></a> 129 <em class='comment'>     * returned, deleted rows are visible with the current rows. If</em>
-<a id='L130' name='L130'></a> 130 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt; is returned, rows are not visible with the set of</em>
-<a id='L131' name='L131'></a> 131 <em class='comment'>     * current rows. The default value is &lt;code&gt;false&lt;/code&gt;.</em>
-<a id='L132' name='L132'></a> 132 <em class='comment'>     * &lt;P&gt;</em>
-<a id='L133' name='L133'></a> 133 <em class='comment'>     * Standard rowset implementations may choose to restrict this behavior</em>
-<a id='L134' name='L134'></a> 134 <em class='comment'>     * for security considerations or for certain deployment</em>
-<a id='L135' name='L135'></a> 135 <em class='comment'>     * scenarios. The visibility of deleted rows is implementation-defined</em>
-<a id='L136' name='L136'></a> 136 <em class='comment'>     * and does not represent standard behavior.</em>
-<a id='L137' name='L137'></a> 137 <em class='comment'>     * &lt;P&gt;</em>
-<a id='L138' name='L138'></a> 138 <em class='comment'>     * Note: Allowing deleted rows to remain visible complicates the behavior</em>
-<a id='L139' name='L139'></a> 139 <em class='comment'>     * of some standard JDBC &lt;code&gt;RowSet&lt;/code&gt; implementations methods.</em>
-<a id='L140' name='L140'></a> 140 <em class='comment'>     * However, most rowset users can simply ignore this extra detail because</em>
-<a id='L141' name='L141'></a> 141 <em class='comment'>     * only very specialized applications will likely want to take advantage of</em>
-<a id='L142' name='L142'></a> 142 <em class='comment'>     * this feature.</em>
-<a id='L143' name='L143'></a> 143 <em class='comment'>     *</em>
-<a id='L144' name='L144'></a> 144 <em class='comment'>     * @return &lt;code&gt;true&lt;/code&gt; if deleted rows are visible;</em>
-<a id='L145' name='L145'></a> 145 <em class='comment'>     *         &lt;code&gt;false&lt;/code&gt; otherwise</em>
-<a id='L146' name='L146'></a> 146 <em class='comment'>     * @exception SQLException if a rowset implementation is unable to</em>
-<a id='L147' name='L147'></a> 147 <em class='comment'>     *          to determine whether rows marked for deletion remain visible</em>
-<a id='L148' name='L148'></a> 148 <em class='comment'>     * @see #setShowDeleted</em>
-<a id='L149' name='L149'></a> 149 <em class='comment'>     */</em>
-<a id='L150' name='L150'></a> 150     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> getShowDeleted() <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L151' name='L151'></a> 151 
-<a id='L152' name='L152'></a> 152     <em class='comment'>/**</em>
-<a id='L153' name='L153'></a> 153 <em class='comment'>     * Sets the property &lt;code&gt;showDeleted&lt;/code&gt; to the given</em>
-<a id='L154' name='L154'></a> 154 <em class='comment'>     * &lt;code&gt;boolean&lt;/code&gt; value. This property determines whether</em>
-<a id='L155' name='L155'></a> 155 <em class='comment'>     * rows marked for deletion continue to appear in the set of current rows.</em>
-<a id='L156' name='L156'></a> 156 <em class='comment'>     * If the value is set to &lt;code&gt;true&lt;/code&gt;, deleted rows are immediately</em>
-<a id='L157' name='L157'></a> 157 <em class='comment'>     * visible with the set of current rows. If the value is set to</em>
-<a id='L158' name='L158'></a> 158 <em class='comment'>     * &lt;code&gt;false&lt;/code&gt;, the deleted rows are set as invisible with the</em>
-<a id='L159' name='L159'></a> 159 <em class='comment'>     * current set of rows.</em>
-<a id='L160' name='L160'></a> 160 <em class='comment'>     * &lt;P&gt;</em>
-<a id='L161' name='L161'></a> 161 <em class='comment'>     * Standard rowset implementations may choose to restrict this behavior</em>
-<a id='L162' name='L162'></a> 162 <em class='comment'>     * for security considerations or for certain deployment</em>
-<a id='L163' name='L163'></a> 163 <em class='comment'>     * scenarios. This is left as implementation-defined and does not</em>
-<a id='L164' name='L164'></a> 164 <em class='comment'>     * represent standard behavior.</em>
-<a id='L165' name='L165'></a> 165 <em class='comment'>     *</em>
-<a id='L166' name='L166'></a> 166 <em class='comment'>     * @param b &lt;code&gt;true&lt;/code&gt; if deleted rows should be shown;</em>
-<a id='L167' name='L167'></a> 167 <em class='comment'>     *              &lt;code&gt;false&lt;/code&gt; otherwise</em>
-<a id='L168' name='L168'></a> 168 <em class='comment'>     * @exception SQLException if a rowset implementation is unable to</em>
-<a id='L169' name='L169'></a> 169 <em class='comment'>     *          to reset whether deleted rows should be visible</em>
-<a id='L170' name='L170'></a> 170 <em class='comment'>     * @see #getShowDeleted</em>
-<a id='L171' name='L171'></a> 171 <em class='comment'>     */</em>
-<a id='L172' name='L172'></a> 172     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> setShowDeleted(<strong class='reserved'>boolean</strong> b) <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L173' name='L173'></a> 173 
-<a id='L174' name='L174'></a> 174     <em class='comment'>/**</em>
-<a id='L175' name='L175'></a> 175 <em class='comment'>     * Retrieves the first warning reported by calls on this &lt;code&gt;JdbcRowSet&lt;/code&gt;</em>
-<a id='L176' name='L176'></a> 176 <em class='comment'>     * object.</em>
-<a id='L177' name='L177'></a> 177 <em class='comment'>     * If a second warning was reported on this &lt;code&gt;JdbcRowSet&lt;/code&gt; object,</em>
-<a id='L178' name='L178'></a> 178 <em class='comment'>     * it will be chained to the first warning and can be retrieved by</em>
-<a id='L179' name='L179'></a> 179 <em class='comment'>     * calling the method &lt;code&gt;RowSetWarning.getNextWarning&lt;/code&gt; on the</em>
-<a id='L180' name='L180'></a> 180 <em class='comment'>     * first warning. Subsequent warnings on this &lt;code&gt;JdbcRowSet&lt;/code&gt;</em>
-<a id='L181' name='L181'></a> 181 <em class='comment'>     * object will be chained to the &lt;code&gt;RowSetWarning&lt;/code&gt; objects</em>
-<a id='L182' name='L182'></a> 182 <em class='comment'>     * returned by the method &lt;code&gt;RowSetWarning.getNextWarning&lt;/code&gt;.</em>
-<a id='L183' name='L183'></a> 183 <em class='comment'>     *</em>
-<a id='L184' name='L184'></a> 184 <em class='comment'>     * The warning chain is automatically cleared each time a new row is read.</em>
-<a id='L185' name='L185'></a> 185 <em class='comment'>     * This method may not be called on a &lt;code&gt;RowSet&lt;/code&gt; object</em>
-<a id='L186' name='L186'></a> 186 <em class='comment'>     * that has been closed;</em>
-<a id='L187' name='L187'></a> 187 <em class='comment'>     * doing so will cause an &lt;code&gt;SQLException&lt;/code&gt; to be thrown.</em>
-<a id='L188' name='L188'></a> 188 <em class='comment'>     * &lt;P&gt;</em>
-<a id='L189' name='L189'></a> 189 <em class='comment'>     * Because it is always connected to its data source, a &lt;code&gt;JdbcRowSet&lt;/code&gt;</em>
-<a id='L190' name='L190'></a> 190 <em class='comment'>     * object can rely on the presence of active</em>
-<a id='L191' name='L191'></a> 191 <em class='comment'>     * &lt;code&gt;Statement&lt;/code&gt;, &lt;code&gt;Connection&lt;/code&gt;, and &lt;code&gt;ResultSet&lt;/code&gt;</em>
-<a id='L192' name='L192'></a> 192 <em class='comment'>     * instances. This means that  applications can obtain additional</em>
-<a id='L193' name='L193'></a> 193 <em class='comment'>     * &lt;code&gt;SQLWarning&lt;/code&gt;</em>
-<a id='L194' name='L194'></a> 194 <em class='comment'>     * notifications by calling the &lt;code&gt;getNextWarning&lt;/code&gt; methods that</em>
-<a id='L195' name='L195'></a> 195 <em class='comment'>     * they provide.</em>
-<a id='L196' name='L196'></a> 196 <em class='comment'>     * Disconnected &lt;code&gt;Rowset&lt;/code&gt; objects, such as a</em>
-<a id='L197' name='L197'></a> 197 <em class='comment'>     * &lt;code&gt;CachedRowSet&lt;/code&gt; object, do not have access to</em>
-<a id='L198' name='L198'></a> 198 <em class='comment'>     * these &lt;code&gt;getNextWarning&lt;/code&gt; methods.</em>
-<a id='L199' name='L199'></a> 199 <em class='comment'>     *</em>
-<a id='L200' name='L200'></a> 200 <em class='comment'>     * @return the first &lt;code&gt;RowSetWarning&lt;/code&gt;</em>
-<a id='L201' name='L201'></a> 201 <em class='comment'>     * object reported on this &lt;code&gt;JdbcRowSet&lt;/code&gt; object</em>
-<a id='L202' name='L202'></a> 202 <em class='comment'>     * or &lt;code&gt;null&lt;/code&gt; if there are none</em>
-<a id='L203' name='L203'></a> 203 <em class='comment'>     * @throws SQLException if this method is called on a closed</em>
-<a id='L204' name='L204'></a> 204 <em class='comment'>     * &lt;code&gt;JdbcRowSet&lt;/code&gt; object</em>
-<a id='L205' name='L205'></a> 205 <em class='comment'>     * @see RowSetWarning</em>
-<a id='L206' name='L206'></a> 206 <em class='comment'>     */</em>
-<a id='L207' name='L207'></a> 207     <strong class='reserved'>public</strong> <a href='../S/4464.html#L56' title='Defined at 56 in src/javax/sql/rowset/RowSetWarning.java.'>RowSetWarning</a> getRowSetWarnings() <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L208' name='L208'></a> 208 
-<a id='L209' name='L209'></a> 209    <em class='comment'>/**</em>
-<a id='L210' name='L210'></a> 210 <em class='comment'>    * Each &lt;code&gt;JdbcRowSet&lt;/code&gt; contains a &lt;code&gt;Connection&lt;/code&gt; object from</em>
-<a id='L211' name='L211'></a> 211 <em class='comment'>    * the &lt;code&gt;ResultSet&lt;/code&gt; or JDBC properties passed to it's constructors.</em>
-<a id='L212' name='L212'></a> 212 <em class='comment'>    * This method wraps the &lt;code&gt;Connection&lt;/code&gt; commit method to allow flexible</em>
-<a id='L213' name='L213'></a> 213 <em class='comment'>    * auto commit or non auto commit transactional control support.</em>
-<a id='L214' name='L214'></a> 214 <em class='comment'>    * &lt;p&gt;</em>
-<a id='L215' name='L215'></a> 215 <em class='comment'>    * Makes all changes made since the previous commit/rollback permanent</em>
-<a id='L216' name='L216'></a> 216 <em class='comment'>    * and releases any database locks currently held by this Connection</em>
-<a id='L217' name='L217'></a> 217 <em class='comment'>    * object. This method should be used only when auto-commit mode has</em>
-<a id='L218' name='L218'></a> 218 <em class='comment'>    * been disabled.</em>
-<a id='L219' name='L219'></a> 219 <em class='comment'>    *</em>
-<a id='L220' name='L220'></a> 220 <em class='comment'>    * @throws SQLException if a database access error occurs or this</em>
-<a id='L221' name='L221'></a> 221 <em class='comment'>    * Connection object within this &lt;code&gt;JdbcRowSet&lt;/code&gt; is in auto-commit mode</em>
-<a id='L222' name='L222'></a> 222 <em class='comment'>    * @see java.sql.Connection#setAutoCommit</em>
-<a id='L223' name='L223'></a> 223 <em class='comment'>    */</em>
-<a id='L224' name='L224'></a> 224     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/11674.html' title='Multiple referred from 3 places.'>commit</a>() <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L225' name='L225'></a> 225 
-<a id='L226' name='L226'></a> 226 
-<a id='L227' name='L227'></a> 227    <em class='comment'>/**</em>
-<a id='L228' name='L228'></a> 228 <em class='comment'>    * Each &lt;code&gt;JdbcRowSet&lt;/code&gt; contains a &lt;code&gt;Connection&lt;/code&gt; object from</em>
-<a id='L229' name='L229'></a> 229 <em class='comment'>    * the original &lt;code&gt;ResultSet&lt;/code&gt; or JDBC properties passed to it. This</em>
-<a id='L230' name='L230'></a> 230 <em class='comment'>    * method wraps the &lt;code&gt;Connection&lt;/code&gt;'s &lt;code&gt;getAutoCommit&lt;/code&gt; method</em>
-<a id='L231' name='L231'></a> 231 <em class='comment'>    * to allow an application to determine the &lt;code&gt;JdbcRowSet&lt;/code&gt; transaction</em>
-<a id='L232' name='L232'></a> 232 <em class='comment'>    * behavior.</em>
-<a id='L233' name='L233'></a> 233 <em class='comment'>    * &lt;p&gt;</em>
-<a id='L234' name='L234'></a> 234 <em class='comment'>    * Sets this connection's auto-commit mode to the given state. If a</em>
-<a id='L235' name='L235'></a> 235 <em class='comment'>    * connection is in auto-commit mode, then all its SQL statements will</em>
-<a id='L236' name='L236'></a> 236 <em class='comment'>    * be executed and committed as individual transactions. Otherwise, its</em>
-<a id='L237' name='L237'></a> 237 <em class='comment'>    * SQL statements are grouped into transactions that are terminated by a</em>
-<a id='L238' name='L238'></a> 238 <em class='comment'>    * call to either the method commit or the method rollback. By default,</em>
-<a id='L239' name='L239'></a> 239 <em class='comment'>    * new connections are in auto-commit mode.</em>
-<a id='L240' name='L240'></a> 240 <em class='comment'>    *</em>
-<a id='L241' name='L241'></a> 241 <em class='comment'>    * @return {@code true} if auto-commit is enabled; {@code false} otherwise</em>
-<a id='L242' name='L242'></a> 242 <em class='comment'>    * @throws SQLException if a database access error occurs</em>
-<a id='L243' name='L243'></a> 243 <em class='comment'>    * @see java.sql.Connection#getAutoCommit()</em>
-<a id='L244' name='L244'></a> 244 <em class='comment'>    */</em>
-<a id='L245' name='L245'></a> 245     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> getAutoCommit() <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L246' name='L246'></a> 246 
-<a id='L247' name='L247'></a> 247 
-<a id='L248' name='L248'></a> 248    <em class='comment'>/**</em>
-<a id='L249' name='L249'></a> 249 <em class='comment'>    * Each &lt;code&gt;JdbcRowSet&lt;/code&gt; contains a &lt;code&gt;Connection&lt;/code&gt; object from</em>
-<a id='L250' name='L250'></a> 250 <em class='comment'>    * the original &lt;code&gt;ResultSet&lt;/code&gt; or JDBC properties passed to it. This</em>
-<a id='L251' name='L251'></a> 251 <em class='comment'>    * method wraps the &lt;code&gt;Connection&lt;/code&gt;'s &lt;code&gt;getAutoCommit&lt;/code&gt; method</em>
-<a id='L252' name='L252'></a> 252 <em class='comment'>    * to allow an application to set the &lt;code&gt;JdbcRowSet&lt;/code&gt; transaction behavior.</em>
-<a id='L253' name='L253'></a> 253 <em class='comment'>    * &lt;p&gt;</em>
-<a id='L254' name='L254'></a> 254 <em class='comment'>    * Sets the current auto-commit mode for this &lt;code&gt;Connection&lt;/code&gt; object.</em>
-<a id='L255' name='L255'></a> 255 <em class='comment'>    * @param autoCommit {@code true} to enable auto-commit; {@code false} to</em>
-<a id='L256' name='L256'></a> 256 <em class='comment'>    * disable auto-commit</em>
-<a id='L257' name='L257'></a> 257 <em class='comment'>    * @throws SQLException if a database access error occurs</em>
-<a id='L258' name='L258'></a> 258 <em class='comment'>    * @see java.sql.Connection#setAutoCommit(boolean)</em>
-<a id='L259' name='L259'></a> 259 <em class='comment'>    */</em>
-<a id='L260' name='L260'></a> 260     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> setAutoCommit(<strong class='reserved'>boolean</strong> autoCommit) <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L261' name='L261'></a> 261 
-<a id='L262' name='L262'></a> 262     <em class='comment'>/**</em>
-<a id='L263' name='L263'></a> 263 <em class='comment'>     * Each &lt;code&gt;JdbcRowSet&lt;/code&gt; contains a &lt;code&gt;Connection&lt;/code&gt; object from</em>
-<a id='L264' name='L264'></a> 264 <em class='comment'>     * the original &lt;code&gt;ResultSet&lt;/code&gt; or JDBC properties passed to it.</em>
-<a id='L265' name='L265'></a> 265 <em class='comment'>     * Undoes all changes made in the current transaction and releases any</em>
-<a id='L266' name='L266'></a> 266 <em class='comment'>     * database locks currently held by this &lt;code&gt;Connection&lt;/code&gt; object. This method</em>
-<a id='L267' name='L267'></a> 267 <em class='comment'>     * should be used only when auto-commit mode has been disabled.</em>
-<a id='L268' name='L268'></a> 268 <em class='comment'>     *</em>
-<a id='L269' name='L269'></a> 269 <em class='comment'>     * @throws SQLException if a database access error occurs or this &lt;code&gt;Connection&lt;/code&gt;</em>
-<a id='L270' name='L270'></a> 270 <em class='comment'>     * object within this &lt;code&gt;JdbcRowSet&lt;/code&gt; is in auto-commit mode.</em>
-<a id='L271' name='L271'></a> 271 <em class='comment'>     * @see #rollback(Savepoint)</em>
-<a id='L272' name='L272'></a> 272 <em class='comment'>     */</em>
-<a id='L273' name='L273'></a> 273      <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> rollback() <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L274' name='L274'></a> 274 
-<a id='L275' name='L275'></a> 275 
-<a id='L276' name='L276'></a> 276     <em class='comment'>/**</em>
-<a id='L277' name='L277'></a> 277 <em class='comment'>     * Each &lt;code&gt;JdbcRowSet&lt;/code&gt; contains a &lt;code&gt;Connection&lt;/code&gt; object from</em>
-<a id='L278' name='L278'></a> 278 <em class='comment'>     * the original &lt;code&gt;ResultSet&lt;/code&gt; or JDBC properties passed to it.</em>
-<a id='L279' name='L279'></a> 279 <em class='comment'>     * Undoes all changes made in the current transaction to the last set savepoint</em>
-<a id='L280' name='L280'></a> 280 <em class='comment'>     * and releases any database locks currently held by this &lt;code&gt;Connection&lt;/code&gt;</em>
-<a id='L281' name='L281'></a> 281 <em class='comment'>     * object. This method should be used only when auto-commit mode has been disabled.</em>
-<a id='L282' name='L282'></a> 282 <em class='comment'>     * @param s The {@code Savepoint} to rollback to</em>
-<a id='L283' name='L283'></a> 283 <em class='comment'>     * @throws SQLException if a database access error occurs or this &lt;code&gt;Connection&lt;/code&gt;</em>
-<a id='L284' name='L284'></a> 284 <em class='comment'>     * object within this &lt;code&gt;JdbcRowSet&lt;/code&gt; is in auto-commit mode.</em>
-<a id='L285' name='L285'></a> 285 <em class='comment'>     * @see #rollback</em>
-<a id='L286' name='L286'></a> 286 <em class='comment'>     */</em>
-<a id='L287' name='L287'></a> 287     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> rollback(<a href='../S/2569.html#L41' title='Defined at 41 in src/java/sql/Savepoint.java.'>Savepoint</a> s) <strong class='reserved'>throws</strong> <a href='../S/2604.html#L53' title='Defined at 53 in src/java/sql/SQLException.java.'>SQLException</a>;
-<a id='L288' name='L288'></a> 288 
-<a id='L289' name='L289'></a> 289 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> <a href="../D/26637.html" title="Multiple defined in 6 places.">javax</a>.sql.rowset;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.sql.*;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> javax.sql.*;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> javax.naming.*;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> java.io.*;
+<a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> java.math.*;
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.io.*;
+<a id="L34" name="L34"></a>  34 
+<a id="L35" name="L35"></a>  35 <em class="comment">/**</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> * The standard interface that all standard implementations of</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> * <code>JdbcRowSet</code> must implement.</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> *</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> * <h3>1.0 Overview</h3></em>
+<a id="L40" name="L40"></a>  40 <em class="comment"> * A wrapper around a <code>ResultSet</code> object that makes it possible</em>
+<a id="L41" name="L41"></a>  41 <em class="comment"> * to use the result set as a JavaBeans™</em>
+<a id="L42" name="L42"></a>  42 <em class="comment"> * component.  Thus, a <code>JdbcRowSet</code> object can be one of the Beans that</em>
+<a id="L43" name="L43"></a>  43 <em class="comment"> * a tool makes available for composing an application.  Because</em>
+<a id="L44" name="L44"></a>  44 <em class="comment"> * a <code>JdbcRowSet</code> is a connected rowset, that is, it continually</em>
+<a id="L45" name="L45"></a>  45 <em class="comment"> * maintains its connection to a database using a JDBC technology-enabled</em>
+<a id="L46" name="L46"></a>  46 <em class="comment"> * driver, it also effectively makes the driver a JavaBeans component.</em>
+<a id="L47" name="L47"></a>  47 <em class="comment"> * <p></p></em>
+<a id="L48" name="L48"></a>  48 <em class="comment"> * Because it is always connected to its database, an instance of</em>
+<a id="L49" name="L49"></a>  49 <em class="comment"> * <code>JdbcRowSet</code></em>
+<a id="L50" name="L50"></a>  50 <em class="comment"> * can simply take calls invoked on it and in turn call them on its</em>
+<a id="L51" name="L51"></a>  51 <em class="comment"> * <code>ResultSet</code> object. As a consequence, a result set can, for</em>
+<a id="L52" name="L52"></a>  52 <em class="comment"> * example, be a component in a Swing application.</em>
+<a id="L53" name="L53"></a>  53 <em class="comment"> * <p></p></em>
+<a id="L54" name="L54"></a>  54 <em class="comment"> * Another advantage of a <code>JdbcRowSet</code> object is that it can be</em>
+<a id="L55" name="L55"></a>  55 <em class="comment"> * used to make a <code>ResultSet</code> object scrollable and updatable.  All</em>
+<a id="L56" name="L56"></a>  56 <em class="comment"> * <code>RowSet</code> objects are by default scrollable and updatable. If</em>
+<a id="L57" name="L57"></a>  57 <em class="comment"> * the driver and database being used do not support scrolling and/or updating</em>
+<a id="L58" name="L58"></a>  58 <em class="comment"> * of result sets, an application can populate a <code>JdbcRowSet</code> object</em>
+<a id="L59" name="L59"></a>  59 <em class="comment"> * with the data of a <code>ResultSet</code> object and then operate on the</em>
+<a id="L60" name="L60"></a>  60 <em class="comment"> * <code>JdbcRowSet</code> object as if it were the <code>ResultSet</code></em>
+<a id="L61" name="L61"></a>  61 <em class="comment"> * object.</em>
+<a id="L62" name="L62"></a>  62 <em class="comment"> *</em>
+<a id="L63" name="L63"></a>  63 <em class="comment"> * <h3>2.0 Creating a <code>JdbcRowSet</code> Object</h3></em>
+<a id="L64" name="L64"></a>  64 <em class="comment"> * The reference implementation of the <code>JdbcRowSet</code> interface,</em>
+<a id="L65" name="L65"></a>  65 <em class="comment"> * <code>JdbcRowSetImpl</code>, provides an implementation of</em>
+<a id="L66" name="L66"></a>  66 <em class="comment"> * the default constructor.  A new instance is initialized with</em>
+<a id="L67" name="L67"></a>  67 <em class="comment"> * default values, which can be set with new values as needed. A</em>
+<a id="L68" name="L68"></a>  68 <em class="comment"> * new instance is not really functional until its <code>execute</code></em>
+<a id="L69" name="L69"></a>  69 <em class="comment"> * method is called. In general, this method does the following:</em>
+<a id="L70" name="L70"></a>  70 <em class="comment"> * <ul></ul></em>
+<a id="L71" name="L71"></a>  71 <em class="comment"> *   <li> establishes a connection with a database</li></em>
+<a id="L72" name="L72"></a>  72 <em class="comment"> *   <li> creates a <code>PreparedStatement</code> object and sets any of its</li></em>
+<a id="L73" name="L73"></a>  73 <em class="comment"> *        placeholder parameters</em>
+<a id="L74" name="L74"></a>  74 <em class="comment"> *   <li> executes the statement to create a <code>ResultSet</code> object</li></em>
+<a id="L75" name="L75"></a>  75 <em class="comment"> * </em>
+<a id="L76" name="L76"></a>  76 <em class="comment"> * If the <code>execute</code> method is successful, it will set the</em>
+<a id="L77" name="L77"></a>  77 <em class="comment"> * appropriate private <code>JdbcRowSet</code> fields with the following:</em>
+<a id="L78" name="L78"></a>  78 <em class="comment"> * <ul></ul></em>
+<a id="L79" name="L79"></a>  79 <em class="comment"> *  <li> a <code>Connection</code> object -- the connection between the rowset</li></em>
+<a id="L80" name="L80"></a>  80 <em class="comment"> *       and the database</em>
+<a id="L81" name="L81"></a>  81 <em class="comment"> *  <li> a <code>PreparedStatement</code> object -- the query that produces</li></em>
+<a id="L82" name="L82"></a>  82 <em class="comment"> *       the result set</em>
+<a id="L83" name="L83"></a>  83 <em class="comment"> *  <li> a <code>ResultSet</code> object -- the result set that the rowset's</li></em>
+<a id="L84" name="L84"></a>  84 <em class="comment"> *       command produced and that is being made, in effect, a JavaBeans</em>
+<a id="L85" name="L85"></a>  85 <em class="comment"> *       component</em>
+<a id="L86" name="L86"></a>  86 <em class="comment"> * </em>
+<a id="L87" name="L87"></a>  87 <em class="comment"> * If these fields have not been set, meaning that the <code>execute</code></em>
+<a id="L88" name="L88"></a>  88 <em class="comment"> * method has not executed successfully, no methods other than</em>
+<a id="L89" name="L89"></a>  89 <em class="comment"> * <code>execute</code> and <code>close</code> may be called on the</em>
+<a id="L90" name="L90"></a>  90 <em class="comment"> * rowset.  All other public methods will throw an exception.</em>
+<a id="L91" name="L91"></a>  91 <em class="comment"> * <p></p></em>
+<a id="L92" name="L92"></a>  92 <em class="comment"> * Before calling the <code>execute</code> method, however, the command</em>
+<a id="L93" name="L93"></a>  93 <em class="comment"> * and properties needed for establishing a connection must be set.</em>
+<a id="L94" name="L94"></a>  94 <em class="comment"> * The following code fragment creates a <code>JdbcRowSetImpl</code> object,</em>
+<a id="L95" name="L95"></a>  95 <em class="comment"> * sets the command and connection properties, sets the placeholder parameter,</em>
+<a id="L96" name="L96"></a>  96 <em class="comment"> * and then invokes the method <code>execute</code>.</em>
+<a id="L97" name="L97"></a>  97 <em class="comment"> * <pre></pre></em>
+<a id="L98" name="L98"></a>  98 <em class="comment"> *     JdbcRowSetImpl jrs = new JdbcRowSetImpl();</em>
+<a id="L99" name="L99"></a>  99 <em class="comment"> *     jrs.setCommand("SELECT * FROM TITLES WHERE TYPE = ?");</em>
+<a id="L100" name="L100"></a> 100 <em class="comment"> *     jrs.setURL("jdbc:myDriver:myAttribute");</em>
+<a id="L101" name="L101"></a> 101 <em class="comment"> *     jrs.setUsername("cervantes");</em>
+<a id="L102" name="L102"></a> 102 <em class="comment"> *     jrs.setPassword("sancho");</em>
+<a id="L103" name="L103"></a> 103 <em class="comment"> *     jrs.setString(1, "BIOGRAPHY");</em>
+<a id="L104" name="L104"></a> 104 <em class="comment"> *     jrs.execute();</em>
+<a id="L105" name="L105"></a> 105 <em class="comment"> * </em>
+<a id="L106" name="L106"></a> 106 <em class="comment"> * The variable <code>jrs</code> now represents an instance of</em>
+<a id="L107" name="L107"></a> 107 <em class="comment"> * <code>JdbcRowSetImpl</code> that is a thin wrapper around the</em>
+<a id="L108" name="L108"></a> 108 <em class="comment"> * <code>ResultSet</code> object containing all the rows in the</em>
+<a id="L109" name="L109"></a> 109 <em class="comment"> * table <code>TITLES</code> where the type of book is biography.</em>
+<a id="L110" name="L110"></a> 110 <em class="comment"> * At this point, operations called on <code>jrs</code> will</em>
+<a id="L111" name="L111"></a> 111 <em class="comment"> * affect the rows in the result set, which is effectively a JavaBeans</em>
+<a id="L112" name="L112"></a> 112 <em class="comment"> * component.</em>
+<a id="L113" name="L113"></a> 113 <em class="comment"> * <p></p></em>
+<a id="L114" name="L114"></a> 114 <em class="comment"> * The implementation of the <code>RowSet</code> method <code>execute</code> in the</em>
+<a id="L115" name="L115"></a> 115 <em class="comment"> * <code>JdbcRowSet</code> reference implementation differs from that in the</em>
+<a id="L116" name="L116"></a> 116 <em class="comment"> * <code>CachedRowSet</code>™</em>
+<a id="L117" name="L117"></a> 117 <em class="comment"> * reference implementation to account for the different</em>
+<a id="L118" name="L118"></a> 118 <em class="comment"> * requirements of connected and disconnected <code>RowSet</code> objects.</em>
+<a id="L119" name="L119"></a> 119 <em class="comment"> * </em>
+<a id="L120" name="L120"></a> 120 <em class="comment"> *</em>
+<a id="L121" name="L121"></a> 121 <em class="comment"> * @author Jonathan Bruce</em>
+<a id="L122" name="L122"></a> 122 <em class="comment"> */</em>
+<a id="L123" name="L123"></a> 123 
+<a id="L124" name="L124"></a> 124 <strong class="reserved">public</strong> <strong class="reserved">interface</strong> <a href="../S/4467.html#L73" title="Referred from 73 in src/javax/sql/rowset/RowSetFactory.java.">JdbcRowSet</a> <strong class="reserved">extends</strong> <a href="../S/4481.html#L87" title="Defined at 87 in src/javax/sql/RowSet.java.">RowSet</a>, <a href="../S/4465.html#L133" title="Defined at 133 in src/javax/sql/rowset/Joinable.java.">Joinable</a> <em class="brace">{</em>
+<a id="L125" name="L125"></a> 125 
+<a id="L126" name="L126"></a> 126     <em class="comment">/**</em>
+<a id="L127" name="L127"></a> 127 <em class="comment">     * Retrieves a <code>boolean</code> indicating whether rows marked</em>
+<a id="L128" name="L128"></a> 128 <em class="comment">     * for deletion appear in the set of current rows. If <code>true</code> is</em>
+<a id="L129" name="L129"></a> 129 <em class="comment">     * returned, deleted rows are visible with the current rows. If</em>
+<a id="L130" name="L130"></a> 130 <em class="comment">     * <code>false</code> is returned, rows are not visible with the set of</em>
+<a id="L131" name="L131"></a> 131 <em class="comment">     * current rows. The default value is <code>false</code>.</em>
+<a id="L132" name="L132"></a> 132 <em class="comment">     * <p></p></em>
+<a id="L133" name="L133"></a> 133 <em class="comment">     * Standard rowset implementations may choose to restrict this behavior</em>
+<a id="L134" name="L134"></a> 134 <em class="comment">     * for security considerations or for certain deployment</em>
+<a id="L135" name="L135"></a> 135 <em class="comment">     * scenarios. The visibility of deleted rows is implementation-defined</em>
+<a id="L136" name="L136"></a> 136 <em class="comment">     * and does not represent standard behavior.</em>
+<a id="L137" name="L137"></a> 137 <em class="comment">     * <p></p></em>
+<a id="L138" name="L138"></a> 138 <em class="comment">     * Note: Allowing deleted rows to remain visible complicates the behavior</em>
+<a id="L139" name="L139"></a> 139 <em class="comment">     * of some standard JDBC <code>RowSet</code> implementations methods.</em>
+<a id="L140" name="L140"></a> 140 <em class="comment">     * However, most rowset users can simply ignore this extra detail because</em>
+<a id="L141" name="L141"></a> 141 <em class="comment">     * only very specialized applications will likely want to take advantage of</em>
+<a id="L142" name="L142"></a> 142 <em class="comment">     * this feature.</em>
+<a id="L143" name="L143"></a> 143 <em class="comment">     *</em>
+<a id="L144" name="L144"></a> 144 <em class="comment">     * @return <code>true</code> if deleted rows are visible;</em>
+<a id="L145" name="L145"></a> 145 <em class="comment">     *         <code>false</code> otherwise</em>
+<a id="L146" name="L146"></a> 146 <em class="comment">     * @exception SQLException if a rowset implementation is unable to</em>
+<a id="L147" name="L147"></a> 147 <em class="comment">     *          to determine whether rows marked for deletion remain visible</em>
+<a id="L148" name="L148"></a> 148 <em class="comment">     * @see #setShowDeleted</em>
+<a id="L149" name="L149"></a> 149 <em class="comment">     */</em>
+<a id="L150" name="L150"></a> 150     <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> getShowDeleted() <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L151" name="L151"></a> 151 
+<a id="L152" name="L152"></a> 152     <em class="comment">/**</em>
+<a id="L153" name="L153"></a> 153 <em class="comment">     * Sets the property <code>showDeleted</code> to the given</em>
+<a id="L154" name="L154"></a> 154 <em class="comment">     * <code>boolean</code> value. This property determines whether</em>
+<a id="L155" name="L155"></a> 155 <em class="comment">     * rows marked for deletion continue to appear in the set of current rows.</em>
+<a id="L156" name="L156"></a> 156 <em class="comment">     * If the value is set to <code>true</code>, deleted rows are immediately</em>
+<a id="L157" name="L157"></a> 157 <em class="comment">     * visible with the set of current rows. If the value is set to</em>
+<a id="L158" name="L158"></a> 158 <em class="comment">     * <code>false</code>, the deleted rows are set as invisible with the</em>
+<a id="L159" name="L159"></a> 159 <em class="comment">     * current set of rows.</em>
+<a id="L160" name="L160"></a> 160 <em class="comment">     * <p></p></em>
+<a id="L161" name="L161"></a> 161 <em class="comment">     * Standard rowset implementations may choose to restrict this behavior</em>
+<a id="L162" name="L162"></a> 162 <em class="comment">     * for security considerations or for certain deployment</em>
+<a id="L163" name="L163"></a> 163 <em class="comment">     * scenarios. This is left as implementation-defined and does not</em>
+<a id="L164" name="L164"></a> 164 <em class="comment">     * represent standard behavior.</em>
+<a id="L165" name="L165"></a> 165 <em class="comment">     *</em>
+<a id="L166" name="L166"></a> 166 <em class="comment">     * @param b <code>true</code> if deleted rows should be shown;</em>
+<a id="L167" name="L167"></a> 167 <em class="comment">     *              <code>false</code> otherwise</em>
+<a id="L168" name="L168"></a> 168 <em class="comment">     * @exception SQLException if a rowset implementation is unable to</em>
+<a id="L169" name="L169"></a> 169 <em class="comment">     *          to reset whether deleted rows should be visible</em>
+<a id="L170" name="L170"></a> 170 <em class="comment">     * @see #getShowDeleted</em>
+<a id="L171" name="L171"></a> 171 <em class="comment">     */</em>
+<a id="L172" name="L172"></a> 172     <strong class="reserved">public</strong> <strong class="reserved">void</strong> setShowDeleted(<strong class="reserved">boolean</strong> b) <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L173" name="L173"></a> 173 
+<a id="L174" name="L174"></a> 174     <em class="comment">/**</em>
+<a id="L175" name="L175"></a> 175 <em class="comment">     * Retrieves the first warning reported by calls on this <code>JdbcRowSet</code></em>
+<a id="L176" name="L176"></a> 176 <em class="comment">     * object.</em>
+<a id="L177" name="L177"></a> 177 <em class="comment">     * If a second warning was reported on this <code>JdbcRowSet</code> object,</em>
+<a id="L178" name="L178"></a> 178 <em class="comment">     * it will be chained to the first warning and can be retrieved by</em>
+<a id="L179" name="L179"></a> 179 <em class="comment">     * calling the method <code>RowSetWarning.getNextWarning</code> on the</em>
+<a id="L180" name="L180"></a> 180 <em class="comment">     * first warning. Subsequent warnings on this <code>JdbcRowSet</code></em>
+<a id="L181" name="L181"></a> 181 <em class="comment">     * object will be chained to the <code>RowSetWarning</code> objects</em>
+<a id="L182" name="L182"></a> 182 <em class="comment">     * returned by the method <code>RowSetWarning.getNextWarning</code>.</em>
+<a id="L183" name="L183"></a> 183 <em class="comment">     *</em>
+<a id="L184" name="L184"></a> 184 <em class="comment">     * The warning chain is automatically cleared each time a new row is read.</em>
+<a id="L185" name="L185"></a> 185 <em class="comment">     * This method may not be called on a <code>RowSet</code> object</em>
+<a id="L186" name="L186"></a> 186 <em class="comment">     * that has been closed;</em>
+<a id="L187" name="L187"></a> 187 <em class="comment">     * doing so will cause an <code>SQLException</code> to be thrown.</em>
+<a id="L188" name="L188"></a> 188 <em class="comment">     * <p></p></em>
+<a id="L189" name="L189"></a> 189 <em class="comment">     * Because it is always connected to its data source, a <code>JdbcRowSet</code></em>
+<a id="L190" name="L190"></a> 190 <em class="comment">     * object can rely on the presence of active</em>
+<a id="L191" name="L191"></a> 191 <em class="comment">     * <code>Statement</code>, <code>Connection</code>, and <code>ResultSet</code></em>
+<a id="L192" name="L192"></a> 192 <em class="comment">     * instances. This means that  applications can obtain additional</em>
+<a id="L193" name="L193"></a> 193 <em class="comment">     * <code>SQLWarning</code></em>
+<a id="L194" name="L194"></a> 194 <em class="comment">     * notifications by calling the <code>getNextWarning</code> methods that</em>
+<a id="L195" name="L195"></a> 195 <em class="comment">     * they provide.</em>
+<a id="L196" name="L196"></a> 196 <em class="comment">     * Disconnected <code>Rowset</code> objects, such as a</em>
+<a id="L197" name="L197"></a> 197 <em class="comment">     * <code>CachedRowSet</code> object, do not have access to</em>
+<a id="L198" name="L198"></a> 198 <em class="comment">     * these <code>getNextWarning</code> methods.</em>
+<a id="L199" name="L199"></a> 199 <em class="comment">     *</em>
+<a id="L200" name="L200"></a> 200 <em class="comment">     * @return the first <code>RowSetWarning</code></em>
+<a id="L201" name="L201"></a> 201 <em class="comment">     * object reported on this <code>JdbcRowSet</code> object</em>
+<a id="L202" name="L202"></a> 202 <em class="comment">     * or <code>null</code> if there are none</em>
+<a id="L203" name="L203"></a> 203 <em class="comment">     * @throws SQLException if this method is called on a closed</em>
+<a id="L204" name="L204"></a> 204 <em class="comment">     * <code>JdbcRowSet</code> object</em>
+<a id="L205" name="L205"></a> 205 <em class="comment">     * @see RowSetWarning</em>
+<a id="L206" name="L206"></a> 206 <em class="comment">     */</em>
+<a id="L207" name="L207"></a> 207     <strong class="reserved">public</strong> <a href="../S/4464.html#L56" title="Defined at 56 in src/javax/sql/rowset/RowSetWarning.java.">RowSetWarning</a> getRowSetWarnings() <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L208" name="L208"></a> 208 
+<a id="L209" name="L209"></a> 209    <em class="comment">/**</em>
+<a id="L210" name="L210"></a> 210 <em class="comment">    * Each <code>JdbcRowSet</code> contains a <code>Connection</code> object from</em>
+<a id="L211" name="L211"></a> 211 <em class="comment">    * the <code>ResultSet</code> or JDBC properties passed to it's constructors.</em>
+<a id="L212" name="L212"></a> 212 <em class="comment">    * This method wraps the <code>Connection</code> commit method to allow flexible</em>
+<a id="L213" name="L213"></a> 213 <em class="comment">    * auto commit or non auto commit transactional control support.</em>
+<a id="L214" name="L214"></a> 214 <em class="comment">    * </em>
+<a id="L215" name="L215"></a> 215 <em class="comment">    * Makes all changes made since the previous commit/rollback permanent</em>
+<a id="L216" name="L216"></a> 216 <em class="comment">    * and releases any database locks currently held by this Connection</em>
+<a id="L217" name="L217"></a> 217 <em class="comment">    * object. This method should be used only when auto-commit mode has</em>
+<a id="L218" name="L218"></a> 218 <em class="comment">    * been disabled.</em>
+<a id="L219" name="L219"></a> 219 <em class="comment">    *</em>
+<a id="L220" name="L220"></a> 220 <em class="comment">    * @throws SQLException if a database access error occurs or this</em>
+<a id="L221" name="L221"></a> 221 <em class="comment">    * Connection object within this <code>JdbcRowSet</code> is in auto-commit mode</em>
+<a id="L222" name="L222"></a> 222 <em class="comment">    * @see java.sql.Connection#setAutoCommit</em>
+<a id="L223" name="L223"></a> 223 <em class="comment">    */</em>
+<a id="L224" name="L224"></a> 224     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/11674.html" title="Multiple referred from 3 places.">commit</a>() <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L225" name="L225"></a> 225 
+<a id="L226" name="L226"></a> 226 
+<a id="L227" name="L227"></a> 227    <em class="comment">/**</em>
+<a id="L228" name="L228"></a> 228 <em class="comment">    * Each <code>JdbcRowSet</code> contains a <code>Connection</code> object from</em>
+<a id="L229" name="L229"></a> 229 <em class="comment">    * the original <code>ResultSet</code> or JDBC properties passed to it. This</em>
+<a id="L230" name="L230"></a> 230 <em class="comment">    * method wraps the <code>Connection</code>'s <code>getAutoCommit</code> method</em>
+<a id="L231" name="L231"></a> 231 <em class="comment">    * to allow an application to determine the <code>JdbcRowSet</code> transaction</em>
+<a id="L232" name="L232"></a> 232 <em class="comment">    * behavior.</em>
+<a id="L233" name="L233"></a> 233 <em class="comment">    * </em>
+<a id="L234" name="L234"></a> 234 <em class="comment">    * Sets this connection's auto-commit mode to the given state. If a</em>
+<a id="L235" name="L235"></a> 235 <em class="comment">    * connection is in auto-commit mode, then all its SQL statements will</em>
+<a id="L236" name="L236"></a> 236 <em class="comment">    * be executed and committed as individual transactions. Otherwise, its</em>
+<a id="L237" name="L237"></a> 237 <em class="comment">    * SQL statements are grouped into transactions that are terminated by a</em>
+<a id="L238" name="L238"></a> 238 <em class="comment">    * call to either the method commit or the method rollback. By default,</em>
+<a id="L239" name="L239"></a> 239 <em class="comment">    * new connections are in auto-commit mode.</em>
+<a id="L240" name="L240"></a> 240 <em class="comment">    *</em>
+<a id="L241" name="L241"></a> 241 <em class="comment">    * @return {@code true} if auto-commit is enabled; {@code false} otherwise</em>
+<a id="L242" name="L242"></a> 242 <em class="comment">    * @throws SQLException if a database access error occurs</em>
+<a id="L243" name="L243"></a> 243 <em class="comment">    * @see java.sql.Connection#getAutoCommit()</em>
+<a id="L244" name="L244"></a> 244 <em class="comment">    */</em>
+<a id="L245" name="L245"></a> 245     <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> getAutoCommit() <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L246" name="L246"></a> 246 
+<a id="L247" name="L247"></a> 247 
+<a id="L248" name="L248"></a> 248    <em class="comment">/**</em>
+<a id="L249" name="L249"></a> 249 <em class="comment">    * Each <code>JdbcRowSet</code> contains a <code>Connection</code> object from</em>
+<a id="L250" name="L250"></a> 250 <em class="comment">    * the original <code>ResultSet</code> or JDBC properties passed to it. This</em>
+<a id="L251" name="L251"></a> 251 <em class="comment">    * method wraps the <code>Connection</code>'s <code>getAutoCommit</code> method</em>
+<a id="L252" name="L252"></a> 252 <em class="comment">    * to allow an application to set the <code>JdbcRowSet</code> transaction behavior.</em>
+<a id="L253" name="L253"></a> 253 <em class="comment">    * </em>
+<a id="L254" name="L254"></a> 254 <em class="comment">    * Sets the current auto-commit mode for this <code>Connection</code> object.</em>
+<a id="L255" name="L255"></a> 255 <em class="comment">    * @param autoCommit {@code true} to enable auto-commit; {@code false} to</em>
+<a id="L256" name="L256"></a> 256 <em class="comment">    * disable auto-commit</em>
+<a id="L257" name="L257"></a> 257 <em class="comment">    * @throws SQLException if a database access error occurs</em>
+<a id="L258" name="L258"></a> 258 <em class="comment">    * @see java.sql.Connection#setAutoCommit(boolean)</em>
+<a id="L259" name="L259"></a> 259 <em class="comment">    */</em>
+<a id="L260" name="L260"></a> 260     <strong class="reserved">public</strong> <strong class="reserved">void</strong> setAutoCommit(<strong class="reserved">boolean</strong> autoCommit) <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L261" name="L261"></a> 261 
+<a id="L262" name="L262"></a> 262     <em class="comment">/**</em>
+<a id="L263" name="L263"></a> 263 <em class="comment">     * Each <code>JdbcRowSet</code> contains a <code>Connection</code> object from</em>
+<a id="L264" name="L264"></a> 264 <em class="comment">     * the original <code>ResultSet</code> or JDBC properties passed to it.</em>
+<a id="L265" name="L265"></a> 265 <em class="comment">     * Undoes all changes made in the current transaction and releases any</em>
+<a id="L266" name="L266"></a> 266 <em class="comment">     * database locks currently held by this <code>Connection</code> object. This method</em>
+<a id="L267" name="L267"></a> 267 <em class="comment">     * should be used only when auto-commit mode has been disabled.</em>
+<a id="L268" name="L268"></a> 268 <em class="comment">     *</em>
+<a id="L269" name="L269"></a> 269 <em class="comment">     * @throws SQLException if a database access error occurs or this <code>Connection</code></em>
+<a id="L270" name="L270"></a> 270 <em class="comment">     * object within this <code>JdbcRowSet</code> is in auto-commit mode.</em>
+<a id="L271" name="L271"></a> 271 <em class="comment">     * @see #rollback(Savepoint)</em>
+<a id="L272" name="L272"></a> 272 <em class="comment">     */</em>
+<a id="L273" name="L273"></a> 273      <strong class="reserved">public</strong> <strong class="reserved">void</strong> rollback() <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L274" name="L274"></a> 274 
+<a id="L275" name="L275"></a> 275 
+<a id="L276" name="L276"></a> 276     <em class="comment">/**</em>
+<a id="L277" name="L277"></a> 277 <em class="comment">     * Each <code>JdbcRowSet</code> contains a <code>Connection</code> object from</em>
+<a id="L278" name="L278"></a> 278 <em class="comment">     * the original <code>ResultSet</code> or JDBC properties passed to it.</em>
+<a id="L279" name="L279"></a> 279 <em class="comment">     * Undoes all changes made in the current transaction to the last set savepoint</em>
+<a id="L280" name="L280"></a> 280 <em class="comment">     * and releases any database locks currently held by this <code>Connection</code></em>
+<a id="L281" name="L281"></a> 281 <em class="comment">     * object. This method should be used only when auto-commit mode has been disabled.</em>
+<a id="L282" name="L282"></a> 282 <em class="comment">     * @param s The {@code Savepoint} to rollback to</em>
+<a id="L283" name="L283"></a> 283 <em class="comment">     * @throws SQLException if a database access error occurs or this <code>Connection</code></em>
+<a id="L284" name="L284"></a> 284 <em class="comment">     * object within this <code>JdbcRowSet</code> is in auto-commit mode.</em>
+<a id="L285" name="L285"></a> 285 <em class="comment">     * @see #rollback</em>
+<a id="L286" name="L286"></a> 286 <em class="comment">     */</em>
+<a id="L287" name="L287"></a> 287     <strong class="reserved">public</strong> <strong class="reserved">void</strong> rollback(<a href="../S/2569.html#L41" title="Defined at 41 in src/java/sql/Savepoint.java.">Savepoint</a> s) <strong class="reserved">throws</strong> <a href="../S/2604.html#L53" title="Defined at 53 in src/java/sql/SQLException.java.">SQLException</a>;
+<a id="L288" name="L288"></a> 288 
+<a id="L289" name="L289"></a> 289 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L150'>[^]</a><a href='#L287'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L150">[^]</a><a href="#L287">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

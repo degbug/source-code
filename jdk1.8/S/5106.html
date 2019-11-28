@@ -1,386 +1,384 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7892.html'>impl</a>/<a href='../files/7904.html'>xs</a>/SubstitutionGroupHandler.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L56'>[^]</a><a href='#L309'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7861.html">org</a>/<a href="../files/7862.html">apache</a>/<a href="../files/7888.html">xerces</a>/<a href="../files/7889.html">internal</a>/<a href="../files/7892.html">impl</a>/<a href="../files/7904.html">xs</a>/SubstitutionGroupHandler.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L56">[^]</a><a href="#L309">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L56' title='Defined at 56.'>getMatchingElemDecl</a></li>
-<li><a href='#L90' title='Defined at 90.'>substitutionGroupOK</a></li>
-<li><a href='#L115' title='Defined at 115.'>typeDerivationOK</a></li>
-<li><a href='#L163' title='Defined at 163.'>inSubstitutionGroup</a></li>
-<li><a href='#L187' title='Defined at 187.'>reset</a></li>
-<li><a href='#L195' title='Defined at 195.'>addSubstitutionGroup</a></li>
-<li><a href='#L222' title='Defined at 222.'>getSubstitutionGroup</a></li>
-<li><a href='#L257' title='Defined at 257.'>getSubGroupB</a></li>
-<li><a href='#L309' title='Defined at 309.'>getDBMethods</a></li>
+<li><a href="#L56" title="Defined at 56.">getMatchingElemDecl</a></li>
+<li><a href="#L90" title="Defined at 90.">substitutionGroupOK</a></li>
+<li><a href="#L115" title="Defined at 115.">typeDerivationOK</a></li>
+<li><a href="#L163" title="Defined at 163.">inSubstitutionGroup</a></li>
+<li><a href="#L187" title="Defined at 187.">reset</a></li>
+<li><a href="#L195" title="Defined at 195.">addSubstitutionGroup</a></li>
+<li><a href="#L222" title="Defined at 222.">getSubstitutionGroup</a></li>
+<li><a href="#L257" title="Defined at 257.">getSubGroupB</a></li>
+<li><a href="#L309" title="Defined at 309.">getDBMethods</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 2001-2005 The Apache Software Foundation.</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
-<a id='L20' name='L20'></a>  20 
-<a id='L21' name='L21'></a>  21 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.xs;
-<a id='L22' name='L22'></a>  22 
-<a id='L23' name='L23'></a>  23 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xs.XSConstants;
-<a id='L24' name='L24'></a>  24 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xs.XSObjectList;
-<a id='L25' name='L25'></a>  25 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
-<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.xni.QName;
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.util.Hashtable;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.util.Vector;
-<a id='L30' name='L30'></a>  30 
-<a id='L31' name='L31'></a>  31 <em class='comment'>/**</em>
-<a id='L32' name='L32'></a>  32 <em class='comment'> * To store and validate information about substitutionGroup</em>
-<a id='L33' name='L33'></a>  33 <em class='comment'> *</em>
-<a id='L34' name='L34'></a>  34 <em class='comment'> * @xerces.internal</em>
-<a id='L35' name='L35'></a>  35 <em class='comment'> *</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> * @author Sandy Gao, IBM</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> *</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> * @version $Id: SubstitutionGroupHandler.java,v 1.6 2010-11-01 04:39:55 joehw Exp $</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> */</em>
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/7754.html' title='Multiple referred from 40 places.'>SubstitutionGroupHandler</a> <em class='brace'>{</em>
-<a id='L41' name='L41'></a>  41 
-<a id='L42' name='L42'></a>  42     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[] EMPTY_GROUP = <strong class='reserved'>new</strong> <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[0];
-<a id='L43' name='L43'></a>  43 
-<a id='L44' name='L44'></a>  44     <em class='comment'>// grammar resolver</em>
-<a id='L45' name='L45'></a>  45     <a href='../S/5112.html#L36' title='Defined at 36 in src/com/sun/org/apache/xerces/internal/impl/xs/XSGrammarBucket.java.'>XSGrammarBucket</a> fGrammarBucket;
-<a id='L46' name='L46'></a>  46 
-<a id='L47' name='L47'></a>  47     <em class='comment'>/**</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'>     * Default constructor</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'>     */</em>
-<a id='L50' name='L50'></a>  50     <strong class='reserved'>public</strong> SubstitutionGroupHandler(<a href='../S/5112.html#L36' title='Defined at 36 in src/com/sun/org/apache/xerces/internal/impl/xs/XSGrammarBucket.java.'>XSGrammarBucket</a> grammarBucket) <em class='brace'>{</em>
-<a id='L51' name='L51'></a>  51         fGrammarBucket = grammarBucket;
-<a id='L52' name='L52'></a>  52     <em class='brace'>}</em>
-<a id='L53' name='L53'></a>  53 
-<a id='L54' name='L54'></a>  54     <em class='comment'>// 3.9.4 Element Sequence Locally Valid (Particle) 2.3.3</em>
-<a id='L55' name='L55'></a>  55     <em class='comment'>// check whether one element decl matches an element with the given qname</em>
-<a id='L56' name='L56'></a>  56     <strong class='reserved'>public</strong> <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> <a href='../R/17566.html' title='Multiple referred from 5 places.'>getMatchingElemDecl</a>(<a href='../D/6976.html' title='Multiple defined in 5 places.'>QName</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> exemplar) <em class='brace'>{</em>
-<a id='L57' name='L57'></a>  57         <strong class='reserved'>if</strong> (<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.localpart == exemplar.fName &amp;&amp;
-<a id='L58' name='L58'></a>  58             <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.uri == exemplar.fTargetNamespace) <em class='brace'>{</em>
-<a id='L59' name='L59'></a>  59             <strong class='reserved'>return</strong> exemplar;
-<a id='L60' name='L60'></a>  60         <em class='brace'>}</em>
-<a id='L61' name='L61'></a>  61 
-<a id='L62' name='L62'></a>  62         <em class='comment'>// if the exemplar is not a global element decl, then it's not possible</em>
-<a id='L63' name='L63'></a>  63         <em class='comment'>// to be substituted by another element.</em>
-<a id='L64' name='L64'></a>  64         <strong class='reserved'>if</strong> (exemplar.fScope != <a href='../S/5346.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.'>XSConstants</a>.SCOPE_GLOBAL)
-<a id='L65' name='L65'></a>  65             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L66' name='L66'></a>  66 
-<a id='L67' name='L67'></a>  67         <em class='comment'>// if the decl blocks substitution, return false</em>
-<a id='L68' name='L68'></a>  68         <strong class='reserved'>if</strong> ((exemplar.fBlock &amp; <a href='../S/5346.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.'>XSConstants</a>.DERIVATION_SUBSTITUTION) != 0)
-<a id='L69' name='L69'></a>  69             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L70' name='L70'></a>  70 
-<a id='L71' name='L71'></a>  71         <em class='comment'>// get grammar of the element</em>
-<a id='L72' name='L72'></a>  72         <a href='../S/5045.html#L81' title='Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.'>SchemaGrammar</a> sGrammar = fGrammarBucket.<a href='../D/19350.html' title='Multiple defined in 8 places.'>getGrammar</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.uri);
-<a id='L73' name='L73'></a>  73         <strong class='reserved'>if</strong> (sGrammar == <strong class='reserved'>null</strong>)
-<a id='L74' name='L74'></a>  74             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L75' name='L75'></a>  75 
-<a id='L76' name='L76'></a>  76         <em class='comment'>// get the decl for the element</em>
-<a id='L77' name='L77'></a>  77         <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> eDecl = sGrammar.<a href='../D/19322.html' title='Multiple defined in 3 places.'>getGlobalElementDecl</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.localpart);
-<a id='L78' name='L78'></a>  78         <strong class='reserved'>if</strong> (eDecl == <strong class='reserved'>null</strong>)
-<a id='L79' name='L79'></a>  79             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L80' name='L80'></a>  80 
-<a id='L81' name='L81'></a>  81         <em class='comment'>// and check by using substitutionGroup information</em>
-<a id='L82' name='L82'></a>  82         <strong class='reserved'>if</strong> (<a href='../S/5106.html#L90' title='Defined at 90 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>substitutionGroupOK</a>(eDecl, exemplar, exemplar.fBlock))
-<a id='L83' name='L83'></a>  83             <strong class='reserved'>return</strong> eDecl;
-<a id='L84' name='L84'></a>  84 
-<a id='L85' name='L85'></a>  85         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L86' name='L86'></a>  86     <em class='brace'>}</em>
-<a id='L87' name='L87'></a>  87 
-<a id='L88' name='L88'></a>  88     <em class='comment'>// 3.3.6 Substitution Group OK (Transitive)</em>
-<a id='L89' name='L89'></a>  89     <em class='comment'>// check whether element can substitute exemplar</em>
-<a id='L90' name='L90'></a>  90     <strong class='reserved'>protected</strong> <strong class='reserved'>boolean</strong> <a href='../R/29019.html' title='Multiple referred from 2 places.'>substitutionGroupOK</a>(<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> exemplar, <strong class='reserved'>short</strong> blockingConstraint) <em class='brace'>{</em>
-<a id='L91' name='L91'></a>  91         <em class='comment'>// For an element declaration (call it D) to be validly substitutable for another element declaration (call it C) subject to a blocking constraint (a subset of {substitution, extension, restriction}, the value of a {disallowed substitutions}) one of the following must be true:</em>
-<a id='L92' name='L92'></a>  92         <em class='comment'>// 1. D and C are the same element declaration.</em>
-<a id='L93' name='L93'></a>  93         <strong class='reserved'>if</strong> (<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> == exemplar)
-<a id='L94' name='L94'></a>  94             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L95' name='L95'></a>  95 
-<a id='L96' name='L96'></a>  96         <em class='comment'>// 2 All of the following must be true:</em>
-<a id='L97' name='L97'></a>  97         <em class='comment'>// 2.1 The blocking constraint does not contain substitution.</em>
-<a id='L98' name='L98'></a>  98         <strong class='reserved'>if</strong> ((blockingConstraint &amp; <a href='../S/5346.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.'>XSConstants</a>.DERIVATION_SUBSTITUTION) != 0)
-<a id='L99' name='L99'></a>  99             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L100' name='L100'></a> 100 
-<a id='L101' name='L101'></a> 101         <em class='comment'>// 2.2 There is a chain of {substitution group affiliation}s from D to C, that is, either D's {substitution group affiliation} is C, or D's {substitution group affiliation}'s {substitution group affiliation} is C, or . . .</em>
-<a id='L102' name='L102'></a> 102         <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> subGroup = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.fSubGroup;
-<a id='L103' name='L103'></a> 103         <strong class='reserved'>while</strong> (subGroup != <strong class='reserved'>null</strong> &amp;&amp; subGroup != exemplar) <em class='brace'>{</em>
-<a id='L104' name='L104'></a> 104             subGroup = subGroup.fSubGroup;
-<a id='L105' name='L105'></a> 105         <em class='brace'>}</em>
-<a id='L106' name='L106'></a> 106 
-<a id='L107' name='L107'></a> 107         <strong class='reserved'>if</strong> (subGroup == <strong class='reserved'>null</strong>)
-<a id='L108' name='L108'></a> 108             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L109' name='L109'></a> 109 
-<a id='L110' name='L110'></a> 110         <em class='comment'>// 2.3 The set of all {derivation method}s involved in the derivation of D's {type definition} from C's {type definition} does not intersect with the union of the blocking constraint, C's {prohibited substitutions} (if C is complex, otherwise the empty set) and the {prohibited substitutions} (respectively the empty set) of any intermediate {type definition}s in the derivation of D's {type definition} from C's {type definition}.</em>
-<a id='L111' name='L111'></a> 111         <em class='comment'>// prepare the combination of {derivation method} and</em>
-<a id='L112' name='L112'></a> 112         <em class='comment'>// {disallowed substitution}</em>
-<a id='L113' name='L113'></a> 113         <strong class='reserved'>return</strong> <a href='../S/5106.html#L115' title='Defined at 115 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>typeDerivationOK</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.fType, exemplar.fType, blockingConstraint);
-<a id='L114' name='L114'></a> 114     <em class='brace'>}</em>
-<a id='L115' name='L115'></a> 115     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../R/29579.html' title='Multiple referred from 2 places.'>typeDerivationOK</a>(<a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a> derived, <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a> base, <strong class='reserved'>short</strong> blockingConstraint) <em class='brace'>{</em>
-<a id='L116' name='L116'></a> 116 
-<a id='L117' name='L117'></a> 117         <strong class='reserved'>short</strong> devMethod = 0, blockConstraint = blockingConstraint;
-<a id='L118' name='L118'></a> 118 
-<a id='L119' name='L119'></a> 119         <em class='comment'>// "derived" should be derived from "base"</em>
-<a id='L120' name='L120'></a> 120         <em class='comment'>// add derivation methods of derived types to devMethod;</em>
-<a id='L121' name='L121'></a> 121         <em class='comment'>// add block of base types to blockConstraint.</em>
-<a id='L122' name='L122'></a> 122         <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = derived;
-<a id='L123' name='L123'></a> 123         <strong class='reserved'>while</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != base &amp;&amp; <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != <a href='../S/5045.html#L81' title='Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.'>SchemaGrammar</a>.fAnyType) <em class='brace'>{</em>
-<a id='L124' name='L124'></a> 124             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>.<a href='../D/23317.html' title='Multiple defined in 4 places.'>getTypeCategory</a>() == <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a>.COMPLEX_TYPE) <em class='brace'>{</em>
-<a id='L125' name='L125'></a> 125                 devMethod |= ((<a href='../S/5102.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.'>XSComplexTypeDecl</a>)<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>).fDerivedBy;
-<a id='L126' name='L126'></a> 126             <em class='brace'>}</em>
-<a id='L127' name='L127'></a> 127             <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L128' name='L128'></a> 128                 devMethod |= <a href='../S/5346.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.'>XSConstants</a>.DERIVATION_RESTRICTION;
-<a id='L129' name='L129'></a> 129             <em class='brace'>}</em>
-<a id='L130' name='L130'></a> 130             <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>.<a href='../D/17203.html' title='Multiple defined in 7 places.'>getBaseType</a>();
-<a id='L131' name='L131'></a> 131             <em class='comment'>// type == null means the current type is anySimpleType,</em>
-<a id='L132' name='L132'></a> 132             <em class='comment'>// whose base type should be anyType</em>
-<a id='L133' name='L133'></a> 133             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L134' name='L134'></a> 134                 <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = <a href='../S/5045.html#L81' title='Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.'>SchemaGrammar</a>.fAnyType;
-<a id='L135' name='L135'></a> 135             <em class='brace'>}</em>
-<a id='L136' name='L136'></a> 136             <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>.<a href='../D/23317.html' title='Multiple defined in 4 places.'>getTypeCategory</a>() == <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a>.COMPLEX_TYPE) <em class='brace'>{</em>
-<a id='L137' name='L137'></a> 137                 blockConstraint |= ((<a href='../S/5102.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.'>XSComplexTypeDecl</a>)<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>).fBlock;
-<a id='L138' name='L138'></a> 138             <em class='brace'>}</em>
-<a id='L139' name='L139'></a> 139         <em class='brace'>}</em>
-<a id='L140' name='L140'></a> 140         <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> != base) <em class='brace'>{</em>
-<a id='L141' name='L141'></a> 141             <em class='comment'>// If the base is a union, check if "derived" is allowed through any of the member types.</em>
-<a id='L142' name='L142'></a> 142             <strong class='reserved'>if</strong> (base.<a href='../D/23317.html' title='Multiple defined in 4 places.'>getTypeCategory</a>() == <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a>.SIMPLE_TYPE) <em class='brace'>{</em>
-<a id='L143' name='L143'></a> 143                 <a href='../S/5370.html#L31' title='Defined at 31 in src/com/sun/org/apache/xerces/internal/xs/XSSimpleTypeDefinition.java.'>XSSimpleTypeDefinition</a> st = (<a href='../S/5370.html#L31' title='Defined at 31 in src/com/sun/org/apache/xerces/internal/xs/XSSimpleTypeDefinition.java.'>XSSimpleTypeDefinition</a>) base;
-<a id='L144' name='L144'></a> 144                 <strong class='reserved'>if</strong> (st.<a href='../D/23568.html' title='Multiple defined in 3 places.'>getVariety</a>() ==  <a href='../S/5370.html#L31' title='Defined at 31 in src/com/sun/org/apache/xerces/internal/xs/XSSimpleTypeDefinition.java.'>XSSimpleTypeDefinition</a>.VARIETY_UNION) <em class='brace'>{</em>
-<a id='L145' name='L145'></a> 145                     <a href='../S/5373.html#L30' title='Defined at 30 in src/com/sun/org/apache/xerces/internal/xs/XSObjectList.java.'>XSObjectList</a> memberTypes = st.<a href='../D/20529.html' title='Multiple defined in 3 places.'>getMemberTypes</a>();
-<a id='L146' name='L146'></a> 146                     <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> = memberTypes.<a href='../D/20075.html' title='Multiple defined in 116 places.'>getLength</a>();
-<a id='L147' name='L147'></a> 147                     <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; ++i) <em class='brace'>{</em>
-<a id='L148' name='L148'></a> 148                         <strong class='reserved'>if</strong> (<a href='../S/5106.html#L115' title='Defined at 115 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>typeDerivationOK</a>(derived, (<a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a>) memberTypes.<a href='../D/26564.html' title='Multiple defined in 60 places.'>item</a>(i), blockingConstraint)) <em class='brace'>{</em>
-<a id='L149' name='L149'></a> 149                             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L150' name='L150'></a> 150                         <em class='brace'>}</em>
-<a id='L151' name='L151'></a> 151                     <em class='brace'>}</em>
-<a id='L152' name='L152'></a> 152                 <em class='brace'>}</em>
-<a id='L153' name='L153'></a> 153             <em class='brace'>}</em>
-<a id='L154' name='L154'></a> 154             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L155' name='L155'></a> 155         <em class='brace'>}</em>
-<a id='L156' name='L156'></a> 156         <strong class='reserved'>if</strong> ((devMethod &amp; blockConstraint) != 0) <em class='brace'>{</em>
-<a id='L157' name='L157'></a> 157             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L158' name='L158'></a> 158         <em class='brace'>}</em>
-<a id='L159' name='L159'></a> 159         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L160' name='L160'></a> 160     <em class='brace'>}</em>
-<a id='L161' name='L161'></a> 161 
-<a id='L162' name='L162'></a> 162     <em class='comment'>// check whether element is in exemplar's substitution group</em>
-<a id='L163' name='L163'></a> 163     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> inSubstitutionGroup(<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> exemplar) <em class='brace'>{</em>
-<a id='L164' name='L164'></a> 164         <em class='comment'>// [Definition:]  Every element declaration (call this HEAD) in the {element declarations} of a schema defines a substitution group, a subset of those {element declarations}, as follows:</em>
-<a id='L165' name='L165'></a> 165         <em class='comment'>// Define PSG, the potential substitution group for HEAD, as follows:</em>
-<a id='L166' name='L166'></a> 166         <em class='comment'>// 1 The element declaration itself is in PSG;</em>
-<a id='L167' name='L167'></a> 167         <em class='comment'>// 2 PSG is closed with respect to {substitution group affiliation}, that is, if any element declaration in the {element declarations} has a {substitution group affiliation} in PSG, then it is also in PSG itself.</em>
-<a id='L168' name='L168'></a> 168         <em class='comment'>// HEAD's actual substitution group is then the set consisting of each member of PSG such that all of the following must be true:</em>
-<a id='L169' name='L169'></a> 169         <em class='comment'>// 1 Its {abstract} is false.</em>
-<a id='L170' name='L170'></a> 170         <em class='comment'>// 2 It is validly substitutable for HEAD subject to an empty blocking constraint, as defined in Substitution Group OK (Transitive) (3.3.6).</em>
-<a id='L171' name='L171'></a> 171         <strong class='reserved'>return</strong> <a href='../S/5106.html#L90' title='Defined at 90 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>substitutionGroupOK</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, exemplar, exemplar.fBlock);
-<a id='L172' name='L172'></a> 172     <em class='brace'>}</em>
-<a id='L173' name='L173'></a> 173 
-<a id='L174' name='L174'></a> 174     <em class='comment'>// to store substitution group information</em>
-<a id='L175' name='L175'></a> 175     <em class='comment'>// the key to the hashtable is an element decl, and the value is</em>
-<a id='L176' name='L176'></a> 176     <em class='comment'>// - a Vector, which contains all elements that has this element as their</em>
-<a id='L177' name='L177'></a> 177     <em class='comment'>//   substitution group affilication</em>
-<a id='L178' name='L178'></a> 178     <em class='comment'>// - an array of OneSubGroup, which contains its substitution group before block.</em>
-<a id='L179' name='L179'></a> 179     <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> fSubGroupsB = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
-<a id='L180' name='L180'></a> 180     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[] EMPTY_VECTOR = <strong class='reserved'>new</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[0];
-<a id='L181' name='L181'></a> 181     <em class='comment'>// The real substitution groups (after "block")</em>
-<a id='L182' name='L182'></a> 182     <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a> fSubGroups = <strong class='reserved'>new</strong> <a href='../D/3743.html' title='Multiple defined in 2 places.'>Hashtable</a>();
-<a id='L183' name='L183'></a> 183 
-<a id='L184' name='L184'></a> 184     <em class='comment'>/**</em>
-<a id='L185' name='L185'></a> 185 <em class='comment'>     * clear the internal registry of substitutionGroup information</em>
-<a id='L186' name='L186'></a> 186 <em class='comment'>     */</em>
-<a id='L187' name='L187'></a> 187     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>() <em class='brace'>{</em>
-<a id='L188' name='L188'></a> 188         fSubGroupsB.<a href='../D/12817.html' title='Multiple defined in 199 places.'>clear</a>();
-<a id='L189' name='L189'></a> 189         fSubGroups.<a href='../D/12817.html' title='Multiple defined in 199 places.'>clear</a>();
-<a id='L190' name='L190'></a> 190     <em class='brace'>}</em>
-<a id='L191' name='L191'></a> 191 
-<a id='L192' name='L192'></a> 192     <em class='comment'>/**</em>
-<a id='L193' name='L193'></a> 193 <em class='comment'>     * add a list of substitution group information.</em>
-<a id='L194' name='L194'></a> 194 <em class='comment'>     */</em>
-<a id='L195' name='L195'></a> 195     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/9977.html' title='Multiple referred from 3 places.'>addSubstitutionGroup</a>(<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[] <a href='../D/15313.html' title='Multiple defined in 25 places.'>elements</a>) <em class='brace'>{</em>
-<a id='L196' name='L196'></a> 196         <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> subHead, <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>;
-<a id='L197' name='L197'></a> 197         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a> subGroup;
-<a id='L198' name='L198'></a> 198         <em class='comment'>// for all elements with substitution group affiliation</em>
-<a id='L199' name='L199'></a> 199         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = <a href='../D/15313.html' title='Multiple defined in 25 places.'>elements</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>-1; i &gt;= 0; i--) <em class='brace'>{</em>
-<a id='L200' name='L200'></a> 200             <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> = <a href='../D/15313.html' title='Multiple defined in 25 places.'>elements</a>[i];
-<a id='L201' name='L201'></a> 201             subHead = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.fSubGroup;
-<a id='L202' name='L202'></a> 202             <em class='comment'>// check whether this an entry for this element</em>
-<a id='L203' name='L203'></a> 203             subGroup = (<a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>)fSubGroupsB.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(subHead);
-<a id='L204' name='L204'></a> 204             <strong class='reserved'>if</strong> (subGroup == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L205' name='L205'></a> 205                 <em class='comment'>// if not, create a new one</em>
-<a id='L206' name='L206'></a> 206                 subGroup = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>();
-<a id='L207' name='L207'></a> 207                 fSubGroupsB.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(subHead, subGroup);
-<a id='L208' name='L208'></a> 208             <em class='brace'>}</em>
-<a id='L209' name='L209'></a> 209             <em class='comment'>// add to the vactor</em>
-<a id='L210' name='L210'></a> 210             subGroup.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>);
-<a id='L211' name='L211'></a> 211         <em class='brace'>}</em>
-<a id='L212' name='L212'></a> 212     <em class='brace'>}</em>
-<a id='L213' name='L213'></a> 213 
-<a id='L214' name='L214'></a> 214     <em class='comment'>/**</em>
-<a id='L215' name='L215'></a> 215 <em class='comment'>     * get all elements that can substitute the given element,</em>
-<a id='L216' name='L216'></a> 216 <em class='comment'>     * according to the spec, we shouldn't consider the {block} constraints.</em>
-<a id='L217' name='L217'></a> 217 <em class='comment'>     *</em>
-<a id='L218' name='L218'></a> 218 <em class='comment'>     * from the spec, substitution group of a given element decl also contains</em>
-<a id='L219' name='L219'></a> 219 <em class='comment'>     * the element itself. but the array returned from this method doesn't</em>
-<a id='L220' name='L220'></a> 220 <em class='comment'>     * containt this element.</em>
-<a id='L221' name='L221'></a> 221 <em class='comment'>     */</em>
-<a id='L222' name='L222'></a> 222     <strong class='reserved'>public</strong> <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[] <a href='../R/19274.html' title='Multiple referred from 8 places.'>getSubstitutionGroup</a>(<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>) <em class='brace'>{</em>
-<a id='L223' name='L223'></a> 223         <em class='comment'>// If we already have sub group for this element, just return it.</em>
-<a id='L224' name='L224'></a> 224         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> subGroup = fSubGroups.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>);
-<a id='L225' name='L225'></a> 225         <strong class='reserved'>if</strong> (subGroup != <strong class='reserved'>null</strong>)
-<a id='L226' name='L226'></a> 226             <strong class='reserved'>return</strong> (<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[])subGroup;
-<a id='L227' name='L227'></a> 227 
-<a id='L228' name='L228'></a> 228         <strong class='reserved'>if</strong> ((<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.fBlock &amp; <a href='../S/5346.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.'>XSConstants</a>.DERIVATION_SUBSTITUTION) != 0) <em class='brace'>{</em>
-<a id='L229' name='L229'></a> 229             fSubGroups.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, EMPTY_GROUP);
-<a id='L230' name='L230'></a> 230             <strong class='reserved'>return</strong> EMPTY_GROUP;
-<a id='L231' name='L231'></a> 231         <em class='brace'>}</em>
-<a id='L232' name='L232'></a> 232 
-<a id='L233' name='L233'></a> 233         <em class='comment'>// Otherwise, get all potential sub group elements</em>
-<a id='L234' name='L234'></a> 234         <em class='comment'>// (without considering "block" on this element</em>
-<a id='L235' name='L235'></a> 235         <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[] groupB = <a href='../S/5106.html#L257' title='Defined at 257 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>getSubGroupB</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <strong class='reserved'>new</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>());
-<a id='L236' name='L236'></a> 236         <strong class='reserved'>int</strong> len = groupB.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>, rlen = 0;
-<a id='L237' name='L237'></a> 237         <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[] ret = <strong class='reserved'>new</strong> <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[len];
-<a id='L238' name='L238'></a> 238         <em class='comment'>// For each of such elements, check whether the derivation methods</em>
-<a id='L239' name='L239'></a> 239         <em class='comment'>// overlap with "block". If not, add it to the sub group</em>
-<a id='L240' name='L240'></a> 240         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0 ; i &lt; len; i++) <em class='brace'>{</em>
-<a id='L241' name='L241'></a> 241             <strong class='reserved'>if</strong> ((<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.fBlock &amp; groupB[i].dMethod) == 0)
-<a id='L242' name='L242'></a> 242                 ret[rlen++] = groupB[i].sub;
-<a id='L243' name='L243'></a> 243         <em class='brace'>}</em>
-<a id='L244' name='L244'></a> 244         <em class='comment'>// Resize the array if necessary</em>
-<a id='L245' name='L245'></a> 245         <strong class='reserved'>if</strong> (rlen &lt; len) <em class='brace'>{</em>
-<a id='L246' name='L246'></a> 246             <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[] ret1 = <strong class='reserved'>new</strong> <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>[rlen];
-<a id='L247' name='L247'></a> 247             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>(ret, 0, ret1, 0, rlen);
-<a id='L248' name='L248'></a> 248             ret = ret1;
-<a id='L249' name='L249'></a> 249         <em class='brace'>}</em>
-<a id='L250' name='L250'></a> 250         <em class='comment'>// Store the subgroup</em>
-<a id='L251' name='L251'></a> 251         fSubGroups.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, ret);
-<a id='L252' name='L252'></a> 252 
-<a id='L253' name='L253'></a> 253         <strong class='reserved'>return</strong> ret;
-<a id='L254' name='L254'></a> 254     <em class='brace'>}</em>
-<a id='L255' name='L255'></a> 255 
-<a id='L256' name='L256'></a> 256     <em class='comment'>// Get potential sub group element (without considering "block")</em>
-<a id='L257' name='L257'></a> 257     <strong class='reserved'>private</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[] <a href='../R/19253.html' title='Multiple referred from 2 places.'>getSubGroupB</a>(<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a> <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>) <em class='brace'>{</em>
-<a id='L258' name='L258'></a> 258         <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> subGroup = fSubGroupsB.<a href='../D/16676.html' title='Multiple defined in 434 places.'>get</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>);
-<a id='L259' name='L259'></a> 259 
-<a id='L260' name='L260'></a> 260         <em class='comment'>// substitution group for this one is empty</em>
-<a id='L261' name='L261'></a> 261         <strong class='reserved'>if</strong> (subGroup == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L262' name='L262'></a> 262             fSubGroupsB.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, EMPTY_VECTOR);
-<a id='L263' name='L263'></a> 263             <strong class='reserved'>return</strong> EMPTY_VECTOR;
-<a id='L264' name='L264'></a> 264         <em class='brace'>}</em>
-<a id='L265' name='L265'></a> 265 
-<a id='L266' name='L266'></a> 266         <em class='comment'>// we've already calculated the element, just return.</em>
-<a id='L267' name='L267'></a> 267         <strong class='reserved'>if</strong> (subGroup <strong class='reserved'>instanceof</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[])
-<a id='L268' name='L268'></a> 268             <strong class='reserved'>return</strong> (<a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[])subGroup;
-<a id='L269' name='L269'></a> 269 
-<a id='L270' name='L270'></a> 270         <em class='comment'>// we only have the *direct* substitutions</em>
-<a id='L271' name='L271'></a> 271         <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a> <a href='../D/23914.html' title='Multiple defined in 8 places.'>group</a> = (<a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>)subGroup, newGroup = <strong class='reserved'>new</strong> <a href='../S/846.html#L83' title='Defined at 83 in src/java/util/Vector.java.'>Vector</a>();
-<a id='L272' name='L272'></a> 272         <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[] group1;
-<a id='L273' name='L273'></a> 273         <em class='comment'>// then for each of the direct substitutions, get its substitution</em>
-<a id='L274' name='L274'></a> 274         <em class='comment'>// group, and combine the groups together.</em>
-<a id='L275' name='L275'></a> 275         <strong class='reserved'>short</strong> dMethod, bMethod, dSubMethod, bSubMethod;
-<a id='L276' name='L276'></a> 276         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = <a href='../D/23914.html' title='Multiple defined in 8 places.'>group</a>.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()-1, j; i &gt;= 0; i--) <em class='brace'>{</em>
-<a id='L277' name='L277'></a> 277             <em class='comment'>// Check whether this element is blocked. If so, ignore it.</em>
-<a id='L278' name='L278'></a> 278             <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> sub = (<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a>)<a href='../D/23914.html' title='Multiple defined in 8 places.'>group</a>.<a href='../D/15289.html' title='Multiple defined in 23 places.'>elementAt</a>(i);
-<a id='L279' name='L279'></a> 279             <strong class='reserved'>if</strong> (!<a href='../S/5106.html#L309' title='Defined at 309 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>getDBMethods</a>(sub.fType, <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.fType, <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>))
-<a id='L280' name='L280'></a> 280                 <strong class='reserved'>continue</strong>;
-<a id='L281' name='L281'></a> 281             <em class='comment'>// Remember derivation methods and blocks from the types</em>
-<a id='L282' name='L282'></a> 282             dMethod = <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>.dMethod;
-<a id='L283' name='L283'></a> 283             bMethod = <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>.bMethod;
-<a id='L284' name='L284'></a> 284             <em class='comment'>// Add this one to potential group</em>
-<a id='L285' name='L285'></a> 285             newGroup.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(<strong class='reserved'>new</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>(sub, <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>.dMethod, <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>.bMethod));
-<a id='L286' name='L286'></a> 286             <em class='comment'>// Get potential group for this element</em>
-<a id='L287' name='L287'></a> 287             group1 = <a href='../S/5106.html#L257' title='Defined at 257 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>getSubGroupB</a>(sub, <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>);
-<a id='L288' name='L288'></a> 288             <strong class='reserved'>for</strong> (j = group1.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>-1; j &gt;= 0; j--) <em class='brace'>{</em>
-<a id='L289' name='L289'></a> 289                 <em class='comment'>// For each of them, check whether it's blocked (by type)</em>
-<a id='L290' name='L290'></a> 290                 dSubMethod = (<strong class='reserved'>short</strong>)(dMethod | group1[j].dMethod);
-<a id='L291' name='L291'></a> 291                 bSubMethod = (<strong class='reserved'>short</strong>)(bMethod | group1[j].bMethod);
-<a id='L292' name='L292'></a> 292                 <em class='comment'>// Ignore it if it's blocked</em>
-<a id='L293' name='L293'></a> 293                 <strong class='reserved'>if</strong> ((dSubMethod &amp; bSubMethod) != 0)
-<a id='L294' name='L294'></a> 294                     <strong class='reserved'>continue</strong>;
-<a id='L295' name='L295'></a> 295                 newGroup.<a href='../D/10774.html' title='Multiple defined in 24 places.'>addElement</a>(<strong class='reserved'>new</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>(group1[j].sub, dSubMethod, bSubMethod));
-<a id='L296' name='L296'></a> 296             <em class='brace'>}</em>
-<a id='L297' name='L297'></a> 297         <em class='brace'>}</em>
-<a id='L298' name='L298'></a> 298         <em class='comment'>// Convert to an array</em>
-<a id='L299' name='L299'></a> 299         <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[] ret = <strong class='reserved'>new</strong> <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>[newGroup.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()];
-<a id='L300' name='L300'></a> 300         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = newGroup.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()-1; i &gt;= 0; i--) <em class='brace'>{</em>
-<a id='L301' name='L301'></a> 301             ret[i] = (<a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a>)newGroup.<a href='../D/15289.html' title='Multiple defined in 23 places.'>elementAt</a>(i);
-<a id='L302' name='L302'></a> 302         <em class='brace'>}</em>
-<a id='L303' name='L303'></a> 303         <em class='comment'>// Store the potential sub group</em>
-<a id='L304' name='L304'></a> 304         fSubGroupsB.<a href='../D/29971.html' title='Multiple defined in 370 places.'>put</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, ret);
-<a id='L305' name='L305'></a> 305 
-<a id='L306' name='L306'></a> 306         <strong class='reserved'>return</strong> ret;
-<a id='L307' name='L307'></a> 307     <em class='brace'>}</em>
-<a id='L308' name='L308'></a> 308 
-<a id='L309' name='L309'></a> 309     <strong class='reserved'>private</strong> <strong class='reserved'>boolean</strong> <a href='../S/5106.html#L279' title='Referred from 279 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>getDBMethods</a>(<a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a> typed, <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a> typeb,
-<a id='L310' name='L310'></a> 310                                  <a href='../S/5106.html#L336' title='Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.'>OneSubGroup</a> <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>) <em class='brace'>{</em>
-<a id='L311' name='L311'></a> 311         <strong class='reserved'>short</strong> dMethod = 0, bMethod = 0;
-<a id='L312' name='L312'></a> 312         <strong class='reserved'>while</strong> (typed != typeb &amp;&amp; typed != <a href='../S/5045.html#L81' title='Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.'>SchemaGrammar</a>.fAnyType) <em class='brace'>{</em>
-<a id='L313' name='L313'></a> 313             <strong class='reserved'>if</strong> (typed.<a href='../D/23317.html' title='Multiple defined in 4 places.'>getTypeCategory</a>() == <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a>.COMPLEX_TYPE)
-<a id='L314' name='L314'></a> 314                 dMethod |= ((<a href='../S/5102.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.'>XSComplexTypeDecl</a>)typed).fDerivedBy;
-<a id='L315' name='L315'></a> 315             <strong class='reserved'>else</strong>
-<a id='L316' name='L316'></a> 316                 dMethod |= <a href='../S/5346.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.'>XSConstants</a>.DERIVATION_RESTRICTION;
-<a id='L317' name='L317'></a> 317             typed = typed.<a href='../D/17203.html' title='Multiple defined in 7 places.'>getBaseType</a>();
-<a id='L318' name='L318'></a> 318             <em class='comment'>// type == null means the current type is anySimpleType,</em>
-<a id='L319' name='L319'></a> 319             <em class='comment'>// whose base type should be anyType</em>
-<a id='L320' name='L320'></a> 320             <strong class='reserved'>if</strong> (typed == <strong class='reserved'>null</strong>)
-<a id='L321' name='L321'></a> 321                 typed = <a href='../S/5045.html#L81' title='Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.'>SchemaGrammar</a>.fAnyType;
-<a id='L322' name='L322'></a> 322             <strong class='reserved'>if</strong> (typed.<a href='../D/23317.html' title='Multiple defined in 4 places.'>getTypeCategory</a>() == <a href='../S/5343.html#L26' title='Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.'>XSTypeDefinition</a>.COMPLEX_TYPE)
-<a id='L323' name='L323'></a> 323                 bMethod |= ((<a href='../S/5102.html#L41' title='Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.'>XSComplexTypeDecl</a>)typed).fBlock;
-<a id='L324' name='L324'></a> 324         <em class='brace'>}</em>
-<a id='L325' name='L325'></a> 325         <em class='comment'>// No derivation relation, or blocked, return false</em>
-<a id='L326' name='L326'></a> 326         <strong class='reserved'>if</strong> (typed != typeb || (dMethod &amp; bMethod) != 0)
-<a id='L327' name='L327'></a> 327             <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L328' name='L328'></a> 328 
-<a id='L329' name='L329'></a> 329         <em class='comment'>// Remember the derivation methods and blocks, return true.</em>
-<a id='L330' name='L330'></a> 330         <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>.dMethod = dMethod;
-<a id='L331' name='L331'></a> 331         <a href='../D/27692.html' title='Multiple defined in 2 places.'>methods</a>.bMethod = bMethod;
-<a id='L332' name='L332'></a> 332         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L333' name='L333'></a> 333     <em class='brace'>}</em>
-<a id='L334' name='L334'></a> 334 
-<a id='L335' name='L335'></a> 335     <em class='comment'>// Record the information about how one element substitute another one</em>
-<a id='L336' name='L336'></a> 336     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/5806.html' title='Multiple referred from 11 places.'>OneSubGroup</a> <em class='brace'>{</em>
-<a id='L337' name='L337'></a> 337         OneSubGroup() <em class='brace'>{</em><em class='brace'>}</em>
-<a id='L338' name='L338'></a> 338         OneSubGroup(<a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> sub, <strong class='reserved'>short</strong> dMethod, <strong class='reserved'>short</strong> bMethod) <em class='brace'>{</em>
-<a id='L339' name='L339'></a> 339             <strong class='reserved'>this</strong>.sub = sub;
-<a id='L340' name='L340'></a> 340             <strong class='reserved'>this</strong>.dMethod = dMethod;
-<a id='L341' name='L341'></a> 341             <strong class='reserved'>this</strong>.bMethod = bMethod;
-<a id='L342' name='L342'></a> 342         <em class='brace'>}</em>
-<a id='L343' name='L343'></a> 343         <em class='comment'>// The element that substitutes another one</em>
-<a id='L344' name='L344'></a> 344         <a href='../S/5105.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.'>XSElementDecl</a> sub;
-<a id='L345' name='L345'></a> 345         <em class='comment'>// The combination of all derivation methods from sub's type to</em>
-<a id='L346' name='L346'></a> 346         <em class='comment'>// the head's type</em>
-<a id='L347' name='L347'></a> 347         <strong class='reserved'>short</strong> dMethod;
-<a id='L348' name='L348'></a> 348         <em class='comment'>// The combination of {block} of the types in the derivation chain</em>
-<a id='L349' name='L349'></a> 349         <em class='comment'>// excluding sub's type</em>
-<a id='L350' name='L350'></a> 350         <strong class='reserved'>short</strong> bMethod;
-<a id='L351' name='L351'></a> 351     <em class='brace'>}</em>
-<a id='L352' name='L352'></a> 352 <em class='brace'>}</em> <em class='comment'>// class SubstitutionGroupHandler</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> */</em>
+<a id="L5" name="L5"></a>   5 <em class="comment">/*</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> * Copyright 2001-2005 The Apache Software Foundation.</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> * you may not use this file except in compliance with the License.</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> * You may obtain a copy of the License at</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> * See the License for the specific language governing permissions and</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> * limitations under the License.</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> */</em>
+<a id="L20" name="L20"></a>  20 
+<a id="L21" name="L21"></a>  21 <strong class="reserved">package</strong> com.sun.org.apache.xerces.internal.<a href="../S/7010.html#L693" title="Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.">impl</a>.xs;
+<a id="L22" name="L22"></a>  22 
+<a id="L23" name="L23"></a>  23 <strong class="reserved">import</strong> com.sun.org.apache.xerces.internal.xs.XSConstants;
+<a id="L24" name="L24"></a>  24 <strong class="reserved">import</strong> com.sun.org.apache.xerces.internal.xs.XSObjectList;
+<a id="L25" name="L25"></a>  25 <strong class="reserved">import</strong> com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
+<a id="L26" name="L26"></a>  26 <strong class="reserved">import</strong> com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+<a id="L27" name="L27"></a>  27 <strong class="reserved">import</strong> com.sun.org.apache.xerces.internal.xni.QName;
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.util.Hashtable;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> java.util.Vector;
+<a id="L30" name="L30"></a>  30 
+<a id="L31" name="L31"></a>  31 <em class="comment">/**</em>
+<a id="L32" name="L32"></a>  32 <em class="comment"> * To store and validate information about substitutionGroup</em>
+<a id="L33" name="L33"></a>  33 <em class="comment"> *</em>
+<a id="L34" name="L34"></a>  34 <em class="comment"> * @xerces.internal</em>
+<a id="L35" name="L35"></a>  35 <em class="comment"> *</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> * @author Sandy Gao, IBM</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> *</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> * @version $Id: SubstitutionGroupHandler.java,v 1.6 2010-11-01 04:39:55 joehw Exp $</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> */</em>
+<a id="L40" name="L40"></a>  40 <strong class="reserved">public</strong> <strong class="reserved">class</strong> <a href="../R/7754.html" title="Multiple referred from 40 places.">SubstitutionGroupHandler</a> <em class="brace">{</em>
+<a id="L41" name="L41"></a>  41 
+<a id="L42" name="L42"></a>  42     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[] EMPTY_GROUP = <strong class="reserved">new</strong> <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[0];
+<a id="L43" name="L43"></a>  43 
+<a id="L44" name="L44"></a>  44     <em class="comment">// grammar resolver</em>
+<a id="L45" name="L45"></a>  45     <a href="../S/5112.html#L36" title="Defined at 36 in src/com/sun/org/apache/xerces/internal/impl/xs/XSGrammarBucket.java.">XSGrammarBucket</a> fGrammarBucket;
+<a id="L46" name="L46"></a>  46 
+<a id="L47" name="L47"></a>  47     <em class="comment">/**</em>
+<a id="L48" name="L48"></a>  48 <em class="comment">     * Default constructor</em>
+<a id="L49" name="L49"></a>  49 <em class="comment">     */</em>
+<a id="L50" name="L50"></a>  50     <strong class="reserved">public</strong> SubstitutionGroupHandler(<a href="../S/5112.html#L36" title="Defined at 36 in src/com/sun/org/apache/xerces/internal/impl/xs/XSGrammarBucket.java.">XSGrammarBucket</a> grammarBucket) <em class="brace">{</em>
+<a id="L51" name="L51"></a>  51         fGrammarBucket = grammarBucket;
+<a id="L52" name="L52"></a>  52     <em class="brace">}</em>
+<a id="L53" name="L53"></a>  53 
+<a id="L54" name="L54"></a>  54     <em class="comment">// 3.9.4 Element Sequence Locally Valid (Particle) 2.3.3</em>
+<a id="L55" name="L55"></a>  55     <em class="comment">// check whether one element decl matches an element with the given qname</em>
+<a id="L56" name="L56"></a>  56     <strong class="reserved">public</strong> <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> <a href="../R/17566.html" title="Multiple referred from 5 places.">getMatchingElemDecl</a>(<a href="../D/6976.html" title="Multiple defined in 5 places.">QName</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> exemplar) <em class="brace">{</em>
+<a id="L57" name="L57"></a>  57         <strong class="reserved">if</strong> (<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.localpart == exemplar.fName &amp;&amp;
+<a id="L58" name="L58"></a>  58             <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.uri == exemplar.fTargetNamespace) <em class="brace">{</em>
+<a id="L59" name="L59"></a>  59             <strong class="reserved">return</strong> exemplar;
+<a id="L60" name="L60"></a>  60         <em class="brace">}</em>
+<a id="L61" name="L61"></a>  61 
+<a id="L62" name="L62"></a>  62         <em class="comment">// if the exemplar is not a global element decl, then it's not possible</em>
+<a id="L63" name="L63"></a>  63         <em class="comment">// to be substituted by another element.</em>
+<a id="L64" name="L64"></a>  64         <strong class="reserved">if</strong> (exemplar.fScope != <a href="../S/5346.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.">XSConstants</a>.SCOPE_GLOBAL)
+<a id="L65" name="L65"></a>  65             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L66" name="L66"></a>  66 
+<a id="L67" name="L67"></a>  67         <em class="comment">// if the decl blocks substitution, return false</em>
+<a id="L68" name="L68"></a>  68         <strong class="reserved">if</strong> ((exemplar.fBlock &amp; <a href="../S/5346.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.">XSConstants</a>.DERIVATION_SUBSTITUTION) != 0)
+<a id="L69" name="L69"></a>  69             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L70" name="L70"></a>  70 
+<a id="L71" name="L71"></a>  71         <em class="comment">// get grammar of the element</em>
+<a id="L72" name="L72"></a>  72         <a href="../S/5045.html#L81" title="Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.">SchemaGrammar</a> sGrammar = fGrammarBucket.<a href="../D/19350.html" title="Multiple defined in 8 places.">getGrammar</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.uri);
+<a id="L73" name="L73"></a>  73         <strong class="reserved">if</strong> (sGrammar == <strong class="reserved">null</strong>)
+<a id="L74" name="L74"></a>  74             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L75" name="L75"></a>  75 
+<a id="L76" name="L76"></a>  76         <em class="comment">// get the decl for the element</em>
+<a id="L77" name="L77"></a>  77         <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> eDecl = sGrammar.<a href="../D/19322.html" title="Multiple defined in 3 places.">getGlobalElementDecl</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.localpart);
+<a id="L78" name="L78"></a>  78         <strong class="reserved">if</strong> (eDecl == <strong class="reserved">null</strong>)
+<a id="L79" name="L79"></a>  79             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L80" name="L80"></a>  80 
+<a id="L81" name="L81"></a>  81         <em class="comment">// and check by using substitutionGroup information</em>
+<a id="L82" name="L82"></a>  82         <strong class="reserved">if</strong> (<a href="../S/5106.html#L90" title="Defined at 90 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">substitutionGroupOK</a>(eDecl, exemplar, exemplar.fBlock))
+<a id="L83" name="L83"></a>  83             <strong class="reserved">return</strong> eDecl;
+<a id="L84" name="L84"></a>  84 
+<a id="L85" name="L85"></a>  85         <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L86" name="L86"></a>  86     <em class="brace">}</em>
+<a id="L87" name="L87"></a>  87 
+<a id="L88" name="L88"></a>  88     <em class="comment">// 3.3.6 Substitution Group OK (Transitive)</em>
+<a id="L89" name="L89"></a>  89     <em class="comment">// check whether element can substitute exemplar</em>
+<a id="L90" name="L90"></a>  90     <strong class="reserved">protected</strong> <strong class="reserved">boolean</strong> <a href="../R/29019.html" title="Multiple referred from 2 places.">substitutionGroupOK</a>(<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> exemplar, <strong class="reserved">short</strong> blockingConstraint) <em class="brace">{</em>
+<a id="L91" name="L91"></a>  91         <em class="comment">// For an element declaration (call it D) to be validly substitutable for another element declaration (call it C) subject to a blocking constraint (a subset of {substitution, extension, restriction}, the value of a {disallowed substitutions}) one of the following must be true:</em>
+<a id="L92" name="L92"></a>  92         <em class="comment">// 1. D and C are the same element declaration.</em>
+<a id="L93" name="L93"></a>  93         <strong class="reserved">if</strong> (<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> == exemplar)
+<a id="L94" name="L94"></a>  94             <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L95" name="L95"></a>  95 
+<a id="L96" name="L96"></a>  96         <em class="comment">// 2 All of the following must be true:</em>
+<a id="L97" name="L97"></a>  97         <em class="comment">// 2.1 The blocking constraint does not contain substitution.</em>
+<a id="L98" name="L98"></a>  98         <strong class="reserved">if</strong> ((blockingConstraint &amp; <a href="../S/5346.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.">XSConstants</a>.DERIVATION_SUBSTITUTION) != 0)
+<a id="L99" name="L99"></a>  99             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L100" name="L100"></a> 100 
+<a id="L101" name="L101"></a> 101         <em class="comment">// 2.2 There is a chain of {substitution group affiliation}s from D to C, that is, either D's {substitution group affiliation} is C, or D's {substitution group affiliation}'s {substitution group affiliation} is C, or . . .</em>
+<a id="L102" name="L102"></a> 102         <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> subGroup = <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.fSubGroup;
+<a id="L103" name="L103"></a> 103         <strong class="reserved">while</strong> (subGroup != <strong class="reserved">null</strong> &amp;&amp; subGroup != exemplar) <em class="brace">{</em>
+<a id="L104" name="L104"></a> 104             subGroup = subGroup.fSubGroup;
+<a id="L105" name="L105"></a> 105         <em class="brace">}</em>
+<a id="L106" name="L106"></a> 106 
+<a id="L107" name="L107"></a> 107         <strong class="reserved">if</strong> (subGroup == <strong class="reserved">null</strong>)
+<a id="L108" name="L108"></a> 108             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L109" name="L109"></a> 109 
+<a id="L110" name="L110"></a> 110         <em class="comment">// 2.3 The set of all {derivation method}s involved in the derivation of D's {type definition} from C's {type definition} does not intersect with the union of the blocking constraint, C's {prohibited substitutions} (if C is complex, otherwise the empty set) and the {prohibited substitutions} (respectively the empty set) of any intermediate {type definition}s in the derivation of D's {type definition} from C's {type definition}.</em>
+<a id="L111" name="L111"></a> 111         <em class="comment">// prepare the combination of {derivation method} and</em>
+<a id="L112" name="L112"></a> 112         <em class="comment">// {disallowed substitution}</em>
+<a id="L113" name="L113"></a> 113         <strong class="reserved">return</strong> <a href="../S/5106.html#L115" title="Defined at 115 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">typeDerivationOK</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.fType, exemplar.fType, blockingConstraint);
+<a id="L114" name="L114"></a> 114     <em class="brace">}</em>
+<a id="L115" name="L115"></a> 115     <strong class="reserved">private</strong> <strong class="reserved">boolean</strong> <a href="../R/29579.html" title="Multiple referred from 2 places.">typeDerivationOK</a>(<a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a> derived, <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a> base, <strong class="reserved">short</strong> blockingConstraint) <em class="brace">{</em>
+<a id="L116" name="L116"></a> 116 
+<a id="L117" name="L117"></a> 117         <strong class="reserved">short</strong> devMethod = 0, blockConstraint = blockingConstraint;
+<a id="L118" name="L118"></a> 118 
+<a id="L119" name="L119"></a> 119         <em class="comment">// "derived" should be derived from "base"</em>
+<a id="L120" name="L120"></a> 120         <em class="comment">// add derivation methods of derived types to devMethod;</em>
+<a id="L121" name="L121"></a> 121         <em class="comment">// add block of base types to blockConstraint.</em>
+<a id="L122" name="L122"></a> 122         <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a> <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> = derived;
+<a id="L123" name="L123"></a> 123         <strong class="reserved">while</strong> (<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> != base &amp;&amp; <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> != <a href="../S/5045.html#L81" title="Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.">SchemaGrammar</a>.fAnyType) <em class="brace">{</em>
+<a id="L124" name="L124"></a> 124             <strong class="reserved">if</strong> (<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a>.<a href="../D/23317.html" title="Multiple defined in 4 places.">getTypeCategory</a>() == <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a>.COMPLEX_TYPE) <em class="brace">{</em>
+<a id="L125" name="L125"></a> 125                 devMethod |= ((<a href="../S/5102.html#L41" title="Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.">XSComplexTypeDecl</a>)<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a>).fDerivedBy;
+<a id="L126" name="L126"></a> 126             <em class="brace">}</em>
+<a id="L127" name="L127"></a> 127             <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L128" name="L128"></a> 128                 devMethod |= <a href="../S/5346.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.">XSConstants</a>.DERIVATION_RESTRICTION;
+<a id="L129" name="L129"></a> 129             <em class="brace">}</em>
+<a id="L130" name="L130"></a> 130             <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> = <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a>.<a href="../D/17203.html" title="Multiple defined in 7 places.">getBaseType</a>();
+<a id="L131" name="L131"></a> 131             <em class="comment">// type == null means the current type is anySimpleType,</em>
+<a id="L132" name="L132"></a> 132             <em class="comment">// whose base type should be anyType</em>
+<a id="L133" name="L133"></a> 133             <strong class="reserved">if</strong> (<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L134" name="L134"></a> 134                 <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> = <a href="../S/5045.html#L81" title="Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.">SchemaGrammar</a>.fAnyType;
+<a id="L135" name="L135"></a> 135             <em class="brace">}</em>
+<a id="L136" name="L136"></a> 136             <strong class="reserved">if</strong> (<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a>.<a href="../D/23317.html" title="Multiple defined in 4 places.">getTypeCategory</a>() == <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a>.COMPLEX_TYPE) <em class="brace">{</em>
+<a id="L137" name="L137"></a> 137                 blockConstraint |= ((<a href="../S/5102.html#L41" title="Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.">XSComplexTypeDecl</a>)<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a>).fBlock;
+<a id="L138" name="L138"></a> 138             <em class="brace">}</em>
+<a id="L139" name="L139"></a> 139         <em class="brace">}</em>
+<a id="L140" name="L140"></a> 140         <strong class="reserved">if</strong> (<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> != base) <em class="brace">{</em>
+<a id="L141" name="L141"></a> 141             <em class="comment">// If the base is a union, check if "derived" is allowed through any of the member types.</em>
+<a id="L142" name="L142"></a> 142             <strong class="reserved">if</strong> (base.<a href="../D/23317.html" title="Multiple defined in 4 places.">getTypeCategory</a>() == <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a>.SIMPLE_TYPE) <em class="brace">{</em>
+<a id="L143" name="L143"></a> 143                 <a href="../S/5370.html#L31" title="Defined at 31 in src/com/sun/org/apache/xerces/internal/xs/XSSimpleTypeDefinition.java.">XSSimpleTypeDefinition</a> st = (<a href="../S/5370.html#L31" title="Defined at 31 in src/com/sun/org/apache/xerces/internal/xs/XSSimpleTypeDefinition.java.">XSSimpleTypeDefinition</a>) base;
+<a id="L144" name="L144"></a> 144                 <strong class="reserved">if</strong> (st.<a href="../D/23568.html" title="Multiple defined in 3 places.">getVariety</a>() ==  <a href="../S/5370.html#L31" title="Defined at 31 in src/com/sun/org/apache/xerces/internal/xs/XSSimpleTypeDefinition.java.">XSSimpleTypeDefinition</a>.VARIETY_UNION) <em class="brace">{</em>
+<a id="L145" name="L145"></a> 145                     <a href="../S/5373.html#L30" title="Defined at 30 in src/com/sun/org/apache/xerces/internal/xs/XSObjectList.java.">XSObjectList</a> memberTypes = st.<a href="../D/20529.html" title="Multiple defined in 3 places.">getMemberTypes</a>();
+<a id="L146" name="L146"></a> 146                     <strong class="reserved">final</strong> <strong class="reserved">int</strong> <a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> = memberTypes.<a href="../D/20075.html" title="Multiple defined in 116 places.">getLength</a>();
+<a id="L147" name="L147"></a> 147                     <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; <a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>; ++i) <em class="brace">{</em>
+<a id="L148" name="L148"></a> 148                         <strong class="reserved">if</strong> (<a href="../S/5106.html#L115" title="Defined at 115 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">typeDerivationOK</a>(derived, (<a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a>) memberTypes.<a href="../D/26564.html" title="Multiple defined in 60 places.">item</a>(i), blockingConstraint)) <em class="brace">{</em>
+<a id="L149" name="L149"></a> 149                             <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L150" name="L150"></a> 150                         <em class="brace">}</em>
+<a id="L151" name="L151"></a> 151                     <em class="brace">}</em>
+<a id="L152" name="L152"></a> 152                 <em class="brace">}</em>
+<a id="L153" name="L153"></a> 153             <em class="brace">}</em>
+<a id="L154" name="L154"></a> 154             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L155" name="L155"></a> 155         <em class="brace">}</em>
+<a id="L156" name="L156"></a> 156         <strong class="reserved">if</strong> ((devMethod &amp; blockConstraint) != 0) <em class="brace">{</em>
+<a id="L157" name="L157"></a> 157             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L158" name="L158"></a> 158         <em class="brace">}</em>
+<a id="L159" name="L159"></a> 159         <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L160" name="L160"></a> 160     <em class="brace">}</em>
+<a id="L161" name="L161"></a> 161 
+<a id="L162" name="L162"></a> 162     <em class="comment">// check whether element is in exemplar's substitution group</em>
+<a id="L163" name="L163"></a> 163     <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> inSubstitutionGroup(<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> exemplar) <em class="brace">{</em>
+<a id="L164" name="L164"></a> 164         <em class="comment">// [Definition:]  Every element declaration (call this HEAD) in the {element declarations} of a schema defines a substitution group, a subset of those {element declarations}, as follows:</em>
+<a id="L165" name="L165"></a> 165         <em class="comment">// Define PSG, the potential substitution group for HEAD, as follows:</em>
+<a id="L166" name="L166"></a> 166         <em class="comment">// 1 The element declaration itself is in PSG;</em>
+<a id="L167" name="L167"></a> 167         <em class="comment">// 2 PSG is closed with respect to {substitution group affiliation}, that is, if any element declaration in the {element declarations} has a {substitution group affiliation} in PSG, then it is also in PSG itself.</em>
+<a id="L168" name="L168"></a> 168         <em class="comment">// HEAD's actual substitution group is then the set consisting of each member of PSG such that all of the following must be true:</em>
+<a id="L169" name="L169"></a> 169         <em class="comment">// 1 Its {abstract} is false.</em>
+<a id="L170" name="L170"></a> 170         <em class="comment">// 2 It is validly substitutable for HEAD subject to an empty blocking constraint, as defined in Substitution Group OK (Transitive) (3.3.6).</em>
+<a id="L171" name="L171"></a> 171         <strong class="reserved">return</strong> <a href="../S/5106.html#L90" title="Defined at 90 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">substitutionGroupOK</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, exemplar, exemplar.fBlock);
+<a id="L172" name="L172"></a> 172     <em class="brace">}</em>
+<a id="L173" name="L173"></a> 173 
+<a id="L174" name="L174"></a> 174     <em class="comment">// to store substitution group information</em>
+<a id="L175" name="L175"></a> 175     <em class="comment">// the key to the hashtable is an element decl, and the value is</em>
+<a id="L176" name="L176"></a> 176     <em class="comment">// - a Vector, which contains all elements that has this element as their</em>
+<a id="L177" name="L177"></a> 177     <em class="comment">//   substitution group affilication</em>
+<a id="L178" name="L178"></a> 178     <em class="comment">// - an array of OneSubGroup, which contains its substitution group before block.</em>
+<a id="L179" name="L179"></a> 179     <a href="../D/3743.html" title="Multiple defined in 2 places.">Hashtable</a> fSubGroupsB = <strong class="reserved">new</strong> <a href="../D/3743.html" title="Multiple defined in 2 places.">Hashtable</a>();
+<a id="L180" name="L180"></a> 180     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[] EMPTY_VECTOR = <strong class="reserved">new</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[0];
+<a id="L181" name="L181"></a> 181     <em class="comment">// The real substitution groups (after "block")</em>
+<a id="L182" name="L182"></a> 182     <a href="../D/3743.html" title="Multiple defined in 2 places.">Hashtable</a> fSubGroups = <strong class="reserved">new</strong> <a href="../D/3743.html" title="Multiple defined in 2 places.">Hashtable</a>();
+<a id="L183" name="L183"></a> 183 
+<a id="L184" name="L184"></a> 184     <em class="comment">/**</em>
+<a id="L185" name="L185"></a> 185 <em class="comment">     * clear the internal registry of substitutionGroup information</em>
+<a id="L186" name="L186"></a> 186 <em class="comment">     */</em>
+<a id="L187" name="L187"></a> 187     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/26238.html" title="Multiple referred from 619 places.">reset</a>() <em class="brace">{</em>
+<a id="L188" name="L188"></a> 188         fSubGroupsB.<a href="../D/12817.html" title="Multiple defined in 199 places.">clear</a>();
+<a id="L189" name="L189"></a> 189         fSubGroups.<a href="../D/12817.html" title="Multiple defined in 199 places.">clear</a>();
+<a id="L190" name="L190"></a> 190     <em class="brace">}</em>
+<a id="L191" name="L191"></a> 191 
+<a id="L192" name="L192"></a> 192     <em class="comment">/**</em>
+<a id="L193" name="L193"></a> 193 <em class="comment">     * add a list of substitution group information.</em>
+<a id="L194" name="L194"></a> 194 <em class="comment">     */</em>
+<a id="L195" name="L195"></a> 195     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/9977.html" title="Multiple referred from 3 places.">addSubstitutionGroup</a>(<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[] <a href="../D/15313.html" title="Multiple defined in 25 places.">elements</a>) <em class="brace">{</em>
+<a id="L196" name="L196"></a> 196         <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> subHead, <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>;
+<a id="L197" name="L197"></a> 197         <a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a> subGroup;
+<a id="L198" name="L198"></a> 198         <em class="comment">// for all elements with substitution group affiliation</em>
+<a id="L199" name="L199"></a> 199         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = <a href="../D/15313.html" title="Multiple defined in 25 places.">elements</a>.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>-1; i &gt;= 0; i--) <em class="brace">{</em>
+<a id="L200" name="L200"></a> 200             <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> = <a href="../D/15313.html" title="Multiple defined in 25 places.">elements</a>[i];
+<a id="L201" name="L201"></a> 201             subHead = <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.fSubGroup;
+<a id="L202" name="L202"></a> 202             <em class="comment">// check whether this an entry for this element</em>
+<a id="L203" name="L203"></a> 203             subGroup = (<a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a>)fSubGroupsB.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(subHead);
+<a id="L204" name="L204"></a> 204             <strong class="reserved">if</strong> (subGroup == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L205" name="L205"></a> 205                 <em class="comment">// if not, create a new one</em>
+<a id="L206" name="L206"></a> 206                 subGroup = <strong class="reserved">new</strong> <a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a>();
+<a id="L207" name="L207"></a> 207                 fSubGroupsB.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(subHead, subGroup);
+<a id="L208" name="L208"></a> 208             <em class="brace">}</em>
+<a id="L209" name="L209"></a> 209             <em class="comment">// add to the vactor</em>
+<a id="L210" name="L210"></a> 210             subGroup.<a href="../D/10774.html" title="Multiple defined in 24 places.">addElement</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>);
+<a id="L211" name="L211"></a> 211         <em class="brace">}</em>
+<a id="L212" name="L212"></a> 212     <em class="brace">}</em>
+<a id="L213" name="L213"></a> 213 
+<a id="L214" name="L214"></a> 214     <em class="comment">/**</em>
+<a id="L215" name="L215"></a> 215 <em class="comment">     * get all elements that can substitute the given element,</em>
+<a id="L216" name="L216"></a> 216 <em class="comment">     * according to the spec, we shouldn't consider the {block} constraints.</em>
+<a id="L217" name="L217"></a> 217 <em class="comment">     *</em>
+<a id="L218" name="L218"></a> 218 <em class="comment">     * from the spec, substitution group of a given element decl also contains</em>
+<a id="L219" name="L219"></a> 219 <em class="comment">     * the element itself. but the array returned from this method doesn't</em>
+<a id="L220" name="L220"></a> 220 <em class="comment">     * containt this element.</em>
+<a id="L221" name="L221"></a> 221 <em class="comment">     */</em>
+<a id="L222" name="L222"></a> 222     <strong class="reserved">public</strong> <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[] <a href="../R/19274.html" title="Multiple referred from 8 places.">getSubstitutionGroup</a>(<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>) <em class="brace">{</em>
+<a id="L223" name="L223"></a> 223         <em class="comment">// If we already have sub group for this element, just return it.</em>
+<a id="L224" name="L224"></a> 224         <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> subGroup = fSubGroups.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>);
+<a id="L225" name="L225"></a> 225         <strong class="reserved">if</strong> (subGroup != <strong class="reserved">null</strong>)
+<a id="L226" name="L226"></a> 226             <strong class="reserved">return</strong> (<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[])subGroup;
+<a id="L227" name="L227"></a> 227 
+<a id="L228" name="L228"></a> 228         <strong class="reserved">if</strong> ((<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.fBlock &amp; <a href="../S/5346.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.">XSConstants</a>.DERIVATION_SUBSTITUTION) != 0) <em class="brace">{</em>
+<a id="L229" name="L229"></a> 229             fSubGroups.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, EMPTY_GROUP);
+<a id="L230" name="L230"></a> 230             <strong class="reserved">return</strong> EMPTY_GROUP;
+<a id="L231" name="L231"></a> 231         <em class="brace">}</em>
+<a id="L232" name="L232"></a> 232 
+<a id="L233" name="L233"></a> 233         <em class="comment">// Otherwise, get all potential sub group elements</em>
+<a id="L234" name="L234"></a> 234         <em class="comment">// (without considering "block" on this element</em>
+<a id="L235" name="L235"></a> 235         <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[] groupB = <a href="../S/5106.html#L257" title="Defined at 257 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">getSubGroupB</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, <strong class="reserved">new</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>());
+<a id="L236" name="L236"></a> 236         <strong class="reserved">int</strong> len = groupB.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>, rlen = 0;
+<a id="L237" name="L237"></a> 237         <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[] ret = <strong class="reserved">new</strong> <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[len];
+<a id="L238" name="L238"></a> 238         <em class="comment">// For each of such elements, check whether the derivation methods</em>
+<a id="L239" name="L239"></a> 239         <em class="comment">// overlap with "block". If not, add it to the sub group</em>
+<a id="L240" name="L240"></a> 240         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0 ; i &lt; len; i++) <em class="brace">{</em>
+<a id="L241" name="L241"></a> 241             <strong class="reserved">if</strong> ((<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.fBlock &amp; groupB[i].dMethod) == 0)
+<a id="L242" name="L242"></a> 242                 ret[rlen++] = groupB[i].sub;
+<a id="L243" name="L243"></a> 243         <em class="brace">}</em>
+<a id="L244" name="L244"></a> 244         <em class="comment">// Resize the array if necessary</em>
+<a id="L245" name="L245"></a> 245         <strong class="reserved">if</strong> (rlen &lt; len) <em class="brace">{</em>
+<a id="L246" name="L246"></a> 246             <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[] ret1 = <strong class="reserved">new</strong> <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>[rlen];
+<a id="L247" name="L247"></a> 247             <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L493" title="Defined at 493 in src/java/lang/System.java.">arraycopy</a>(ret, 0, ret1, 0, rlen);
+<a id="L248" name="L248"></a> 248             ret = ret1;
+<a id="L249" name="L249"></a> 249         <em class="brace">}</em>
+<a id="L250" name="L250"></a> 250         <em class="comment">// Store the subgroup</em>
+<a id="L251" name="L251"></a> 251         fSubGroups.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, ret);
+<a id="L252" name="L252"></a> 252 
+<a id="L253" name="L253"></a> 253         <strong class="reserved">return</strong> ret;
+<a id="L254" name="L254"></a> 254     <em class="brace">}</em>
+<a id="L255" name="L255"></a> 255 
+<a id="L256" name="L256"></a> 256     <em class="comment">// Get potential sub group element (without considering "block")</em>
+<a id="L257" name="L257"></a> 257     <strong class="reserved">private</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[] <a href="../R/19253.html" title="Multiple referred from 2 places.">getSubGroupB</a>(<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a> <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>) <em class="brace">{</em>
+<a id="L258" name="L258"></a> 258         <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> subGroup = fSubGroupsB.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>);
+<a id="L259" name="L259"></a> 259 
+<a id="L260" name="L260"></a> 260         <em class="comment">// substitution group for this one is empty</em>
+<a id="L261" name="L261"></a> 261         <strong class="reserved">if</strong> (subGroup == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L262" name="L262"></a> 262             fSubGroupsB.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, EMPTY_VECTOR);
+<a id="L263" name="L263"></a> 263             <strong class="reserved">return</strong> EMPTY_VECTOR;
+<a id="L264" name="L264"></a> 264         <em class="brace">}</em>
+<a id="L265" name="L265"></a> 265 
+<a id="L266" name="L266"></a> 266         <em class="comment">// we've already calculated the element, just return.</em>
+<a id="L267" name="L267"></a> 267         <strong class="reserved">if</strong> (subGroup <strong class="reserved">instanceof</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[])
+<a id="L268" name="L268"></a> 268             <strong class="reserved">return</strong> (<a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[])subGroup;
+<a id="L269" name="L269"></a> 269 
+<a id="L270" name="L270"></a> 270         <em class="comment">// we only have the *direct* substitutions</em>
+<a id="L271" name="L271"></a> 271         <a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a> <a href="../D/23914.html" title="Multiple defined in 8 places.">group</a> = (<a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a>)subGroup, newGroup = <strong class="reserved">new</strong> <a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a>();
+<a id="L272" name="L272"></a> 272         <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[] group1;
+<a id="L273" name="L273"></a> 273         <em class="comment">// then for each of the direct substitutions, get its substitution</em>
+<a id="L274" name="L274"></a> 274         <em class="comment">// group, and combine the groups together.</em>
+<a id="L275" name="L275"></a> 275         <strong class="reserved">short</strong> dMethod, bMethod, dSubMethod, bSubMethod;
+<a id="L276" name="L276"></a> 276         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = <a href="../D/23914.html" title="Multiple defined in 8 places.">group</a>.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>()-1, j; i &gt;= 0; i--) <em class="brace">{</em>
+<a id="L277" name="L277"></a> 277             <em class="comment">// Check whether this element is blocked. If so, ignore it.</em>
+<a id="L278" name="L278"></a> 278             <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> sub = (<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a>)<a href="../D/23914.html" title="Multiple defined in 8 places.">group</a>.<a href="../D/15289.html" title="Multiple defined in 23 places.">elementAt</a>(i);
+<a id="L279" name="L279"></a> 279             <strong class="reserved">if</strong> (!<a href="../S/5106.html#L309" title="Defined at 309 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">getDBMethods</a>(sub.fType, <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.fType, <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>))
+<a id="L280" name="L280"></a> 280                 <strong class="reserved">continue</strong>;
+<a id="L281" name="L281"></a> 281             <em class="comment">// Remember derivation methods and blocks from the types</em>
+<a id="L282" name="L282"></a> 282             dMethod = <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>.dMethod;
+<a id="L283" name="L283"></a> 283             bMethod = <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>.bMethod;
+<a id="L284" name="L284"></a> 284             <em class="comment">// Add this one to potential group</em>
+<a id="L285" name="L285"></a> 285             newGroup.<a href="../D/10774.html" title="Multiple defined in 24 places.">addElement</a>(<strong class="reserved">new</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>(sub, <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>.dMethod, <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>.bMethod));
+<a id="L286" name="L286"></a> 286             <em class="comment">// Get potential group for this element</em>
+<a id="L287" name="L287"></a> 287             group1 = <a href="../S/5106.html#L257" title="Defined at 257 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">getSubGroupB</a>(sub, <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>);
+<a id="L288" name="L288"></a> 288             <strong class="reserved">for</strong> (j = group1.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>-1; j &gt;= 0; j--) <em class="brace">{</em>
+<a id="L289" name="L289"></a> 289                 <em class="comment">// For each of them, check whether it's blocked (by type)</em>
+<a id="L290" name="L290"></a> 290                 dSubMethod = (<strong class="reserved">short</strong>)(dMethod | group1[j].dMethod);
+<a id="L291" name="L291"></a> 291                 bSubMethod = (<strong class="reserved">short</strong>)(bMethod | group1[j].bMethod);
+<a id="L292" name="L292"></a> 292                 <em class="comment">// Ignore it if it's blocked</em>
+<a id="L293" name="L293"></a> 293                 <strong class="reserved">if</strong> ((dSubMethod &amp; bSubMethod) != 0)
+<a id="L294" name="L294"></a> 294                     <strong class="reserved">continue</strong>;
+<a id="L295" name="L295"></a> 295                 newGroup.<a href="../D/10774.html" title="Multiple defined in 24 places.">addElement</a>(<strong class="reserved">new</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>(group1[j].sub, dSubMethod, bSubMethod));
+<a id="L296" name="L296"></a> 296             <em class="brace">}</em>
+<a id="L297" name="L297"></a> 297         <em class="brace">}</em>
+<a id="L298" name="L298"></a> 298         <em class="comment">// Convert to an array</em>
+<a id="L299" name="L299"></a> 299         <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[] ret = <strong class="reserved">new</strong> <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>[newGroup.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>()];
+<a id="L300" name="L300"></a> 300         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = newGroup.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>()-1; i &gt;= 0; i--) <em class="brace">{</em>
+<a id="L301" name="L301"></a> 301             ret[i] = (<a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a>)newGroup.<a href="../D/15289.html" title="Multiple defined in 23 places.">elementAt</a>(i);
+<a id="L302" name="L302"></a> 302         <em class="brace">}</em>
+<a id="L303" name="L303"></a> 303         <em class="comment">// Store the potential sub group</em>
+<a id="L304" name="L304"></a> 304         fSubGroupsB.<a href="../D/29971.html" title="Multiple defined in 370 places.">put</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, ret);
+<a id="L305" name="L305"></a> 305 
+<a id="L306" name="L306"></a> 306         <strong class="reserved">return</strong> ret;
+<a id="L307" name="L307"></a> 307     <em class="brace">}</em>
+<a id="L308" name="L308"></a> 308 
+<a id="L309" name="L309"></a> 309     <strong class="reserved">private</strong> <strong class="reserved">boolean</strong> <a href="../S/5106.html#L279" title="Referred from 279 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">getDBMethods</a>(<a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a> typed, <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a> typeb,
+<a id="L310" name="L310"></a> 310                                  <a href="../S/5106.html#L336" title="Defined at 336 in src/com/sun/org/apache/xerces/internal/impl/xs/SubstitutionGroupHandler.java.">OneSubGroup</a> <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>) <em class="brace">{</em>
+<a id="L311" name="L311"></a> 311         <strong class="reserved">short</strong> dMethod = 0, bMethod = 0;
+<a id="L312" name="L312"></a> 312         <strong class="reserved">while</strong> (typed != typeb &amp;&amp; typed != <a href="../S/5045.html#L81" title="Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.">SchemaGrammar</a>.fAnyType) <em class="brace">{</em>
+<a id="L313" name="L313"></a> 313             <strong class="reserved">if</strong> (typed.<a href="../D/23317.html" title="Multiple defined in 4 places.">getTypeCategory</a>() == <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a>.COMPLEX_TYPE)
+<a id="L314" name="L314"></a> 314                 dMethod |= ((<a href="../S/5102.html#L41" title="Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.">XSComplexTypeDecl</a>)typed).fDerivedBy;
+<a id="L315" name="L315"></a> 315             <strong class="reserved">else</strong>
+<a id="L316" name="L316"></a> 316                 dMethod |= <a href="../S/5346.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSConstants.java.">XSConstants</a>.DERIVATION_RESTRICTION;
+<a id="L317" name="L317"></a> 317             typed = typed.<a href="../D/17203.html" title="Multiple defined in 7 places.">getBaseType</a>();
+<a id="L318" name="L318"></a> 318             <em class="comment">// type == null means the current type is anySimpleType,</em>
+<a id="L319" name="L319"></a> 319             <em class="comment">// whose base type should be anyType</em>
+<a id="L320" name="L320"></a> 320             <strong class="reserved">if</strong> (typed == <strong class="reserved">null</strong>)
+<a id="L321" name="L321"></a> 321                 typed = <a href="../S/5045.html#L81" title="Defined at 81 in src/com/sun/org/apache/xerces/internal/impl/xs/SchemaGrammar.java.">SchemaGrammar</a>.fAnyType;
+<a id="L322" name="L322"></a> 322             <strong class="reserved">if</strong> (typed.<a href="../D/23317.html" title="Multiple defined in 4 places.">getTypeCategory</a>() == <a href="../S/5343.html#L26" title="Defined at 26 in src/com/sun/org/apache/xerces/internal/xs/XSTypeDefinition.java.">XSTypeDefinition</a>.COMPLEX_TYPE)
+<a id="L323" name="L323"></a> 323                 bMethod |= ((<a href="../S/5102.html#L41" title="Defined at 41 in src/com/sun/org/apache/xerces/internal/impl/xs/XSComplexTypeDecl.java.">XSComplexTypeDecl</a>)typed).fBlock;
+<a id="L324" name="L324"></a> 324         <em class="brace">}</em>
+<a id="L325" name="L325"></a> 325         <em class="comment">// No derivation relation, or blocked, return false</em>
+<a id="L326" name="L326"></a> 326         <strong class="reserved">if</strong> (typed != typeb || (dMethod &amp; bMethod) != 0)
+<a id="L327" name="L327"></a> 327             <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L328" name="L328"></a> 328 
+<a id="L329" name="L329"></a> 329         <em class="comment">// Remember the derivation methods and blocks, return true.</em>
+<a id="L330" name="L330"></a> 330         <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>.dMethod = dMethod;
+<a id="L331" name="L331"></a> 331         <a href="../D/27692.html" title="Multiple defined in 2 places.">methods</a>.bMethod = bMethod;
+<a id="L332" name="L332"></a> 332         <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L333" name="L333"></a> 333     <em class="brace">}</em>
+<a id="L334" name="L334"></a> 334 
+<a id="L335" name="L335"></a> 335     <em class="comment">// Record the information about how one element substitute another one</em>
+<a id="L336" name="L336"></a> 336     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../R/5806.html" title="Multiple referred from 11 places.">OneSubGroup</a> <em class="brace">{</em>
+<a id="L337" name="L337"></a> 337         OneSubGroup() <em class="brace">{</em><em class="brace">}</em>
+<a id="L338" name="L338"></a> 338         OneSubGroup(<a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> sub, <strong class="reserved">short</strong> dMethod, <strong class="reserved">short</strong> bMethod) <em class="brace">{</em>
+<a id="L339" name="L339"></a> 339             <strong class="reserved">this</strong>.sub = sub;
+<a id="L340" name="L340"></a> 340             <strong class="reserved">this</strong>.dMethod = dMethod;
+<a id="L341" name="L341"></a> 341             <strong class="reserved">this</strong>.bMethod = bMethod;
+<a id="L342" name="L342"></a> 342         <em class="brace">}</em>
+<a id="L343" name="L343"></a> 343         <em class="comment">// The element that substitutes another one</em>
+<a id="L344" name="L344"></a> 344         <a href="../S/5105.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/impl/xs/XSElementDecl.java.">XSElementDecl</a> sub;
+<a id="L345" name="L345"></a> 345         <em class="comment">// The combination of all derivation methods from sub's type to</em>
+<a id="L346" name="L346"></a> 346         <em class="comment">// the head's type</em>
+<a id="L347" name="L347"></a> 347         <strong class="reserved">short</strong> dMethod;
+<a id="L348" name="L348"></a> 348         <em class="comment">// The combination of {block} of the types in the derivation chain</em>
+<a id="L349" name="L349"></a> 349         <em class="comment">// excluding sub's type</em>
+<a id="L350" name="L350"></a> 350         <strong class="reserved">short</strong> bMethod;
+<a id="L351" name="L351"></a> 351     <em class="brace">}</em>
+<a id="L352" name="L352"></a> 352 <em class="brace">}</em> <em class="comment">// class SubstitutionGroupHandler</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L56'>[^]</a><a href='#L309'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L56">[^]</a><a href="#L309">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

@@ -1,372 +1,370 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/com/sun/jmx/snmp/daemon/SnmpSubBulkRequestHandler.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7840.html'>jmx</a>/<a href='../files/7851.html'>snmp</a>/<a href='../files/7854.html'>daemon</a>/SnmpSubBulkRequestHandler.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L85'>[^]</a><a href='#L260'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7840.html">jmx</a>/<a href="../files/7851.html">snmp</a>/<a href="../files/7854.html">daemon</a>/SnmpSubBulkRequestHandler.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L85">[^]</a><a href="#L260">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L85' title='Defined at 85.'>run</a></li>
-<li><a href='#L132' title='Defined at 132.'>init</a></li>
-<li><a href='#L160' title='Defined at 160.'>findVarBind</a></li>
-<li><a href='#L260' title='Defined at 260.'>updateResult</a></li>
+<li><a href="#L85" title="Defined at 85.">run</a></li>
+<li><a href="#L132" title="Defined at 132.">init</a></li>
+<li><a href="#L160" title="Defined at 160.">findVarBind</a></li>
+<li><a href="#L260" title="Defined at 260.">updateResult</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 
-<a id='L27' name='L27'></a>  27 <strong class='reserved'>package</strong> com.sun.jmx.snmp.daemon;
-<a id='L28' name='L28'></a>  28 
-<a id='L29' name='L29'></a>  29 
-<a id='L30' name='L30'></a>  30 
-<a id='L31' name='L31'></a>  31 <em class='comment'>// java import</em>
-<a id='L32' name='L32'></a>  32 <em class='comment'>//</em>
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.util.Enumeration;
-<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.util.logging.Level;
-<a id='L35' name='L35'></a>  35 <em class='comment'>// jmx imports</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'>//</em>
-<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpPdu;
-<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpVarBind;
-<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpOid;
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpValue;
-<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpDefinitions;
-<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpStatusException;
-<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> com.sun.jmx.snmp.SnmpEngine;
-<a id='L44' name='L44'></a>  44 <em class='comment'>// SNMP Runtime import</em>
-<a id='L45' name='L45'></a>  45 <em class='comment'>//</em>
-<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> static com.sun.jmx.defaults.JmxProperties.SNMP_ADAPTOR_LOGGER;
-<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> com.sun.jmx.snmp.agent.SnmpMibAgent;
-<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> com.sun.jmx.snmp.internal.SnmpIncomingRequest;
-<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> com.sun.jmx.snmp.ThreadContext;
-<a id='L50' name='L50'></a>  50 
-<a id='L51' name='L51'></a>  51 <strong class='reserved'>class</strong> <a href='../S/6462.html#L1059' title='Referred from 1059 in src/com/sun/jmx/snmp/daemon/SnmpRequestHandler.java.'>SnmpSubBulkRequestHandler</a> <strong class='reserved'>extends</strong> <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a> <em class='brace'>{</em>
-<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <a href='../S/6449.html#L130' title='Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.'>SnmpAdaptorServer</a> server = <strong class='reserved'>null</strong>;
-<a id='L53' name='L53'></a>  53 
-<a id='L54' name='L54'></a>  54     <em class='comment'>/**</em>
-<a id='L55' name='L55'></a>  55 <em class='comment'>     * The constructor initialize the subrequest with the whole varbind list contained</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'>     * in the original request.</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'>     */</em>
-<a id='L58' name='L58'></a>  58     <strong class='reserved'>protected</strong> SnmpSubBulkRequestHandler(<a href='../S/6481.html#L47' title='Defined at 47 in src/com/sun/jmx/snmp/SnmpEngine.java.'>SnmpEngine</a> engine,
-<a id='L59' name='L59'></a>  59                                         <a href='../S/6449.html#L130' title='Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.'>SnmpAdaptorServer</a> server,
-<a id='L60' name='L60'></a>  60                                         <a href='../S/6387.html#L48' title='Defined at 48 in src/com/sun/jmx/snmp/internal/SnmpIncomingRequest.java.'>SnmpIncomingRequest</a> incRequest,
-<a id='L61' name='L61'></a>  61                                         <a href='../S/6411.html#L63' title='Defined at 63 in src/com/sun/jmx/snmp/agent/SnmpMibAgent.java.'>SnmpMibAgent</a> agent,
-<a id='L62' name='L62'></a>  62                                         <a href='../S/6374.html#L48' title='Defined at 48 in src/com/sun/jmx/snmp/SnmpPdu.java.'>SnmpPdu</a> req,
-<a id='L63' name='L63'></a>  63                                         <strong class='reserved'>int</strong> nonRepeat,
-<a id='L64' name='L64'></a>  64                                         <strong class='reserved'>int</strong> maxRepeat,
-<a id='L65' name='L65'></a>  65                                         <strong class='reserved'>int</strong> R) <em class='brace'>{</em>
-<a id='L66' name='L66'></a>  66         <strong class='reserved'>super</strong>(engine, incRequest, agent, req);
-<a id='L67' name='L67'></a>  67         <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>(server, req, nonRepeat, maxRepeat, R);
-<a id='L68' name='L68'></a>  68     <em class='brace'>}</em>
-<a id='L69' name='L69'></a>  69 
-<a id='L70' name='L70'></a>  70     <em class='comment'>/**</em>
-<a id='L71' name='L71'></a>  71 <em class='comment'>     * The constructor initialize the subrequest with the whole varbind list contained</em>
-<a id='L72' name='L72'></a>  72 <em class='comment'>     * in the original request.</em>
-<a id='L73' name='L73'></a>  73 <em class='comment'>     */</em>
-<a id='L74' name='L74'></a>  74     <strong class='reserved'>protected</strong> SnmpSubBulkRequestHandler(<a href='../S/6449.html#L130' title='Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.'>SnmpAdaptorServer</a> server,
-<a id='L75' name='L75'></a>  75                                         <a href='../S/6411.html#L63' title='Defined at 63 in src/com/sun/jmx/snmp/agent/SnmpMibAgent.java.'>SnmpMibAgent</a> agent,
-<a id='L76' name='L76'></a>  76                                         <a href='../S/6374.html#L48' title='Defined at 48 in src/com/sun/jmx/snmp/SnmpPdu.java.'>SnmpPdu</a> req,
-<a id='L77' name='L77'></a>  77                                         <strong class='reserved'>int</strong> nonRepeat,
-<a id='L78' name='L78'></a>  78                                         <strong class='reserved'>int</strong> maxRepeat,
-<a id='L79' name='L79'></a>  79                                         <strong class='reserved'>int</strong> R) <em class='brace'>{</em>
-<a id='L80' name='L80'></a>  80         <strong class='reserved'>super</strong>(agent, req);
-<a id='L81' name='L81'></a>  81         <a href='../D/24497.html' title='Multiple defined in 127 places.'>init</a>(server, req, nonRepeat, maxRepeat, R);
-<a id='L82' name='L82'></a>  82     <em class='brace'>}</em>
-<a id='L83' name='L83'></a>  83 
-<a id='L84' name='L84'></a>  84     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L85' name='L85'></a>  85     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26539.html' title='Multiple referred from 715 places.'>run</a>() <em class='brace'>{</em>
-<a id='L86' name='L86'></a>  86 
-<a id='L87' name='L87'></a>  87         <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>= varBind.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>();
-<a id='L88' name='L88'></a>  88 
-<a id='L89' name='L89'></a>  89         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L90' name='L90'></a>  90             <em class='comment'>// Invoke a getBulk operation</em>
-<a id='L91' name='L91'></a>  91             <em class='comment'>//</em>
-<a id='L92' name='L92'></a>  92             <em class='comment'>/* NPCTE fix for bugId 4492741, esc 0, 16-August-2001 */</em>
-<a id='L93' name='L93'></a>  93             <strong class='reserved'>final</strong> <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a> oldContext =
-<a id='L94' name='L94'></a>  94                 <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>.<a href='../D/29933.html' title='Multiple defined in 37 places.'>push</a>("SnmpUserData",<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>);
-<a id='L95' name='L95'></a>  95             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L96' name='L96'></a>  96                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L97' name='L97'></a>  97                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L98' name='L98'></a>  98                         "run", "[" + <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>() +
-<a id='L99' name='L99'></a>  99                         "]:getBulk operation on " + agent.<a href='../D/20602.html' title='Multiple defined in 2 places.'>getMibName</a>());
-<a id='L100' name='L100'></a> 100                 <em class='brace'>}</em>
-<a id='L101' name='L101'></a> 101                 agent.<a href='../D/17373.html' title='Multiple defined in 4 places.'>getBulk</a>(<a href='../S/6443.html#L121' title='Defined at 121 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>createMibRequest</a>(varBind,<a href='../D/36409.html' title='Multiple defined in 4 places.'>version</a>,<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>),
-<a id='L102' name='L102'></a> 102                               nonRepeat, maxRepeat);
-<a id='L103' name='L103'></a> 103             <em class='brace'>}</em> <strong class='reserved'>finally</strong> <em class='brace'>{</em>
-<a id='L104' name='L104'></a> 104                 <a href='../S/6442.html#L65' title='Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.'>ThreadContext</a>.<a href='../D/31346.html' title='Multiple defined in 2 places.'>restore</a>(oldContext);
-<a id='L105' name='L105'></a> 105             <em class='brace'>}</em>
-<a id='L106' name='L106'></a> 106             <em class='comment'>/* end of NPCTE fix for bugId 4492741 */</em>
-<a id='L107' name='L107'></a> 107 
-<a id='L108' name='L108'></a> 108         <em class='brace'>}</em> <strong class='reserved'>catch</strong>(<a href='../S/6312.html#L40' title='Defined at 40 in src/com/sun/jmx/snmp/SnmpStatusException.java.'>SnmpStatusException</a> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) <em class='brace'>{</em>
-<a id='L109' name='L109'></a> 109             errorStatus = <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.<a href='../D/22739.html' title='Multiple defined in 8 places.'>getStatus</a>() ;
-<a id='L110' name='L110'></a> 110             errorIndex=  <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>.<a href='../D/18850.html' title='Multiple defined in 9 places.'>getErrorIndex</a>();
-<a id='L111' name='L111'></a> 111             <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
-<a id='L112' name='L112'></a> 112                 SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L113' name='L113'></a> 113                     "run", "[" + <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>() +
-<a id='L114' name='L114'></a> 114                     "]:an Snmp error occurred during the operation", <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>);
-<a id='L115' name='L115'></a> 115             <em class='brace'>}</em>
-<a id='L116' name='L116'></a> 116         <em class='brace'>}</em>
-<a id='L117' name='L117'></a> 117         <strong class='reserved'>catch</strong>(<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>) <em class='brace'>{</em>
-<a id='L118' name='L118'></a> 118             errorStatus = <a href='../S/6476.html#L19' title='Defined at 19 in src/com/sun/jmx/snmp/SnmpDefinitions.java.'>SnmpDefinitions</a>.snmpRspGenErr ;
-<a id='L119' name='L119'></a> 119             <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
-<a id='L120' name='L120'></a> 120                 SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L121' name='L121'></a> 121                     "run", "[" + <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>() +
-<a id='L122' name='L122'></a> 122                     "]:a generic error occurred during the operation", <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>);
-<a id='L123' name='L123'></a> 123             <em class='brace'>}</em>
-<a id='L124' name='L124'></a> 124         <em class='brace'>}</em>
-<a id='L125' name='L125'></a> 125         <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L126' name='L126'></a> 126             SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L127' name='L127'></a> 127                 "run", "[" + <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>() +
-<a id='L128' name='L128'></a> 128                   "]:operation completed");
-<a id='L129' name='L129'></a> 129         <em class='brace'>}</em>
-<a id='L130' name='L130'></a> 130     <em class='brace'>}</em>
-<a id='L131' name='L131'></a> 131 
-<a id='L132' name='L132'></a> 132     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/20537.html' title='Multiple referred from 888 places.'>init</a>(<a href='../S/6449.html#L130' title='Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.'>SnmpAdaptorServer</a> server,
-<a id='L133' name='L133'></a> 133                       <a href='../S/6374.html#L48' title='Defined at 48 in src/com/sun/jmx/snmp/SnmpPdu.java.'>SnmpPdu</a> req,
-<a id='L134' name='L134'></a> 134                       <strong class='reserved'>int</strong> nonRepeat,
-<a id='L135' name='L135'></a> 135                       <strong class='reserved'>int</strong> maxRepeat,
-<a id='L136' name='L136'></a> 136                       <strong class='reserved'>int</strong> R) <em class='brace'>{</em>
-<a id='L137' name='L137'></a> 137         <strong class='reserved'>this</strong>.server = server;
-<a id='L138' name='L138'></a> 138         <strong class='reserved'>this</strong>.nonRepeat= nonRepeat;
-<a id='L139' name='L139'></a> 139         <strong class='reserved'>this</strong>.maxRepeat= maxRepeat;
-<a id='L140' name='L140'></a> 140         <strong class='reserved'>this</strong>.globalR= R;
-<a id='L141' name='L141'></a> 141 
-<a id='L142' name='L142'></a> 142         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>= translation.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
-<a id='L143' name='L143'></a> 143         <strong class='reserved'>final</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>[] <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>= req.varBindList;
-<a id='L144' name='L144'></a> 144         <strong class='reserved'>final</strong> <a href='../D/6116.html' title='Multiple defined in 2 places.'>NonSyncVector</a>&lt;<a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>&gt; nonSyncVarBind =
-<a id='L145' name='L145'></a> 145                 ((<a href='../D/6116.html' title='Multiple defined in 2 places.'>NonSyncVector</a>&lt;<a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>&gt;)varBind);
-<a id='L146' name='L146'></a> 146         <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i &lt; <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>; i++) <em class='brace'>{</em>
-<a id='L147' name='L147'></a> 147             translation[i]= i;
-<a id='L148' name='L148'></a> 148             <em class='comment'>// we need to allocate a new SnmpVarBind. Otherwise the first</em>
-<a id='L149' name='L149'></a> 149             <em class='comment'>// sub request will modify the list...</em>
-<a id='L150' name='L150'></a> 150             <em class='comment'>//</em>
-<a id='L151' name='L151'></a> 151             <strong class='reserved'>final</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> newVarBind =
-<a id='L152' name='L152'></a> 152                 <strong class='reserved'>new</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>(<a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>[i].oid, <a href='../D/26871.html' title='Multiple defined in 42 places.'>list</a>[i].<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
-<a id='L153' name='L153'></a> 153             nonSyncVarBind.<a href='../D/10970.html' title='Multiple defined in 2 places.'>addNonSyncElement</a>(newVarBind);
-<a id='L154' name='L154'></a> 154         <em class='brace'>}</em>
-<a id='L155' name='L155'></a> 155     <em class='brace'>}</em>
-<a id='L156' name='L156'></a> 156 
-<a id='L157' name='L157'></a> 157     <em class='comment'>/**</em>
-<a id='L158' name='L158'></a> 158 <em class='comment'>     * The method updates find out which element to use at update time. Handle oid overlapping as well</em>
-<a id='L159' name='L159'></a> 159 <em class='comment'>     */</em>
-<a id='L160' name='L160'></a> 160     <strong class='reserved'>private</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> <a href='../R/14499.html' title='Multiple referred from 2 places.'>findVarBind</a>(<a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>,
-<a id='L161' name='L161'></a> 161                                     <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>) <em class='brace'>{</em>
-<a id='L162' name='L162'></a> 162 
-<a id='L163' name='L163'></a> 163         <strong class='reserved'>if</strong> (<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> == <strong class='reserved'>null</strong>) <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L164' name='L164'></a> 164 
-<a id='L165' name='L165'></a> 165         <strong class='reserved'>if</strong> (<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.oid == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L166' name='L166'></a> 166              <strong class='reserved'>return</strong> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>;
-<a id='L167' name='L167'></a> 167         <em class='brace'>}</em>
-<a id='L168' name='L168'></a> 168 
-<a id='L169' name='L169'></a> 169         <strong class='reserved'>if</strong> (<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>.endOfMibView) <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
-<a id='L170' name='L170'></a> 170 
-<a id='L171' name='L171'></a> 171         <strong class='reserved'>if</strong> (<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> == <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>.endOfMibView) <strong class='reserved'>return</strong> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>;
-<a id='L172' name='L172'></a> 172 
-<a id='L173' name='L173'></a> 173         <strong class='reserved'>final</strong> <a href='../S/6471.html#L42' title='Defined at 42 in src/com/sun/jmx/snmp/SnmpValue.java.'>SnmpValue</a> <a href='../S/1444.html#L56' title='Defined at 56 in src/java/io/ExpiringCache.java.'>val</a> = <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>;
-<a id='L174' name='L174'></a> 174 
-<a id='L175' name='L175'></a> 175         <strong class='reserved'>int</strong> comp = <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.oid.<a href='../D/13068.html' title='Multiple defined in 86 places.'>compareTo</a>(<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.oid);
-<a id='L176' name='L176'></a> 176         <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L177' name='L177'></a> 177             SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L178' name='L178'></a> 178                 "findVarBind","Comparing OID element : " + <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.oid +
-<a id='L179' name='L179'></a> 179                   " with result : " + <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.oid);
-<a id='L180' name='L180'></a> 180             SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L181' name='L181'></a> 181                 "findVarBind","Values element : " + <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a> +
-<a id='L182' name='L182'></a> 182                   " result : " + <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
-<a id='L183' name='L183'></a> 183         <em class='brace'>}</em>
-<a id='L184' name='L184'></a> 184         <strong class='reserved'>if</strong> (comp &lt; 0) <em class='brace'>{</em>
-<a id='L185' name='L185'></a> 185             <em class='comment'>// Take the smallest (lexicographically)</em>
-<a id='L186' name='L186'></a> 186             <em class='comment'>//</em>
-<a id='L187' name='L187'></a> 187             <strong class='reserved'>return</strong> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>;
-<a id='L188' name='L188'></a> 188         <em class='brace'>}</em>
-<a id='L189' name='L189'></a> 189         <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L190' name='L190'></a> 190             <strong class='reserved'>if</strong>(comp == 0) <em class='brace'>{</em>
-<a id='L191' name='L191'></a> 191                 <em class='comment'>// Must compare agent used for reply</em>
-<a id='L192' name='L192'></a> 192                 <em class='comment'>// Take the deeper within the reply</em>
-<a id='L193' name='L193'></a> 193                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L194' name='L194'></a> 194                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L195' name='L195'></a> 195                         "findVarBind"," oid overlapping. Oid : " +
-<a id='L196' name='L196'></a> 196                           <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.oid + "value :" + <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>.<a href='../D/36360.html' title='Multiple defined in 73 places.'>value</a>);
-<a id='L197' name='L197'></a> 197                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L198' name='L198'></a> 198                          "findVarBind","Already present varBind : " +
-<a id='L199' name='L199'></a> 199                           <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>);
-<a id='L200' name='L200'></a> 200                 <em class='brace'>}</em>
-<a id='L201' name='L201'></a> 201                 <a href='../S/6468.html#L22' title='Defined at 22 in src/com/sun/jmx/snmp/SnmpOid.java.'>SnmpOid</a> oid = <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.oid;
-<a id='L202' name='L202'></a> 202                 <a href='../S/6411.html#L63' title='Defined at 63 in src/com/sun/jmx/snmp/agent/SnmpMibAgent.java.'>SnmpMibAgent</a> deeperAgent = server.<a href='../D/16847.html' title='Multiple defined in 3 places.'>getAgentMib</a>(oid);
-<a id='L203' name='L203'></a> 203 
-<a id='L204' name='L204'></a> 204                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L205' name='L205'></a> 205                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L206' name='L206'></a> 206                         "findVarBind","Deeper agent : " + deeperAgent);
-<a id='L207' name='L207'></a> 207                 <em class='brace'>}</em>
-<a id='L208' name='L208'></a> 208                 <strong class='reserved'>if</strong>(deeperAgent == agent) <em class='brace'>{</em>
-<a id='L209' name='L209'></a> 209                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L210' name='L210'></a> 210                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L211' name='L211'></a> 211                             "findVarBind","The current agent is the deeper one. Update the value with the current one");
-<a id='L212' name='L212'></a> 212                     <em class='brace'>}</em>
-<a id='L213' name='L213'></a> 213                     <strong class='reserved'>return</strong> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>;
-<a id='L214' name='L214'></a> 214                 <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L215' name='L215'></a> 215                     <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L216' name='L216'></a> 216                         SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L217' name='L217'></a> 217                             "findVarBind","The current agent is not the deeper one. return the previous one.");
-<a id='L218' name='L218'></a> 218                     <em class='brace'>}</em>
-<a id='L219' name='L219'></a> 219                     <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
-<a id='L220' name='L220'></a> 220                 <em class='brace'>}</em>
-<a id='L221' name='L221'></a> 221 
-<a id='L222' name='L222'></a> 222                 <em class='comment'>/*</em>
-<a id='L223' name='L223'></a> 223 <em class='comment'>                   Vector v = new Vector();</em>
-<a id='L224' name='L224'></a> 224 <em class='comment'>                   SnmpMibRequest getReq = createMibRequest(v,</em>
-<a id='L225' name='L225'></a> 225 <em class='comment'>                   version,</em>
-<a id='L226' name='L226'></a> 226 <em class='comment'>                   null);</em>
-<a id='L227' name='L227'></a> 227 <em class='comment'>                   SnmpVarBind realValue = new SnmpVarBind(oid);</em>
-<a id='L228' name='L228'></a> 228 <em class='comment'>                   getReq.addVarBind(realValue);</em>
-<a id='L229' name='L229'></a> 229 <em class='comment'>                   try {</em>
-<a id='L230' name='L230'></a> 230 <em class='comment'>                   deeperAgent.get(getReq);</em>
-<a id='L231' name='L231'></a> 231 <em class='comment'>                   } catch(SnmpStatusException e) {</em>
-<a id='L232' name='L232'></a> 232 <em class='comment'>                   e.printStackTrace();</em>
-<a id='L233' name='L233'></a> 233 <em class='comment'>                   }</em>
-<a id='L234' name='L234'></a> 234 <em class='comment'></em>
-<a id='L235' name='L235'></a> 235 <em class='comment'>                   if(isDebugOn())</em>
-<a id='L236' name='L236'></a> 236 <em class='comment'>                   trace("findVarBind", "Biggest priority value is : " +</em>
-<a id='L237' name='L237'></a> 237 <em class='comment'>                   realValue.value);</em>
-<a id='L238' name='L238'></a> 238 <em class='comment'></em>
-<a id='L239' name='L239'></a> 239 <em class='comment'>                   return realValue;</em>
-<a id='L240' name='L240'></a> 240 <em class='comment'>                */</em>
-<a id='L241' name='L241'></a> 241 
-<a id='L242' name='L242'></a> 242             <em class='brace'>}</em>
-<a id='L243' name='L243'></a> 243             <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L244' name='L244'></a> 244                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L245' name='L245'></a> 245                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L246' name='L246'></a> 246                         "findVarBind","The right varBind is the already present one");
-<a id='L247' name='L247'></a> 247                 <em class='brace'>}</em>
-<a id='L248' name='L248'></a> 248                 <strong class='reserved'>return</strong> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>;
-<a id='L249' name='L249'></a> 249             <em class='brace'>}</em>
-<a id='L250' name='L250'></a> 250         <em class='brace'>}</em>
-<a id='L251' name='L251'></a> 251     <em class='brace'>}</em>
-<a id='L252' name='L252'></a> 252     <em class='comment'>/**</em>
-<a id='L253' name='L253'></a> 253 <em class='comment'>     * The method updates a given var bind list with the result of a</em>
-<a id='L254' name='L254'></a> 254 <em class='comment'>     * previsouly invoked operation.</em>
-<a id='L255' name='L255'></a> 255 <em class='comment'>     * Prior to calling the method, one must make sure that the operation was</em>
-<a id='L256' name='L256'></a> 256 <em class='comment'>     * successful. As such the method getErrorIndex or getErrorStatus should be</em>
-<a id='L257' name='L257'></a> 257 <em class='comment'>     * called.</em>
-<a id='L258' name='L258'></a> 258 <em class='comment'>     */</em>
-<a id='L259' name='L259'></a> 259     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L260' name='L260'></a> 260     <strong class='reserved'>protected</strong> <strong class='reserved'>void</strong> <a href='../R/29947.html' title='Multiple referred from 3 places.'>updateResult</a>(<a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>[] <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>) <em class='brace'>{</em>
-<a id='L261' name='L261'></a> 261         <em class='comment'>// we can assume that the run method is over ...</em>
-<a id='L262' name='L262'></a> 262         <em class='comment'>//</em>
-<a id='L263' name='L263'></a> 263 
-<a id='L264' name='L264'></a> 264         <strong class='reserved'>final</strong> <a href='../S/1134.html#L61' title='Defined at 61 in src/java/util/Enumeration.java.'>Enumeration</a>&lt;<a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a>&gt; e= varBind.<a href='../D/15313.html' title='Multiple defined in 25 places.'>elements</a>();
-<a id='L265' name='L265'></a> 265         <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>= <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
-<a id='L266' name='L266'></a> 266 
-<a id='L267' name='L267'></a> 267         <em class='comment'>// First go through all the values once ...</em>
-<a id='L268' name='L268'></a> 268         <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> i=0; i &lt; <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>; i++) <em class='brace'>{</em>
-<a id='L269' name='L269'></a> 269             <em class='comment'>// May be we should control the position ...</em>
-<a id='L270' name='L270'></a> 270             <em class='comment'>//</em>
-<a id='L271' name='L271'></a> 271             <strong class='reserved'>if</strong> (e.<a href='../D/24128.html' title='Multiple defined in 32 places.'>hasMoreElements</a>() == <strong class='reserved'>false</strong>)
-<a id='L272' name='L272'></a> 272                 <strong class='reserved'>return</strong>;
-<a id='L273' name='L273'></a> 273 
-<a id='L274' name='L274'></a> 274             <em class='comment'>// bugId 4641694: must check position in order to avoid</em>
-<a id='L275' name='L275'></a> 275             <em class='comment'>//       ArrayIndexOutOfBoundException</em>
-<a id='L276' name='L276'></a> 276             <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> pos=translation[i];
-<a id='L277' name='L277'></a> 277             <strong class='reserved'>if</strong> (pos &gt;= <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>) <em class='brace'>{</em>
-<a id='L278' name='L278'></a> 278                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST)) <em class='brace'>{</em>
-<a id='L279' name='L279'></a> 279                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINEST, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L280' name='L280'></a> 280                         "updateResult","Position '"+pos+"' is out of bound...");
-<a id='L281' name='L281'></a> 281                 <em class='brace'>}</em>
-<a id='L282' name='L282'></a> 282                 <strong class='reserved'>continue</strong>;
-<a id='L283' name='L283'></a> 283             <em class='brace'>}</em>
-<a id='L284' name='L284'></a> 284 
-<a id='L285' name='L285'></a> 285             <strong class='reserved'>final</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>= e.<a href='../D/28145.html' title='Multiple defined in 35 places.'>nextElement</a>();
-<a id='L286' name='L286'></a> 286 
-<a id='L287' name='L287'></a> 287             <strong class='reserved'>if</strong> (<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> == <strong class='reserved'>null</strong>) <strong class='reserved'>continue</strong>;
-<a id='L288' name='L288'></a> 288             <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L289' name='L289'></a> 289                 SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L290' name='L290'></a> 290                     "updateResult","Non repeaters Current element : " +
-<a id='L291' name='L291'></a> 291                       <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> + " from agent : " + agent);
-<a id='L292' name='L292'></a> 292             <em class='brace'>}</em>
-<a id='L293' name='L293'></a> 293             <strong class='reserved'>final</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> res = <a href='../S/6450.html#L160' title='Defined at 160 in src/com/sun/jmx/snmp/daemon/SnmpSubBulkRequestHandler.java.'>findVarBind</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>,<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>[pos]);
-<a id='L294' name='L294'></a> 294 
-<a id='L295' name='L295'></a> 295             <strong class='reserved'>if</strong>(res == <strong class='reserved'>null</strong>) <strong class='reserved'>continue</strong>;
-<a id='L296' name='L296'></a> 296 
-<a id='L297' name='L297'></a> 297             <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>[pos] = res;
-<a id='L298' name='L298'></a> 298         <em class='brace'>}</em>
-<a id='L299' name='L299'></a> 299 
-<a id='L300' name='L300'></a> 300         <em class='comment'>// Now update the values which have been repeated</em>
-<a id='L301' name='L301'></a> 301         <em class='comment'>// more than once.</em>
-<a id='L302' name='L302'></a> 302         <strong class='reserved'>int</strong> localR= <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a> - nonRepeat;
-<a id='L303' name='L303'></a> 303         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 2 ; i &lt;= maxRepeat ; i++) <em class='brace'>{</em>
-<a id='L304' name='L304'></a> 304             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> r = 0 ; r &lt; localR ; r++) <em class='brace'>{</em>
-<a id='L305' name='L305'></a> 305                 <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> pos = (i-1)* globalR + translation[nonRepeat + r] ;
-<a id='L306' name='L306'></a> 306                 <strong class='reserved'>if</strong> (pos &gt;= <a href='../D/27569.html' title='Multiple defined in 28 places.'>max</a>)
-<a id='L307' name='L307'></a> 307                     <strong class='reserved'>return</strong>;
-<a id='L308' name='L308'></a> 308                 <strong class='reserved'>if</strong> (e.<a href='../D/24128.html' title='Multiple defined in 32 places.'>hasMoreElements</a>() ==<strong class='reserved'>false</strong>)
-<a id='L309' name='L309'></a> 309                     <strong class='reserved'>return</strong>;
-<a id='L310' name='L310'></a> 310                 <strong class='reserved'>final</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>= e.<a href='../D/28145.html' title='Multiple defined in 35 places.'>nextElement</a>();
-<a id='L311' name='L311'></a> 311 
-<a id='L312' name='L312'></a> 312                 <strong class='reserved'>if</strong> (<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> == <strong class='reserved'>null</strong>) <strong class='reserved'>continue</strong>;
-<a id='L313' name='L313'></a> 313                 <strong class='reserved'>if</strong> (SNMP_ADAPTOR_LOGGER.<a href='../D/25833.html' title='Multiple defined in 6 places.'>isLoggable</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER)) <em class='brace'>{</em>
-<a id='L314' name='L314'></a> 314                     SNMP_ADAPTOR_LOGGER.<a href='../D/27062.html' title='Multiple defined in 6 places.'>logp</a>(<a href='../S/1180.html#L66' title='Defined at 66 in src/java/util/logging/Level.java.'>Level</a>.FINER, <a href='../S/6443.html#L52' title='Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.'>SnmpSubRequestHandler</a>.<strong class='reserved'>class</strong>.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>(),
-<a id='L315' name='L315'></a> 315                         "updateResult","Repeaters Current element : " +
-<a id='L316' name='L316'></a> 316                           <a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a> + " from agent : " + agent);
-<a id='L317' name='L317'></a> 317                 <em class='brace'>}</em>
-<a id='L318' name='L318'></a> 318                 <strong class='reserved'>final</strong> <a href='../S/6477.html#L29' title='Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.'>SnmpVarBind</a> res = <a href='../S/6450.html#L160' title='Defined at 160 in src/com/sun/jmx/snmp/daemon/SnmpSubBulkRequestHandler.java.'>findVarBind</a>(<a href='../D/15287.html' title='Multiple defined in 20 places.'>element</a>, <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>[pos]);
-<a id='L319' name='L319'></a> 319 
-<a id='L320' name='L320'></a> 320                 <strong class='reserved'>if</strong>(res == <strong class='reserved'>null</strong>) <strong class='reserved'>continue</strong>;
-<a id='L321' name='L321'></a> 321 
-<a id='L322' name='L322'></a> 322                 <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>[pos] = res;
-<a id='L323' name='L323'></a> 323             <em class='brace'>}</em>
-<a id='L324' name='L324'></a> 324         <em class='brace'>}</em>
-<a id='L325' name='L325'></a> 325     <em class='brace'>}</em>
-<a id='L326' name='L326'></a> 326 
-<a id='L327' name='L327'></a> 327     <em class='comment'>// PROTECTED VARIABLES</em>
-<a id='L328' name='L328'></a> 328     <em class='comment'>//------------------</em>
-<a id='L329' name='L329'></a> 329 
-<a id='L330' name='L330'></a> 330     <em class='comment'>/**</em>
-<a id='L331' name='L331'></a> 331 <em class='comment'>     * Specific to the sub request</em>
-<a id='L332' name='L332'></a> 332 <em class='comment'>     */</em>
-<a id='L333' name='L333'></a> 333     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> nonRepeat=0;
-<a id='L334' name='L334'></a> 334 
-<a id='L335' name='L335'></a> 335     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> maxRepeat=0;
-<a id='L336' name='L336'></a> 336 
-<a id='L337' name='L337'></a> 337     <em class='comment'>/**</em>
-<a id='L338' name='L338'></a> 338 <em class='comment'>     * R as defined in RCF 1902 for the global request the sub-request is associated to.</em>
-<a id='L339' name='L339'></a> 339 <em class='comment'>     */</em>
-<a id='L340' name='L340'></a> 340     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> globalR=0;
-<a id='L341' name='L341'></a> 341 
-<a id='L342' name='L342'></a> 342     <strong class='reserved'>protected</strong> <strong class='reserved'>int</strong> <a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>=0;
-<a id='L343' name='L343'></a> 343 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 
+<a id="L27" name="L27"></a>  27 <strong class="reserved">package</strong> com.sun.jmx.snmp.daemon;
+<a id="L28" name="L28"></a>  28 
+<a id="L29" name="L29"></a>  29 
+<a id="L30" name="L30"></a>  30 
+<a id="L31" name="L31"></a>  31 <em class="comment">// java import</em>
+<a id="L32" name="L32"></a>  32 <em class="comment">//</em>
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.util.Enumeration;
+<a id="L34" name="L34"></a>  34 <strong class="reserved">import</strong> java.util.logging.Level;
+<a id="L35" name="L35"></a>  35 <em class="comment">// jmx imports</em>
+<a id="L36" name="L36"></a>  36 <em class="comment">//</em>
+<a id="L37" name="L37"></a>  37 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpPdu;
+<a id="L38" name="L38"></a>  38 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpVarBind;
+<a id="L39" name="L39"></a>  39 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpOid;
+<a id="L40" name="L40"></a>  40 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpValue;
+<a id="L41" name="L41"></a>  41 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpDefinitions;
+<a id="L42" name="L42"></a>  42 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpStatusException;
+<a id="L43" name="L43"></a>  43 <strong class="reserved">import</strong> com.sun.jmx.snmp.SnmpEngine;
+<a id="L44" name="L44"></a>  44 <em class="comment">// SNMP Runtime import</em>
+<a id="L45" name="L45"></a>  45 <em class="comment">//</em>
+<a id="L46" name="L46"></a>  46 <strong class="reserved">import</strong> static com.sun.jmx.defaults.JmxProperties.SNMP_ADAPTOR_LOGGER;
+<a id="L47" name="L47"></a>  47 <strong class="reserved">import</strong> com.sun.jmx.snmp.agent.SnmpMibAgent;
+<a id="L48" name="L48"></a>  48 <strong class="reserved">import</strong> com.sun.jmx.snmp.internal.SnmpIncomingRequest;
+<a id="L49" name="L49"></a>  49 <strong class="reserved">import</strong> com.sun.jmx.snmp.ThreadContext;
+<a id="L50" name="L50"></a>  50 
+<a id="L51" name="L51"></a>  51 <strong class="reserved">class</strong> <a href="../S/6462.html#L1059" title="Referred from 1059 in src/com/sun/jmx/snmp/daemon/SnmpRequestHandler.java.">SnmpSubBulkRequestHandler</a> <strong class="reserved">extends</strong> <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a> <em class="brace">{</em>
+<a id="L52" name="L52"></a>  52     <strong class="reserved">private</strong> <a href="../S/6449.html#L130" title="Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.">SnmpAdaptorServer</a> server = <strong class="reserved">null</strong>;
+<a id="L53" name="L53"></a>  53 
+<a id="L54" name="L54"></a>  54     <em class="comment">/**</em>
+<a id="L55" name="L55"></a>  55 <em class="comment">     * The constructor initialize the subrequest with the whole varbind list contained</em>
+<a id="L56" name="L56"></a>  56 <em class="comment">     * in the original request.</em>
+<a id="L57" name="L57"></a>  57 <em class="comment">     */</em>
+<a id="L58" name="L58"></a>  58     <strong class="reserved">protected</strong> SnmpSubBulkRequestHandler(<a href="../S/6481.html#L47" title="Defined at 47 in src/com/sun/jmx/snmp/SnmpEngine.java.">SnmpEngine</a> engine,
+<a id="L59" name="L59"></a>  59                                         <a href="../S/6449.html#L130" title="Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.">SnmpAdaptorServer</a> server,
+<a id="L60" name="L60"></a>  60                                         <a href="../S/6387.html#L48" title="Defined at 48 in src/com/sun/jmx/snmp/internal/SnmpIncomingRequest.java.">SnmpIncomingRequest</a> incRequest,
+<a id="L61" name="L61"></a>  61                                         <a href="../S/6411.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/agent/SnmpMibAgent.java.">SnmpMibAgent</a> agent,
+<a id="L62" name="L62"></a>  62                                         <a href="../S/6374.html#L48" title="Defined at 48 in src/com/sun/jmx/snmp/SnmpPdu.java.">SnmpPdu</a> req,
+<a id="L63" name="L63"></a>  63                                         <strong class="reserved">int</strong> nonRepeat,
+<a id="L64" name="L64"></a>  64                                         <strong class="reserved">int</strong> maxRepeat,
+<a id="L65" name="L65"></a>  65                                         <strong class="reserved">int</strong> R) <em class="brace">{</em>
+<a id="L66" name="L66"></a>  66         <strong class="reserved">super</strong>(engine, incRequest, agent, req);
+<a id="L67" name="L67"></a>  67         <a href="../D/24497.html" title="Multiple defined in 127 places.">init</a>(server, req, nonRepeat, maxRepeat, R);
+<a id="L68" name="L68"></a>  68     <em class="brace">}</em>
+<a id="L69" name="L69"></a>  69 
+<a id="L70" name="L70"></a>  70     <em class="comment">/**</em>
+<a id="L71" name="L71"></a>  71 <em class="comment">     * The constructor initialize the subrequest with the whole varbind list contained</em>
+<a id="L72" name="L72"></a>  72 <em class="comment">     * in the original request.</em>
+<a id="L73" name="L73"></a>  73 <em class="comment">     */</em>
+<a id="L74" name="L74"></a>  74     <strong class="reserved">protected</strong> SnmpSubBulkRequestHandler(<a href="../S/6449.html#L130" title="Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.">SnmpAdaptorServer</a> server,
+<a id="L75" name="L75"></a>  75                                         <a href="../S/6411.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/agent/SnmpMibAgent.java.">SnmpMibAgent</a> agent,
+<a id="L76" name="L76"></a>  76                                         <a href="../S/6374.html#L48" title="Defined at 48 in src/com/sun/jmx/snmp/SnmpPdu.java.">SnmpPdu</a> req,
+<a id="L77" name="L77"></a>  77                                         <strong class="reserved">int</strong> nonRepeat,
+<a id="L78" name="L78"></a>  78                                         <strong class="reserved">int</strong> maxRepeat,
+<a id="L79" name="L79"></a>  79                                         <strong class="reserved">int</strong> R) <em class="brace">{</em>
+<a id="L80" name="L80"></a>  80         <strong class="reserved">super</strong>(agent, req);
+<a id="L81" name="L81"></a>  81         <a href="../D/24497.html" title="Multiple defined in 127 places.">init</a>(server, req, nonRepeat, maxRepeat, R);
+<a id="L82" name="L82"></a>  82     <em class="brace">}</em>
+<a id="L83" name="L83"></a>  83 
+<a id="L84" name="L84"></a>  84     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L85" name="L85"></a>  85     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/26539.html" title="Multiple referred from 715 places.">run</a>() <em class="brace">{</em>
+<a id="L86" name="L86"></a>  86 
+<a id="L87" name="L87"></a>  87         <a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>= varBind.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>();
+<a id="L88" name="L88"></a>  88 
+<a id="L89" name="L89"></a>  89         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L90" name="L90"></a>  90             <em class="comment">// Invoke a getBulk operation</em>
+<a id="L91" name="L91"></a>  91             <em class="comment">//</em>
+<a id="L92" name="L92"></a>  92             <em class="comment">/* NPCTE fix for bugId 4492741, esc 0, 16-August-2001 */</em>
+<a id="L93" name="L93"></a>  93             <strong class="reserved">final</strong> <a href="../S/6442.html#L65" title="Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.">ThreadContext</a> oldContext =
+<a id="L94" name="L94"></a>  94                 <a href="../S/6442.html#L65" title="Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.">ThreadContext</a>.<a href="../D/29933.html" title="Multiple defined in 37 places.">push</a>("SnmpUserData",<a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>);
+<a id="L95" name="L95"></a>  95             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L96" name="L96"></a>  96                 <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L97" name="L97"></a>  97                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L98" name="L98"></a>  98                         "run", "[" + <a href="../S/1769.html#L141" title="Defined at 141 in src/java/lang/Thread.java.">Thread</a>.<a href="../S/1769.html#L264" title="Defined at 264 in src/java/lang/Thread.java.">currentThread</a>() +
+<a id="L99" name="L99"></a>  99                         "]:getBulk operation on " + agent.<a href="../D/20602.html" title="Multiple defined in 2 places.">getMibName</a>());
+<a id="L100" name="L100"></a> 100                 <em class="brace">}</em>
+<a id="L101" name="L101"></a> 101                 agent.<a href="../D/17373.html" title="Multiple defined in 4 places.">getBulk</a>(<a href="../S/6443.html#L121" title="Defined at 121 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">createMibRequest</a>(varBind,<a href="../D/36409.html" title="Multiple defined in 4 places.">version</a>,<a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>),
+<a id="L102" name="L102"></a> 102                               nonRepeat, maxRepeat);
+<a id="L103" name="L103"></a> 103             <em class="brace">}</em> <strong class="reserved">finally</strong> <em class="brace">{</em>
+<a id="L104" name="L104"></a> 104                 <a href="../S/6442.html#L65" title="Defined at 65 in src/com/sun/jmx/snmp/ThreadContext.java.">ThreadContext</a>.<a href="../D/31346.html" title="Multiple defined in 2 places.">restore</a>(oldContext);
+<a id="L105" name="L105"></a> 105             <em class="brace">}</em>
+<a id="L106" name="L106"></a> 106             <em class="comment">/* end of NPCTE fix for bugId 4492741 */</em>
+<a id="L107" name="L107"></a> 107 
+<a id="L108" name="L108"></a> 108         <em class="brace">}</em> <strong class="reserved">catch</strong>(<a href="../S/6312.html#L40" title="Defined at 40 in src/com/sun/jmx/snmp/SnmpStatusException.java.">SnmpStatusException</a> <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>) <em class="brace">{</em>
+<a id="L109" name="L109"></a> 109             errorStatus = <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>.<a href="../D/22739.html" title="Multiple defined in 8 places.">getStatus</a>() ;
+<a id="L110" name="L110"></a> 110             errorIndex=  <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>.<a href="../D/18850.html" title="Multiple defined in 9 places.">getErrorIndex</a>();
+<a id="L111" name="L111"></a> 111             <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINEST)) <em class="brace">{</em>
+<a id="L112" name="L112"></a> 112                 SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINEST, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L113" name="L113"></a> 113                     "run", "[" + <a href="../S/1769.html#L141" title="Defined at 141 in src/java/lang/Thread.java.">Thread</a>.<a href="../S/1769.html#L264" title="Defined at 264 in src/java/lang/Thread.java.">currentThread</a>() +
+<a id="L114" name="L114"></a> 114                     "]:an Snmp error occurred during the operation", <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>);
+<a id="L115" name="L115"></a> 115             <em class="brace">}</em>
+<a id="L116" name="L116"></a> 116         <em class="brace">}</em>
+<a id="L117" name="L117"></a> 117         <strong class="reserved">catch</strong>(<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>) <em class="brace">{</em>
+<a id="L118" name="L118"></a> 118             errorStatus = <a href="../S/6476.html#L19" title="Defined at 19 in src/com/sun/jmx/snmp/SnmpDefinitions.java.">SnmpDefinitions</a>.snmpRspGenErr ;
+<a id="L119" name="L119"></a> 119             <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINEST)) <em class="brace">{</em>
+<a id="L120" name="L120"></a> 120                 SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINEST, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L121" name="L121"></a> 121                     "run", "[" + <a href="../S/1769.html#L141" title="Defined at 141 in src/java/lang/Thread.java.">Thread</a>.<a href="../S/1769.html#L264" title="Defined at 264 in src/java/lang/Thread.java.">currentThread</a>() +
+<a id="L122" name="L122"></a> 122                     "]:a generic error occurred during the operation", <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>);
+<a id="L123" name="L123"></a> 123             <em class="brace">}</em>
+<a id="L124" name="L124"></a> 124         <em class="brace">}</em>
+<a id="L125" name="L125"></a> 125         <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L126" name="L126"></a> 126             SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L127" name="L127"></a> 127                 "run", "[" + <a href="../S/1769.html#L141" title="Defined at 141 in src/java/lang/Thread.java.">Thread</a>.<a href="../S/1769.html#L264" title="Defined at 264 in src/java/lang/Thread.java.">currentThread</a>() +
+<a id="L128" name="L128"></a> 128                   "]:operation completed");
+<a id="L129" name="L129"></a> 129         <em class="brace">}</em>
+<a id="L130" name="L130"></a> 130     <em class="brace">}</em>
+<a id="L131" name="L131"></a> 131 
+<a id="L132" name="L132"></a> 132     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../R/20537.html" title="Multiple referred from 888 places.">init</a>(<a href="../S/6449.html#L130" title="Defined at 130 in src/com/sun/jmx/snmp/daemon/SnmpAdaptorServer.java.">SnmpAdaptorServer</a> server,
+<a id="L133" name="L133"></a> 133                       <a href="../S/6374.html#L48" title="Defined at 48 in src/com/sun/jmx/snmp/SnmpPdu.java.">SnmpPdu</a> req,
+<a id="L134" name="L134"></a> 134                       <strong class="reserved">int</strong> nonRepeat,
+<a id="L135" name="L135"></a> 135                       <strong class="reserved">int</strong> maxRepeat,
+<a id="L136" name="L136"></a> 136                       <strong class="reserved">int</strong> R) <em class="brace">{</em>
+<a id="L137" name="L137"></a> 137         <strong class="reserved">this</strong>.server = server;
+<a id="L138" name="L138"></a> 138         <strong class="reserved">this</strong>.nonRepeat= nonRepeat;
+<a id="L139" name="L139"></a> 139         <strong class="reserved">this</strong>.maxRepeat= maxRepeat;
+<a id="L140" name="L140"></a> 140         <strong class="reserved">this</strong>.globalR= R;
+<a id="L141" name="L141"></a> 141 
+<a id="L142" name="L142"></a> 142         <strong class="reserved">final</strong> <strong class="reserved">int</strong> <a href="../D/27569.html" title="Multiple defined in 28 places.">max</a>= translation.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>;
+<a id="L143" name="L143"></a> 143         <strong class="reserved">final</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>[] <a href="../D/26871.html" title="Multiple defined in 42 places.">list</a>= req.varBindList;
+<a id="L144" name="L144"></a> 144         <strong class="reserved">final</strong> <a href="../D/6116.html" title="Multiple defined in 2 places.">NonSyncVector</a>&lt;<a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>&gt; nonSyncVarBind =
+<a id="L145" name="L145"></a> 145                 ((<a href="../D/6116.html" title="Multiple defined in 2 places.">NonSyncVector</a>&lt;<a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>&gt;)varBind);
+<a id="L146" name="L146"></a> 146         <strong class="reserved">for</strong>(<strong class="reserved">int</strong> i=0; i &lt; <a href="../D/27569.html" title="Multiple defined in 28 places.">max</a>; i++) <em class="brace">{</em>
+<a id="L147" name="L147"></a> 147             translation[i]= i;
+<a id="L148" name="L148"></a> 148             <em class="comment">// we need to allocate a new SnmpVarBind. Otherwise the first</em>
+<a id="L149" name="L149"></a> 149             <em class="comment">// sub request will modify the list...</em>
+<a id="L150" name="L150"></a> 150             <em class="comment">//</em>
+<a id="L151" name="L151"></a> 151             <strong class="reserved">final</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> newVarBind =
+<a id="L152" name="L152"></a> 152                 <strong class="reserved">new</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>(<a href="../D/26871.html" title="Multiple defined in 42 places.">list</a>[i].oid, <a href="../D/26871.html" title="Multiple defined in 42 places.">list</a>[i].<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>);
+<a id="L153" name="L153"></a> 153             nonSyncVarBind.<a href="../D/10970.html" title="Multiple defined in 2 places.">addNonSyncElement</a>(newVarBind);
+<a id="L154" name="L154"></a> 154         <em class="brace">}</em>
+<a id="L155" name="L155"></a> 155     <em class="brace">}</em>
+<a id="L156" name="L156"></a> 156 
+<a id="L157" name="L157"></a> 157     <em class="comment">/**</em>
+<a id="L158" name="L158"></a> 158 <em class="comment">     * The method updates find out which element to use at update time. Handle oid overlapping as well</em>
+<a id="L159" name="L159"></a> 159 <em class="comment">     */</em>
+<a id="L160" name="L160"></a> 160     <strong class="reserved">private</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> <a href="../R/14499.html" title="Multiple referred from 2 places.">findVarBind</a>(<a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>,
+<a id="L161" name="L161"></a> 161                                     <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>) <em class="brace">{</em>
+<a id="L162" name="L162"></a> 162 
+<a id="L163" name="L163"></a> 163         <strong class="reserved">if</strong> (<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> == <strong class="reserved">null</strong>) <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L164" name="L164"></a> 164 
+<a id="L165" name="L165"></a> 165         <strong class="reserved">if</strong> (<a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.oid == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L166" name="L166"></a> 166              <strong class="reserved">return</strong> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>;
+<a id="L167" name="L167"></a> 167         <em class="brace">}</em>
+<a id="L168" name="L168"></a> 168 
+<a id="L169" name="L169"></a> 169         <strong class="reserved">if</strong> (<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a> == <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>.endOfMibView) <strong class="reserved">return</strong> <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>;
+<a id="L170" name="L170"></a> 170 
+<a id="L171" name="L171"></a> 171         <strong class="reserved">if</strong> (<a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a> == <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>.endOfMibView) <strong class="reserved">return</strong> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>;
+<a id="L172" name="L172"></a> 172 
+<a id="L173" name="L173"></a> 173         <strong class="reserved">final</strong> <a href="../S/6471.html#L42" title="Defined at 42 in src/com/sun/jmx/snmp/SnmpValue.java.">SnmpValue</a> <a href="../S/1444.html#L56" title="Defined at 56 in src/java/io/ExpiringCache.java.">val</a> = <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>;
+<a id="L174" name="L174"></a> 174 
+<a id="L175" name="L175"></a> 175         <strong class="reserved">int</strong> comp = <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.oid.<a href="../D/13068.html" title="Multiple defined in 86 places.">compareTo</a>(<a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.oid);
+<a id="L176" name="L176"></a> 176         <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L177" name="L177"></a> 177             SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L178" name="L178"></a> 178                 "findVarBind","Comparing OID element : " + <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.oid +
+<a id="L179" name="L179"></a> 179                   " with result : " + <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.oid);
+<a id="L180" name="L180"></a> 180             SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L181" name="L181"></a> 181                 "findVarBind","Values element : " + <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a> +
+<a id="L182" name="L182"></a> 182                   " result : " + <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>);
+<a id="L183" name="L183"></a> 183         <em class="brace">}</em>
+<a id="L184" name="L184"></a> 184         <strong class="reserved">if</strong> (comp &lt; 0) <em class="brace">{</em>
+<a id="L185" name="L185"></a> 185             <em class="comment">// Take the smallest (lexicographically)</em>
+<a id="L186" name="L186"></a> 186             <em class="comment">//</em>
+<a id="L187" name="L187"></a> 187             <strong class="reserved">return</strong> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>;
+<a id="L188" name="L188"></a> 188         <em class="brace">}</em>
+<a id="L189" name="L189"></a> 189         <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L190" name="L190"></a> 190             <strong class="reserved">if</strong>(comp == 0) <em class="brace">{</em>
+<a id="L191" name="L191"></a> 191                 <em class="comment">// Must compare agent used for reply</em>
+<a id="L192" name="L192"></a> 192                 <em class="comment">// Take the deeper within the reply</em>
+<a id="L193" name="L193"></a> 193                 <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L194" name="L194"></a> 194                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L195" name="L195"></a> 195                         "findVarBind"," oid overlapping. Oid : " +
+<a id="L196" name="L196"></a> 196                           <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.oid + "value :" + <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>.<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>);
+<a id="L197" name="L197"></a> 197                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L198" name="L198"></a> 198                          "findVarBind","Already present varBind : " +
+<a id="L199" name="L199"></a> 199                           <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>);
+<a id="L200" name="L200"></a> 200                 <em class="brace">}</em>
+<a id="L201" name="L201"></a> 201                 <a href="../S/6468.html#L22" title="Defined at 22 in src/com/sun/jmx/snmp/SnmpOid.java.">SnmpOid</a> oid = <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.oid;
+<a id="L202" name="L202"></a> 202                 <a href="../S/6411.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/agent/SnmpMibAgent.java.">SnmpMibAgent</a> deeperAgent = server.<a href="../D/16847.html" title="Multiple defined in 3 places.">getAgentMib</a>(oid);
+<a id="L203" name="L203"></a> 203 
+<a id="L204" name="L204"></a> 204                 <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L205" name="L205"></a> 205                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L206" name="L206"></a> 206                         "findVarBind","Deeper agent : " + deeperAgent);
+<a id="L207" name="L207"></a> 207                 <em class="brace">}</em>
+<a id="L208" name="L208"></a> 208                 <strong class="reserved">if</strong>(deeperAgent == agent) <em class="brace">{</em>
+<a id="L209" name="L209"></a> 209                     <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L210" name="L210"></a> 210                         SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L211" name="L211"></a> 211                             "findVarBind","The current agent is the deeper one. Update the value with the current one");
+<a id="L212" name="L212"></a> 212                     <em class="brace">}</em>
+<a id="L213" name="L213"></a> 213                     <strong class="reserved">return</strong> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>;
+<a id="L214" name="L214"></a> 214                 <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L215" name="L215"></a> 215                     <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L216" name="L216"></a> 216                         SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L217" name="L217"></a> 217                             "findVarBind","The current agent is not the deeper one. return the previous one.");
+<a id="L218" name="L218"></a> 218                     <em class="brace">}</em>
+<a id="L219" name="L219"></a> 219                     <strong class="reserved">return</strong> <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>;
+<a id="L220" name="L220"></a> 220                 <em class="brace">}</em>
+<a id="L221" name="L221"></a> 221 
+<a id="L222" name="L222"></a> 222                 <em class="comment">/*</em>
+<a id="L223" name="L223"></a> 223 <em class="comment">                   Vector v = new Vector();</em>
+<a id="L224" name="L224"></a> 224 <em class="comment">                   SnmpMibRequest getReq = createMibRequest(v,</em>
+<a id="L225" name="L225"></a> 225 <em class="comment">                   version,</em>
+<a id="L226" name="L226"></a> 226 <em class="comment">                   null);</em>
+<a id="L227" name="L227"></a> 227 <em class="comment">                   SnmpVarBind realValue = new SnmpVarBind(oid);</em>
+<a id="L228" name="L228"></a> 228 <em class="comment">                   getReq.addVarBind(realValue);</em>
+<a id="L229" name="L229"></a> 229 <em class="comment">                   try {</em>
+<a id="L230" name="L230"></a> 230 <em class="comment">                   deeperAgent.get(getReq);</em>
+<a id="L231" name="L231"></a> 231 <em class="comment">                   } catch(SnmpStatusException e) {</em>
+<a id="L232" name="L232"></a> 232 <em class="comment">                   e.printStackTrace();</em>
+<a id="L233" name="L233"></a> 233 <em class="comment">                   }</em>
+<a id="L234" name="L234"></a> 234 <em class="comment"></em>
+<a id="L235" name="L235"></a> 235 <em class="comment">                   if(isDebugOn())</em>
+<a id="L236" name="L236"></a> 236 <em class="comment">                   trace("findVarBind", "Biggest priority value is : " +</em>
+<a id="L237" name="L237"></a> 237 <em class="comment">                   realValue.value);</em>
+<a id="L238" name="L238"></a> 238 <em class="comment"></em>
+<a id="L239" name="L239"></a> 239 <em class="comment">                   return realValue;</em>
+<a id="L240" name="L240"></a> 240 <em class="comment">                */</em>
+<a id="L241" name="L241"></a> 241 
+<a id="L242" name="L242"></a> 242             <em class="brace">}</em>
+<a id="L243" name="L243"></a> 243             <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L244" name="L244"></a> 244                 <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L245" name="L245"></a> 245                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L246" name="L246"></a> 246                         "findVarBind","The right varBind is the already present one");
+<a id="L247" name="L247"></a> 247                 <em class="brace">}</em>
+<a id="L248" name="L248"></a> 248                 <strong class="reserved">return</strong> <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>;
+<a id="L249" name="L249"></a> 249             <em class="brace">}</em>
+<a id="L250" name="L250"></a> 250         <em class="brace">}</em>
+<a id="L251" name="L251"></a> 251     <em class="brace">}</em>
+<a id="L252" name="L252"></a> 252     <em class="comment">/**</em>
+<a id="L253" name="L253"></a> 253 <em class="comment">     * The method updates a given var bind list with the result of a</em>
+<a id="L254" name="L254"></a> 254 <em class="comment">     * previsouly invoked operation.</em>
+<a id="L255" name="L255"></a> 255 <em class="comment">     * Prior to calling the method, one must make sure that the operation was</em>
+<a id="L256" name="L256"></a> 256 <em class="comment">     * successful. As such the method getErrorIndex or getErrorStatus should be</em>
+<a id="L257" name="L257"></a> 257 <em class="comment">     * called.</em>
+<a id="L258" name="L258"></a> 258 <em class="comment">     */</em>
+<a id="L259" name="L259"></a> 259     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L260" name="L260"></a> 260     <strong class="reserved">protected</strong> <strong class="reserved">void</strong> <a href="../R/29947.html" title="Multiple referred from 3 places.">updateResult</a>(<a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>[] <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>) <em class="brace">{</em>
+<a id="L261" name="L261"></a> 261         <em class="comment">// we can assume that the run method is over ...</em>
+<a id="L262" name="L262"></a> 262         <em class="comment">//</em>
+<a id="L263" name="L263"></a> 263 
+<a id="L264" name="L264"></a> 264         <strong class="reserved">final</strong> <a href="../S/1134.html#L61" title="Defined at 61 in src/java/util/Enumeration.java.">Enumeration</a>&lt;<a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a>&gt; e= varBind.<a href="../D/15313.html" title="Multiple defined in 25 places.">elements</a>();
+<a id="L265" name="L265"></a> 265         <strong class="reserved">final</strong> <strong class="reserved">int</strong> <a href="../D/27569.html" title="Multiple defined in 28 places.">max</a>= <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>;
+<a id="L266" name="L266"></a> 266 
+<a id="L267" name="L267"></a> 267         <em class="comment">// First go through all the values once ...</em>
+<a id="L268" name="L268"></a> 268         <strong class="reserved">for</strong>(<strong class="reserved">int</strong> i=0; i &lt; <a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>; i++) <em class="brace">{</em>
+<a id="L269" name="L269"></a> 269             <em class="comment">// May be we should control the position ...</em>
+<a id="L270" name="L270"></a> 270             <em class="comment">//</em>
+<a id="L271" name="L271"></a> 271             <strong class="reserved">if</strong> (e.<a href="../D/24128.html" title="Multiple defined in 32 places.">hasMoreElements</a>() == <strong class="reserved">false</strong>)
+<a id="L272" name="L272"></a> 272                 <strong class="reserved">return</strong>;
+<a id="L273" name="L273"></a> 273 
+<a id="L274" name="L274"></a> 274             <em class="comment">// bugId 4641694: must check position in order to avoid</em>
+<a id="L275" name="L275"></a> 275             <em class="comment">//       ArrayIndexOutOfBoundException</em>
+<a id="L276" name="L276"></a> 276             <strong class="reserved">final</strong> <strong class="reserved">int</strong> pos=translation[i];
+<a id="L277" name="L277"></a> 277             <strong class="reserved">if</strong> (pos &gt;= <a href="../D/27569.html" title="Multiple defined in 28 places.">max</a>) <em class="brace">{</em>
+<a id="L278" name="L278"></a> 278                 <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINEST)) <em class="brace">{</em>
+<a id="L279" name="L279"></a> 279                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINEST, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L280" name="L280"></a> 280                         "updateResult","Position '"+pos+"' is out of bound...");
+<a id="L281" name="L281"></a> 281                 <em class="brace">}</em>
+<a id="L282" name="L282"></a> 282                 <strong class="reserved">continue</strong>;
+<a id="L283" name="L283"></a> 283             <em class="brace">}</em>
+<a id="L284" name="L284"></a> 284 
+<a id="L285" name="L285"></a> 285             <strong class="reserved">final</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>= e.<a href="../D/28145.html" title="Multiple defined in 35 places.">nextElement</a>();
+<a id="L286" name="L286"></a> 286 
+<a id="L287" name="L287"></a> 287             <strong class="reserved">if</strong> (<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> == <strong class="reserved">null</strong>) <strong class="reserved">continue</strong>;
+<a id="L288" name="L288"></a> 288             <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L289" name="L289"></a> 289                 SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L290" name="L290"></a> 290                     "updateResult","Non repeaters Current element : " +
+<a id="L291" name="L291"></a> 291                       <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> + " from agent : " + agent);
+<a id="L292" name="L292"></a> 292             <em class="brace">}</em>
+<a id="L293" name="L293"></a> 293             <strong class="reserved">final</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> res = <a href="../S/6450.html#L160" title="Defined at 160 in src/com/sun/jmx/snmp/daemon/SnmpSubBulkRequestHandler.java.">findVarBind</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>,<a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>[pos]);
+<a id="L294" name="L294"></a> 294 
+<a id="L295" name="L295"></a> 295             <strong class="reserved">if</strong>(res == <strong class="reserved">null</strong>) <strong class="reserved">continue</strong>;
+<a id="L296" name="L296"></a> 296 
+<a id="L297" name="L297"></a> 297             <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>[pos] = res;
+<a id="L298" name="L298"></a> 298         <em class="brace">}</em>
+<a id="L299" name="L299"></a> 299 
+<a id="L300" name="L300"></a> 300         <em class="comment">// Now update the values which have been repeated</em>
+<a id="L301" name="L301"></a> 301         <em class="comment">// more than once.</em>
+<a id="L302" name="L302"></a> 302         <strong class="reserved">int</strong> localR= <a href="../D/34593.html" title="Multiple defined in 204 places.">size</a> - nonRepeat;
+<a id="L303" name="L303"></a> 303         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 2 ; i &lt;= maxRepeat ; i++) <em class="brace">{</em>
+<a id="L304" name="L304"></a> 304             <strong class="reserved">for</strong> (<strong class="reserved">int</strong> r = 0 ; r &lt; localR ; r++) <em class="brace">{</em>
+<a id="L305" name="L305"></a> 305                 <strong class="reserved">final</strong> <strong class="reserved">int</strong> pos = (i-1)* globalR + translation[nonRepeat + r] ;
+<a id="L306" name="L306"></a> 306                 <strong class="reserved">if</strong> (pos &gt;= <a href="../D/27569.html" title="Multiple defined in 28 places.">max</a>)
+<a id="L307" name="L307"></a> 307                     <strong class="reserved">return</strong>;
+<a id="L308" name="L308"></a> 308                 <strong class="reserved">if</strong> (e.<a href="../D/24128.html" title="Multiple defined in 32 places.">hasMoreElements</a>() ==<strong class="reserved">false</strong>)
+<a id="L309" name="L309"></a> 309                     <strong class="reserved">return</strong>;
+<a id="L310" name="L310"></a> 310                 <strong class="reserved">final</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>= e.<a href="../D/28145.html" title="Multiple defined in 35 places.">nextElement</a>();
+<a id="L311" name="L311"></a> 311 
+<a id="L312" name="L312"></a> 312                 <strong class="reserved">if</strong> (<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> == <strong class="reserved">null</strong>) <strong class="reserved">continue</strong>;
+<a id="L313" name="L313"></a> 313                 <strong class="reserved">if</strong> (SNMP_ADAPTOR_LOGGER.<a href="../D/25833.html" title="Multiple defined in 6 places.">isLoggable</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER)) <em class="brace">{</em>
+<a id="L314" name="L314"></a> 314                     SNMP_ADAPTOR_LOGGER.<a href="../D/27062.html" title="Multiple defined in 6 places.">logp</a>(<a href="../S/1180.html#L66" title="Defined at 66 in src/java/util/logging/Level.java.">Level</a>.FINER, <a href="../S/6443.html#L52" title="Defined at 52 in src/com/sun/jmx/snmp/daemon/SnmpSubRequestHandler.java.">SnmpSubRequestHandler</a>.<strong class="reserved">class</strong>.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>(),
+<a id="L315" name="L315"></a> 315                         "updateResult","Repeaters Current element : " +
+<a id="L316" name="L316"></a> 316                           <a href="../D/15287.html" title="Multiple defined in 20 places.">element</a> + " from agent : " + agent);
+<a id="L317" name="L317"></a> 317                 <em class="brace">}</em>
+<a id="L318" name="L318"></a> 318                 <strong class="reserved">final</strong> <a href="../S/6477.html#L29" title="Defined at 29 in src/com/sun/jmx/snmp/SnmpVarBind.java.">SnmpVarBind</a> res = <a href="../S/6450.html#L160" title="Defined at 160 in src/com/sun/jmx/snmp/daemon/SnmpSubBulkRequestHandler.java.">findVarBind</a>(<a href="../D/15287.html" title="Multiple defined in 20 places.">element</a>, <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>[pos]);
+<a id="L319" name="L319"></a> 319 
+<a id="L320" name="L320"></a> 320                 <strong class="reserved">if</strong>(res == <strong class="reserved">null</strong>) <strong class="reserved">continue</strong>;
+<a id="L321" name="L321"></a> 321 
+<a id="L322" name="L322"></a> 322                 <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>[pos] = res;
+<a id="L323" name="L323"></a> 323             <em class="brace">}</em>
+<a id="L324" name="L324"></a> 324         <em class="brace">}</em>
+<a id="L325" name="L325"></a> 325     <em class="brace">}</em>
+<a id="L326" name="L326"></a> 326 
+<a id="L327" name="L327"></a> 327     <em class="comment">// PROTECTED VARIABLES</em>
+<a id="L328" name="L328"></a> 328     <em class="comment">//------------------</em>
+<a id="L329" name="L329"></a> 329 
+<a id="L330" name="L330"></a> 330     <em class="comment">/**</em>
+<a id="L331" name="L331"></a> 331 <em class="comment">     * Specific to the sub request</em>
+<a id="L332" name="L332"></a> 332 <em class="comment">     */</em>
+<a id="L333" name="L333"></a> 333     <strong class="reserved">protected</strong> <strong class="reserved">int</strong> nonRepeat=0;
+<a id="L334" name="L334"></a> 334 
+<a id="L335" name="L335"></a> 335     <strong class="reserved">protected</strong> <strong class="reserved">int</strong> maxRepeat=0;
+<a id="L336" name="L336"></a> 336 
+<a id="L337" name="L337"></a> 337     <em class="comment">/**</em>
+<a id="L338" name="L338"></a> 338 <em class="comment">     * R as defined in RCF 1902 for the global request the sub-request is associated to.</em>
+<a id="L339" name="L339"></a> 339 <em class="comment">     */</em>
+<a id="L340" name="L340"></a> 340     <strong class="reserved">protected</strong> <strong class="reserved">int</strong> globalR=0;
+<a id="L341" name="L341"></a> 341 
+<a id="L342" name="L342"></a> 342     <strong class="reserved">protected</strong> <strong class="reserved">int</strong> <a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>=0;
+<a id="L343" name="L343"></a> 343 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L85'>[^]</a><a href='#L260'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L85">[^]</a><a href="#L260">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

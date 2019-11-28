@@ -1,351 +1,349 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7817.html'>imageio</a>/<a href='../files/7818.html'>plugins</a>/<a href='../files/7824.html'>wbmp</a>/WBMPImageWriter.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L69'>[^]</a><a href='#L309'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7817.html">imageio</a>/<a href="../files/7818.html">plugins</a>/<a href="../files/7824.html">wbmp</a>/WBMPImageWriter.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L69">[^]</a><a href="#L309">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L69' title='Defined at 69.'>getNumBits</a></li>
-<li><a href='#L80' title='Defined at 80.'>intToMultiByte</a></li>
-<li><a href='#L102' title='Defined at 102.'>setOutput</a></li>
-<li><a href='#L112' title='Defined at 112.'>getDefaultStreamMetadata</a></li>
-<li><a href='#L116' title='Defined at 116.'>getDefaultImageMetadata</a></li>
-<li><a href='#L123' title='Defined at 123.'>convertStreamMetadata</a></li>
-<li><a href='#L128' title='Defined at 128.'>convertImageMetadata</a></li>
-<li><a href='#L134' title='Defined at 134.'>canWriteRasters</a></li>
-<li><a href='#L138' title='Defined at 138.'>write</a></li>
-<li><a href='#L304' title='Defined at 304.'>reset</a></li>
-<li><a href='#L309' title='Defined at 309.'>checkSampleModel</a></li>
+<li><a href="#L69" title="Defined at 69.">getNumBits</a></li>
+<li><a href="#L80" title="Defined at 80.">intToMultiByte</a></li>
+<li><a href="#L102" title="Defined at 102.">setOutput</a></li>
+<li><a href="#L112" title="Defined at 112.">getDefaultStreamMetadata</a></li>
+<li><a href="#L116" title="Defined at 116.">getDefaultImageMetadata</a></li>
+<li><a href="#L123" title="Defined at 123.">convertStreamMetadata</a></li>
+<li><a href="#L128" title="Defined at 128.">convertImageMetadata</a></li>
+<li><a href="#L134" title="Defined at 134.">canWriteRasters</a></li>
+<li><a href="#L138" title="Defined at 138.">write</a></li>
+<li><a href="#L304" title="Defined at 304.">reset</a></li>
+<li><a href="#L309" title="Defined at 309.">checkSampleModel</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> com.sun.imageio.plugins.wbmp;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.awt.Point;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.awt.Rectangle;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.awt.image.ColorModel;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.awt.image.DataBuffer;
-<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.awt.image.DataBufferByte;
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.awt.image.IndexColorModel;
-<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.awt.image.MultiPixelPackedSampleModel;
-<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.awt.image.Raster;
-<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.awt.image.RenderedImage;
-<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.awt.image.SampleModel;
-<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.awt.image.WritableRaster;
-<a id='L39' name='L39'></a>  39 
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.io.IOException;
-<a id='L41' name='L41'></a>  41 
-<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> javax.imageio.IIOImage;
-<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> javax.imageio.IIOException;
-<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> javax.imageio.ImageTypeSpecifier;
-<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> javax.imageio.ImageWriteParam;
-<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> javax.imageio.ImageWriter;
-<a id='L47' name='L47'></a>  47 <strong class='reserved'>import</strong> javax.imageio.metadata.IIOMetadata;
-<a id='L48' name='L48'></a>  48 <strong class='reserved'>import</strong> javax.imageio.metadata.IIOMetadataFormatImpl;
-<a id='L49' name='L49'></a>  49 <strong class='reserved'>import</strong> javax.imageio.metadata.IIOInvalidTreeException;
-<a id='L50' name='L50'></a>  50 <strong class='reserved'>import</strong> javax.imageio.spi.ImageWriterSpi;
-<a id='L51' name='L51'></a>  51 <strong class='reserved'>import</strong> javax.imageio.stream.ImageOutputStream;
-<a id='L52' name='L52'></a>  52 
-<a id='L53' name='L53'></a>  53 <strong class='reserved'>import</strong> com.sun.imageio.plugins.common.I18N;
-<a id='L54' name='L54'></a>  54 
-<a id='L55' name='L55'></a>  55 <em class='comment'>/**</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'> * The Java Image IO plugin writer for encoding a binary RenderedImage into</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'> * a WBMP format.</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'> *</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'> * The encoding process may clip, subsample using the parameters</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'> * specified in the &lt;code&gt;ImageWriteParam&lt;/code&gt;.</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'> *</em>
-<a id='L62' name='L62'></a>  62 <em class='comment'> * @see com.sun.media.imageio.plugins.WBMPImageWriteParam</em>
-<a id='L63' name='L63'></a>  63 <em class='comment'> */</em>
-<a id='L64' name='L64'></a>  64 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../S/6799.html#L91' title='Referred from 91 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriterSpi.java.'>WBMPImageWriter</a> <strong class='reserved'>extends</strong> <a href='../S/4231.html#L64' title='Defined at 64 in src/javax/imageio/ImageWriter.java.'>ImageWriter</a> <em class='brace'>{</em>
-<a id='L65' name='L65'></a>  65     <em class='comment'>/** The output stream to write into */</em>
-<a id='L66' name='L66'></a>  66     <strong class='reserved'>private</strong> <a href='../S/4199.html#L52' title='Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.'>ImageOutputStream</a> <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>null</strong>;
-<a id='L67' name='L67'></a>  67 
-<a id='L68' name='L68'></a>  68     <em class='comment'>// Get the number of bits required to represent an int.</em>
-<a id='L69' name='L69'></a>  69     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/18034.html' title='Multiple referred from 4 places.'>getNumBits</a>(<strong class='reserved'>int</strong> <a href='../D/24897.html' title='Multiple defined in 21 places.'>intValue</a>) <em class='brace'>{</em>
-<a id='L70' name='L70'></a>  70         <strong class='reserved'>int</strong> numBits = 32;
-<a id='L71' name='L71'></a>  71         <strong class='reserved'>int</strong> <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> = 0x80000000;
-<a id='L72' name='L72'></a>  72         <strong class='reserved'>while</strong>(<a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> != 0 &amp;&amp; (<a href='../D/24897.html' title='Multiple defined in 21 places.'>intValue</a> &amp; <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a>) == 0) <em class='brace'>{</em>
-<a id='L73' name='L73'></a>  73             numBits--;
-<a id='L74' name='L74'></a>  74             <a href='../S/915.html#L394' title='Defined at 394 in src/java/util/stream/StreamOpFlag.java.'>mask</a> &gt;&gt;&gt;= 1;
-<a id='L75' name='L75'></a>  75         <em class='brace'>}</em>
-<a id='L76' name='L76'></a>  76         <strong class='reserved'>return</strong> numBits;
-<a id='L77' name='L77'></a>  77     <em class='brace'>}</em>
-<a id='L78' name='L78'></a>  78 
-<a id='L79' name='L79'></a>  79     <em class='comment'>// Convert an int value to WBMP multi-byte format.</em>
-<a id='L80' name='L80'></a>  80     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>byte</strong>[] <a href='../R/20907.html' title='Multiple referred from 2 places.'>intToMultiByte</a>(<strong class='reserved'>int</strong> <a href='../D/24897.html' title='Multiple defined in 21 places.'>intValue</a>) <em class='brace'>{</em>
-<a id='L81' name='L81'></a>  81         <strong class='reserved'>int</strong> numBitsLeft = <a href='../D/21056.html' title='Multiple defined in 2 places.'>getNumBits</a>(<a href='../D/24897.html' title='Multiple defined in 21 places.'>intValue</a>);
-<a id='L82' name='L82'></a>  82         <strong class='reserved'>byte</strong>[] multiBytes = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[(numBitsLeft + 6)/7];
-<a id='L83' name='L83'></a>  83 
-<a id='L84' name='L84'></a>  84         <strong class='reserved'>int</strong> maxIndex = multiBytes.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> - 1;
-<a id='L85' name='L85'></a>  85         <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> b = 0; b &lt;= maxIndex; b++) <em class='brace'>{</em>
-<a id='L86' name='L86'></a>  86             multiBytes[b] = (<strong class='reserved'>byte</strong>)((<a href='../D/24897.html' title='Multiple defined in 21 places.'>intValue</a> &gt;&gt;&gt; ((maxIndex - b)*7))&amp;0x7f);
-<a id='L87' name='L87'></a>  87             <strong class='reserved'>if</strong>(b != maxIndex) <em class='brace'>{</em>
-<a id='L88' name='L88'></a>  88                 multiBytes[b] |= (<strong class='reserved'>byte</strong>)0x80;
-<a id='L89' name='L89'></a>  89             <em class='brace'>}</em>
-<a id='L90' name='L90'></a>  90         <em class='brace'>}</em>
-<a id='L91' name='L91'></a>  91 
-<a id='L92' name='L92'></a>  92         <strong class='reserved'>return</strong> multiBytes;
-<a id='L93' name='L93'></a>  93     <em class='brace'>}</em>
-<a id='L94' name='L94'></a>  94 
-<a id='L95' name='L95'></a>  95     <em class='comment'>/** Constructs &lt;code&gt;WBMPImageWriter&lt;/code&gt; based on the provided</em>
-<a id='L96' name='L96'></a>  96 <em class='comment'>     *  &lt;code&gt;ImageWriterSpi&lt;/code&gt;.</em>
-<a id='L97' name='L97'></a>  97 <em class='comment'>     */</em>
-<a id='L98' name='L98'></a>  98     <strong class='reserved'>public</strong> WBMPImageWriter(<a href='../S/4219.html#L76' title='Defined at 76 in src/javax/imageio/spi/ImageWriterSpi.java.'>ImageWriterSpi</a> originator) <em class='brace'>{</em>
-<a id='L99' name='L99'></a>  99         <strong class='reserved'>super</strong>(originator);
-<a id='L100' name='L100'></a> 100     <em class='brace'>}</em>
-<a id='L101' name='L101'></a> 101 
-<a id='L102' name='L102'></a> 102     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/27874.html' title='Multiple referred from 10 places.'>setOutput</a>(<a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> <a href='../D/28597.html' title='Multiple defined in 4 places.'>output</a>) <em class='brace'>{</em>
-<a id='L103' name='L103'></a> 103         <strong class='reserved'>super</strong>.<a href='../D/33452.html' title='Multiple defined in 7 places.'>setOutput</a>(<a href='../D/28597.html' title='Multiple defined in 4 places.'>output</a>); <em class='comment'>// validates output</em>
-<a id='L104' name='L104'></a> 104         <strong class='reserved'>if</strong> (<a href='../D/28597.html' title='Multiple defined in 4 places.'>output</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L105' name='L105'></a> 105             <strong class='reserved'>if</strong> (!(<a href='../D/28597.html' title='Multiple defined in 4 places.'>output</a> <strong class='reserved'>instanceof</strong> <a href='../S/4199.html#L52' title='Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.'>ImageOutputStream</a>))
-<a id='L106' name='L106'></a> 106                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("WBMPImageWriter"));
-<a id='L107' name='L107'></a> 107             <strong class='reserved'>this</strong>.<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = (<a href='../S/4199.html#L52' title='Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.'>ImageOutputStream</a>)<a href='../D/28597.html' title='Multiple defined in 4 places.'>output</a>;
-<a id='L108' name='L108'></a> 108         <em class='brace'>}</em> <strong class='reserved'>else</strong>
-<a id='L109' name='L109'></a> 109             <strong class='reserved'>this</strong>.<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>null</strong>;
-<a id='L110' name='L110'></a> 110     <em class='brace'>}</em>
-<a id='L111' name='L111'></a> 111 
-<a id='L112' name='L112'></a> 112     <strong class='reserved'>public</strong> <a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../R/16081.html' title='Multiple referred from 3 places.'>getDefaultStreamMetadata</a>(<a href='../S/4227.html#L86' title='Defined at 86 in src/javax/imageio/ImageWriteParam.java.'>ImageWriteParam</a> param) <em class='brace'>{</em>
-<a id='L113' name='L113'></a> 113         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L114' name='L114'></a> 114     <em class='brace'>}</em>
-<a id='L115' name='L115'></a> 115 
-<a id='L116' name='L116'></a> 116     <strong class='reserved'>public</strong> <a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../R/16038.html' title='Multiple referred from 4 places.'>getDefaultImageMetadata</a>(<a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a> imageType,
-<a id='L117' name='L117'></a> 117                                                <a href='../S/4227.html#L86' title='Defined at 86 in src/javax/imageio/ImageWriteParam.java.'>ImageWriteParam</a> param) <em class='brace'>{</em>
-<a id='L118' name='L118'></a> 118         <a href='../S/6801.html#L42' title='Defined at 42 in src/com/sun/imageio/plugins/wbmp/WBMPMetadata.java.'>WBMPMetadata</a> <a href='../D/27675.html' title='Multiple defined in 3 places.'>meta</a> = <strong class='reserved'>new</strong> <a href='../S/6801.html#L42' title='Defined at 42 in src/com/sun/imageio/plugins/wbmp/WBMPMetadata.java.'>WBMPMetadata</a>();
-<a id='L119' name='L119'></a> 119         <a href='../D/27675.html' title='Multiple defined in 3 places.'>meta</a>.wbmpType = 0; <em class='comment'>// default wbmp level</em>
-<a id='L120' name='L120'></a> 120         <strong class='reserved'>return</strong> <a href='../D/27675.html' title='Multiple defined in 3 places.'>meta</a>;
-<a id='L121' name='L121'></a> 121     <em class='brace'>}</em>
-<a id='L122' name='L122'></a> 122 
-<a id='L123' name='L123'></a> 123     <strong class='reserved'>public</strong> <a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../S/6838.html#L508' title='Referred from 508 in src/com/sun/imageio/plugins/gif/GIFImageWriter.java.'>convertStreamMetadata</a>(<a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> inData,
-<a id='L124' name='L124'></a> 124                                              <a href='../S/4227.html#L86' title='Defined at 86 in src/javax/imageio/ImageWriteParam.java.'>ImageWriteParam</a> param) <em class='brace'>{</em>
-<a id='L125' name='L125'></a> 125         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L126' name='L126'></a> 126     <em class='brace'>}</em>
-<a id='L127' name='L127'></a> 127 
-<a id='L128' name='L128'></a> 128     <strong class='reserved'>public</strong> <a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../R/12024.html' title='Multiple referred from 3 places.'>convertImageMetadata</a>(<a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> <a href='../S/4075.html#L236' title='Defined at 236 in src/javax/xml/ws/wsaddressing/W3CEndpointReferenceBuilder.java.'>metadata</a>,
-<a id='L129' name='L129'></a> 129                                             <a href='../S/4243.html#L53' title='Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.'>ImageTypeSpecifier</a> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a>,
-<a id='L130' name='L130'></a> 130                                             <a href='../S/4227.html#L86' title='Defined at 86 in src/javax/imageio/ImageWriteParam.java.'>ImageWriteParam</a> param) <em class='brace'>{</em>
-<a id='L131' name='L131'></a> 131         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L132' name='L132'></a> 132     <em class='brace'>}</em>
-<a id='L133' name='L133'></a> 133 
-<a id='L134' name='L134'></a> 134     <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> canWriteRasters() <em class='brace'>{</em>
-<a id='L135' name='L135'></a> 135         <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L136' name='L136'></a> 136     <em class='brace'>}</em>
-<a id='L137' name='L137'></a> 137 
-<a id='L138' name='L138'></a> 138     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/30544.html' title='Multiple referred from 1880 places.'>write</a>(<a href='../S/4238.html#L66' title='Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.'>IIOMetadata</a> streamMetadata,
-<a id='L139' name='L139'></a> 139                       <a href='../S/4226.html#L60' title='Defined at 60 in src/javax/imageio/IIOImage.java.'>IIOImage</a> image,
-<a id='L140' name='L140'></a> 140                       <a href='../S/4227.html#L86' title='Defined at 86 in src/javax/imageio/ImageWriteParam.java.'>ImageWriteParam</a> param) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> <em class='brace'>{</em>
-<a id='L141' name='L141'></a> 141 
-<a id='L142' name='L142'></a> 142         <strong class='reserved'>if</strong> (<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L143' name='L143'></a> 143             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1555.html#L38' title='Defined at 38 in src/java/lang/IllegalStateException.java.'>IllegalStateException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("WBMPImageWriter3"));
-<a id='L144' name='L144'></a> 144         <em class='brace'>}</em>
-<a id='L145' name='L145'></a> 145 
-<a id='L146' name='L146'></a> 146         <strong class='reserved'>if</strong> (image == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L147' name='L147'></a> 147             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("WBMPImageWriter4"));
-<a id='L148' name='L148'></a> 148         <em class='brace'>}</em>
-<a id='L149' name='L149'></a> 149 
-<a id='L150' name='L150'></a> 150         <a href='../D/12819.html' title='Multiple defined in 3 places.'>clearAbortRequest</a>();
-<a id='L151' name='L151'></a> 151         <a href='../D/29812.html' title='Multiple defined in 2 places.'>processImageStarted</a>(0);
-<a id='L152' name='L152'></a> 152         <strong class='reserved'>if</strong> (param == <strong class='reserved'>null</strong>)
-<a id='L153' name='L153'></a> 153             param = <a href='../D/18388.html' title='Multiple defined in 5 places.'>getDefaultWriteParam</a>();
-<a id='L154' name='L154'></a> 154 
-<a id='L155' name='L155'></a> 155         <a href='../S/2255.html#L48' title='Defined at 48 in src/java/awt/image/RenderedImage.java.'>RenderedImage</a> <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a> = <strong class='reserved'>null</strong>;
-<a id='L156' name='L156'></a> 156         <a href='../S/2238.html#L126' title='Defined at 126 in src/java/awt/image/Raster.java.'>Raster</a> inputRaster = <strong class='reserved'>null</strong>;
-<a id='L157' name='L157'></a> 157         <strong class='reserved'>boolean</strong> writeRaster = image.<a href='../S/4226.html#L188' title='Defined at 188 in src/javax/imageio/IIOImage.java.'>hasRaster</a>();
-<a id='L158' name='L158'></a> 158         <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> sourceRegion = param.<a href='../D/22627.html' title='Multiple defined in 2 places.'>getSourceRegion</a>();
-<a id='L159' name='L159'></a> 159         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sampleModel = <strong class='reserved'>null</strong>;
-<a id='L160' name='L160'></a> 160 
-<a id='L161' name='L161'></a> 161         <strong class='reserved'>if</strong> (writeRaster) <em class='brace'>{</em>
-<a id='L162' name='L162'></a> 162             inputRaster = image.<a href='../D/21845.html' title='Multiple defined in 8 places.'>getRaster</a>();
-<a id='L163' name='L163'></a> 163             sampleModel = inputRaster.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
-<a id='L164' name='L164'></a> 164         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L165' name='L165'></a> 165             <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a> = image.<a href='../S/4226.html#L153' title='Defined at 153 in src/javax/imageio/IIOImage.java.'>getRenderedImage</a>();
-<a id='L166' name='L166'></a> 166             sampleModel = <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>();
-<a id='L167' name='L167'></a> 167 
-<a id='L168' name='L168'></a> 168             inputRaster = <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>.<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
-<a id='L169' name='L169'></a> 169         <em class='brace'>}</em>
-<a id='L170' name='L170'></a> 170 
-<a id='L171' name='L171'></a> 171         <a href='../S/6800.html#L309' title='Defined at 309 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.'>checkSampleModel</a>(sampleModel);
-<a id='L172' name='L172'></a> 172         <strong class='reserved'>if</strong> (sourceRegion == <strong class='reserved'>null</strong>)
-<a id='L173' name='L173'></a> 173             sourceRegion = inputRaster.<a href='../D/17335.html' title='Multiple defined in 41 places.'>getBounds</a>();
-<a id='L174' name='L174'></a> 174         <strong class='reserved'>else</strong>
-<a id='L175' name='L175'></a> 175             sourceRegion = sourceRegion.<a href='../D/24981.html' title='Multiple defined in 5 places.'>intersection</a>(inputRaster.<a href='../D/17335.html' title='Multiple defined in 41 places.'>getBounds</a>());
-<a id='L176' name='L176'></a> 176 
-<a id='L177' name='L177'></a> 177         <strong class='reserved'>if</strong> (sourceRegion.<a href='../D/25493.html' title='Multiple defined in 113 places.'>isEmpty</a>())
-<a id='L178' name='L178'></a> 178             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1723.html#L43' title='Defined at 43 in src/java/lang/RuntimeException.java.'>RuntimeException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("WBMPImageWriter1"));
-<a id='L179' name='L179'></a> 179 
-<a id='L180' name='L180'></a> 180         <strong class='reserved'>int</strong> scaleX = param.<a href='../S/4198.html#L345' title='Defined at 345 in src/javax/imageio/IIOParam.java.'>getSourceXSubsampling</a>();
-<a id='L181' name='L181'></a> 181         <strong class='reserved'>int</strong> scaleY = param.<a href='../S/4198.html#L360' title='Defined at 360 in src/javax/imageio/IIOParam.java.'>getSourceYSubsampling</a>();
-<a id='L182' name='L182'></a> 182         <strong class='reserved'>int</strong> xOffset = param.<a href='../S/4198.html#L375' title='Defined at 375 in src/javax/imageio/IIOParam.java.'>getSubsamplingXOffset</a>();
-<a id='L183' name='L183'></a> 183         <strong class='reserved'>int</strong> yOffset = param.<a href='../S/4198.html#L390' title='Defined at 390 in src/javax/imageio/IIOParam.java.'>getSubsamplingYOffset</a>();
-<a id='L184' name='L184'></a> 184 
-<a id='L185' name='L185'></a> 185         sourceRegion.<a href='../D/35598.html' title='Multiple defined in 116 places.'>translate</a>(xOffset, yOffset);
-<a id='L186' name='L186'></a> 186         sourceRegion.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> -= xOffset;
-<a id='L187' name='L187'></a> 187         sourceRegion.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> -= yOffset;
-<a id='L188' name='L188'></a> 188 
-<a id='L189' name='L189'></a> 189         <strong class='reserved'>int</strong> minX = sourceRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> / scaleX;
-<a id='L190' name='L190'></a> 190         <strong class='reserved'>int</strong> minY = sourceRegion.y / scaleY;
-<a id='L191' name='L191'></a> 191         <strong class='reserved'>int</strong> w = (sourceRegion.<a href='../D/36863.html' title='Multiple defined in 3 places.'>width</a> + scaleX - 1) / scaleX;
-<a id='L192' name='L192'></a> 192         <strong class='reserved'>int</strong> h = (sourceRegion.<a href='../S/3196.html#L677' title='Defined at 677 in src/javax/swing/Spring.java.'>height</a> + scaleY - 1) / scaleY;
-<a id='L193' name='L193'></a> 193 
-<a id='L194' name='L194'></a> 194         <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a> destinationRegion = <strong class='reserved'>new</strong> <a href='../S/2314.html#L119' title='Defined at 119 in src/java/awt/Rectangle.java.'>Rectangle</a>(minX, minY, w, h);
-<a id='L195' name='L195'></a> 195         sampleModel = sampleModel.<a href='../D/13707.html' title='Multiple defined in 10 places.'>createCompatibleSampleModel</a>(w, h);
-<a id='L196' name='L196'></a> 196 
-<a id='L197' name='L197'></a> 197         <a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> destSM= sampleModel;
-<a id='L198' name='L198'></a> 198 
-<a id='L199' name='L199'></a> 199         <em class='comment'>// If the data are not formatted nominally then reformat.</em>
-<a id='L200' name='L200'></a> 200         <strong class='reserved'>if</strong>(sampleModel.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>() != <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE ||
-<a id='L201' name='L201'></a> 201            !(sampleModel <strong class='reserved'>instanceof</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>) ||
-<a id='L202' name='L202'></a> 202            ((<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)sampleModel).<a href='../S/2229.html#L292' title='Defined at 292 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>getDataBitOffset</a>() != 0) <em class='brace'>{</em>
-<a id='L203' name='L203'></a> 203            destSM =
-<a id='L204' name='L204'></a> 204                 <strong class='reserved'>new</strong> <a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>(<a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE,
-<a id='L205' name='L205'></a> 205                                                 w, h, 1,
-<a id='L206' name='L206'></a> 206                                                 w + 7 &gt;&gt; 3, 0);
-<a id='L207' name='L207'></a> 207         <em class='brace'>}</em>
-<a id='L208' name='L208'></a> 208 
-<a id='L209' name='L209'></a> 209         <strong class='reserved'>if</strong> (!destinationRegion.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(sourceRegion)) <em class='brace'>{</em>
-<a id='L210' name='L210'></a> 210             <strong class='reserved'>if</strong> (scaleX == 1 &amp;&amp; scaleY == 1)
-<a id='L211' name='L211'></a> 211                 inputRaster = inputRaster.<a href='../S/2238.html#L1311' title='Defined at 1311 in src/java/awt/image/Raster.java.'>createChild</a>(inputRaster.<a href='../D/20651.html' title='Multiple defined in 6 places.'>getMinX</a>(),
-<a id='L212' name='L212'></a> 212                                                       inputRaster.<a href='../D/20652.html' title='Multiple defined in 6 places.'>getMinY</a>(),
-<a id='L213' name='L213'></a> 213                                                       w, h, minX, minY, <strong class='reserved'>null</strong>);
-<a id='L214' name='L214'></a> 214             <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L215' name='L215'></a> 215                 <a href='../S/2280.html#L49' title='Defined at 49 in src/java/awt/image/WritableRaster.java.'>WritableRaster</a> ras = <a href='../S/2238.html#L126' title='Defined at 126 in src/java/awt/image/Raster.java.'>Raster</a>.<a href='../D/14329.html' title='Multiple defined in 2 places.'>createWritableRaster</a>(destSM,
-<a id='L216' name='L216'></a> 216                                                                  <strong class='reserved'>new</strong> <a href='../S/2123.html#L38' title='Defined at 38 in src/java/awt/Point.java.'>Point</a>(minX, minY));
-<a id='L217' name='L217'></a> 217 
-<a id='L218' name='L218'></a> 218                 <strong class='reserved'>byte</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)ras.<a href='../S/2238.html#L1429' title='Defined at 1429 in src/java/awt/image/Raster.java.'>getDataBuffer</a>()).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
-<a id='L219' name='L219'></a> 219 
-<a id='L220' name='L220'></a> 220                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> j = minY, y = sourceRegion.y, k = 0;
-<a id='L221' name='L221'></a> 221                     j &lt; minY + h; j++, y += scaleY) <em class='brace'>{</em>
-<a id='L222' name='L222'></a> 222 
-<a id='L223' name='L223'></a> 223                     <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0, <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> = sourceRegion.<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>;
-<a id='L224' name='L224'></a> 224                         i &lt;w; i++, <a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a> +=scaleX) <em class='brace'>{</em>
-<a id='L225' name='L225'></a> 225                         <strong class='reserved'>int</strong> v = inputRaster.<a href='../D/22220.html' title='Multiple defined in 6 places.'>getSample</a>(<a href='../D/37285.html' title='Multiple defined in 2 places.'>x</a>, y, 0);
-<a id='L226' name='L226'></a> 226                         <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[k + (i &gt;&gt; 3)] |= v &lt;&lt; (7 - (i &amp; 7));
-<a id='L227' name='L227'></a> 227                     <em class='brace'>}</em>
-<a id='L228' name='L228'></a> 228                     k += w + 7 &gt;&gt; 3;
-<a id='L229' name='L229'></a> 229                 <em class='brace'>}</em>
-<a id='L230' name='L230'></a> 230                 inputRaster = ras;
-<a id='L231' name='L231'></a> 231             <em class='brace'>}</em>
-<a id='L232' name='L232'></a> 232         <em class='brace'>}</em>
-<a id='L233' name='L233'></a> 233 
-<a id='L234' name='L234'></a> 234         <em class='comment'>// If the data are not formatted nominally then reformat.</em>
-<a id='L235' name='L235'></a> 235         <strong class='reserved'>if</strong>(!destSM.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(inputRaster.<a href='../D/22223.html' title='Multiple defined in 5 places.'>getSampleModel</a>())) <em class='brace'>{</em>
-<a id='L236' name='L236'></a> 236             <a href='../S/2280.html#L49' title='Defined at 49 in src/java/awt/image/WritableRaster.java.'>WritableRaster</a> raster =
-<a id='L237' name='L237'></a> 237                 <a href='../S/2238.html#L126' title='Defined at 126 in src/java/awt/image/Raster.java.'>Raster</a>.<a href='../D/14329.html' title='Multiple defined in 2 places.'>createWritableRaster</a>(destSM,
-<a id='L238' name='L238'></a> 238                                             <strong class='reserved'>new</strong> <a href='../S/2123.html#L38' title='Defined at 38 in src/java/awt/Point.java.'>Point</a>(inputRaster.<a href='../D/20651.html' title='Multiple defined in 6 places.'>getMinX</a>(),
-<a id='L239' name='L239'></a> 239                                                       inputRaster.<a href='../D/20652.html' title='Multiple defined in 6 places.'>getMinY</a>()));
-<a id='L240' name='L240'></a> 240             raster.<a href='../D/33672.html' title='Multiple defined in 10 places.'>setRect</a>(inputRaster);
-<a id='L241' name='L241'></a> 241             inputRaster = raster;
-<a id='L242' name='L242'></a> 242         <em class='brace'>}</em>
-<a id='L243' name='L243'></a> 243 
-<a id='L244' name='L244'></a> 244         <em class='comment'>// Check whether the image is white-is-zero.</em>
-<a id='L245' name='L245'></a> 245         <strong class='reserved'>boolean</strong> isWhiteZero = <strong class='reserved'>false</strong>;
-<a id='L246' name='L246'></a> 246         <strong class='reserved'>if</strong>(!writeRaster &amp;&amp; <a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>.<a href='../D/17790.html' title='Multiple defined in 14 places.'>getColorModel</a>() <strong class='reserved'>instanceof</strong> <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>) <em class='brace'>{</em>
-<a id='L247' name='L247'></a> 247             <a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a> icm = (<a href='../S/2242.html#L125' title='Defined at 125 in src/java/awt/image/IndexColorModel.java.'>IndexColorModel</a>)<a href='../S/4116.html#L132' title='Defined at 132 in src/javax/xml/ws/Action.java.'>input</a>.<a href='../D/17790.html' title='Multiple defined in 14 places.'>getColorModel</a>();
-<a id='L248' name='L248'></a> 248             isWhiteZero = icm.<a href='../D/21904.html' title='Multiple defined in 9 places.'>getRed</a>(0) &gt; icm.<a href='../D/21904.html' title='Multiple defined in 9 places.'>getRed</a>(1);
-<a id='L249' name='L249'></a> 249         <em class='brace'>}</em>
-<a id='L250' name='L250'></a> 250 
-<a id='L251' name='L251'></a> 251         <em class='comment'>// Get the line stride, bytes per row, and data array.</em>
-<a id='L252' name='L252'></a> 252         <strong class='reserved'>int</strong> lineStride =
-<a id='L253' name='L253'></a> 253             ((<a href='../S/2229.html#L65' title='Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.'>MultiPixelPackedSampleModel</a>)destSM).<a href='../D/22246.html' title='Multiple defined in 3 places.'>getScanlineStride</a>();
-<a id='L254' name='L254'></a> 254         <strong class='reserved'>int</strong> bytesPerRow = (w + 7)/8;
-<a id='L255' name='L255'></a> 255         <strong class='reserved'>byte</strong>[] bdata = ((<a href='../S/2266.html#L60' title='Defined at 60 in src/java/awt/image/DataBufferByte.java.'>DataBufferByte</a>)inputRaster.<a href='../S/2238.html#L1429' title='Defined at 1429 in src/java/awt/image/Raster.java.'>getDataBuffer</a>()).<a href='../D/18190.html' title='Multiple defined in 47 places.'>getData</a>();
-<a id='L256' name='L256'></a> 256 
-<a id='L257' name='L257'></a> 257         <em class='comment'>// Write WBMP header.</em>
-<a id='L258' name='L258'></a> 258         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(0); <em class='comment'>// TypeField</em>
-<a id='L259' name='L259'></a> 259         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(0); <em class='comment'>// FixHeaderField</em>
-<a id='L260' name='L260'></a> 260         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(<a href='../S/6800.html#L80' title='Defined at 80 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.'>intToMultiByte</a>(w)); <em class='comment'>// width</em>
-<a id='L261' name='L261'></a> 261         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(<a href='../S/6800.html#L80' title='Defined at 80 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.'>intToMultiByte</a>(h)); <em class='comment'>// height</em>
-<a id='L262' name='L262'></a> 262 
-<a id='L263' name='L263'></a> 263         <em class='comment'>// Write the data.</em>
-<a id='L264' name='L264'></a> 264         <strong class='reserved'>if</strong>(!isWhiteZero &amp;&amp; lineStride == bytesPerRow) <em class='brace'>{</em>
-<a id='L265' name='L265'></a> 265             <em class='comment'>// Write the entire image.</em>
-<a id='L266' name='L266'></a> 266             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(bdata, 0, h * bytesPerRow);
-<a id='L267' name='L267'></a> 267             <a href='../D/29811.html' title='Multiple defined in 2 places.'>processImageProgress</a>(100.0F);
-<a id='L268' name='L268'></a> 268         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L269' name='L269'></a> 269             <em class='comment'>// Write the image row-by-row.</em>
-<a id='L270' name='L270'></a> 270             <strong class='reserved'>int</strong> <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> = 0;
-<a id='L271' name='L271'></a> 271             <strong class='reserved'>if</strong>(!isWhiteZero) <em class='brace'>{</em>
-<a id='L272' name='L272'></a> 272                 <em class='comment'>// Black-is-zero</em>
-<a id='L273' name='L273'></a> 273                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> row = 0; row &lt; h; row++) <em class='brace'>{</em>
-<a id='L274' name='L274'></a> 274                     <strong class='reserved'>if</strong> (<a href='../D/10520.html' title='Multiple defined in 2 places.'>abortRequested</a>())
-<a id='L275' name='L275'></a> 275                         <strong class='reserved'>break</strong>;
-<a id='L276' name='L276'></a> 276                     <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(bdata, <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>, bytesPerRow);
-<a id='L277' name='L277'></a> 277                     <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += lineStride;
-<a id='L278' name='L278'></a> 278                     <a href='../D/29811.html' title='Multiple defined in 2 places.'>processImageProgress</a>(100.0F * row / h);
-<a id='L279' name='L279'></a> 279                 <em class='brace'>}</em>
-<a id='L280' name='L280'></a> 280             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L281' name='L281'></a> 281                 <em class='comment'>// White-is-zero: need to invert data.</em>
-<a id='L282' name='L282'></a> 282                 <strong class='reserved'>byte</strong>[] inverted = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[bytesPerRow];
-<a id='L283' name='L283'></a> 283                 <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> row = 0; row &lt; h; row++) <em class='brace'>{</em>
-<a id='L284' name='L284'></a> 284                     <strong class='reserved'>if</strong> (<a href='../D/10520.html' title='Multiple defined in 2 places.'>abortRequested</a>())
-<a id='L285' name='L285'></a> 285                         <strong class='reserved'>break</strong>;
-<a id='L286' name='L286'></a> 286                     <strong class='reserved'>for</strong>(<strong class='reserved'>int</strong> col = 0; col &lt; bytesPerRow; col++) <em class='brace'>{</em>
-<a id='L287' name='L287'></a> 287                         inverted[col] = (<strong class='reserved'>byte</strong>)(~(bdata[col+<a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a>]));
-<a id='L288' name='L288'></a> 288                     <em class='brace'>}</em>
-<a id='L289' name='L289'></a> 289                     <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/36968.html' title='Multiple defined in 508 places.'>write</a>(inverted, 0, bytesPerRow);
-<a id='L290' name='L290'></a> 290                     <a href='../D/28472.html' title='Multiple defined in 2 places.'>offset</a> += lineStride;
-<a id='L291' name='L291'></a> 291                     <a href='../D/29811.html' title='Multiple defined in 2 places.'>processImageProgress</a>(100.0F * row / h);
-<a id='L292' name='L292'></a> 292                 <em class='brace'>}</em>
-<a id='L293' name='L293'></a> 293             <em class='brace'>}</em>
-<a id='L294' name='L294'></a> 294         <em class='brace'>}</em>
-<a id='L295' name='L295'></a> 295 
-<a id='L296' name='L296'></a> 296         <strong class='reserved'>if</strong> (<a href='../D/10520.html' title='Multiple defined in 2 places.'>abortRequested</a>())
-<a id='L297' name='L297'></a> 297             <a href='../S/4231.html#L1871' title='Defined at 1871 in src/javax/imageio/ImageWriter.java.'>processWriteAborted</a>();
-<a id='L298' name='L298'></a> 298         <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L299' name='L299'></a> 299             <a href='../D/29810.html' title='Multiple defined in 2 places.'>processImageComplete</a>();
-<a id='L300' name='L300'></a> 300             <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/16479.html' title='Multiple defined in 6 places.'>flushBefore</a>(<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>.<a href='../D/22762.html' title='Multiple defined in 3 places.'>getStreamPosition</a>());
-<a id='L301' name='L301'></a> 301         <em class='brace'>}</em>
-<a id='L302' name='L302'></a> 302     <em class='brace'>}</em>
-<a id='L303' name='L303'></a> 303 
-<a id='L304' name='L304'></a> 304     <strong class='reserved'>public</strong> <strong class='reserved'>void</strong> <a href='../R/26238.html' title='Multiple referred from 619 places.'>reset</a>() <em class='brace'>{</em>
-<a id='L305' name='L305'></a> 305         <strong class='reserved'>super</strong>.<a href='../D/31151.html' title='Multiple defined in 296 places.'>reset</a>();
-<a id='L306' name='L306'></a> 306         <a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a> = <strong class='reserved'>null</strong>;
-<a id='L307' name='L307'></a> 307     <em class='brace'>}</em>
-<a id='L308' name='L308'></a> 308 
-<a id='L309' name='L309'></a> 309     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/6800.html#L171' title='Referred from 171 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.'>checkSampleModel</a>(<a href='../S/2227.html#L81' title='Defined at 81 in src/java/awt/image/SampleModel.java.'>SampleModel</a> sm) <em class='brace'>{</em>
-<a id='L310' name='L310'></a> 310         <strong class='reserved'>int</strong> <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> = sm.<a href='../D/18205.html' title='Multiple defined in 4 places.'>getDataType</a>();
-<a id='L311' name='L311'></a> 311         <strong class='reserved'>if</strong> (<a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> &lt; <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_BYTE || <a href='../D/35749.html' title='Multiple defined in 239 places.'>type</a> &gt; <a href='../S/2284.html#L70' title='Defined at 70 in src/java/awt/image/DataBuffer.java.'>DataBuffer</a>.TYPE_INT
-<a id='L312' name='L312'></a> 312             || sm.<a href='../D/21054.html' title='Multiple defined in 3 places.'>getNumBands</a>() != 1 || sm.<a href='../D/22227.html' title='Multiple defined in 8 places.'>getSampleSize</a>(0) != 1)
-<a id='L313' name='L313'></a> 313             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4055.html' title='Multiple defined in 2 places.'>IllegalArgumentException</a>(<a href='../S/6791.html#L28' title='Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.'>I18N</a>.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>("WBMPImageWriter2"));
-<a id='L314' name='L314'></a> 314     <em class='brace'>}</em>
-<a id='L315' name='L315'></a> 315 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> com.sun.imageio.plugins.wbmp;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.awt.Point;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> java.awt.Rectangle;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> java.awt.image.ColorModel;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> java.awt.image.DataBuffer;
+<a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> java.awt.image.DataBufferByte;
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.awt.image.IndexColorModel;
+<a id="L34" name="L34"></a>  34 <strong class="reserved">import</strong> java.awt.image.MultiPixelPackedSampleModel;
+<a id="L35" name="L35"></a>  35 <strong class="reserved">import</strong> java.awt.image.Raster;
+<a id="L36" name="L36"></a>  36 <strong class="reserved">import</strong> java.awt.image.RenderedImage;
+<a id="L37" name="L37"></a>  37 <strong class="reserved">import</strong> java.awt.image.SampleModel;
+<a id="L38" name="L38"></a>  38 <strong class="reserved">import</strong> java.awt.image.WritableRaster;
+<a id="L39" name="L39"></a>  39 
+<a id="L40" name="L40"></a>  40 <strong class="reserved">import</strong> java.io.IOException;
+<a id="L41" name="L41"></a>  41 
+<a id="L42" name="L42"></a>  42 <strong class="reserved">import</strong> javax.imageio.IIOImage;
+<a id="L43" name="L43"></a>  43 <strong class="reserved">import</strong> javax.imageio.IIOException;
+<a id="L44" name="L44"></a>  44 <strong class="reserved">import</strong> javax.imageio.ImageTypeSpecifier;
+<a id="L45" name="L45"></a>  45 <strong class="reserved">import</strong> javax.imageio.ImageWriteParam;
+<a id="L46" name="L46"></a>  46 <strong class="reserved">import</strong> javax.imageio.ImageWriter;
+<a id="L47" name="L47"></a>  47 <strong class="reserved">import</strong> javax.imageio.metadata.IIOMetadata;
+<a id="L48" name="L48"></a>  48 <strong class="reserved">import</strong> javax.imageio.metadata.IIOMetadataFormatImpl;
+<a id="L49" name="L49"></a>  49 <strong class="reserved">import</strong> javax.imageio.metadata.IIOInvalidTreeException;
+<a id="L50" name="L50"></a>  50 <strong class="reserved">import</strong> javax.imageio.spi.ImageWriterSpi;
+<a id="L51" name="L51"></a>  51 <strong class="reserved">import</strong> javax.imageio.stream.ImageOutputStream;
+<a id="L52" name="L52"></a>  52 
+<a id="L53" name="L53"></a>  53 <strong class="reserved">import</strong> com.sun.imageio.plugins.common.I18N;
+<a id="L54" name="L54"></a>  54 
+<a id="L55" name="L55"></a>  55 <em class="comment">/**</em>
+<a id="L56" name="L56"></a>  56 <em class="comment"> * The Java Image IO plugin writer for encoding a binary RenderedImage into</em>
+<a id="L57" name="L57"></a>  57 <em class="comment"> * a WBMP format.</em>
+<a id="L58" name="L58"></a>  58 <em class="comment"> *</em>
+<a id="L59" name="L59"></a>  59 <em class="comment"> * The encoding process may clip, subsample using the parameters</em>
+<a id="L60" name="L60"></a>  60 <em class="comment"> * specified in the <code>ImageWriteParam</code>.</em>
+<a id="L61" name="L61"></a>  61 <em class="comment"> *</em>
+<a id="L62" name="L62"></a>  62 <em class="comment"> * @see com.sun.media.imageio.plugins.WBMPImageWriteParam</em>
+<a id="L63" name="L63"></a>  63 <em class="comment"> */</em>
+<a id="L64" name="L64"></a>  64 <strong class="reserved">public</strong> <strong class="reserved">class</strong> <a href="../S/6799.html#L91" title="Referred from 91 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriterSpi.java.">WBMPImageWriter</a> <strong class="reserved">extends</strong> <a href="../S/4231.html#L64" title="Defined at 64 in src/javax/imageio/ImageWriter.java.">ImageWriter</a> <em class="brace">{</em>
+<a id="L65" name="L65"></a>  65     <em class="comment">/** The output stream to write into */</em>
+<a id="L66" name="L66"></a>  66     <strong class="reserved">private</strong> <a href="../S/4199.html#L52" title="Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.">ImageOutputStream</a> <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a> = <strong class="reserved">null</strong>;
+<a id="L67" name="L67"></a>  67 
+<a id="L68" name="L68"></a>  68     <em class="comment">// Get the number of bits required to represent an int.</em>
+<a id="L69" name="L69"></a>  69     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">int</strong> <a href="../R/18034.html" title="Multiple referred from 4 places.">getNumBits</a>(<strong class="reserved">int</strong> <a href="../D/24897.html" title="Multiple defined in 21 places.">intValue</a>) <em class="brace">{</em>
+<a id="L70" name="L70"></a>  70         <strong class="reserved">int</strong> numBits = 32;
+<a id="L71" name="L71"></a>  71         <strong class="reserved">int</strong> <a href="../S/915.html#L394" title="Defined at 394 in src/java/util/stream/StreamOpFlag.java.">mask</a> = 0x80000000;
+<a id="L72" name="L72"></a>  72         <strong class="reserved">while</strong>(<a href="../S/915.html#L394" title="Defined at 394 in src/java/util/stream/StreamOpFlag.java.">mask</a> != 0 &amp;&amp; (<a href="../D/24897.html" title="Multiple defined in 21 places.">intValue</a> &amp; <a href="../S/915.html#L394" title="Defined at 394 in src/java/util/stream/StreamOpFlag.java.">mask</a>) == 0) <em class="brace">{</em>
+<a id="L73" name="L73"></a>  73             numBits--;
+<a id="L74" name="L74"></a>  74             <a href="../S/915.html#L394" title="Defined at 394 in src/java/util/stream/StreamOpFlag.java.">mask</a> &gt;&gt;&gt;= 1;
+<a id="L75" name="L75"></a>  75         <em class="brace">}</em>
+<a id="L76" name="L76"></a>  76         <strong class="reserved">return</strong> numBits;
+<a id="L77" name="L77"></a>  77     <em class="brace">}</em>
+<a id="L78" name="L78"></a>  78 
+<a id="L79" name="L79"></a>  79     <em class="comment">// Convert an int value to WBMP multi-byte format.</em>
+<a id="L80" name="L80"></a>  80     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">byte</strong>[] <a href="../R/20907.html" title="Multiple referred from 2 places.">intToMultiByte</a>(<strong class="reserved">int</strong> <a href="../D/24897.html" title="Multiple defined in 21 places.">intValue</a>) <em class="brace">{</em>
+<a id="L81" name="L81"></a>  81         <strong class="reserved">int</strong> numBitsLeft = <a href="../D/21056.html" title="Multiple defined in 2 places.">getNumBits</a>(<a href="../D/24897.html" title="Multiple defined in 21 places.">intValue</a>);
+<a id="L82" name="L82"></a>  82         <strong class="reserved">byte</strong>[] multiBytes = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[(numBitsLeft + 6)/7];
+<a id="L83" name="L83"></a>  83 
+<a id="L84" name="L84"></a>  84         <strong class="reserved">int</strong> maxIndex = multiBytes.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> - 1;
+<a id="L85" name="L85"></a>  85         <strong class="reserved">for</strong>(<strong class="reserved">int</strong> b = 0; b &lt;= maxIndex; b++) <em class="brace">{</em>
+<a id="L86" name="L86"></a>  86             multiBytes[b] = (<strong class="reserved">byte</strong>)((<a href="../D/24897.html" title="Multiple defined in 21 places.">intValue</a> &gt;&gt;&gt; ((maxIndex - b)*7))&amp;0x7f);
+<a id="L87" name="L87"></a>  87             <strong class="reserved">if</strong>(b != maxIndex) <em class="brace">{</em>
+<a id="L88" name="L88"></a>  88                 multiBytes[b] |= (<strong class="reserved">byte</strong>)0x80;
+<a id="L89" name="L89"></a>  89             <em class="brace">}</em>
+<a id="L90" name="L90"></a>  90         <em class="brace">}</em>
+<a id="L91" name="L91"></a>  91 
+<a id="L92" name="L92"></a>  92         <strong class="reserved">return</strong> multiBytes;
+<a id="L93" name="L93"></a>  93     <em class="brace">}</em>
+<a id="L94" name="L94"></a>  94 
+<a id="L95" name="L95"></a>  95     <em class="comment">/** Constructs <code>WBMPImageWriter</code> based on the provided</em>
+<a id="L96" name="L96"></a>  96 <em class="comment">     *  <code>ImageWriterSpi</code>.</em>
+<a id="L97" name="L97"></a>  97 <em class="comment">     */</em>
+<a id="L98" name="L98"></a>  98     <strong class="reserved">public</strong> WBMPImageWriter(<a href="../S/4219.html#L76" title="Defined at 76 in src/javax/imageio/spi/ImageWriterSpi.java.">ImageWriterSpi</a> originator) <em class="brace">{</em>
+<a id="L99" name="L99"></a>  99         <strong class="reserved">super</strong>(originator);
+<a id="L100" name="L100"></a> 100     <em class="brace">}</em>
+<a id="L101" name="L101"></a> 101 
+<a id="L102" name="L102"></a> 102     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/27874.html" title="Multiple referred from 10 places.">setOutput</a>(<a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> <a href="../D/28597.html" title="Multiple defined in 4 places.">output</a>) <em class="brace">{</em>
+<a id="L103" name="L103"></a> 103         <strong class="reserved">super</strong>.<a href="../D/33452.html" title="Multiple defined in 7 places.">setOutput</a>(<a href="../D/28597.html" title="Multiple defined in 4 places.">output</a>); <em class="comment">// validates output</em>
+<a id="L104" name="L104"></a> 104         <strong class="reserved">if</strong> (<a href="../D/28597.html" title="Multiple defined in 4 places.">output</a> != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L105" name="L105"></a> 105             <strong class="reserved">if</strong> (!(<a href="../D/28597.html" title="Multiple defined in 4 places.">output</a> <strong class="reserved">instanceof</strong> <a href="../S/4199.html#L52" title="Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.">ImageOutputStream</a>))
+<a id="L106" name="L106"></a> 106                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>(<a href="../S/6791.html#L28" title="Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.">I18N</a>.<a href="../D/22769.html" title="Multiple defined in 35 places.">getString</a>("WBMPImageWriter"));
+<a id="L107" name="L107"></a> 107             <strong class="reserved">this</strong>.<a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a> = (<a href="../S/4199.html#L52" title="Defined at 52 in src/javax/imageio/stream/ImageOutputStream.java.">ImageOutputStream</a>)<a href="../D/28597.html" title="Multiple defined in 4 places.">output</a>;
+<a id="L108" name="L108"></a> 108         <em class="brace">}</em> <strong class="reserved">else</strong>
+<a id="L109" name="L109"></a> 109             <strong class="reserved">this</strong>.<a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a> = <strong class="reserved">null</strong>;
+<a id="L110" name="L110"></a> 110     <em class="brace">}</em>
+<a id="L111" name="L111"></a> 111 
+<a id="L112" name="L112"></a> 112     <strong class="reserved">public</strong> <a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> <a href="../R/16081.html" title="Multiple referred from 3 places.">getDefaultStreamMetadata</a>(<a href="../S/4227.html#L86" title="Defined at 86 in src/javax/imageio/ImageWriteParam.java.">ImageWriteParam</a> param) <em class="brace">{</em>
+<a id="L113" name="L113"></a> 113         <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L114" name="L114"></a> 114     <em class="brace">}</em>
+<a id="L115" name="L115"></a> 115 
+<a id="L116" name="L116"></a> 116     <strong class="reserved">public</strong> <a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> <a href="../R/16038.html" title="Multiple referred from 4 places.">getDefaultImageMetadata</a>(<a href="../S/4243.html#L53" title="Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.">ImageTypeSpecifier</a> imageType,
+<a id="L117" name="L117"></a> 117                                                <a href="../S/4227.html#L86" title="Defined at 86 in src/javax/imageio/ImageWriteParam.java.">ImageWriteParam</a> param) <em class="brace">{</em>
+<a id="L118" name="L118"></a> 118         <a href="../S/6801.html#L42" title="Defined at 42 in src/com/sun/imageio/plugins/wbmp/WBMPMetadata.java.">WBMPMetadata</a> <a href="../D/27675.html" title="Multiple defined in 3 places.">meta</a> = <strong class="reserved">new</strong> <a href="../S/6801.html#L42" title="Defined at 42 in src/com/sun/imageio/plugins/wbmp/WBMPMetadata.java.">WBMPMetadata</a>();
+<a id="L119" name="L119"></a> 119         <a href="../D/27675.html" title="Multiple defined in 3 places.">meta</a>.wbmpType = 0; <em class="comment">// default wbmp level</em>
+<a id="L120" name="L120"></a> 120         <strong class="reserved">return</strong> <a href="../D/27675.html" title="Multiple defined in 3 places.">meta</a>;
+<a id="L121" name="L121"></a> 121     <em class="brace">}</em>
+<a id="L122" name="L122"></a> 122 
+<a id="L123" name="L123"></a> 123     <strong class="reserved">public</strong> <a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> <a href="../S/6838.html#L508" title="Referred from 508 in src/com/sun/imageio/plugins/gif/GIFImageWriter.java.">convertStreamMetadata</a>(<a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> inData,
+<a id="L124" name="L124"></a> 124                                              <a href="../S/4227.html#L86" title="Defined at 86 in src/javax/imageio/ImageWriteParam.java.">ImageWriteParam</a> param) <em class="brace">{</em>
+<a id="L125" name="L125"></a> 125         <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L126" name="L126"></a> 126     <em class="brace">}</em>
+<a id="L127" name="L127"></a> 127 
+<a id="L128" name="L128"></a> 128     <strong class="reserved">public</strong> <a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> <a href="../R/12024.html" title="Multiple referred from 3 places.">convertImageMetadata</a>(<a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> <a href="../S/4075.html#L236" title="Defined at 236 in src/javax/xml/ws/wsaddressing/W3CEndpointReferenceBuilder.java.">metadata</a>,
+<a id="L129" name="L129"></a> 129                                             <a href="../S/4243.html#L53" title="Defined at 53 in src/javax/imageio/ImageTypeSpecifier.java.">ImageTypeSpecifier</a> <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a>,
+<a id="L130" name="L130"></a> 130                                             <a href="../S/4227.html#L86" title="Defined at 86 in src/javax/imageio/ImageWriteParam.java.">ImageWriteParam</a> param) <em class="brace">{</em>
+<a id="L131" name="L131"></a> 131         <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L132" name="L132"></a> 132     <em class="brace">}</em>
+<a id="L133" name="L133"></a> 133 
+<a id="L134" name="L134"></a> 134     <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> canWriteRasters() <em class="brace">{</em>
+<a id="L135" name="L135"></a> 135         <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L136" name="L136"></a> 136     <em class="brace">}</em>
+<a id="L137" name="L137"></a> 137 
+<a id="L138" name="L138"></a> 138     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/30544.html" title="Multiple referred from 1880 places.">write</a>(<a href="../S/4238.html#L66" title="Defined at 66 in src/javax/imageio/metadata/IIOMetadata.java.">IIOMetadata</a> streamMetadata,
+<a id="L139" name="L139"></a> 139                       <a href="../S/4226.html#L60" title="Defined at 60 in src/javax/imageio/IIOImage.java.">IIOImage</a> image,
+<a id="L140" name="L140"></a> 140                       <a href="../S/4227.html#L86" title="Defined at 86 in src/javax/imageio/ImageWriteParam.java.">ImageWriteParam</a> param) <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> <em class="brace">{</em>
+<a id="L141" name="L141"></a> 141 
+<a id="L142" name="L142"></a> 142         <strong class="reserved">if</strong> (<a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a> == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L143" name="L143"></a> 143             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1555.html#L38" title="Defined at 38 in src/java/lang/IllegalStateException.java.">IllegalStateException</a>(<a href="../S/6791.html#L28" title="Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.">I18N</a>.<a href="../D/22769.html" title="Multiple defined in 35 places.">getString</a>("WBMPImageWriter3"));
+<a id="L144" name="L144"></a> 144         <em class="brace">}</em>
+<a id="L145" name="L145"></a> 145 
+<a id="L146" name="L146"></a> 146         <strong class="reserved">if</strong> (image == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L147" name="L147"></a> 147             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>(<a href="../S/6791.html#L28" title="Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.">I18N</a>.<a href="../D/22769.html" title="Multiple defined in 35 places.">getString</a>("WBMPImageWriter4"));
+<a id="L148" name="L148"></a> 148         <em class="brace">}</em>
+<a id="L149" name="L149"></a> 149 
+<a id="L150" name="L150"></a> 150         <a href="../D/12819.html" title="Multiple defined in 3 places.">clearAbortRequest</a>();
+<a id="L151" name="L151"></a> 151         <a href="../D/29812.html" title="Multiple defined in 2 places.">processImageStarted</a>(0);
+<a id="L152" name="L152"></a> 152         <strong class="reserved">if</strong> (param == <strong class="reserved">null</strong>)
+<a id="L153" name="L153"></a> 153             param = <a href="../D/18388.html" title="Multiple defined in 5 places.">getDefaultWriteParam</a>();
+<a id="L154" name="L154"></a> 154 
+<a id="L155" name="L155"></a> 155         <a href="../S/2255.html#L48" title="Defined at 48 in src/java/awt/image/RenderedImage.java.">RenderedImage</a> <a href="../S/4116.html#L132" title="Defined at 132 in src/javax/xml/ws/Action.java.">input</a> = <strong class="reserved">null</strong>;
+<a id="L156" name="L156"></a> 156         <a href="../S/2238.html#L126" title="Defined at 126 in src/java/awt/image/Raster.java.">Raster</a> inputRaster = <strong class="reserved">null</strong>;
+<a id="L157" name="L157"></a> 157         <strong class="reserved">boolean</strong> writeRaster = image.<a href="../S/4226.html#L188" title="Defined at 188 in src/javax/imageio/IIOImage.java.">hasRaster</a>();
+<a id="L158" name="L158"></a> 158         <a href="../S/2314.html#L119" title="Defined at 119 in src/java/awt/Rectangle.java.">Rectangle</a> sourceRegion = param.<a href="../D/22627.html" title="Multiple defined in 2 places.">getSourceRegion</a>();
+<a id="L159" name="L159"></a> 159         <a href="../S/2227.html#L81" title="Defined at 81 in src/java/awt/image/SampleModel.java.">SampleModel</a> sampleModel = <strong class="reserved">null</strong>;
+<a id="L160" name="L160"></a> 160 
+<a id="L161" name="L161"></a> 161         <strong class="reserved">if</strong> (writeRaster) <em class="brace">{</em>
+<a id="L162" name="L162"></a> 162             inputRaster = image.<a href="../D/21845.html" title="Multiple defined in 8 places.">getRaster</a>();
+<a id="L163" name="L163"></a> 163             sampleModel = inputRaster.<a href="../D/22223.html" title="Multiple defined in 5 places.">getSampleModel</a>();
+<a id="L164" name="L164"></a> 164         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L165" name="L165"></a> 165             <a href="../S/4116.html#L132" title="Defined at 132 in src/javax/xml/ws/Action.java.">input</a> = image.<a href="../S/4226.html#L153" title="Defined at 153 in src/javax/imageio/IIOImage.java.">getRenderedImage</a>();
+<a id="L166" name="L166"></a> 166             sampleModel = <a href="../S/4116.html#L132" title="Defined at 132 in src/javax/xml/ws/Action.java.">input</a>.<a href="../D/22223.html" title="Multiple defined in 5 places.">getSampleModel</a>();
+<a id="L167" name="L167"></a> 167 
+<a id="L168" name="L168"></a> 168             inputRaster = <a href="../S/4116.html#L132" title="Defined at 132 in src/javax/xml/ws/Action.java.">input</a>.<a href="../D/18190.html" title="Multiple defined in 47 places.">getData</a>();
+<a id="L169" name="L169"></a> 169         <em class="brace">}</em>
+<a id="L170" name="L170"></a> 170 
+<a id="L171" name="L171"></a> 171         <a href="../S/6800.html#L309" title="Defined at 309 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.">checkSampleModel</a>(sampleModel);
+<a id="L172" name="L172"></a> 172         <strong class="reserved">if</strong> (sourceRegion == <strong class="reserved">null</strong>)
+<a id="L173" name="L173"></a> 173             sourceRegion = inputRaster.<a href="../D/17335.html" title="Multiple defined in 41 places.">getBounds</a>();
+<a id="L174" name="L174"></a> 174         <strong class="reserved">else</strong>
+<a id="L175" name="L175"></a> 175             sourceRegion = sourceRegion.<a href="../D/24981.html" title="Multiple defined in 5 places.">intersection</a>(inputRaster.<a href="../D/17335.html" title="Multiple defined in 41 places.">getBounds</a>());
+<a id="L176" name="L176"></a> 176 
+<a id="L177" name="L177"></a> 177         <strong class="reserved">if</strong> (sourceRegion.<a href="../D/25493.html" title="Multiple defined in 113 places.">isEmpty</a>())
+<a id="L178" name="L178"></a> 178             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1723.html#L43" title="Defined at 43 in src/java/lang/RuntimeException.java.">RuntimeException</a>(<a href="../S/6791.html#L28" title="Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.">I18N</a>.<a href="../D/22769.html" title="Multiple defined in 35 places.">getString</a>("WBMPImageWriter1"));
+<a id="L179" name="L179"></a> 179 
+<a id="L180" name="L180"></a> 180         <strong class="reserved">int</strong> scaleX = param.<a href="../S/4198.html#L345" title="Defined at 345 in src/javax/imageio/IIOParam.java.">getSourceXSubsampling</a>();
+<a id="L181" name="L181"></a> 181         <strong class="reserved">int</strong> scaleY = param.<a href="../S/4198.html#L360" title="Defined at 360 in src/javax/imageio/IIOParam.java.">getSourceYSubsampling</a>();
+<a id="L182" name="L182"></a> 182         <strong class="reserved">int</strong> xOffset = param.<a href="../S/4198.html#L375" title="Defined at 375 in src/javax/imageio/IIOParam.java.">getSubsamplingXOffset</a>();
+<a id="L183" name="L183"></a> 183         <strong class="reserved">int</strong> yOffset = param.<a href="../S/4198.html#L390" title="Defined at 390 in src/javax/imageio/IIOParam.java.">getSubsamplingYOffset</a>();
+<a id="L184" name="L184"></a> 184 
+<a id="L185" name="L185"></a> 185         sourceRegion.<a href="../D/35598.html" title="Multiple defined in 116 places.">translate</a>(xOffset, yOffset);
+<a id="L186" name="L186"></a> 186         sourceRegion.<a href="../D/36863.html" title="Multiple defined in 3 places.">width</a> -= xOffset;
+<a id="L187" name="L187"></a> 187         sourceRegion.<a href="../S/3196.html#L677" title="Defined at 677 in src/javax/swing/Spring.java.">height</a> -= yOffset;
+<a id="L188" name="L188"></a> 188 
+<a id="L189" name="L189"></a> 189         <strong class="reserved">int</strong> minX = sourceRegion.<a href="../D/37285.html" title="Multiple defined in 2 places.">x</a> / scaleX;
+<a id="L190" name="L190"></a> 190         <strong class="reserved">int</strong> minY = sourceRegion.y / scaleY;
+<a id="L191" name="L191"></a> 191         <strong class="reserved">int</strong> w = (sourceRegion.<a href="../D/36863.html" title="Multiple defined in 3 places.">width</a> + scaleX - 1) / scaleX;
+<a id="L192" name="L192"></a> 192         <strong class="reserved">int</strong> h = (sourceRegion.<a href="../S/3196.html#L677" title="Defined at 677 in src/javax/swing/Spring.java.">height</a> + scaleY - 1) / scaleY;
+<a id="L193" name="L193"></a> 193 
+<a id="L194" name="L194"></a> 194         <a href="../S/2314.html#L119" title="Defined at 119 in src/java/awt/Rectangle.java.">Rectangle</a> destinationRegion = <strong class="reserved">new</strong> <a href="../S/2314.html#L119" title="Defined at 119 in src/java/awt/Rectangle.java.">Rectangle</a>(minX, minY, w, h);
+<a id="L195" name="L195"></a> 195         sampleModel = sampleModel.<a href="../D/13707.html" title="Multiple defined in 10 places.">createCompatibleSampleModel</a>(w, h);
+<a id="L196" name="L196"></a> 196 
+<a id="L197" name="L197"></a> 197         <a href="../S/2227.html#L81" title="Defined at 81 in src/java/awt/image/SampleModel.java.">SampleModel</a> destSM= sampleModel;
+<a id="L198" name="L198"></a> 198 
+<a id="L199" name="L199"></a> 199         <em class="comment">// If the data are not formatted nominally then reformat.</em>
+<a id="L200" name="L200"></a> 200         <strong class="reserved">if</strong>(sampleModel.<a href="../D/18205.html" title="Multiple defined in 4 places.">getDataType</a>() != <a href="../S/2284.html#L70" title="Defined at 70 in src/java/awt/image/DataBuffer.java.">DataBuffer</a>.TYPE_BYTE ||
+<a id="L201" name="L201"></a> 201            !(sampleModel <strong class="reserved">instanceof</strong> <a href="../S/2229.html#L65" title="Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.">MultiPixelPackedSampleModel</a>) ||
+<a id="L202" name="L202"></a> 202            ((<a href="../S/2229.html#L65" title="Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.">MultiPixelPackedSampleModel</a>)sampleModel).<a href="../S/2229.html#L292" title="Defined at 292 in src/java/awt/image/MultiPixelPackedSampleModel.java.">getDataBitOffset</a>() != 0) <em class="brace">{</em>
+<a id="L203" name="L203"></a> 203            destSM =
+<a id="L204" name="L204"></a> 204                 <strong class="reserved">new</strong> <a href="../S/2229.html#L65" title="Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.">MultiPixelPackedSampleModel</a>(<a href="../S/2284.html#L70" title="Defined at 70 in src/java/awt/image/DataBuffer.java.">DataBuffer</a>.TYPE_BYTE,
+<a id="L205" name="L205"></a> 205                                                 w, h, 1,
+<a id="L206" name="L206"></a> 206                                                 w + 7 &gt;&gt; 3, 0);
+<a id="L207" name="L207"></a> 207         <em class="brace">}</em>
+<a id="L208" name="L208"></a> 208 
+<a id="L209" name="L209"></a> 209         <strong class="reserved">if</strong> (!destinationRegion.<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(sourceRegion)) <em class="brace">{</em>
+<a id="L210" name="L210"></a> 210             <strong class="reserved">if</strong> (scaleX == 1 &amp;&amp; scaleY == 1)
+<a id="L211" name="L211"></a> 211                 inputRaster = inputRaster.<a href="../S/2238.html#L1311" title="Defined at 1311 in src/java/awt/image/Raster.java.">createChild</a>(inputRaster.<a href="../D/20651.html" title="Multiple defined in 6 places.">getMinX</a>(),
+<a id="L212" name="L212"></a> 212                                                       inputRaster.<a href="../D/20652.html" title="Multiple defined in 6 places.">getMinY</a>(),
+<a id="L213" name="L213"></a> 213                                                       w, h, minX, minY, <strong class="reserved">null</strong>);
+<a id="L214" name="L214"></a> 214             <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L215" name="L215"></a> 215                 <a href="../S/2280.html#L49" title="Defined at 49 in src/java/awt/image/WritableRaster.java.">WritableRaster</a> ras = <a href="../S/2238.html#L126" title="Defined at 126 in src/java/awt/image/Raster.java.">Raster</a>.<a href="../D/14329.html" title="Multiple defined in 2 places.">createWritableRaster</a>(destSM,
+<a id="L216" name="L216"></a> 216                                                                  <strong class="reserved">new</strong> <a href="../S/2123.html#L38" title="Defined at 38 in src/java/awt/Point.java.">Point</a>(minX, minY));
+<a id="L217" name="L217"></a> 217 
+<a id="L218" name="L218"></a> 218                 <strong class="reserved">byte</strong>[] <a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a> = ((<a href="../S/2266.html#L60" title="Defined at 60 in src/java/awt/image/DataBufferByte.java.">DataBufferByte</a>)ras.<a href="../S/2238.html#L1429" title="Defined at 1429 in src/java/awt/image/Raster.java.">getDataBuffer</a>()).<a href="../D/18190.html" title="Multiple defined in 47 places.">getData</a>();
+<a id="L219" name="L219"></a> 219 
+<a id="L220" name="L220"></a> 220                 <strong class="reserved">for</strong>(<strong class="reserved">int</strong> j = minY, y = sourceRegion.y, k = 0;
+<a id="L221" name="L221"></a> 221                     j &lt; minY + h; j++, y += scaleY) <em class="brace">{</em>
+<a id="L222" name="L222"></a> 222 
+<a id="L223" name="L223"></a> 223                     <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0, <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a> = sourceRegion.<a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>;
+<a id="L224" name="L224"></a> 224                         i &lt;w; i++, <a href="../D/37285.html" title="Multiple defined in 2 places.">x</a> +=scaleX) <em class="brace">{</em>
+<a id="L225" name="L225"></a> 225                         <strong class="reserved">int</strong> v = inputRaster.<a href="../D/22220.html" title="Multiple defined in 6 places.">getSample</a>(<a href="../D/37285.html" title="Multiple defined in 2 places.">x</a>, y, 0);
+<a id="L226" name="L226"></a> 226                         <a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>[k + (i &gt;&gt; 3)] |= v &lt;&lt; (7 - (i &amp; 7));
+<a id="L227" name="L227"></a> 227                     <em class="brace">}</em>
+<a id="L228" name="L228"></a> 228                     k += w + 7 &gt;&gt; 3;
+<a id="L229" name="L229"></a> 229                 <em class="brace">}</em>
+<a id="L230" name="L230"></a> 230                 inputRaster = ras;
+<a id="L231" name="L231"></a> 231             <em class="brace">}</em>
+<a id="L232" name="L232"></a> 232         <em class="brace">}</em>
+<a id="L233" name="L233"></a> 233 
+<a id="L234" name="L234"></a> 234         <em class="comment">// If the data are not formatted nominally then reformat.</em>
+<a id="L235" name="L235"></a> 235         <strong class="reserved">if</strong>(!destSM.<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(inputRaster.<a href="../D/22223.html" title="Multiple defined in 5 places.">getSampleModel</a>())) <em class="brace">{</em>
+<a id="L236" name="L236"></a> 236             <a href="../S/2280.html#L49" title="Defined at 49 in src/java/awt/image/WritableRaster.java.">WritableRaster</a> raster =
+<a id="L237" name="L237"></a> 237                 <a href="../S/2238.html#L126" title="Defined at 126 in src/java/awt/image/Raster.java.">Raster</a>.<a href="../D/14329.html" title="Multiple defined in 2 places.">createWritableRaster</a>(destSM,
+<a id="L238" name="L238"></a> 238                                             <strong class="reserved">new</strong> <a href="../S/2123.html#L38" title="Defined at 38 in src/java/awt/Point.java.">Point</a>(inputRaster.<a href="../D/20651.html" title="Multiple defined in 6 places.">getMinX</a>(),
+<a id="L239" name="L239"></a> 239                                                       inputRaster.<a href="../D/20652.html" title="Multiple defined in 6 places.">getMinY</a>()));
+<a id="L240" name="L240"></a> 240             raster.<a href="../D/33672.html" title="Multiple defined in 10 places.">setRect</a>(inputRaster);
+<a id="L241" name="L241"></a> 241             inputRaster = raster;
+<a id="L242" name="L242"></a> 242         <em class="brace">}</em>
+<a id="L243" name="L243"></a> 243 
+<a id="L244" name="L244"></a> 244         <em class="comment">// Check whether the image is white-is-zero.</em>
+<a id="L245" name="L245"></a> 245         <strong class="reserved">boolean</strong> isWhiteZero = <strong class="reserved">false</strong>;
+<a id="L246" name="L246"></a> 246         <strong class="reserved">if</strong>(!writeRaster &amp;&amp; <a href="../S/4116.html#L132" title="Defined at 132 in src/javax/xml/ws/Action.java.">input</a>.<a href="../D/17790.html" title="Multiple defined in 14 places.">getColorModel</a>() <strong class="reserved">instanceof</strong> <a href="../S/2242.html#L125" title="Defined at 125 in src/java/awt/image/IndexColorModel.java.">IndexColorModel</a>) <em class="brace">{</em>
+<a id="L247" name="L247"></a> 247             <a href="../S/2242.html#L125" title="Defined at 125 in src/java/awt/image/IndexColorModel.java.">IndexColorModel</a> icm = (<a href="../S/2242.html#L125" title="Defined at 125 in src/java/awt/image/IndexColorModel.java.">IndexColorModel</a>)<a href="../S/4116.html#L132" title="Defined at 132 in src/javax/xml/ws/Action.java.">input</a>.<a href="../D/17790.html" title="Multiple defined in 14 places.">getColorModel</a>();
+<a id="L248" name="L248"></a> 248             isWhiteZero = icm.<a href="../D/21904.html" title="Multiple defined in 9 places.">getRed</a>(0) &gt; icm.<a href="../D/21904.html" title="Multiple defined in 9 places.">getRed</a>(1);
+<a id="L249" name="L249"></a> 249         <em class="brace">}</em>
+<a id="L250" name="L250"></a> 250 
+<a id="L251" name="L251"></a> 251         <em class="comment">// Get the line stride, bytes per row, and data array.</em>
+<a id="L252" name="L252"></a> 252         <strong class="reserved">int</strong> lineStride =
+<a id="L253" name="L253"></a> 253             ((<a href="../S/2229.html#L65" title="Defined at 65 in src/java/awt/image/MultiPixelPackedSampleModel.java.">MultiPixelPackedSampleModel</a>)destSM).<a href="../D/22246.html" title="Multiple defined in 3 places.">getScanlineStride</a>();
+<a id="L254" name="L254"></a> 254         <strong class="reserved">int</strong> bytesPerRow = (w + 7)/8;
+<a id="L255" name="L255"></a> 255         <strong class="reserved">byte</strong>[] bdata = ((<a href="../S/2266.html#L60" title="Defined at 60 in src/java/awt/image/DataBufferByte.java.">DataBufferByte</a>)inputRaster.<a href="../S/2238.html#L1429" title="Defined at 1429 in src/java/awt/image/Raster.java.">getDataBuffer</a>()).<a href="../D/18190.html" title="Multiple defined in 47 places.">getData</a>();
+<a id="L256" name="L256"></a> 256 
+<a id="L257" name="L257"></a> 257         <em class="comment">// Write WBMP header.</em>
+<a id="L258" name="L258"></a> 258         <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(0); <em class="comment">// TypeField</em>
+<a id="L259" name="L259"></a> 259         <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(0); <em class="comment">// FixHeaderField</em>
+<a id="L260" name="L260"></a> 260         <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(<a href="../S/6800.html#L80" title="Defined at 80 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.">intToMultiByte</a>(w)); <em class="comment">// width</em>
+<a id="L261" name="L261"></a> 261         <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(<a href="../S/6800.html#L80" title="Defined at 80 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.">intToMultiByte</a>(h)); <em class="comment">// height</em>
+<a id="L262" name="L262"></a> 262 
+<a id="L263" name="L263"></a> 263         <em class="comment">// Write the data.</em>
+<a id="L264" name="L264"></a> 264         <strong class="reserved">if</strong>(!isWhiteZero &amp;&amp; lineStride == bytesPerRow) <em class="brace">{</em>
+<a id="L265" name="L265"></a> 265             <em class="comment">// Write the entire image.</em>
+<a id="L266" name="L266"></a> 266             <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(bdata, 0, h * bytesPerRow);
+<a id="L267" name="L267"></a> 267             <a href="../D/29811.html" title="Multiple defined in 2 places.">processImageProgress</a>(100.0F);
+<a id="L268" name="L268"></a> 268         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L269" name="L269"></a> 269             <em class="comment">// Write the image row-by-row.</em>
+<a id="L270" name="L270"></a> 270             <strong class="reserved">int</strong> <a href="../D/28472.html" title="Multiple defined in 2 places.">offset</a> = 0;
+<a id="L271" name="L271"></a> 271             <strong class="reserved">if</strong>(!isWhiteZero) <em class="brace">{</em>
+<a id="L272" name="L272"></a> 272                 <em class="comment">// Black-is-zero</em>
+<a id="L273" name="L273"></a> 273                 <strong class="reserved">for</strong>(<strong class="reserved">int</strong> row = 0; row &lt; h; row++) <em class="brace">{</em>
+<a id="L274" name="L274"></a> 274                     <strong class="reserved">if</strong> (<a href="../D/10520.html" title="Multiple defined in 2 places.">abortRequested</a>())
+<a id="L275" name="L275"></a> 275                         <strong class="reserved">break</strong>;
+<a id="L276" name="L276"></a> 276                     <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(bdata, <a href="../D/28472.html" title="Multiple defined in 2 places.">offset</a>, bytesPerRow);
+<a id="L277" name="L277"></a> 277                     <a href="../D/28472.html" title="Multiple defined in 2 places.">offset</a> += lineStride;
+<a id="L278" name="L278"></a> 278                     <a href="../D/29811.html" title="Multiple defined in 2 places.">processImageProgress</a>(100.0F * row / h);
+<a id="L279" name="L279"></a> 279                 <em class="brace">}</em>
+<a id="L280" name="L280"></a> 280             <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L281" name="L281"></a> 281                 <em class="comment">// White-is-zero: need to invert data.</em>
+<a id="L282" name="L282"></a> 282                 <strong class="reserved">byte</strong>[] inverted = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[bytesPerRow];
+<a id="L283" name="L283"></a> 283                 <strong class="reserved">for</strong>(<strong class="reserved">int</strong> row = 0; row &lt; h; row++) <em class="brace">{</em>
+<a id="L284" name="L284"></a> 284                     <strong class="reserved">if</strong> (<a href="../D/10520.html" title="Multiple defined in 2 places.">abortRequested</a>())
+<a id="L285" name="L285"></a> 285                         <strong class="reserved">break</strong>;
+<a id="L286" name="L286"></a> 286                     <strong class="reserved">for</strong>(<strong class="reserved">int</strong> col = 0; col &lt; bytesPerRow; col++) <em class="brace">{</em>
+<a id="L287" name="L287"></a> 287                         inverted[col] = (<strong class="reserved">byte</strong>)(~(bdata[col+<a href="../D/28472.html" title="Multiple defined in 2 places.">offset</a>]));
+<a id="L288" name="L288"></a> 288                     <em class="brace">}</em>
+<a id="L289" name="L289"></a> 289                     <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/36968.html" title="Multiple defined in 508 places.">write</a>(inverted, 0, bytesPerRow);
+<a id="L290" name="L290"></a> 290                     <a href="../D/28472.html" title="Multiple defined in 2 places.">offset</a> += lineStride;
+<a id="L291" name="L291"></a> 291                     <a href="../D/29811.html" title="Multiple defined in 2 places.">processImageProgress</a>(100.0F * row / h);
+<a id="L292" name="L292"></a> 292                 <em class="brace">}</em>
+<a id="L293" name="L293"></a> 293             <em class="brace">}</em>
+<a id="L294" name="L294"></a> 294         <em class="brace">}</em>
+<a id="L295" name="L295"></a> 295 
+<a id="L296" name="L296"></a> 296         <strong class="reserved">if</strong> (<a href="../D/10520.html" title="Multiple defined in 2 places.">abortRequested</a>())
+<a id="L297" name="L297"></a> 297             <a href="../S/4231.html#L1871" title="Defined at 1871 in src/javax/imageio/ImageWriter.java.">processWriteAborted</a>();
+<a id="L298" name="L298"></a> 298         <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L299" name="L299"></a> 299             <a href="../D/29810.html" title="Multiple defined in 2 places.">processImageComplete</a>();
+<a id="L300" name="L300"></a> 300             <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/16479.html" title="Multiple defined in 6 places.">flushBefore</a>(<a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>.<a href="../D/22762.html" title="Multiple defined in 3 places.">getStreamPosition</a>());
+<a id="L301" name="L301"></a> 301         <em class="brace">}</em>
+<a id="L302" name="L302"></a> 302     <em class="brace">}</em>
+<a id="L303" name="L303"></a> 303 
+<a id="L304" name="L304"></a> 304     <strong class="reserved">public</strong> <strong class="reserved">void</strong> <a href="../R/26238.html" title="Multiple referred from 619 places.">reset</a>() <em class="brace">{</em>
+<a id="L305" name="L305"></a> 305         <strong class="reserved">super</strong>.<a href="../D/31151.html" title="Multiple defined in 296 places.">reset</a>();
+<a id="L306" name="L306"></a> 306         <a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a> = <strong class="reserved">null</strong>;
+<a id="L307" name="L307"></a> 307     <em class="brace">}</em>
+<a id="L308" name="L308"></a> 308 
+<a id="L309" name="L309"></a> 309     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/6800.html#L171" title="Referred from 171 in src/com/sun/imageio/plugins/wbmp/WBMPImageWriter.java.">checkSampleModel</a>(<a href="../S/2227.html#L81" title="Defined at 81 in src/java/awt/image/SampleModel.java.">SampleModel</a> sm) <em class="brace">{</em>
+<a id="L310" name="L310"></a> 310         <strong class="reserved">int</strong> <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> = sm.<a href="../D/18205.html" title="Multiple defined in 4 places.">getDataType</a>();
+<a id="L311" name="L311"></a> 311         <strong class="reserved">if</strong> (<a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> &lt; <a href="../S/2284.html#L70" title="Defined at 70 in src/java/awt/image/DataBuffer.java.">DataBuffer</a>.TYPE_BYTE || <a href="../D/35749.html" title="Multiple defined in 239 places.">type</a> &gt; <a href="../S/2284.html#L70" title="Defined at 70 in src/java/awt/image/DataBuffer.java.">DataBuffer</a>.TYPE_INT
+<a id="L312" name="L312"></a> 312             || sm.<a href="../D/21054.html" title="Multiple defined in 3 places.">getNumBands</a>() != 1 || sm.<a href="../D/22227.html" title="Multiple defined in 8 places.">getSampleSize</a>(0) != 1)
+<a id="L313" name="L313"></a> 313             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>(<a href="../S/6791.html#L28" title="Defined at 28 in src/com/sun/imageio/plugins/common/I18N.java.">I18N</a>.<a href="../D/22769.html" title="Multiple defined in 35 places.">getString</a>("WBMPImageWriter2"));
+<a id="L314" name="L314"></a> 314     <em class="brace">}</em>
+<a id="L315" name="L315"></a> 315 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L69'>[^]</a><a href='#L309'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L69">[^]</a><a href="#L309">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

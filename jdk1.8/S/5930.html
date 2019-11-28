@@ -1,375 +1,373 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7923.html'>xml</a>/<a href='../files/7924.html'>internal</a>/<a href='../files/7930.html'>resolver</a>/<a href='../files/7933.html'>tools</a>/CatalogResolver.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L97'>[^]</a><a href='#L325'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7861.html">org</a>/<a href="../files/7862.html">apache</a>/<a href="../files/7923.html">xml</a>/<a href="../files/7924.html">internal</a>/<a href="../files/7930.html">resolver</a>/<a href="../files/7933.html">tools</a>/CatalogResolver.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L97">[^]</a><a href="#L325">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L97' title='Defined at 97.'>initializeCatalogs</a></li>
-<li><a href='#L102' title='Defined at 102.'>getCatalog</a></li>
-<li><a href='#L126' title='Defined at 126.'>getResolvedEntity</a></li>
-<li><a href='#L196' title='Defined at 196.'>resolveEntity</a></li>
-<li><a href='#L230' title='Defined at 230.'>resolve</a></li>
-<li><a href='#L304' title='Defined at 304.'>setEntityResolver</a></li>
-<li><a href='#L325' title='Defined at 325.'>makeAbsolute</a></li>
+<li><a href="#L97" title="Defined at 97.">initializeCatalogs</a></li>
+<li><a href="#L102" title="Defined at 102.">getCatalog</a></li>
+<li><a href="#L126" title="Defined at 126.">getResolvedEntity</a></li>
+<li><a href="#L196" title="Defined at 196.">resolveEntity</a></li>
+<li><a href="#L230" title="Defined at 230.">resolve</a></li>
+<li><a href="#L304" title="Defined at 304.">setEntityResolver</a></li>
+<li><a href="#L325" title="Defined at 325.">makeAbsolute</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'>// CatalogResolver.java - A SAX EntityResolver/JAXP URI Resolver</em>
-<a id='L6' name='L6'></a>   6 
-<a id='L7' name='L7'></a>   7 <em class='comment'>/*</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> * Copyright 2001-2004 The Apache Software Foundation or its licensors,</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> * as applicable.</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> * you may not use this file except in compliance with the License.</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> * You may obtain a copy of the License at</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> * See the License for the specific language governing permissions and</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> * limitations under the License.</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> */</em>
-<a id='L23' name='L23'></a>  23 
-<a id='L24' name='L24'></a>  24 <strong class='reserved'>package</strong> com.sun.org.apache.xml.internal.resolver.tools;
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>import</strong> com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
-<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.io.IOException;
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.io.InputStream;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.net.URL;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.net.MalformedURLException;
-<a id='L31' name='L31'></a>  31 
-<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> org.xml.sax.SAXException;
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> org.xml.sax.XMLReader;
-<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> org.xml.sax.InputSource;
-<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> org.xml.sax.EntityResolver;
-<a id='L36' name='L36'></a>  36 
-<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> javax.xml.transform.sax.SAXSource;
-<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> javax.xml.transform.Source;
-<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> javax.xml.transform.URIResolver;
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> javax.xml.transform.TransformerException;
-<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> javax.xml.parsers.ParserConfigurationException;
-<a id='L42' name='L42'></a>  42 <strong class='reserved'>import</strong> javax.xml.parsers.SAXParserFactory;
-<a id='L43' name='L43'></a>  43 
-<a id='L44' name='L44'></a>  44 <strong class='reserved'>import</strong> com.sun.org.apache.xml.internal.resolver.Catalog;
-<a id='L45' name='L45'></a>  45 <strong class='reserved'>import</strong> com.sun.org.apache.xml.internal.resolver.CatalogManager;
-<a id='L46' name='L46'></a>  46 <strong class='reserved'>import</strong> com.sun.org.apache.xml.internal.resolver.helpers.FileURL;
-<a id='L47' name='L47'></a>  47 
-<a id='L48' name='L48'></a>  48 <em class='comment'>/**</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'> * A SAX EntityResolver/JAXP URIResolver that uses catalogs.</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'> *</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'> * &lt;p&gt;This class implements both a SAX EntityResolver and a JAXP URIResolver.</em>
-<a id='L52' name='L52'></a>  52 <em class='comment'> * &lt;/p&gt;</em>
-<a id='L53' name='L53'></a>  53 <em class='comment'> *</em>
-<a id='L54' name='L54'></a>  54 <em class='comment'> * &lt;p&gt;This resolver understands OASIS TR9401 catalogs, XCatalogs, and the</em>
-<a id='L55' name='L55'></a>  55 <em class='comment'> * current working draft of the OASIS Entity Resolution Technical</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'> * Committee specification.&lt;/p&gt;</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'> *</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'> * @see Catalog</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'> * @see org.xml.sax.EntityResolver</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'> * @see javax.xml.transform.URIResolver</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'> *</em>
-<a id='L62' name='L62'></a>  62 <em class='comment'> * @author Norman Walsh</em>
-<a id='L63' name='L63'></a>  63 <em class='comment'> * &lt;a href="mailto:Norman.Walsh@Sun.COM"&gt;Norman.Walsh@Sun.COM&lt;/a&gt;</em>
-<a id='L64' name='L64'></a>  64 <em class='comment'> *</em>
-<a id='L65' name='L65'></a>  65 <em class='comment'> * @version 1.0</em>
-<a id='L66' name='L66'></a>  66 <em class='comment'> */</em>
-<a id='L67' name='L67'></a>  67 <strong class='reserved'>public</strong> <strong class='reserved'>class</strong> <a href='../R/1198.html' title='Multiple referred from 11 places.'>CatalogResolver</a> <strong class='reserved'>implements</strong> <a href='../S/722.html#L93' title='Defined at 93 in src/org/xml/sax/EntityResolver.java.'>EntityResolver</a>, <a href='../S/4040.html#L32' title='Defined at 32 in src/javax/xml/transform/URIResolver.java.'>URIResolver</a> <em class='brace'>{</em>
-<a id='L68' name='L68'></a>  68   <em class='comment'>/** Make the parser Namespace aware? */</em>
-<a id='L69' name='L69'></a>  69   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> namespaceAware = <strong class='reserved'>true</strong>;
-<a id='L70' name='L70'></a>  70 
-<a id='L71' name='L71'></a>  71   <em class='comment'>/** Make the parser validating? */</em>
-<a id='L72' name='L72'></a>  72   <strong class='reserved'>public</strong> <strong class='reserved'>boolean</strong> validating = <strong class='reserved'>false</strong>;
-<a id='L73' name='L73'></a>  73 
-<a id='L74' name='L74'></a>  74   <em class='comment'>/** The underlying catalog */</em>
-<a id='L75' name='L75'></a>  75   <strong class='reserved'>private</strong> <a href='../S/5932.html#L198' title='Defined at 198 in src/com/sun/org/apache/xml/internal/resolver/Catalog.java.'>Catalog</a> catalog = <strong class='reserved'>null</strong>;
-<a id='L76' name='L76'></a>  76 
-<a id='L77' name='L77'></a>  77   <em class='comment'>/** The catalog manager */</em>
-<a id='L78' name='L78'></a>  78   <strong class='reserved'>private</strong> <a href='../S/5933.html#L126' title='Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>CatalogManager</a> catalogManager = <a href='../S/5933.html#L126' title='Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>CatalogManager</a>.<a href='../S/5933.html#L291' title='Defined at 291 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>getStaticManager</a>();
-<a id='L79' name='L79'></a>  79 
-<a id='L80' name='L80'></a>  80   <em class='comment'>/** Constructor */</em>
-<a id='L81' name='L81'></a>  81   <strong class='reserved'>public</strong> CatalogResolver() <em class='brace'>{</em>
-<a id='L82' name='L82'></a>  82     <a href='../S/5930.html#L97' title='Defined at 97 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.'>initializeCatalogs</a>(<strong class='reserved'>false</strong>);
-<a id='L83' name='L83'></a>  83   <em class='brace'>}</em>
-<a id='L84' name='L84'></a>  84 
-<a id='L85' name='L85'></a>  85   <em class='comment'>/** Constructor */</em>
-<a id='L86' name='L86'></a>  86   <strong class='reserved'>public</strong> CatalogResolver(<strong class='reserved'>boolean</strong> privateCatalog) <em class='brace'>{</em>
-<a id='L87' name='L87'></a>  87     <a href='../S/5930.html#L97' title='Defined at 97 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.'>initializeCatalogs</a>(privateCatalog);
-<a id='L88' name='L88'></a>  88   <em class='brace'>}</em>
-<a id='L89' name='L89'></a>  89 
-<a id='L90' name='L90'></a>  90   <em class='comment'>/** Constructor */</em>
-<a id='L91' name='L91'></a>  91   <strong class='reserved'>public</strong> CatalogResolver(<a href='../S/5933.html#L126' title='Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>CatalogManager</a> manager) <em class='brace'>{</em>
-<a id='L92' name='L92'></a>  92     catalogManager = manager;
-<a id='L93' name='L93'></a>  93     <a href='../S/5930.html#L97' title='Defined at 97 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.'>initializeCatalogs</a>(!catalogManager.<a href='../S/5933.html#L642' title='Defined at 642 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>getUseStaticCatalog</a>());
-<a id='L94' name='L94'></a>  94   <em class='brace'>}</em>
-<a id='L95' name='L95'></a>  95 
-<a id='L96' name='L96'></a>  96   <em class='comment'>/** Initialize catalog */</em>
-<a id='L97' name='L97'></a>  97   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/20690.html' title='Multiple referred from 3 places.'>initializeCatalogs</a>(<strong class='reserved'>boolean</strong> privateCatalog) <em class='brace'>{</em>
-<a id='L98' name='L98'></a>  98     catalog = catalogManager.<a href='../D/17511.html' title='Multiple defined in 7 places.'>getCatalog</a>();
-<a id='L99' name='L99'></a>  99   <em class='brace'>}</em>
-<a id='L100' name='L100'></a> 100 
-<a id='L101' name='L101'></a> 101   <em class='comment'>/** Return the underlying catalog */</em>
-<a id='L102' name='L102'></a> 102   <strong class='reserved'>public</strong> <a href='../S/5932.html#L198' title='Defined at 198 in src/com/sun/org/apache/xml/internal/resolver/Catalog.java.'>Catalog</a> <a href='../R/15458.html' title='Multiple referred from 5 places.'>getCatalog</a>() <em class='brace'>{</em>
-<a id='L103' name='L103'></a> 103     <strong class='reserved'>return</strong> catalog;
-<a id='L104' name='L104'></a> 104   <em class='brace'>}</em>
-<a id='L105' name='L105'></a> 105 
-<a id='L106' name='L106'></a> 106   <em class='comment'>/**</em>
-<a id='L107' name='L107'></a> 107 <em class='comment'>   * Implements the guts of the &lt;code&gt;resolveEntity&lt;/code&gt; method</em>
-<a id='L108' name='L108'></a> 108 <em class='comment'>   * for the SAX interface.</em>
-<a id='L109' name='L109'></a> 109 <em class='comment'>   *</em>
-<a id='L110' name='L110'></a> 110 <em class='comment'>   * &lt;p&gt;Presented with an optional public identifier and a system</em>
-<a id='L111' name='L111'></a> 111 <em class='comment'>   * identifier, this function attempts to locate a mapping in the</em>
-<a id='L112' name='L112'></a> 112 <em class='comment'>   * catalogs.&lt;/p&gt;</em>
-<a id='L113' name='L113'></a> 113 <em class='comment'>   *</em>
-<a id='L114' name='L114'></a> 114 <em class='comment'>   * &lt;p&gt;If such a mapping is found, it is returned.  If no mapping is</em>
-<a id='L115' name='L115'></a> 115 <em class='comment'>   * found, null is returned.&lt;/p&gt;</em>
-<a id='L116' name='L116'></a> 116 <em class='comment'>   *</em>
-<a id='L117' name='L117'></a> 117 <em class='comment'>   * @param publicId  The public identifier for the entity in question.</em>
-<a id='L118' name='L118'></a> 118 <em class='comment'>   * This may be null.</em>
-<a id='L119' name='L119'></a> 119 <em class='comment'>   *</em>
-<a id='L120' name='L120'></a> 120 <em class='comment'>   * @param systemId  The system identifier for the entity in question.</em>
-<a id='L121' name='L121'></a> 121 <em class='comment'>   * XML requires a system identifier on all external entities, so this</em>
-<a id='L122' name='L122'></a> 122 <em class='comment'>   * value is always specified.</em>
-<a id='L123' name='L123'></a> 123 <em class='comment'>   *</em>
-<a id='L124' name='L124'></a> 124 <em class='comment'>   * @return The resolved identifier (a URI reference).</em>
-<a id='L125' name='L125'></a> 125 <em class='comment'>   */</em>
-<a id='L126' name='L126'></a> 126   <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/18706.html' title='Multiple referred from 5 places.'>getResolvedEntity</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a>) <em class='brace'>{</em>
-<a id='L127' name='L127'></a> 127     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> resolved = <strong class='reserved'>null</strong>;
-<a id='L128' name='L128'></a> 128 
-<a id='L129' name='L129'></a> 129     <strong class='reserved'>if</strong> (catalog == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L130' name='L130'></a> 130       catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(1, "Catalog resolution attempted with null catalog; ignored");
-<a id='L131' name='L131'></a> 131       <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L132' name='L132'></a> 132     <em class='brace'>}</em>
-<a id='L133' name='L133'></a> 133 
-<a id='L134' name='L134'></a> 134     <strong class='reserved'>if</strong> (<a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L135' name='L135'></a> 135       <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L136' name='L136'></a> 136         resolved = catalog.<a href='../D/31308.html' title='Multiple defined in 3 places.'>resolveSystem</a>(<a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a>);
-<a id='L137' name='L137'></a> 137       <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/814.html#L38' title='Defined at 38 in src/java/net/MalformedURLException.java.'>MalformedURLException</a> me) <em class='brace'>{</em>
-<a id='L138' name='L138'></a> 138         catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(1, "Malformed URL exception trying to resolve",
-<a id='L139' name='L139'></a> 139                       <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>);
-<a id='L140' name='L140'></a> 140         resolved = <strong class='reserved'>null</strong>;
-<a id='L141' name='L141'></a> 141       <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> ie) <em class='brace'>{</em>
-<a id='L142' name='L142'></a> 142         catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(1, "I/O exception trying to resolve", <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>);
-<a id='L143' name='L143'></a> 143         resolved = <strong class='reserved'>null</strong>;
-<a id='L144' name='L144'></a> 144       <em class='brace'>}</em>
-<a id='L145' name='L145'></a> 145     <em class='brace'>}</em>
-<a id='L146' name='L146'></a> 146 
-<a id='L147' name='L147'></a> 147     <strong class='reserved'>if</strong> (resolved == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L148' name='L148'></a> 148       <strong class='reserved'>if</strong> (<a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L149' name='L149'></a> 149         <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L150' name='L150'></a> 150           resolved = catalog.<a href='../D/31298.html' title='Multiple defined in 3 places.'>resolvePublic</a>(<a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>, <a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a>);
-<a id='L151' name='L151'></a> 151         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/814.html#L38' title='Defined at 38 in src/java/net/MalformedURLException.java.'>MalformedURLException</a> me) <em class='brace'>{</em>
-<a id='L152' name='L152'></a> 152           catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(1, "Malformed URL exception trying to resolve",
-<a id='L153' name='L153'></a> 153                         <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>);
-<a id='L154' name='L154'></a> 154         <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a> ie) <em class='brace'>{</em>
-<a id='L155' name='L155'></a> 155           catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(1, "I/O exception trying to resolve", <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>);
-<a id='L156' name='L156'></a> 156         <em class='brace'>}</em>
-<a id='L157' name='L157'></a> 157       <em class='brace'>}</em>
-<a id='L158' name='L158'></a> 158 
-<a id='L159' name='L159'></a> 159       <strong class='reserved'>if</strong> (resolved != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L160' name='L160'></a> 160         catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(2, "Resolved public", <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>, resolved);
-<a id='L161' name='L161'></a> 161       <em class='brace'>}</em>
-<a id='L162' name='L162'></a> 162     <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L163' name='L163'></a> 163       catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(2, "Resolved system", <a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a>, resolved);
-<a id='L164' name='L164'></a> 164     <em class='brace'>}</em>
-<a id='L165' name='L165'></a> 165 
-<a id='L166' name='L166'></a> 166     <strong class='reserved'>return</strong> resolved;
-<a id='L167' name='L167'></a> 167   <em class='brace'>}</em>
-<a id='L168' name='L168'></a> 168 
-<a id='L169' name='L169'></a> 169   <em class='comment'>/**</em>
-<a id='L170' name='L170'></a> 170 <em class='comment'>   * Implements the &lt;code&gt;resolveEntity&lt;/code&gt; method</em>
-<a id='L171' name='L171'></a> 171 <em class='comment'>   * for the SAX interface.</em>
-<a id='L172' name='L172'></a> 172 <em class='comment'>   *</em>
-<a id='L173' name='L173'></a> 173 <em class='comment'>   * &lt;p&gt;Presented with an optional public identifier and a system</em>
-<a id='L174' name='L174'></a> 174 <em class='comment'>   * identifier, this function attempts to locate a mapping in the</em>
-<a id='L175' name='L175'></a> 175 <em class='comment'>   * catalogs.&lt;/p&gt;</em>
-<a id='L176' name='L176'></a> 176 <em class='comment'>   *</em>
-<a id='L177' name='L177'></a> 177 <em class='comment'>   * &lt;p&gt;If such a mapping is found, the resolver attempts to open</em>
-<a id='L178' name='L178'></a> 178 <em class='comment'>   * the mapped value as an InputSource and return it. Exceptions are</em>
-<a id='L179' name='L179'></a> 179 <em class='comment'>   * ignored and null is returned if the mapped value cannot be opened</em>
-<a id='L180' name='L180'></a> 180 <em class='comment'>   * as an input source.&lt;/p&gt;</em>
-<a id='L181' name='L181'></a> 181 <em class='comment'>   *</em>
-<a id='L182' name='L182'></a> 182 <em class='comment'>   * &lt;p&gt;If no mapping is found (or an error occurs attempting to open</em>
-<a id='L183' name='L183'></a> 183 <em class='comment'>   * the mapped value as an input source), null is returned and the system</em>
-<a id='L184' name='L184'></a> 184 <em class='comment'>   * will use the specified system identifier as if no entityResolver</em>
-<a id='L185' name='L185'></a> 185 <em class='comment'>   * was specified.&lt;/p&gt;</em>
-<a id='L186' name='L186'></a> 186 <em class='comment'>   *</em>
-<a id='L187' name='L187'></a> 187 <em class='comment'>   * @param publicId  The public identifier for the entity in question.</em>
-<a id='L188' name='L188'></a> 188 <em class='comment'>   * This may be null.</em>
-<a id='L189' name='L189'></a> 189 <em class='comment'>   *</em>
-<a id='L190' name='L190'></a> 190 <em class='comment'>   * @param systemId  The system identifier for the entity in question.</em>
-<a id='L191' name='L191'></a> 191 <em class='comment'>   * XML requires a system identifier on all external entities, so this</em>
-<a id='L192' name='L192'></a> 192 <em class='comment'>   * value is always specified.</em>
-<a id='L193' name='L193'></a> 193 <em class='comment'>   *</em>
-<a id='L194' name='L194'></a> 194 <em class='comment'>   * @return An InputSource for the mapped identifier, or null.</em>
-<a id='L195' name='L195'></a> 195 <em class='comment'>   */</em>
-<a id='L196' name='L196'></a> 196   <strong class='reserved'>public</strong> <a href='../S/711.html#L84' title='Defined at 84 in src/org/xml/sax/InputSource.java.'>InputSource</a> <a href='../R/26336.html' title='Multiple referred from 17 places.'>resolveEntity</a> (<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a>) <em class='brace'>{</em>
-<a id='L197' name='L197'></a> 197     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> resolved = <a href='../S/5930.html#L126' title='Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.'>getResolvedEntity</a>(<a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>, <a href='../D/35191.html' title='Multiple defined in 2 places.'>systemId</a>);
-<a id='L198' name='L198'></a> 198 
-<a id='L199' name='L199'></a> 199     <strong class='reserved'>if</strong> (resolved != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L200' name='L200'></a> 200       <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L201' name='L201'></a> 201         <a href='../S/711.html#L84' title='Defined at 84 in src/org/xml/sax/InputSource.java.'>InputSource</a> iSource = <strong class='reserved'>new</strong> <a href='../S/711.html#L84' title='Defined at 84 in src/org/xml/sax/InputSource.java.'>InputSource</a>(resolved);
-<a id='L202' name='L202'></a> 202         iSource.<a href='../D/33634.html' title='Multiple defined in 14 places.'>setPublicId</a>(<a href='../D/29918.html' title='Multiple defined in 2 places.'>publicId</a>);
-<a id='L203' name='L203'></a> 203 
-<a id='L204' name='L204'></a> 204         <em class='comment'>// Ideally this method would not attempt to open the</em>
-<a id='L205' name='L205'></a> 205         <em class='comment'>// InputStream, but there is a bug (in Xerces, at least)</em>
-<a id='L206' name='L206'></a> 206         <em class='comment'>// that causes the parser to mistakenly open the wrong</em>
-<a id='L207' name='L207'></a> 207         <em class='comment'>// system identifier if the returned InputSource does</em>
-<a id='L208' name='L208'></a> 208         <em class='comment'>// not have a byteStream.</em>
-<a id='L209' name='L209'></a> 209         <em class='comment'>//</em>
-<a id='L210' name='L210'></a> 210         <em class='comment'>// It could be argued that we still shouldn't do this here,</em>
-<a id='L211' name='L211'></a> 211         <em class='comment'>// but since the purpose of calling the entityResolver is</em>
-<a id='L212' name='L212'></a> 212         <em class='comment'>// almost certainly to open the input stream, it seems to</em>
-<a id='L213' name='L213'></a> 213         <em class='comment'>// do little harm.</em>
-<a id='L214' name='L214'></a> 214         <em class='comment'>//</em>
-<a id='L215' name='L215'></a> 215         <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> url = <strong class='reserved'>new</strong> <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a>(resolved);
-<a id='L216' name='L216'></a> 216         <a href='../D/4231.html' title='Multiple defined in 3 places.'>InputStream</a> iStream = url.<a href='../S/768.html#L1037' title='Defined at 1037 in src/java/net/URL.java.'>openStream</a>();
-<a id='L217' name='L217'></a> 217         iSource.<a href='../D/32067.html' title='Multiple defined in 7 places.'>setByteStream</a>(iStream);
-<a id='L218' name='L218'></a> 218 
-<a id='L219' name='L219'></a> 219         <strong class='reserved'>return</strong> iSource;
-<a id='L220' name='L220'></a> 220       <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
-<a id='L221' name='L221'></a> 221         catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(1, "Failed to create InputSource", resolved);
-<a id='L222' name='L222'></a> 222         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L223' name='L223'></a> 223       <em class='brace'>}</em>
-<a id='L224' name='L224'></a> 224     <em class='brace'>}</em>
-<a id='L225' name='L225'></a> 225 
-<a id='L226' name='L226'></a> 226     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L227' name='L227'></a> 227   <em class='brace'>}</em>
-<a id='L228' name='L228'></a> 228 
-<a id='L229' name='L229'></a> 229   <em class='comment'>/** JAXP URIResolver API */</em>
-<a id='L230' name='L230'></a> 230   <strong class='reserved'>public</strong> <a href='../S/4049.html#L32' title='Defined at 32 in src/javax/xml/transform/Source.java.'>Source</a> <a href='../R/26316.html' title='Multiple referred from 78 places.'>resolve</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> href, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> base)
-<a id='L231' name='L231'></a> 231     <strong class='reserved'>throws</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a> <em class='brace'>{</em>
-<a id='L232' name='L232'></a> 232 
-<a id='L233' name='L233'></a> 233     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri = href;
-<a id='L234' name='L234'></a> 234     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> fragment = <strong class='reserved'>null</strong>;
-<a id='L235' name='L235'></a> 235     <strong class='reserved'>int</strong> hashPos = href.<a href='../D/24468.html' title='Multiple defined in 74 places.'>indexOf</a>("#");
-<a id='L236' name='L236'></a> 236     <strong class='reserved'>if</strong> (hashPos &gt;= 0) <em class='brace'>{</em>
-<a id='L237' name='L237'></a> 237       uri = href.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(0, hashPos);
-<a id='L238' name='L238'></a> 238       fragment = href.<a href='../D/35013.html' title='Multiple defined in 26 places.'>substring</a>(hashPos+1);
-<a id='L239' name='L239'></a> 239     <em class='brace'>}</em>
-<a id='L240' name='L240'></a> 240 
-<a id='L241' name='L241'></a> 241     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = <strong class='reserved'>null</strong>;
-<a id='L242' name='L242'></a> 242 
-<a id='L243' name='L243'></a> 243     <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L244' name='L244'></a> 244       <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = catalog.<a href='../D/31316.html' title='Multiple defined in 4 places.'>resolveURI</a>(href);
-<a id='L245' name='L245'></a> 245     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
-<a id='L246' name='L246'></a> 246       <em class='comment'>// nop;</em>
-<a id='L247' name='L247'></a> 247     <em class='brace'>}</em>
-<a id='L248' name='L248'></a> 248 
-<a id='L249' name='L249'></a> 249     <strong class='reserved'>if</strong> (<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L250' name='L250'></a> 250       <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L251' name='L251'></a> 251         <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> url = <strong class='reserved'>null</strong>;
-<a id='L252' name='L252'></a> 252 
-<a id='L253' name='L253'></a> 253         <strong class='reserved'>if</strong> (base==<strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L254' name='L254'></a> 254           url = <strong class='reserved'>new</strong> <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a>(uri);
-<a id='L255' name='L255'></a> 255           <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = url.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
-<a id='L256' name='L256'></a> 256         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L257' name='L257'></a> 257           <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> baseURL = <strong class='reserved'>new</strong> <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a>(base);
-<a id='L258' name='L258'></a> 258           url = (href.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>()==0 ? baseURL : <strong class='reserved'>new</strong> <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a>(baseURL, uri));
-<a id='L259' name='L259'></a> 259           <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a> = url.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
-<a id='L260' name='L260'></a> 260         <em class='brace'>}</em>
-<a id='L261' name='L261'></a> 261       <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.net.<a href='../S/814.html#L38' title='Defined at 38 in src/java/net/MalformedURLException.java.'>MalformedURLException</a> mue) <em class='brace'>{</em>
-<a id='L262' name='L262'></a> 262         <em class='comment'>// try to make an absolute URI from the current base</em>
-<a id='L263' name='L263'></a> 263         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> absBase = <a href='../D/27199.html' title='Multiple defined in 3 places.'>makeAbsolute</a>(base);
-<a id='L264' name='L264'></a> 264         <strong class='reserved'>if</strong> (!absBase.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(base)) <em class='brace'>{</em>
-<a id='L265' name='L265'></a> 265           <em class='comment'>// don't bother if the absBase isn't different!</em>
-<a id='L266' name='L266'></a> 266           <strong class='reserved'>return</strong> <a href='../D/31237.html' title='Multiple defined in 38 places.'>resolve</a>(href, absBase);
-<a id='L267' name='L267'></a> 267         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L268' name='L268'></a> 268           <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a>("Malformed URL "
-<a id='L269' name='L269'></a> 269                                          + href + "(base " + base + ")",
-<a id='L270' name='L270'></a> 270                                          mue);
-<a id='L271' name='L271'></a> 271         <em class='brace'>}</em>
-<a id='L272' name='L272'></a> 272       <em class='brace'>}</em>
-<a id='L273' name='L273'></a> 273     <em class='brace'>}</em>
-<a id='L274' name='L274'></a> 274 
-<a id='L275' name='L275'></a> 275     catalogManager.<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/27673.html' title='Multiple defined in 6 places.'>message</a>(2, "Resolved URI", href, <a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>);
-<a id='L276' name='L276'></a> 276 
-<a id='L277' name='L277'></a> 277     <a href='../S/4031.html#L45' title='Defined at 45 in src/javax/xml/transform/sax/SAXSource.java.'>SAXSource</a> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a> = <strong class='reserved'>new</strong> <a href='../S/4031.html#L45' title='Defined at 45 in src/javax/xml/transform/sax/SAXSource.java.'>SAXSource</a>();
-<a id='L278' name='L278'></a> 278     <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/32960.html' title='Multiple defined in 16 places.'>setInputSource</a>(<strong class='reserved'>new</strong> <a href='../S/711.html#L84' title='Defined at 84 in src/org/xml/sax/InputSource.java.'>InputSource</a>(<a href='../D/31365.html' title='Multiple defined in 7 places.'>result</a>));
-<a id='L279' name='L279'></a> 279     <a href='../D/32603.html' title='Multiple defined in 31 places.'>setEntityResolver</a>(<a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>);
-<a id='L280' name='L280'></a> 280     <strong class='reserved'>return</strong> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>;
-<a id='L281' name='L281'></a> 281   <em class='brace'>}</em>
-<a id='L282' name='L282'></a> 282 
-<a id='L283' name='L283'></a> 283   <em class='comment'>/**</em>
-<a id='L284' name='L284'></a> 284 <em class='comment'>   * &lt;p&gt;Establish an entityResolver for newly resolved URIs.&lt;/p&gt;</em>
-<a id='L285' name='L285'></a> 285 <em class='comment'>   *</em>
-<a id='L286' name='L286'></a> 286 <em class='comment'>   * &lt;p&gt;This is called from the URIResolver to set an EntityResolver</em>
-<a id='L287' name='L287'></a> 287 <em class='comment'>   * on the SAX parser to be used for new XML documents that are</em>
-<a id='L288' name='L288'></a> 288 <em class='comment'>   * encountered as a result of the document() function, xsl:import,</em>
-<a id='L289' name='L289'></a> 289 <em class='comment'>   * or xsl:include.  This is done because the XSLT processor calls</em>
-<a id='L290' name='L290'></a> 290 <em class='comment'>   * out to the SAXParserFactory itself to create a new SAXParser to</em>
-<a id='L291' name='L291'></a> 291 <em class='comment'>   * parse the new document.  The new parser does not automatically</em>
-<a id='L292' name='L292'></a> 292 <em class='comment'>   * inherit the EntityResolver of the original (although arguably</em>
-<a id='L293' name='L293'></a> 293 <em class='comment'>   * it should).  See below:&lt;/p&gt;</em>
-<a id='L294' name='L294'></a> 294 <em class='comment'>   *</em>
-<a id='L295' name='L295'></a> 295 <em class='comment'>   * &lt;tt&gt;"If an application wants to set the ErrorHandler or</em>
-<a id='L296' name='L296'></a> 296 <em class='comment'>   * EntityResolver for an XMLReader used during a transformation,</em>
-<a id='L297' name='L297'></a> 297 <em class='comment'>   * it should use a URIResolver to return the SAXSource which</em>
-<a id='L298' name='L298'></a> 298 <em class='comment'>   * provides (with getXMLReader) a reference to the XMLReader"&lt;/tt&gt;</em>
-<a id='L299' name='L299'></a> 299 <em class='comment'>   *</em>
-<a id='L300' name='L300'></a> 300 <em class='comment'>   * &lt;p&gt;...quoted from page 118 of the Java API for XML</em>
-<a id='L301' name='L301'></a> 301 <em class='comment'>   * Processing 1.1 specification&lt;/p&gt;</em>
-<a id='L302' name='L302'></a> 302 <em class='comment'>   *</em>
-<a id='L303' name='L303'></a> 303 <em class='comment'>   */</em>
-<a id='L304' name='L304'></a> 304   <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../R/27337.html' title='Multiple referred from 40 places.'>setEntityResolver</a>(<a href='../S/4031.html#L45' title='Defined at 45 in src/javax/xml/transform/sax/SAXSource.java.'>SAXSource</a> <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>) <strong class='reserved'>throws</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a> <em class='brace'>{</em>
-<a id='L305' name='L305'></a> 305     <a href='../S/724.html#L84' title='Defined at 84 in src/org/xml/sax/XMLReader.java.'>XMLReader</a> <a href='../S/1437.html#L135' title='Defined at 135 in src/java/io/Console.java.'>reader</a> = <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/23755.html' title='Multiple defined in 9 places.'>getXMLReader</a>();
-<a id='L306' name='L306'></a> 306     <strong class='reserved'>if</strong> (<a href='../S/1437.html#L135' title='Defined at 135 in src/java/io/Console.java.'>reader</a> == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L307' name='L307'></a> 307       <a href='../S/3844.html#L43' title='Defined at 43 in src/javax/xml/parsers/SAXParserFactory.java.'>SAXParserFactory</a> spFactory = catalogManager.<a href='../S/5933.html#L781' title='Defined at 781 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.'>useServicesMechanism</a>() ?
-<a id='L308' name='L308'></a> 308                     <a href='../S/3844.html#L43' title='Defined at 43 in src/javax/xml/parsers/SAXParserFactory.java.'>SAXParserFactory</a>.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>() : <strong class='reserved'>new</strong> <a href='../S/5399.html#L48' title='Defined at 48 in src/com/sun/org/apache/xerces/internal/jaxp/SAXParserFactoryImpl.java.'>SAXParserFactoryImpl</a>();
-<a id='L309' name='L309'></a> 309       spFactory.<a href='../D/33323.html' title='Multiple defined in 3 places.'>setNamespaceAware</a>(<strong class='reserved'>true</strong>);
-<a id='L310' name='L310'></a> 310       <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L311' name='L311'></a> 311         <a href='../S/1437.html#L135' title='Defined at 135 in src/java/io/Console.java.'>reader</a> = spFactory.<a href='../D/28066.html' title='Multiple defined in 2 places.'>newSAXParser</a>().<a href='../D/23755.html' title='Multiple defined in 9 places.'>getXMLReader</a>();
-<a id='L312' name='L312'></a> 312       <em class='brace'>}</em>
-<a id='L313' name='L313'></a> 313       <strong class='reserved'>catch</strong> (<a href='../S/3851.html#L34' title='Defined at 34 in src/javax/xml/parsers/ParserConfigurationException.java.'>ParserConfigurationException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
-<a id='L314' name='L314'></a> 314         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
-<a id='L315' name='L315'></a> 315       <em class='brace'>}</em>
-<a id='L316' name='L316'></a> 316       <strong class='reserved'>catch</strong> (<a href='../S/726.html#L62' title='Defined at 62 in src/org/xml/sax/SAXException.java.'>SAXException</a> <a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>) <em class='brace'>{</em>
-<a id='L317' name='L317'></a> 317         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/4051.html#L35' title='Defined at 35 in src/javax/xml/transform/TransformerException.java.'>TransformerException</a>(<a href='../S/5015.html#L111' title='Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.'>ex</a>);
-<a id='L318' name='L318'></a> 318       <em class='brace'>}</em>
-<a id='L319' name='L319'></a> 319     <em class='brace'>}</em>
-<a id='L320' name='L320'></a> 320     <a href='../S/1437.html#L135' title='Defined at 135 in src/java/io/Console.java.'>reader</a>.<a href='../D/32603.html' title='Multiple defined in 31 places.'>setEntityResolver</a>(<strong class='reserved'>this</strong>);
-<a id='L321' name='L321'></a> 321     <a href='../S/2041.html#L132' title='Defined at 132 in src/java/nio/channels/Pipe.java.'>source</a>.<a href='../D/34347.html' title='Multiple defined in 4 places.'>setXMLReader</a>(<a href='../S/1437.html#L135' title='Defined at 135 in src/java/io/Console.java.'>reader</a>);
-<a id='L322' name='L322'></a> 322   <em class='brace'>}</em>
-<a id='L323' name='L323'></a> 323 
-<a id='L324' name='L324'></a> 324   <em class='comment'>/** Attempt to construct an absolute URI */</em>
-<a id='L325' name='L325'></a> 325   <strong class='reserved'>private</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/22816.html' title='Multiple referred from 22 places.'>makeAbsolute</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> uri) <em class='brace'>{</em>
-<a id='L326' name='L326'></a> 326     <strong class='reserved'>if</strong> (uri == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L327' name='L327'></a> 327       uri = "";
-<a id='L328' name='L328'></a> 328     <em class='brace'>}</em>
-<a id='L329' name='L329'></a> 329 
-<a id='L330' name='L330'></a> 330     <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L331' name='L331'></a> 331       <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> url = <strong class='reserved'>new</strong> <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a>(uri);
-<a id='L332' name='L332'></a> 332       <strong class='reserved'>return</strong> url.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
-<a id='L333' name='L333'></a> 333     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/814.html#L38' title='Defined at 38 in src/java/net/MalformedURLException.java.'>MalformedURLException</a> mue) <em class='brace'>{</em>
-<a id='L334' name='L334'></a> 334       <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L335' name='L335'></a> 335         <a href='../D/9256.html' title='Multiple defined in 2 places.'>URL</a> fileURL = <a href='../S/5950.html#L46' title='Defined at 46 in src/com/sun/org/apache/xml/internal/resolver/helpers/FileURL.java.'>FileURL</a>.<a href='../S/5950.html#L76' title='Defined at 76 in src/com/sun/org/apache/xml/internal/resolver/helpers/FileURL.java.'>makeURL</a>(uri);
-<a id='L336' name='L336'></a> 336         <strong class='reserved'>return</strong> fileURL.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>();
-<a id='L337' name='L337'></a> 337       <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/814.html#L38' title='Defined at 38 in src/java/net/MalformedURLException.java.'>MalformedURLException</a> mue2) <em class='brace'>{</em>
-<a id='L338' name='L338'></a> 338         <em class='comment'>// bail</em>
-<a id='L339' name='L339'></a> 339         <strong class='reserved'>return</strong> uri;
-<a id='L340' name='L340'></a> 340       <em class='brace'>}</em>
-<a id='L341' name='L341'></a> 341     <em class='brace'>}</em>
-<a id='L342' name='L342'></a> 342   <em class='brace'>}</em>
-<a id='L343' name='L343'></a> 343 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> */</em>
+<a id="L5" name="L5"></a>   5 <em class="comment">// CatalogResolver.java - A SAX EntityResolver/JAXP URI Resolver</em>
+<a id="L6" name="L6"></a>   6 
+<a id="L7" name="L7"></a>   7 <em class="comment">/*</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> * Copyright 2001-2004 The Apache Software Foundation or its licensors,</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> * as applicable.</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> * you may not use this file except in compliance with the License.</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> * You may obtain a copy of the License at</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> * See the License for the specific language governing permissions and</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> * limitations under the License.</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> */</em>
+<a id="L23" name="L23"></a>  23 
+<a id="L24" name="L24"></a>  24 <strong class="reserved">package</strong> com.sun.org.apache.xml.internal.resolver.tools;
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">import</strong> com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
+<a id="L27" name="L27"></a>  27 <strong class="reserved">import</strong> java.io.IOException;
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.io.InputStream;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> java.net.URL;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> java.net.MalformedURLException;
+<a id="L31" name="L31"></a>  31 
+<a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> org.xml.sax.SAXException;
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> org.xml.sax.XMLReader;
+<a id="L34" name="L34"></a>  34 <strong class="reserved">import</strong> org.xml.sax.InputSource;
+<a id="L35" name="L35"></a>  35 <strong class="reserved">import</strong> org.xml.sax.EntityResolver;
+<a id="L36" name="L36"></a>  36 
+<a id="L37" name="L37"></a>  37 <strong class="reserved">import</strong> javax.xml.transform.sax.SAXSource;
+<a id="L38" name="L38"></a>  38 <strong class="reserved">import</strong> javax.xml.transform.Source;
+<a id="L39" name="L39"></a>  39 <strong class="reserved">import</strong> javax.xml.transform.URIResolver;
+<a id="L40" name="L40"></a>  40 <strong class="reserved">import</strong> javax.xml.transform.TransformerException;
+<a id="L41" name="L41"></a>  41 <strong class="reserved">import</strong> javax.xml.parsers.ParserConfigurationException;
+<a id="L42" name="L42"></a>  42 <strong class="reserved">import</strong> javax.xml.parsers.SAXParserFactory;
+<a id="L43" name="L43"></a>  43 
+<a id="L44" name="L44"></a>  44 <strong class="reserved">import</strong> com.sun.org.apache.xml.internal.resolver.Catalog;
+<a id="L45" name="L45"></a>  45 <strong class="reserved">import</strong> com.sun.org.apache.xml.internal.resolver.CatalogManager;
+<a id="L46" name="L46"></a>  46 <strong class="reserved">import</strong> com.sun.org.apache.xml.internal.resolver.helpers.FileURL;
+<a id="L47" name="L47"></a>  47 
+<a id="L48" name="L48"></a>  48 <em class="comment">/**</em>
+<a id="L49" name="L49"></a>  49 <em class="comment"> * A SAX EntityResolver/JAXP URIResolver that uses catalogs.</em>
+<a id="L50" name="L50"></a>  50 <em class="comment"> *</em>
+<a id="L51" name="L51"></a>  51 <em class="comment"> * This class implements both a SAX EntityResolver and a JAXP URIResolver.</em>
+<a id="L52" name="L52"></a>  52 <em class="comment"> * </em>
+<a id="L53" name="L53"></a>  53 <em class="comment"> *</em>
+<a id="L54" name="L54"></a>  54 <em class="comment"> * This resolver understands OASIS TR9401 catalogs, XCatalogs, and the</em>
+<a id="L55" name="L55"></a>  55 <em class="comment"> * current working draft of the OASIS Entity Resolution Technical</em>
+<a id="L56" name="L56"></a>  56 <em class="comment"> * Committee specification.</em>
+<a id="L57" name="L57"></a>  57 <em class="comment"> *</em>
+<a id="L58" name="L58"></a>  58 <em class="comment"> * @see Catalog</em>
+<a id="L59" name="L59"></a>  59 <em class="comment"> * @see org.xml.sax.EntityResolver</em>
+<a id="L60" name="L60"></a>  60 <em class="comment"> * @see javax.xml.transform.URIResolver</em>
+<a id="L61" name="L61"></a>  61 <em class="comment"> *</em>
+<a id="L62" name="L62"></a>  62 <em class="comment"> * @author Norman Walsh</em>
+<a id="L63" name="L63"></a>  63 <em class="comment"> * <a href="mailto:Norman.Walsh@Sun.COM">Norman.Walsh@Sun.COM</a></em>
+<a id="L64" name="L64"></a>  64 <em class="comment"> *</em>
+<a id="L65" name="L65"></a>  65 <em class="comment"> * @version 1.0</em>
+<a id="L66" name="L66"></a>  66 <em class="comment"> */</em>
+<a id="L67" name="L67"></a>  67 <strong class="reserved">public</strong> <strong class="reserved">class</strong> <a href="../R/1198.html" title="Multiple referred from 11 places.">CatalogResolver</a> <strong class="reserved">implements</strong> <a href="../S/722.html#L93" title="Defined at 93 in src/org/xml/sax/EntityResolver.java.">EntityResolver</a>, <a href="../S/4040.html#L32" title="Defined at 32 in src/javax/xml/transform/URIResolver.java.">URIResolver</a> <em class="brace">{</em>
+<a id="L68" name="L68"></a>  68   <em class="comment">/** Make the parser Namespace aware? */</em>
+<a id="L69" name="L69"></a>  69   <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> namespaceAware = <strong class="reserved">true</strong>;
+<a id="L70" name="L70"></a>  70 
+<a id="L71" name="L71"></a>  71   <em class="comment">/** Make the parser validating? */</em>
+<a id="L72" name="L72"></a>  72   <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> validating = <strong class="reserved">false</strong>;
+<a id="L73" name="L73"></a>  73 
+<a id="L74" name="L74"></a>  74   <em class="comment">/** The underlying catalog */</em>
+<a id="L75" name="L75"></a>  75   <strong class="reserved">private</strong> <a href="../S/5932.html#L198" title="Defined at 198 in src/com/sun/org/apache/xml/internal/resolver/Catalog.java.">Catalog</a> catalog = <strong class="reserved">null</strong>;
+<a id="L76" name="L76"></a>  76 
+<a id="L77" name="L77"></a>  77   <em class="comment">/** The catalog manager */</em>
+<a id="L78" name="L78"></a>  78   <strong class="reserved">private</strong> <a href="../S/5933.html#L126" title="Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.">CatalogManager</a> catalogManager = <a href="../S/5933.html#L126" title="Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.">CatalogManager</a>.<a href="../S/5933.html#L291" title="Defined at 291 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.">getStaticManager</a>();
+<a id="L79" name="L79"></a>  79 
+<a id="L80" name="L80"></a>  80   <em class="comment">/** Constructor */</em>
+<a id="L81" name="L81"></a>  81   <strong class="reserved">public</strong> CatalogResolver() <em class="brace">{</em>
+<a id="L82" name="L82"></a>  82     <a href="../S/5930.html#L97" title="Defined at 97 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.">initializeCatalogs</a>(<strong class="reserved">false</strong>);
+<a id="L83" name="L83"></a>  83   <em class="brace">}</em>
+<a id="L84" name="L84"></a>  84 
+<a id="L85" name="L85"></a>  85   <em class="comment">/** Constructor */</em>
+<a id="L86" name="L86"></a>  86   <strong class="reserved">public</strong> CatalogResolver(<strong class="reserved">boolean</strong> privateCatalog) <em class="brace">{</em>
+<a id="L87" name="L87"></a>  87     <a href="../S/5930.html#L97" title="Defined at 97 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.">initializeCatalogs</a>(privateCatalog);
+<a id="L88" name="L88"></a>  88   <em class="brace">}</em>
+<a id="L89" name="L89"></a>  89 
+<a id="L90" name="L90"></a>  90   <em class="comment">/** Constructor */</em>
+<a id="L91" name="L91"></a>  91   <strong class="reserved">public</strong> CatalogResolver(<a href="../S/5933.html#L126" title="Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.">CatalogManager</a> manager) <em class="brace">{</em>
+<a id="L92" name="L92"></a>  92     catalogManager = manager;
+<a id="L93" name="L93"></a>  93     <a href="../S/5930.html#L97" title="Defined at 97 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.">initializeCatalogs</a>(!catalogManager.<a href="../S/5933.html#L642" title="Defined at 642 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.">getUseStaticCatalog</a>());
+<a id="L94" name="L94"></a>  94   <em class="brace">}</em>
+<a id="L95" name="L95"></a>  95 
+<a id="L96" name="L96"></a>  96   <em class="comment">/** Initialize catalog */</em>
+<a id="L97" name="L97"></a>  97   <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../R/20690.html" title="Multiple referred from 3 places.">initializeCatalogs</a>(<strong class="reserved">boolean</strong> privateCatalog) <em class="brace">{</em>
+<a id="L98" name="L98"></a>  98     catalog = catalogManager.<a href="../D/17511.html" title="Multiple defined in 7 places.">getCatalog</a>();
+<a id="L99" name="L99"></a>  99   <em class="brace">}</em>
+<a id="L100" name="L100"></a> 100 
+<a id="L101" name="L101"></a> 101   <em class="comment">/** Return the underlying catalog */</em>
+<a id="L102" name="L102"></a> 102   <strong class="reserved">public</strong> <a href="../S/5932.html#L198" title="Defined at 198 in src/com/sun/org/apache/xml/internal/resolver/Catalog.java.">Catalog</a> <a href="../R/15458.html" title="Multiple referred from 5 places.">getCatalog</a>() <em class="brace">{</em>
+<a id="L103" name="L103"></a> 103     <strong class="reserved">return</strong> catalog;
+<a id="L104" name="L104"></a> 104   <em class="brace">}</em>
+<a id="L105" name="L105"></a> 105 
+<a id="L106" name="L106"></a> 106   <em class="comment">/**</em>
+<a id="L107" name="L107"></a> 107 <em class="comment">   * Implements the guts of the <code>resolveEntity</code> method</em>
+<a id="L108" name="L108"></a> 108 <em class="comment">   * for the SAX interface.</em>
+<a id="L109" name="L109"></a> 109 <em class="comment">   *</em>
+<a id="L110" name="L110"></a> 110 <em class="comment">   * Presented with an optional public identifier and a system</em>
+<a id="L111" name="L111"></a> 111 <em class="comment">   * identifier, this function attempts to locate a mapping in the</em>
+<a id="L112" name="L112"></a> 112 <em class="comment">   * catalogs.</em>
+<a id="L113" name="L113"></a> 113 <em class="comment">   *</em>
+<a id="L114" name="L114"></a> 114 <em class="comment">   * If such a mapping is found, it is returned.  If no mapping is</em>
+<a id="L115" name="L115"></a> 115 <em class="comment">   * found, null is returned.</em>
+<a id="L116" name="L116"></a> 116 <em class="comment">   *</em>
+<a id="L117" name="L117"></a> 117 <em class="comment">   * @param publicId  The public identifier for the entity in question.</em>
+<a id="L118" name="L118"></a> 118 <em class="comment">   * This may be null.</em>
+<a id="L119" name="L119"></a> 119 <em class="comment">   *</em>
+<a id="L120" name="L120"></a> 120 <em class="comment">   * @param systemId  The system identifier for the entity in question.</em>
+<a id="L121" name="L121"></a> 121 <em class="comment">   * XML requires a system identifier on all external entities, so this</em>
+<a id="L122" name="L122"></a> 122 <em class="comment">   * value is always specified.</em>
+<a id="L123" name="L123"></a> 123 <em class="comment">   *</em>
+<a id="L124" name="L124"></a> 124 <em class="comment">   * @return The resolved identifier (a URI reference).</em>
+<a id="L125" name="L125"></a> 125 <em class="comment">   */</em>
+<a id="L126" name="L126"></a> 126   <strong class="reserved">public</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../R/18706.html" title="Multiple referred from 5 places.">getResolvedEntity</a> (<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a>) <em class="brace">{</em>
+<a id="L127" name="L127"></a> 127     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> resolved = <strong class="reserved">null</strong>;
+<a id="L128" name="L128"></a> 128 
+<a id="L129" name="L129"></a> 129     <strong class="reserved">if</strong> (catalog == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L130" name="L130"></a> 130       catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(1, "Catalog resolution attempted with null catalog; ignored");
+<a id="L131" name="L131"></a> 131       <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L132" name="L132"></a> 132     <em class="brace">}</em>
+<a id="L133" name="L133"></a> 133 
+<a id="L134" name="L134"></a> 134     <strong class="reserved">if</strong> (<a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a> != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L135" name="L135"></a> 135       <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L136" name="L136"></a> 136         resolved = catalog.<a href="../D/31308.html" title="Multiple defined in 3 places.">resolveSystem</a>(<a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a>);
+<a id="L137" name="L137"></a> 137       <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/814.html#L38" title="Defined at 38 in src/java/net/MalformedURLException.java.">MalformedURLException</a> me) <em class="brace">{</em>
+<a id="L138" name="L138"></a> 138         catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(1, "Malformed URL exception trying to resolve",
+<a id="L139" name="L139"></a> 139                       <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>);
+<a id="L140" name="L140"></a> 140         resolved = <strong class="reserved">null</strong>;
+<a id="L141" name="L141"></a> 141       <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> ie) <em class="brace">{</em>
+<a id="L142" name="L142"></a> 142         catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(1, "I/O exception trying to resolve", <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>);
+<a id="L143" name="L143"></a> 143         resolved = <strong class="reserved">null</strong>;
+<a id="L144" name="L144"></a> 144       <em class="brace">}</em>
+<a id="L145" name="L145"></a> 145     <em class="brace">}</em>
+<a id="L146" name="L146"></a> 146 
+<a id="L147" name="L147"></a> 147     <strong class="reserved">if</strong> (resolved == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L148" name="L148"></a> 148       <strong class="reserved">if</strong> (<a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a> != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L149" name="L149"></a> 149         <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L150" name="L150"></a> 150           resolved = catalog.<a href="../D/31298.html" title="Multiple defined in 3 places.">resolvePublic</a>(<a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>, <a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a>);
+<a id="L151" name="L151"></a> 151         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/814.html#L38" title="Defined at 38 in src/java/net/MalformedURLException.java.">MalformedURLException</a> me) <em class="brace">{</em>
+<a id="L152" name="L152"></a> 152           catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(1, "Malformed URL exception trying to resolve",
+<a id="L153" name="L153"></a> 153                         <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>);
+<a id="L154" name="L154"></a> 154         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a> ie) <em class="brace">{</em>
+<a id="L155" name="L155"></a> 155           catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(1, "I/O exception trying to resolve", <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>);
+<a id="L156" name="L156"></a> 156         <em class="brace">}</em>
+<a id="L157" name="L157"></a> 157       <em class="brace">}</em>
+<a id="L158" name="L158"></a> 158 
+<a id="L159" name="L159"></a> 159       <strong class="reserved">if</strong> (resolved != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L160" name="L160"></a> 160         catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(2, "Resolved public", <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>, resolved);
+<a id="L161" name="L161"></a> 161       <em class="brace">}</em>
+<a id="L162" name="L162"></a> 162     <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L163" name="L163"></a> 163       catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(2, "Resolved system", <a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a>, resolved);
+<a id="L164" name="L164"></a> 164     <em class="brace">}</em>
+<a id="L165" name="L165"></a> 165 
+<a id="L166" name="L166"></a> 166     <strong class="reserved">return</strong> resolved;
+<a id="L167" name="L167"></a> 167   <em class="brace">}</em>
+<a id="L168" name="L168"></a> 168 
+<a id="L169" name="L169"></a> 169   <em class="comment">/**</em>
+<a id="L170" name="L170"></a> 170 <em class="comment">   * Implements the <code>resolveEntity</code> method</em>
+<a id="L171" name="L171"></a> 171 <em class="comment">   * for the SAX interface.</em>
+<a id="L172" name="L172"></a> 172 <em class="comment">   *</em>
+<a id="L173" name="L173"></a> 173 <em class="comment">   * Presented with an optional public identifier and a system</em>
+<a id="L174" name="L174"></a> 174 <em class="comment">   * identifier, this function attempts to locate a mapping in the</em>
+<a id="L175" name="L175"></a> 175 <em class="comment">   * catalogs.</em>
+<a id="L176" name="L176"></a> 176 <em class="comment">   *</em>
+<a id="L177" name="L177"></a> 177 <em class="comment">   * If such a mapping is found, the resolver attempts to open</em>
+<a id="L178" name="L178"></a> 178 <em class="comment">   * the mapped value as an InputSource and return it. Exceptions are</em>
+<a id="L179" name="L179"></a> 179 <em class="comment">   * ignored and null is returned if the mapped value cannot be opened</em>
+<a id="L180" name="L180"></a> 180 <em class="comment">   * as an input source.</em>
+<a id="L181" name="L181"></a> 181 <em class="comment">   *</em>
+<a id="L182" name="L182"></a> 182 <em class="comment">   * If no mapping is found (or an error occurs attempting to open</em>
+<a id="L183" name="L183"></a> 183 <em class="comment">   * the mapped value as an input source), null is returned and the system</em>
+<a id="L184" name="L184"></a> 184 <em class="comment">   * will use the specified system identifier as if no entityResolver</em>
+<a id="L185" name="L185"></a> 185 <em class="comment">   * was specified.</em>
+<a id="L186" name="L186"></a> 186 <em class="comment">   *</em>
+<a id="L187" name="L187"></a> 187 <em class="comment">   * @param publicId  The public identifier for the entity in question.</em>
+<a id="L188" name="L188"></a> 188 <em class="comment">   * This may be null.</em>
+<a id="L189" name="L189"></a> 189 <em class="comment">   *</em>
+<a id="L190" name="L190"></a> 190 <em class="comment">   * @param systemId  The system identifier for the entity in question.</em>
+<a id="L191" name="L191"></a> 191 <em class="comment">   * XML requires a system identifier on all external entities, so this</em>
+<a id="L192" name="L192"></a> 192 <em class="comment">   * value is always specified.</em>
+<a id="L193" name="L193"></a> 193 <em class="comment">   *</em>
+<a id="L194" name="L194"></a> 194 <em class="comment">   * @return An InputSource for the mapped identifier, or null.</em>
+<a id="L195" name="L195"></a> 195 <em class="comment">   */</em>
+<a id="L196" name="L196"></a> 196   <strong class="reserved">public</strong> <a href="../S/711.html#L84" title="Defined at 84 in src/org/xml/sax/InputSource.java.">InputSource</a> <a href="../R/26336.html" title="Multiple referred from 17 places.">resolveEntity</a> (<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a>) <em class="brace">{</em>
+<a id="L197" name="L197"></a> 197     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> resolved = <a href="../S/5930.html#L126" title="Defined at 126 in src/com/sun/org/apache/xml/internal/resolver/tools/CatalogResolver.java.">getResolvedEntity</a>(<a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>, <a href="../D/35191.html" title="Multiple defined in 2 places.">systemId</a>);
+<a id="L198" name="L198"></a> 198 
+<a id="L199" name="L199"></a> 199     <strong class="reserved">if</strong> (resolved != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L200" name="L200"></a> 200       <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L201" name="L201"></a> 201         <a href="../S/711.html#L84" title="Defined at 84 in src/org/xml/sax/InputSource.java.">InputSource</a> iSource = <strong class="reserved">new</strong> <a href="../S/711.html#L84" title="Defined at 84 in src/org/xml/sax/InputSource.java.">InputSource</a>(resolved);
+<a id="L202" name="L202"></a> 202         iSource.<a href="../D/33634.html" title="Multiple defined in 14 places.">setPublicId</a>(<a href="../D/29918.html" title="Multiple defined in 2 places.">publicId</a>);
+<a id="L203" name="L203"></a> 203 
+<a id="L204" name="L204"></a> 204         <em class="comment">// Ideally this method would not attempt to open the</em>
+<a id="L205" name="L205"></a> 205         <em class="comment">// InputStream, but there is a bug (in Xerces, at least)</em>
+<a id="L206" name="L206"></a> 206         <em class="comment">// that causes the parser to mistakenly open the wrong</em>
+<a id="L207" name="L207"></a> 207         <em class="comment">// system identifier if the returned InputSource does</em>
+<a id="L208" name="L208"></a> 208         <em class="comment">// not have a byteStream.</em>
+<a id="L209" name="L209"></a> 209         <em class="comment">//</em>
+<a id="L210" name="L210"></a> 210         <em class="comment">// It could be argued that we still shouldn't do this here,</em>
+<a id="L211" name="L211"></a> 211         <em class="comment">// but since the purpose of calling the entityResolver is</em>
+<a id="L212" name="L212"></a> 212         <em class="comment">// almost certainly to open the input stream, it seems to</em>
+<a id="L213" name="L213"></a> 213         <em class="comment">// do little harm.</em>
+<a id="L214" name="L214"></a> 214         <em class="comment">//</em>
+<a id="L215" name="L215"></a> 215         <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a> url = <strong class="reserved">new</strong> <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a>(resolved);
+<a id="L216" name="L216"></a> 216         <a href="../D/4231.html" title="Multiple defined in 3 places.">InputStream</a> iStream = url.<a href="../S/768.html#L1037" title="Defined at 1037 in src/java/net/URL.java.">openStream</a>();
+<a id="L217" name="L217"></a> 217         iSource.<a href="../D/32067.html" title="Multiple defined in 7 places.">setByteStream</a>(iStream);
+<a id="L218" name="L218"></a> 218 
+<a id="L219" name="L219"></a> 219         <strong class="reserved">return</strong> iSource;
+<a id="L220" name="L220"></a> 220       <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
+<a id="L221" name="L221"></a> 221         catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(1, "Failed to create InputSource", resolved);
+<a id="L222" name="L222"></a> 222         <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L223" name="L223"></a> 223       <em class="brace">}</em>
+<a id="L224" name="L224"></a> 224     <em class="brace">}</em>
+<a id="L225" name="L225"></a> 225 
+<a id="L226" name="L226"></a> 226     <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L227" name="L227"></a> 227   <em class="brace">}</em>
+<a id="L228" name="L228"></a> 228 
+<a id="L229" name="L229"></a> 229   <em class="comment">/** JAXP URIResolver API */</em>
+<a id="L230" name="L230"></a> 230   <strong class="reserved">public</strong> <a href="../S/4049.html#L32" title="Defined at 32 in src/javax/xml/transform/Source.java.">Source</a> <a href="../R/26316.html" title="Multiple referred from 78 places.">resolve</a>(<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> href, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> base)
+<a id="L231" name="L231"></a> 231     <strong class="reserved">throws</strong> <a href="../S/4051.html#L35" title="Defined at 35 in src/javax/xml/transform/TransformerException.java.">TransformerException</a> <em class="brace">{</em>
+<a id="L232" name="L232"></a> 232 
+<a id="L233" name="L233"></a> 233     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> uri = href;
+<a id="L234" name="L234"></a> 234     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> fragment = <strong class="reserved">null</strong>;
+<a id="L235" name="L235"></a> 235     <strong class="reserved">int</strong> hashPos = href.<a href="../D/24468.html" title="Multiple defined in 74 places.">indexOf</a>("#");
+<a id="L236" name="L236"></a> 236     <strong class="reserved">if</strong> (hashPos &gt;= 0) <em class="brace">{</em>
+<a id="L237" name="L237"></a> 237       uri = href.<a href="../D/35013.html" title="Multiple defined in 26 places.">substring</a>(0, hashPos);
+<a id="L238" name="L238"></a> 238       fragment = href.<a href="../D/35013.html" title="Multiple defined in 26 places.">substring</a>(hashPos+1);
+<a id="L239" name="L239"></a> 239     <em class="brace">}</em>
+<a id="L240" name="L240"></a> 240 
+<a id="L241" name="L241"></a> 241     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a> = <strong class="reserved">null</strong>;
+<a id="L242" name="L242"></a> 242 
+<a id="L243" name="L243"></a> 243     <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L244" name="L244"></a> 244       <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a> = catalog.<a href="../D/31316.html" title="Multiple defined in 4 places.">resolveURI</a>(href);
+<a id="L245" name="L245"></a> 245     <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
+<a id="L246" name="L246"></a> 246       <em class="comment">// nop;</em>
+<a id="L247" name="L247"></a> 247     <em class="brace">}</em>
+<a id="L248" name="L248"></a> 248 
+<a id="L249" name="L249"></a> 249     <strong class="reserved">if</strong> (<a href="../D/31365.html" title="Multiple defined in 7 places.">result</a> == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L250" name="L250"></a> 250       <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L251" name="L251"></a> 251         <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a> url = <strong class="reserved">null</strong>;
+<a id="L252" name="L252"></a> 252 
+<a id="L253" name="L253"></a> 253         <strong class="reserved">if</strong> (base==<strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L254" name="L254"></a> 254           url = <strong class="reserved">new</strong> <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a>(uri);
+<a id="L255" name="L255"></a> 255           <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a> = url.<a href="../D/35493.html" title="Multiple defined in 1021 places.">toString</a>();
+<a id="L256" name="L256"></a> 256         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L257" name="L257"></a> 257           <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a> baseURL = <strong class="reserved">new</strong> <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a>(base);
+<a id="L258" name="L258"></a> 258           url = (href.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>()==0 ? baseURL : <strong class="reserved">new</strong> <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a>(baseURL, uri));
+<a id="L259" name="L259"></a> 259           <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a> = url.<a href="../D/35493.html" title="Multiple defined in 1021 places.">toString</a>();
+<a id="L260" name="L260"></a> 260         <em class="brace">}</em>
+<a id="L261" name="L261"></a> 261       <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.net.<a href="../S/814.html#L38" title="Defined at 38 in src/java/net/MalformedURLException.java.">MalformedURLException</a> mue) <em class="brace">{</em>
+<a id="L262" name="L262"></a> 262         <em class="comment">// try to make an absolute URI from the current base</em>
+<a id="L263" name="L263"></a> 263         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> absBase = <a href="../D/27199.html" title="Multiple defined in 3 places.">makeAbsolute</a>(base);
+<a id="L264" name="L264"></a> 264         <strong class="reserved">if</strong> (!absBase.<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(base)) <em class="brace">{</em>
+<a id="L265" name="L265"></a> 265           <em class="comment">// don't bother if the absBase isn't different!</em>
+<a id="L266" name="L266"></a> 266           <strong class="reserved">return</strong> <a href="../D/31237.html" title="Multiple defined in 38 places.">resolve</a>(href, absBase);
+<a id="L267" name="L267"></a> 267         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L268" name="L268"></a> 268           <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/4051.html#L35" title="Defined at 35 in src/javax/xml/transform/TransformerException.java.">TransformerException</a>("Malformed URL "
+<a id="L269" name="L269"></a> 269                                          + href + "(base " + base + ")",
+<a id="L270" name="L270"></a> 270                                          mue);
+<a id="L271" name="L271"></a> 271         <em class="brace">}</em>
+<a id="L272" name="L272"></a> 272       <em class="brace">}</em>
+<a id="L273" name="L273"></a> 273     <em class="brace">}</em>
+<a id="L274" name="L274"></a> 274 
+<a id="L275" name="L275"></a> 275     catalogManager.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/27673.html" title="Multiple defined in 6 places.">message</a>(2, "Resolved URI", href, <a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>);
+<a id="L276" name="L276"></a> 276 
+<a id="L277" name="L277"></a> 277     <a href="../S/4031.html#L45" title="Defined at 45 in src/javax/xml/transform/sax/SAXSource.java.">SAXSource</a> <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a> = <strong class="reserved">new</strong> <a href="../S/4031.html#L45" title="Defined at 45 in src/javax/xml/transform/sax/SAXSource.java.">SAXSource</a>();
+<a id="L278" name="L278"></a> 278     <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>.<a href="../D/32960.html" title="Multiple defined in 16 places.">setInputSource</a>(<strong class="reserved">new</strong> <a href="../S/711.html#L84" title="Defined at 84 in src/org/xml/sax/InputSource.java.">InputSource</a>(<a href="../D/31365.html" title="Multiple defined in 7 places.">result</a>));
+<a id="L279" name="L279"></a> 279     <a href="../D/32603.html" title="Multiple defined in 31 places.">setEntityResolver</a>(<a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>);
+<a id="L280" name="L280"></a> 280     <strong class="reserved">return</strong> <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>;
+<a id="L281" name="L281"></a> 281   <em class="brace">}</em>
+<a id="L282" name="L282"></a> 282 
+<a id="L283" name="L283"></a> 283   <em class="comment">/**</em>
+<a id="L284" name="L284"></a> 284 <em class="comment">   * Establish an entityResolver for newly resolved URIs.</em>
+<a id="L285" name="L285"></a> 285 <em class="comment">   *</em>
+<a id="L286" name="L286"></a> 286 <em class="comment">   * This is called from the URIResolver to set an EntityResolver</em>
+<a id="L287" name="L287"></a> 287 <em class="comment">   * on the SAX parser to be used for new XML documents that are</em>
+<a id="L288" name="L288"></a> 288 <em class="comment">   * encountered as a result of the document() function, xsl:import,</em>
+<a id="L289" name="L289"></a> 289 <em class="comment">   * or xsl:include.  This is done because the XSLT processor calls</em>
+<a id="L290" name="L290"></a> 290 <em class="comment">   * out to the SAXParserFactory itself to create a new SAXParser to</em>
+<a id="L291" name="L291"></a> 291 <em class="comment">   * parse the new document.  The new parser does not automatically</em>
+<a id="L292" name="L292"></a> 292 <em class="comment">   * inherit the EntityResolver of the original (although arguably</em>
+<a id="L293" name="L293"></a> 293 <em class="comment">   * it should).  See below:</em>
+<a id="L294" name="L294"></a> 294 <em class="comment">   *</em>
+<a id="L295" name="L295"></a> 295 <em class="comment">   * <tt>"If an application wants to set the ErrorHandler or</tt></em>
+<a id="L296" name="L296"></a> 296 <em class="comment">   * EntityResolver for an XMLReader used during a transformation,</em>
+<a id="L297" name="L297"></a> 297 <em class="comment">   * it should use a URIResolver to return the SAXSource which</em>
+<a id="L298" name="L298"></a> 298 <em class="comment">   * provides (with getXMLReader) a reference to the XMLReader"</em>
+<a id="L299" name="L299"></a> 299 <em class="comment">   *</em>
+<a id="L300" name="L300"></a> 300 <em class="comment">   * ...quoted from page 118 of the Java API for XML</em>
+<a id="L301" name="L301"></a> 301 <em class="comment">   * Processing 1.1 specification</em>
+<a id="L302" name="L302"></a> 302 <em class="comment">   *</em>
+<a id="L303" name="L303"></a> 303 <em class="comment">   */</em>
+<a id="L304" name="L304"></a> 304   <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../R/27337.html" title="Multiple referred from 40 places.">setEntityResolver</a>(<a href="../S/4031.html#L45" title="Defined at 45 in src/javax/xml/transform/sax/SAXSource.java.">SAXSource</a> <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>) <strong class="reserved">throws</strong> <a href="../S/4051.html#L35" title="Defined at 35 in src/javax/xml/transform/TransformerException.java.">TransformerException</a> <em class="brace">{</em>
+<a id="L305" name="L305"></a> 305     <a href="../S/724.html#L84" title="Defined at 84 in src/org/xml/sax/XMLReader.java.">XMLReader</a> <a href="../S/1437.html#L135" title="Defined at 135 in src/java/io/Console.java.">reader</a> = <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>.<a href="../D/23755.html" title="Multiple defined in 9 places.">getXMLReader</a>();
+<a id="L306" name="L306"></a> 306     <strong class="reserved">if</strong> (<a href="../S/1437.html#L135" title="Defined at 135 in src/java/io/Console.java.">reader</a> == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L307" name="L307"></a> 307       <a href="../S/3844.html#L43" title="Defined at 43 in src/javax/xml/parsers/SAXParserFactory.java.">SAXParserFactory</a> spFactory = catalogManager.<a href="../S/5933.html#L781" title="Defined at 781 in src/com/sun/org/apache/xml/internal/resolver/CatalogManager.java.">useServicesMechanism</a>() ?
+<a id="L308" name="L308"></a> 308                     <a href="../S/3844.html#L43" title="Defined at 43 in src/javax/xml/parsers/SAXParserFactory.java.">SAXParserFactory</a>.<a href="../D/28016.html" title="Multiple defined in 74 places.">newInstance</a>() : <strong class="reserved">new</strong> <a href="../S/5399.html#L48" title="Defined at 48 in src/com/sun/org/apache/xerces/internal/jaxp/SAXParserFactoryImpl.java.">SAXParserFactoryImpl</a>();
+<a id="L309" name="L309"></a> 309       spFactory.<a href="../D/33323.html" title="Multiple defined in 3 places.">setNamespaceAware</a>(<strong class="reserved">true</strong>);
+<a id="L310" name="L310"></a> 310       <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L311" name="L311"></a> 311         <a href="../S/1437.html#L135" title="Defined at 135 in src/java/io/Console.java.">reader</a> = spFactory.<a href="../D/28066.html" title="Multiple defined in 2 places.">newSAXParser</a>().<a href="../D/23755.html" title="Multiple defined in 9 places.">getXMLReader</a>();
+<a id="L312" name="L312"></a> 312       <em class="brace">}</em>
+<a id="L313" name="L313"></a> 313       <strong class="reserved">catch</strong> (<a href="../S/3851.html#L34" title="Defined at 34 in src/javax/xml/parsers/ParserConfigurationException.java.">ParserConfigurationException</a> <a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>) <em class="brace">{</em>
+<a id="L314" name="L314"></a> 314         <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/4051.html#L35" title="Defined at 35 in src/javax/xml/transform/TransformerException.java.">TransformerException</a>(<a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>);
+<a id="L315" name="L315"></a> 315       <em class="brace">}</em>
+<a id="L316" name="L316"></a> 316       <strong class="reserved">catch</strong> (<a href="../S/726.html#L62" title="Defined at 62 in src/org/xml/sax/SAXException.java.">SAXException</a> <a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>) <em class="brace">{</em>
+<a id="L317" name="L317"></a> 317         <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/4051.html#L35" title="Defined at 35 in src/javax/xml/transform/TransformerException.java.">TransformerException</a>(<a href="../S/5015.html#L111" title="Defined at 111 in src/com/sun/org/apache/xerces/internal/impl/xpath/regex/RegexParser.java.">ex</a>);
+<a id="L318" name="L318"></a> 318       <em class="brace">}</em>
+<a id="L319" name="L319"></a> 319     <em class="brace">}</em>
+<a id="L320" name="L320"></a> 320     <a href="../S/1437.html#L135" title="Defined at 135 in src/java/io/Console.java.">reader</a>.<a href="../D/32603.html" title="Multiple defined in 31 places.">setEntityResolver</a>(<strong class="reserved">this</strong>);
+<a id="L321" name="L321"></a> 321     <a href="../S/2041.html#L132" title="Defined at 132 in src/java/nio/channels/Pipe.java.">source</a>.<a href="../D/34347.html" title="Multiple defined in 4 places.">setXMLReader</a>(<a href="../S/1437.html#L135" title="Defined at 135 in src/java/io/Console.java.">reader</a>);
+<a id="L322" name="L322"></a> 322   <em class="brace">}</em>
+<a id="L323" name="L323"></a> 323 
+<a id="L324" name="L324"></a> 324   <em class="comment">/** Attempt to construct an absolute URI */</em>
+<a id="L325" name="L325"></a> 325   <strong class="reserved">private</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../R/22816.html" title="Multiple referred from 22 places.">makeAbsolute</a>(<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> uri) <em class="brace">{</em>
+<a id="L326" name="L326"></a> 326     <strong class="reserved">if</strong> (uri == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L327" name="L327"></a> 327       uri = "";
+<a id="L328" name="L328"></a> 328     <em class="brace">}</em>
+<a id="L329" name="L329"></a> 329 
+<a id="L330" name="L330"></a> 330     <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L331" name="L331"></a> 331       <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a> url = <strong class="reserved">new</strong> <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a>(uri);
+<a id="L332" name="L332"></a> 332       <strong class="reserved">return</strong> url.<a href="../D/35493.html" title="Multiple defined in 1021 places.">toString</a>();
+<a id="L333" name="L333"></a> 333     <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/814.html#L38" title="Defined at 38 in src/java/net/MalformedURLException.java.">MalformedURLException</a> mue) <em class="brace">{</em>
+<a id="L334" name="L334"></a> 334       <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L335" name="L335"></a> 335         <a href="../D/9256.html" title="Multiple defined in 2 places.">URL</a> fileURL = <a href="../S/5950.html#L46" title="Defined at 46 in src/com/sun/org/apache/xml/internal/resolver/helpers/FileURL.java.">FileURL</a>.<a href="../S/5950.html#L76" title="Defined at 76 in src/com/sun/org/apache/xml/internal/resolver/helpers/FileURL.java.">makeURL</a>(uri);
+<a id="L336" name="L336"></a> 336         <strong class="reserved">return</strong> fileURL.<a href="../D/35493.html" title="Multiple defined in 1021 places.">toString</a>();
+<a id="L337" name="L337"></a> 337       <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/814.html#L38" title="Defined at 38 in src/java/net/MalformedURLException.java.">MalformedURLException</a> mue2) <em class="brace">{</em>
+<a id="L338" name="L338"></a> 338         <em class="comment">// bail</em>
+<a id="L339" name="L339"></a> 339         <strong class="reserved">return</strong> uri;
+<a id="L340" name="L340"></a> 340       <em class="brace">}</em>
+<a id="L341" name="L341"></a> 341     <em class="brace">}</em>
+<a id="L342" name="L342"></a> 342   <em class="brace">}</em>
+<a id="L343" name="L343"></a> 343 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L97'>[^]</a><a href='#L325'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L97">[^]</a><a href="#L325">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

@@ -1,602 +1,600 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/java/lang/invoke/InnerClassLambdaMetafactory.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8003.html'>lang</a>/<a href='../files/8006.html'>invoke</a>/InnerClassLambdaMetafactory.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L75'>[^]</a><a href='#L548'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8003.html">lang</a>/<a href="../files/8006.html">invoke</a>/InnerClassLambdaMetafactory.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L75">[^]</a><a href="#L548">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L75' title='Defined at 75.'>toMethodDescriptorString</a></li>
-<li><a href='#L193' title='Defined at 193.'>buildCallSite</a></li>
-<li><a href='#L249' title='Defined at 249.'>spinInnerClass</a></li>
-<li><a href='#L332' title='Defined at 332.'>generateFactory</a></li>
-<li><a href='#L352' title='Defined at 352.'>generateConstructor</a></li>
-<li><a href='#L377' title='Defined at 377.'>generateSerializationFriendlyMethods</a></li>
-<li><a href='#L417' title='Defined at 417.'>generateSerializationHostileMethods</a></li>
-<li><a href='#L455' title='Defined at 455.'>generate</a></li>
-<li><a href='#L485' title='Defined at 485.'>convertArgumentTypes</a></li>
-<li><a href='#L507' title='Defined at 507.'>invocationOpcode</a></li>
-<li><a href='#L525' title='Defined at 525.'>getParameterSize</a></li>
-<li><a href='#L534' title='Defined at 534.'>getLoadOpcode</a></li>
-<li><a href='#L541' title='Defined at 541.'>getReturnOpcode</a></li>
-<li><a href='#L548' title='Defined at 548.'>getOpcodeOffset</a></li>
+<li><a href="#L75" title="Defined at 75.">toMethodDescriptorString</a></li>
+<li><a href="#L193" title="Defined at 193.">buildCallSite</a></li>
+<li><a href="#L249" title="Defined at 249.">spinInnerClass</a></li>
+<li><a href="#L332" title="Defined at 332.">generateFactory</a></li>
+<li><a href="#L352" title="Defined at 352.">generateConstructor</a></li>
+<li><a href="#L377" title="Defined at 377.">generateSerializationFriendlyMethods</a></li>
+<li><a href="#L417" title="Defined at 417.">generateSerializationHostileMethods</a></li>
+<li><a href="#L455" title="Defined at 455.">generate</a></li>
+<li><a href="#L485" title="Defined at 485.">convertArgumentTypes</a></li>
+<li><a href="#L507" title="Defined at 507.">invocationOpcode</a></li>
+<li><a href="#L525" title="Defined at 525.">getParameterSize</a></li>
+<li><a href="#L534" title="Defined at 534.">getLoadOpcode</a></li>
+<li><a href="#L541" title="Defined at 541.">getReturnOpcode</a></li>
+<li><a href="#L548" title="Defined at 548.">getOpcodeOffset</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/25050.html' title='Multiple defined in 52 places.'>invoke</a>;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> jdk.internal.org.objectweb.asm.*;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> sun.invoke.util.BytecodeDescriptor;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> sun.misc.Unsafe;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> sun.security.action.GetPropertyAction;
-<a id='L32' name='L32'></a>  32 
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> java.io.FilePermission;
-<a id='L34' name='L34'></a>  34 <strong class='reserved'>import</strong> java.io.Serializable;
-<a id='L35' name='L35'></a>  35 <strong class='reserved'>import</strong> java.lang.reflect.Constructor;
-<a id='L36' name='L36'></a>  36 <strong class='reserved'>import</strong> java.security.AccessController;
-<a id='L37' name='L37'></a>  37 <strong class='reserved'>import</strong> java.security.PrivilegedAction;
-<a id='L38' name='L38'></a>  38 <strong class='reserved'>import</strong> java.util.LinkedHashSet;
-<a id='L39' name='L39'></a>  39 <strong class='reserved'>import</strong> java.util.concurrent.atomic.AtomicInteger;
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>import</strong> java.util.PropertyPermission;
-<a id='L41' name='L41'></a>  41 <strong class='reserved'>import</strong> java.util.Set;
-<a id='L42' name='L42'></a>  42 
-<a id='L43' name='L43'></a>  43 <strong class='reserved'>import</strong> static jdk.internal.org.objectweb.asm.Opcodes.*;
-<a id='L44' name='L44'></a>  44 
-<a id='L45' name='L45'></a>  45 <em class='comment'>/**</em>
-<a id='L46' name='L46'></a>  46 <em class='comment'> * Lambda metafactory implementation which dynamically creates an</em>
-<a id='L47' name='L47'></a>  47 <em class='comment'> * inner-class-like class per lambda callsite.</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'> *</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'> * @see LambdaMetafactory</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'> */</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'>/* package */</em> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong> <a href='../R/3827.html' title='Multiple referred from 2 places.'>InnerClassLambdaMetafactory</a> <strong class='reserved'>extends</strong> <a href='../S/1624.html#L39' title='Defined at 39 in src/java/lang/invoke/AbstractValidatingLambdaMetafactory.java.'>AbstractValidatingLambdaMetafactory</a> <em class='brace'>{</em>
-<a id='L52' name='L52'></a>  52     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> Unsafe UNSAFE = Unsafe.getUnsafe();
-<a id='L53' name='L53'></a>  53 
-<a id='L54' name='L54'></a>  54     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong> CLASSFILE_VERSION = 52;
-<a id='L55' name='L55'></a>  55     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> METHOD_DESCRIPTOR_VOID = <a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.getMethodDescriptor(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.VOID_TYPE);
-<a id='L56' name='L56'></a>  56     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> JAVA_LANG_OBJECT = "java/lang/Object";
-<a id='L57' name='L57'></a>  57     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_CTOR = "&lt;init&gt;";
-<a id='L58' name='L58'></a>  58     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_FACTORY = "get$Lambda";
-<a id='L59' name='L59'></a>  59 
-<a id='L60' name='L60'></a>  60     <em class='comment'>//Serialization support</em>
-<a id='L61' name='L61'></a>  61     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_SERIALIZED_LAMBDA = "java/lang/invoke/SerializedLambda";
-<a id='L62' name='L62'></a>  62     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_NOT_SERIALIZABLE_EXCEPTION = "java/io/NotSerializableException";
-<a id='L63' name='L63'></a>  63     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DESCR_METHOD_WRITE_REPLACE = "()Ljava/lang/Object;";
-<a id='L64' name='L64'></a>  64     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DESCR_METHOD_WRITE_OBJECT = "(Ljava/io/ObjectOutputStream;)V";
-<a id='L65' name='L65'></a>  65     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DESCR_METHOD_READ_OBJECT = "(Ljava/io/ObjectInputStream;)V";
-<a id='L66' name='L66'></a>  66     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_METHOD_WRITE_REPLACE = "writeReplace";
-<a id='L67' name='L67'></a>  67     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_METHOD_READ_OBJECT = "readObject";
-<a id='L68' name='L68'></a>  68     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> NAME_METHOD_WRITE_OBJECT = "writeObject";
-<a id='L69' name='L69'></a>  69     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DESCR_CTOR_SERIALIZED_LAMBDA
-<a id='L70' name='L70'></a>  70             = <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a>.<a href='../D/27690.html' title='Multiple defined in 8 places.'>methodType</a>(<strong class='reserved'>void</strong>.<strong class='reserved'>class</strong>,
-<a id='L71' name='L71'></a>  71                                     <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>.<strong class='reserved'>class</strong>,
-<a id='L72' name='L72'></a>  72                                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>,
-<a id='L73' name='L73'></a>  73                                     <strong class='reserved'>int</strong>.<strong class='reserved'>class</strong>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>,
-<a id='L74' name='L74'></a>  74                                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>,
-<a id='L75' name='L75'></a>  75                                     <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a>[].<strong class='reserved'>class</strong>).<a href='../R/29294.html' title='Multiple referred from 16 places.'>toMethodDescriptorString</a>();
-<a id='L76' name='L76'></a>  76     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION
-<a id='L77' name='L77'></a>  77             = <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a>.<a href='../D/27690.html' title='Multiple defined in 8 places.'>methodType</a>(<strong class='reserved'>void</strong>.<strong class='reserved'>class</strong>, <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>.<strong class='reserved'>class</strong>).<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>();
-<a id='L78' name='L78'></a>  78     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] SER_HOSTILE_EXCEPTIONS = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <em class='brace'>{</em>NAME_NOT_SERIALIZABLE_EXCEPTION<em class='brace'>}</em>;
-<a id='L79' name='L79'></a>  79 
-<a id='L80' name='L80'></a>  80 
-<a id='L81' name='L81'></a>  81     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] EMPTY_STRING_ARRAY = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[0];
-<a id='L82' name='L82'></a>  82 
-<a id='L83' name='L83'></a>  83     <em class='comment'>// Used to ensure that each spun class name is unique</em>
-<a id='L84' name='L84'></a>  84     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1089.html#L54' title='Defined at 54 in src/java/util/concurrent/atomic/AtomicInteger.java.'>AtomicInteger</a> counter = <strong class='reserved'>new</strong> <a href='../S/1089.html#L54' title='Defined at 54 in src/java/util/concurrent/atomic/AtomicInteger.java.'>AtomicInteger</a>(0);
-<a id='L85' name='L85'></a>  85 
-<a id='L86' name='L86'></a>  86     <em class='comment'>// For dumping generated classes to disk, for debugging purposes</em>
-<a id='L87' name='L87'></a>  87     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <a href='../S/1630.html#L46' title='Defined at 46 in src/java/lang/invoke/ProxyClassesDumper.java.'>ProxyClassesDumper</a> dumper;
-<a id='L88' name='L88'></a>  88 
-<a id='L89' name='L89'></a>  89     <strong class='reserved'>static</strong> <em class='brace'>{</em>
-<a id='L90' name='L90'></a>  90         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> = "jdk.internal.lambda.dumpProxyClasses";
-<a id='L91' name='L91'></a>  91         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> path = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
-<a id='L92' name='L92'></a>  92                 <strong class='reserved'>new</strong> <a href='../D/3576.html' title='Multiple defined in 3 places.'>GetPropertyAction</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a>), <strong class='reserved'>null</strong>,
-<a id='L93' name='L93'></a>  93                 <strong class='reserved'>new</strong> <a href='../S/830.html#L91' title='Defined at 91 in src/java/util/PropertyPermission.java.'>PropertyPermission</a>(<a href='../D/26706.html' title='Multiple defined in 2 places.'>key</a> , "read"));
-<a id='L94' name='L94'></a>  94         dumper = (<strong class='reserved'>null</strong> == path) ? <strong class='reserved'>null</strong> : <a href='../S/1630.html#L46' title='Defined at 46 in src/java/lang/invoke/ProxyClassesDumper.java.'>ProxyClassesDumper</a>.<a href='../D/19762.html' title='Multiple defined in 157 places.'>getInstance</a>(path);
-<a id='L95' name='L95'></a>  95     <em class='brace'>}</em>
-<a id='L96' name='L96'></a>  96 
-<a id='L97' name='L97'></a>  97     <em class='comment'>// See context values in AbstractValidatingLambdaMetafactory</em>
-<a id='L98' name='L98'></a>  98     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> implMethodClassName;        <em class='comment'>// Name of type containing implementation "CC"</em>
-<a id='L99' name='L99'></a>  99     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> implMethodName;             <em class='comment'>// Name of implementation method "impl"</em>
-<a id='L100' name='L100'></a> 100     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> implMethodDesc;             <em class='comment'>// Type descriptor for implementation methods "(I)Ljava/lang/String;"</em>
-<a id='L101' name='L101'></a> 101     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; implMethodReturnClass;    <em class='comment'>// class for implementaion method return type "Ljava/lang/String;"</em>
-<a id='L102' name='L102'></a> 102     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> constructorType;        <em class='comment'>// Generated class constructor type "(CC)void"</em>
-<a id='L103' name='L103'></a> 103     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> ClassWriter cw;                    <em class='comment'>// ASM class writer</em>
-<a id='L104' name='L104'></a> 104     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] argNames;                 <em class='comment'>// Generated names for the constructor arguments</em>
-<a id='L105' name='L105'></a> 105     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] argDescs;                 <em class='comment'>// Type descriptors for the constructor arguments</em>
-<a id='L106' name='L106'></a> 106     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> lambdaClassName;            <em class='comment'>// Generated name for the generated class "X$$Lambda$1"</em>
-<a id='L107' name='L107'></a> 107 
-<a id='L108' name='L108'></a> 108     <em class='comment'>/**</em>
-<a id='L109' name='L109'></a> 109 <em class='comment'>     * General meta-factory constructor, supporting both standard cases and</em>
-<a id='L110' name='L110'></a> 110 <em class='comment'>     * allowing for uncommon options such as serialization or bridging.</em>
-<a id='L111' name='L111'></a> 111 <em class='comment'>     *</em>
-<a id='L112' name='L112'></a> 112 <em class='comment'>     * @param caller Stacked automatically by VM; represents a lookup context</em>
-<a id='L113' name='L113'></a> 113 <em class='comment'>     *               with the accessibility privileges of the caller.</em>
-<a id='L114' name='L114'></a> 114 <em class='comment'>     * @param invokedType Stacked automatically by VM; the signature of the</em>
-<a id='L115' name='L115'></a> 115 <em class='comment'>     *                    invoked method, which includes the expected static</em>
-<a id='L116' name='L116'></a> 116 <em class='comment'>     *                    type of the returned lambda object, and the static</em>
-<a id='L117' name='L117'></a> 117 <em class='comment'>     *                    types of the captured arguments for the lambda.  In</em>
-<a id='L118' name='L118'></a> 118 <em class='comment'>     *                    the event that the implementation method is an</em>
-<a id='L119' name='L119'></a> 119 <em class='comment'>     *                    instance method, the first argument in the invocation</em>
-<a id='L120' name='L120'></a> 120 <em class='comment'>     *                    signature will correspond to the receiver.</em>
-<a id='L121' name='L121'></a> 121 <em class='comment'>     * @param samMethodName Name of the method in the functional interface to</em>
-<a id='L122' name='L122'></a> 122 <em class='comment'>     *                      which the lambda or method reference is being</em>
-<a id='L123' name='L123'></a> 123 <em class='comment'>     *                      converted, represented as a String.</em>
-<a id='L124' name='L124'></a> 124 <em class='comment'>     * @param samMethodType Type of the method in the functional interface to</em>
-<a id='L125' name='L125'></a> 125 <em class='comment'>     *                      which the lambda or method reference is being</em>
-<a id='L126' name='L126'></a> 126 <em class='comment'>     *                      converted, represented as a MethodType.</em>
-<a id='L127' name='L127'></a> 127 <em class='comment'>     * @param implMethod The implementation method which should be called (with</em>
-<a id='L128' name='L128'></a> 128 <em class='comment'>     *                   suitable adaptation of argument types, return types,</em>
-<a id='L129' name='L129'></a> 129 <em class='comment'>     *                   and adjustment for captured arguments) when methods of</em>
-<a id='L130' name='L130'></a> 130 <em class='comment'>     *                   the resulting functional interface instance are invoked.</em>
-<a id='L131' name='L131'></a> 131 <em class='comment'>     * @param instantiatedMethodType The signature of the primary functional</em>
-<a id='L132' name='L132'></a> 132 <em class='comment'>     *                               interface method after type variables are</em>
-<a id='L133' name='L133'></a> 133 <em class='comment'>     *                               substituted with their instantiation from</em>
-<a id='L134' name='L134'></a> 134 <em class='comment'>     *                               the capture site</em>
-<a id='L135' name='L135'></a> 135 <em class='comment'>     * @param isSerializable Should the lambda be made serializable?  If set,</em>
-<a id='L136' name='L136'></a> 136 <em class='comment'>     *                       either the target type or one of the additional SAM</em>
-<a id='L137' name='L137'></a> 137 <em class='comment'>     *                       types must extend {@code Serializable}.</em>
-<a id='L138' name='L138'></a> 138 <em class='comment'>     * @param markerInterfaces Additional interfaces which the lambda object</em>
-<a id='L139' name='L139'></a> 139 <em class='comment'>     *                       should implement.</em>
-<a id='L140' name='L140'></a> 140 <em class='comment'>     * @param additionalBridges Method types for additional signatures to be</em>
-<a id='L141' name='L141'></a> 141 <em class='comment'>     *                          bridged to the implementation method</em>
-<a id='L142' name='L142'></a> 142 <em class='comment'>     * @throws LambdaConversionException If any of the meta-factory protocol</em>
-<a id='L143' name='L143'></a> 143 <em class='comment'>     * invariants are violated</em>
-<a id='L144' name='L144'></a> 144 <em class='comment'>     */</em>
-<a id='L145' name='L145'></a> 145     <strong class='reserved'>public</strong> InnerClassLambdaMetafactory(<a href='../S/1619.html#L60' title='Defined at 60 in src/java/lang/invoke/MethodHandles.java.'>MethodHandles</a>.<a href='../S/1619.html#L512' title='Defined at 512 in src/java/lang/invoke/MethodHandles.java.'>Lookup</a> caller,
-<a id='L146' name='L146'></a> 146                                        <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> invokedType,
-<a id='L147' name='L147'></a> 147                                        <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> samMethodName,
-<a id='L148' name='L148'></a> 148                                        <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> samMethodType,
-<a id='L149' name='L149'></a> 149                                        <a href='../S/1623.html#L421' title='Defined at 421 in src/java/lang/invoke/MethodHandle.java.'>MethodHandle</a> implMethod,
-<a id='L150' name='L150'></a> 150                                        <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> instantiatedMethodType,
-<a id='L151' name='L151'></a> 151                                        <strong class='reserved'>boolean</strong> <a href='../D/26224.html' title='Multiple defined in 4 places.'>isSerializable</a>,
-<a id='L152' name='L152'></a> 152                                        <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt;[] markerInterfaces,
-<a id='L153' name='L153'></a> 153                                        <a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a>[] additionalBridges)
-<a id='L154' name='L154'></a> 154             <strong class='reserved'>throws</strong> <a href='../S/1632.html#L31' title='Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.'>LambdaConversionException</a> <em class='brace'>{</em>
-<a id='L155' name='L155'></a> 155         <strong class='reserved'>super</strong>(caller, invokedType, samMethodName, samMethodType,
-<a id='L156' name='L156'></a> 156               implMethod, instantiatedMethodType,
-<a id='L157' name='L157'></a> 157               <a href='../D/26224.html' title='Multiple defined in 4 places.'>isSerializable</a>, markerInterfaces, additionalBridges);
-<a id='L158' name='L158'></a> 158         implMethodClassName = implDefiningClass.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/');
-<a id='L159' name='L159'></a> 159         implMethodName = implInfo.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>();
-<a id='L160' name='L160'></a> 160         implMethodDesc = implMethodType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>();
-<a id='L161' name='L161'></a> 161         implMethodReturnClass = (implKind == <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_newInvokeSpecial)
-<a id='L162' name='L162'></a> 162                 ? implDefiningClass
-<a id='L163' name='L163'></a> 163                 : implMethodType.<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>();
-<a id='L164' name='L164'></a> 164         constructorType = invokedType.<a href='../S/1616.html#L582' title='Defined at 582 in src/java/lang/invoke/MethodType.java.'>changeReturnType</a>(<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE);
-<a id='L165' name='L165'></a> 165         lambdaClassName = targetClass.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/') + "$$Lambda$" + counter.<a href='../D/24446.html' title='Multiple defined in 8 places.'>incrementAndGet</a>();
-<a id='L166' name='L166'></a> 166         cw = <strong class='reserved'>new</strong> ClassWriter(ClassWriter.COMPUTE_MAXS);
-<a id='L167' name='L167'></a> 167         <strong class='reserved'>int</strong> <a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a> = invokedType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>();
-<a id='L168' name='L168'></a> 168         <strong class='reserved'>if</strong> (<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a> &gt; 0) <em class='brace'>{</em>
-<a id='L169' name='L169'></a> 169             argNames = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>];
-<a id='L170' name='L170'></a> 170             argDescs = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>];
-<a id='L171' name='L171'></a> 171             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; <a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>; i++) <em class='brace'>{</em>
-<a id='L172' name='L172'></a> 172                 argNames[i] = "arg$" + (i + 1);
-<a id='L173' name='L173'></a> 173                 argDescs[i] = BytecodeDescriptor.unparse(invokedType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(i));
-<a id='L174' name='L174'></a> 174             <em class='brace'>}</em>
-<a id='L175' name='L175'></a> 175         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L176' name='L176'></a> 176             argNames = argDescs = EMPTY_STRING_ARRAY;
-<a id='L177' name='L177'></a> 177         <em class='brace'>}</em>
-<a id='L178' name='L178'></a> 178     <em class='brace'>}</em>
-<a id='L179' name='L179'></a> 179 
-<a id='L180' name='L180'></a> 180     <em class='comment'>/**</em>
-<a id='L181' name='L181'></a> 181 <em class='comment'>     * Build the CallSite. Generate a class file which implements the functional</em>
-<a id='L182' name='L182'></a> 182 <em class='comment'>     * interface, define the class, if there are no parameters create an instance</em>
-<a id='L183' name='L183'></a> 183 <em class='comment'>     * of the class which the CallSite will return, otherwise, generate handles</em>
-<a id='L184' name='L184'></a> 184 <em class='comment'>     * which will call the class' constructor.</em>
-<a id='L185' name='L185'></a> 185 <em class='comment'>     *</em>
-<a id='L186' name='L186'></a> 186 <em class='comment'>     * @return a CallSite, which, when invoked, will return an instance of the</em>
-<a id='L187' name='L187'></a> 187 <em class='comment'>     * functional interface</em>
-<a id='L188' name='L188'></a> 188 <em class='comment'>     * @throws ReflectiveOperationException</em>
-<a id='L189' name='L189'></a> 189 <em class='comment'>     * @throws LambdaConversionException If properly formed functional interface</em>
-<a id='L190' name='L190'></a> 190 <em class='comment'>     * is not found</em>
-<a id='L191' name='L191'></a> 191 <em class='comment'>     */</em>
-<a id='L192' name='L192'></a> 192     @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L193' name='L193'></a> 193     <a href='../S/1601.html#L86' title='Defined at 86 in src/java/lang/invoke/CallSite.java.'>CallSite</a> <a href='../R/10692.html' title='Multiple referred from 2 places.'>buildCallSite</a>() <strong class='reserved'>throws</strong> <a href='../S/1632.html#L31' title='Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.'>LambdaConversionException</a> <em class='brace'>{</em>
-<a id='L194' name='L194'></a> 194         <strong class='reserved'>final</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; innerClass = <a href='../S/1600.html#L249' title='Defined at 249 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>spinInnerClass</a>();
-<a id='L195' name='L195'></a> 195         <strong class='reserved'>if</strong> (invokedType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>() == 0) <em class='brace'>{</em>
-<a id='L196' name='L196'></a> 196             <strong class='reserved'>final</strong> <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a>&lt;?&gt;[] ctrs = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
-<a id='L197' name='L197'></a> 197                     <strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a>&lt;?&gt;[]&gt;() <em class='brace'>{</em>
-<a id='L198' name='L198'></a> 198                 @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L199' name='L199'></a> 199                 <strong class='reserved'>public</strong> <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a>&lt;?&gt;[] <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
-<a id='L200' name='L200'></a> 200                     <a href='../D/1833.html' title='Multiple defined in 2 places.'>Constructor</a>&lt;?&gt;[] ctrs = innerClass.<a href='../S/1722.html#L2018' title='Defined at 2018 in src/java/lang/Class.java.'>getDeclaredConstructors</a>();
-<a id='L201' name='L201'></a> 201                     <strong class='reserved'>if</strong> (ctrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 1) <em class='brace'>{</em>
-<a id='L202' name='L202'></a> 202                         <em class='comment'>// The lambda implementing inner class constructor is private, set</em>
-<a id='L203' name='L203'></a> 203                         <em class='comment'>// it accessible (by us) before creating the constant sole instance</em>
-<a id='L204' name='L204'></a> 204                         ctrs[0].<a href='../D/31850.html' title='Multiple defined in 2 places.'>setAccessible</a>(<strong class='reserved'>true</strong>);
-<a id='L205' name='L205'></a> 205                     <em class='brace'>}</em>
-<a id='L206' name='L206'></a> 206                     <strong class='reserved'>return</strong> ctrs;
-<a id='L207' name='L207'></a> 207                 <em class='brace'>}</em>
-<a id='L208' name='L208'></a> 208                     <em class='brace'>}</em>);
-<a id='L209' name='L209'></a> 209             <strong class='reserved'>if</strong> (ctrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> != 1) <em class='brace'>{</em>
-<a id='L210' name='L210'></a> 210                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1632.html#L31' title='Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.'>LambdaConversionException</a>("Expected one lambda constructor for "
-<a id='L211' name='L211'></a> 211                         + innerClass.<a href='../D/17480.html' title='Multiple defined in 4 places.'>getCanonicalName</a>() + ", got " + ctrs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
-<a id='L212' name='L212'></a> 212             <em class='brace'>}</em>
-<a id='L213' name='L213'></a> 213 
-<a id='L214' name='L214'></a> 214             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L215' name='L215'></a> 215                 <a href='../D/6272.html' title='Multiple defined in 7 places.'>Object</a> inst = ctrs[0].<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>();
-<a id='L216' name='L216'></a> 216                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1633.html#L34' title='Defined at 34 in src/java/lang/invoke/ConstantCallSite.java.'>ConstantCallSite</a>(<a href='../S/1619.html#L60' title='Defined at 60 in src/java/lang/invoke/MethodHandles.java.'>MethodHandles</a>.<a href='../D/13273.html' title='Multiple defined in 4 places.'>constant</a>(samBase, inst));
-<a id='L217' name='L217'></a> 217             <em class='brace'>}</em>
-<a id='L218' name='L218'></a> 218             <strong class='reserved'>catch</strong> (<a href='../S/1731.html#L35' title='Defined at 35 in src/java/lang/ReflectiveOperationException.java.'>ReflectiveOperationException</a> e) <em class='brace'>{</em>
-<a id='L219' name='L219'></a> 219                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1632.html#L31' title='Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.'>LambdaConversionException</a>("Exception instantiating lambda object", e);
-<a id='L220' name='L220'></a> 220             <em class='brace'>}</em>
-<a id='L221' name='L221'></a> 221         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L222' name='L222'></a> 222             <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L223' name='L223'></a> 223                 UNSAFE.ensureClassInitialized(innerClass);
-<a id='L224' name='L224'></a> 224                 <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../S/1633.html#L34' title='Defined at 34 in src/java/lang/invoke/ConstantCallSite.java.'>ConstantCallSite</a>(
-<a id='L225' name='L225'></a> 225                         <a href='../S/1619.html#L60' title='Defined at 60 in src/java/lang/invoke/MethodHandles.java.'>MethodHandles</a>.<a href='../S/1619.html#L512' title='Defined at 512 in src/java/lang/invoke/MethodHandles.java.'>Lookup</a>.IMPL_LOOKUP
-<a id='L226' name='L226'></a> 226                              .<a href='../S/1619.html#L776' title='Defined at 776 in src/java/lang/invoke/MethodHandles.java.'>findStatic</a>(innerClass, NAME_FACTORY, invokedType));
-<a id='L227' name='L227'></a> 227             <em class='brace'>}</em>
-<a id='L228' name='L228'></a> 228             <strong class='reserved'>catch</strong> (<a href='../S/1731.html#L35' title='Defined at 35 in src/java/lang/ReflectiveOperationException.java.'>ReflectiveOperationException</a> e) <em class='brace'>{</em>
-<a id='L229' name='L229'></a> 229                 <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1632.html#L31' title='Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.'>LambdaConversionException</a>("Exception finding constructor", e);
-<a id='L230' name='L230'></a> 230             <em class='brace'>}</em>
-<a id='L231' name='L231'></a> 231         <em class='brace'>}</em>
-<a id='L232' name='L232'></a> 232     <em class='brace'>}</em>
-<a id='L233' name='L233'></a> 233 
-<a id='L234' name='L234'></a> 234     <em class='comment'>/**</em>
-<a id='L235' name='L235'></a> 235 <em class='comment'>     * Generate a class file which implements the functional</em>
-<a id='L236' name='L236'></a> 236 <em class='comment'>     * interface, define and return the class.</em>
-<a id='L237' name='L237'></a> 237 <em class='comment'>     *</em>
-<a id='L238' name='L238'></a> 238 <em class='comment'>     * @implNote The class that is generated does not include signature</em>
-<a id='L239' name='L239'></a> 239 <em class='comment'>     * information for exceptions that may be present on the SAM method.</em>
-<a id='L240' name='L240'></a> 240 <em class='comment'>     * This is to reduce classfile size, and is harmless as checked exceptions</em>
-<a id='L241' name='L241'></a> 241 <em class='comment'>     * are erased anyway, no one will ever compile against this classfile,</em>
-<a id='L242' name='L242'></a> 242 <em class='comment'>     * and we make no guarantees about the reflective properties of lambda</em>
-<a id='L243' name='L243'></a> 243 <em class='comment'>     * objects.</em>
-<a id='L244' name='L244'></a> 244 <em class='comment'>     *</em>
-<a id='L245' name='L245'></a> 245 <em class='comment'>     * @return a Class which implements the functional interface</em>
-<a id='L246' name='L246'></a> 246 <em class='comment'>     * @throws LambdaConversionException If properly formed functional interface</em>
-<a id='L247' name='L247'></a> 247 <em class='comment'>     * is not found</em>
-<a id='L248' name='L248'></a> 248 <em class='comment'>     */</em>
-<a id='L249' name='L249'></a> 249     <strong class='reserved'>private</strong> <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/1600.html#L194' title='Referred from 194 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>spinInnerClass</a>() <strong class='reserved'>throws</strong> <a href='../S/1632.html#L31' title='Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.'>LambdaConversionException</a> <em class='brace'>{</em>
-<a id='L250' name='L250'></a> 250         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[] <a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a>;
-<a id='L251' name='L251'></a> 251         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> samIntf = samBase.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/');
-<a id='L252' name='L252'></a> 252         <strong class='reserved'>boolean</strong> accidentallySerializable = !<a href='../D/26224.html' title='Multiple defined in 4 places.'>isSerializable</a> &amp;&amp; <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(samBase);
-<a id='L253' name='L253'></a> 253         <strong class='reserved'>if</strong> (markerInterfaces.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> == 0) <em class='brace'>{</em>
-<a id='L254' name='L254'></a> 254             <a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a> = <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[]<em class='brace'>{</em>samIntf<em class='brace'>}</em>;
-<a id='L255' name='L255'></a> 255         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L256' name='L256'></a> 256             <em class='comment'>// Assure no duplicate interfaces (ClassFormatError)</em>
-<a id='L257' name='L257'></a> 257             <a href='../S/1160.html#L85' title='Defined at 85 in src/java/util/Set.java.'>Set</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt; itfs = <strong class='reserved'>new</strong> <a href='../S/1146.html#L118' title='Defined at 118 in src/java/util/LinkedHashSet.java.'>LinkedHashSet</a>&lt;&gt;(markerInterfaces.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a> + 1);
-<a id='L258' name='L258'></a> 258             itfs.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(samIntf);
-<a id='L259' name='L259'></a> 259             <strong class='reserved'>for</strong> (<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; markerInterface : markerInterfaces) <em class='brace'>{</em>
-<a id='L260' name='L260'></a> 260                 itfs.<a href='../D/10632.html' title='Multiple defined in 301 places.'>add</a>(markerInterface.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/'));
-<a id='L261' name='L261'></a> 261                 accidentallySerializable |= !<a href='../D/26224.html' title='Multiple defined in 4 places.'>isSerializable</a> &amp;&amp; <a href='../S/1407.html#L169' title='Defined at 169 in src/java/io/Serializable.java.'>Serializable</a>.<strong class='reserved'>class</strong>.<a href='../D/25213.html' title='Multiple defined in 7 places.'>isAssignableFrom</a>(markerInterface);
-<a id='L262' name='L262'></a> 262             <em class='brace'>}</em>
-<a id='L263' name='L263'></a> 263             <a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a> = itfs.<a href='../D/35348.html' title='Multiple defined in 117 places.'>toArray</a>(<strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>[itfs.<a href='../D/34593.html' title='Multiple defined in 204 places.'>size</a>()]);
-<a id='L264' name='L264'></a> 264         <em class='brace'>}</em>
-<a id='L265' name='L265'></a> 265 
-<a id='L266' name='L266'></a> 266         cw.<a href='../D/36419.html' title='Multiple defined in 21 places.'>visit</a>(CLASSFILE_VERSION, ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC,
-<a id='L267' name='L267'></a> 267                  lambdaClassName, <strong class='reserved'>null</strong>,
-<a id='L268' name='L268'></a> 268                  JAVA_LANG_OBJECT, <a href='../D/24908.html' title='Multiple defined in 2 places.'>interfaces</a>);
-<a id='L269' name='L269'></a> 269 
-<a id='L270' name='L270'></a> 270         <em class='comment'>// Generate final fields to be filled in by constructor</em>
-<a id='L271' name='L271'></a> 271         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; argDescs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
-<a id='L272' name='L272'></a> 272             FieldVisitor fv = cw.<a href='../D/36544.html' title='Multiple defined in 4 places.'>visitField</a>(ACC_PRIVATE + ACC_FINAL,
-<a id='L273' name='L273'></a> 273                                             argNames[i],
-<a id='L274' name='L274'></a> 274                                             argDescs[i],
-<a id='L275' name='L275'></a> 275                                             <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);
-<a id='L276' name='L276'></a> 276             fv.visitEnd();
-<a id='L277' name='L277'></a> 277         <em class='brace'>}</em>
-<a id='L278' name='L278'></a> 278 
-<a id='L279' name='L279'></a> 279         <a href='../S/1600.html#L352' title='Defined at 352 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateConstructor</a>();
-<a id='L280' name='L280'></a> 280 
-<a id='L281' name='L281'></a> 281         <strong class='reserved'>if</strong> (invokedType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>() != 0) <em class='brace'>{</em>
-<a id='L282' name='L282'></a> 282             <a href='../S/1600.html#L332' title='Defined at 332 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateFactory</a>();
-<a id='L283' name='L283'></a> 283         <em class='brace'>}</em>
-<a id='L284' name='L284'></a> 284 
-<a id='L285' name='L285'></a> 285         <em class='comment'>// Forward the SAM method</em>
-<a id='L286' name='L286'></a> 286         MethodVisitor mv = cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PUBLIC, samMethodName,
-<a id='L287' name='L287'></a> 287                                           samMethodType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>(), <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);
-<a id='L288' name='L288'></a> 288         mv.<a href='../D/36432.html' title='Multiple defined in 5 places.'>visitAnnotation</a>("Ljava/lang/invoke/LambdaForm$Hidden;", <strong class='reserved'>true</strong>);
-<a id='L289' name='L289'></a> 289         <strong class='reserved'>new</strong> <a href='../S/1600.html#L449' title='Defined at 449 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>ForwardingMethodGenerator</a>(mv).<a href='../D/16632.html' title='Multiple defined in 7 places.'>generate</a>(samMethodType);
-<a id='L290' name='L290'></a> 290 
-<a id='L291' name='L291'></a> 291         <em class='comment'>// Forward the bridges</em>
-<a id='L292' name='L292'></a> 292         <strong class='reserved'>if</strong> (additionalBridges != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L293' name='L293'></a> 293             <strong class='reserved'>for</strong> (<a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> mt : additionalBridges) <em class='brace'>{</em>
-<a id='L294' name='L294'></a> 294                 mv = cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PUBLIC|ACC_BRIDGE, samMethodName,
-<a id='L295' name='L295'></a> 295                                     mt.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>(), <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);
-<a id='L296' name='L296'></a> 296                 mv.<a href='../D/36432.html' title='Multiple defined in 5 places.'>visitAnnotation</a>("Ljava/lang/invoke/LambdaForm$Hidden;", <strong class='reserved'>true</strong>);
-<a id='L297' name='L297'></a> 297                 <strong class='reserved'>new</strong> <a href='../S/1600.html#L449' title='Defined at 449 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>ForwardingMethodGenerator</a>(mv).<a href='../D/16632.html' title='Multiple defined in 7 places.'>generate</a>(mt);
-<a id='L298' name='L298'></a> 298             <em class='brace'>}</em>
-<a id='L299' name='L299'></a> 299         <em class='brace'>}</em>
-<a id='L300' name='L300'></a> 300 
-<a id='L301' name='L301'></a> 301         <strong class='reserved'>if</strong> (<a href='../D/26224.html' title='Multiple defined in 4 places.'>isSerializable</a>)
-<a id='L302' name='L302'></a> 302             <a href='../S/1600.html#L377' title='Defined at 377 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateSerializationFriendlyMethods</a>();
-<a id='L303' name='L303'></a> 303         <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (accidentallySerializable)
-<a id='L304' name='L304'></a> 304             <a href='../S/1600.html#L417' title='Defined at 417 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateSerializationHostileMethods</a>();
-<a id='L305' name='L305'></a> 305 
-<a id='L306' name='L306'></a> 306         cw.visitEnd();
-<a id='L307' name='L307'></a> 307 
-<a id='L308' name='L308'></a> 308         <em class='comment'>// Define the generated class in this VM.</em>
-<a id='L309' name='L309'></a> 309 
-<a id='L310' name='L310'></a> 310         <strong class='reserved'>final</strong> <strong class='reserved'>byte</strong>[] classBytes = cw.<a href='../D/35362.html' title='Multiple defined in 10 places.'>toByteArray</a>();
-<a id='L311' name='L311'></a> 311 
-<a id='L312' name='L312'></a> 312         <em class='comment'>// If requested, dump out to a file for debugging purposes</em>
-<a id='L313' name='L313'></a> 313         <strong class='reserved'>if</strong> (dumper != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L314' name='L314'></a> 314             <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>&gt;() <em class='brace'>{</em>
-<a id='L315' name='L315'></a> 315                 @<a href='../S/1740.html#L51' title='Defined at 51 in src/java/lang/Override.java.'>Override</a>
-<a id='L316' name='L316'></a> 316                 <strong class='reserved'>public</strong> <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
-<a id='L317' name='L317'></a> 317                     dumper.<a href='../D/15247.html' title='Multiple defined in 2 places.'>dumpClass</a>(lambdaClassName, classBytes);
-<a id='L318' name='L318'></a> 318                     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L319' name='L319'></a> 319                 <em class='brace'>}</em>
-<a id='L320' name='L320'></a> 320             <em class='brace'>}</em>, <strong class='reserved'>null</strong>,
-<a id='L321' name='L321'></a> 321             <strong class='reserved'>new</strong> <a href='../S/1426.html#L100' title='Defined at 100 in src/java/io/FilePermission.java.'>FilePermission</a>("&lt;&lt;ALL FILES&gt;&gt;", "read, write"),
-<a id='L322' name='L322'></a> 322             <em class='comment'>// createDirectories may need it</em>
-<a id='L323' name='L323'></a> 323             <strong class='reserved'>new</strong> <a href='../S/830.html#L91' title='Defined at 91 in src/java/util/PropertyPermission.java.'>PropertyPermission</a>("user.dir", "read"));
-<a id='L324' name='L324'></a> 324         <em class='brace'>}</em>
-<a id='L325' name='L325'></a> 325 
-<a id='L326' name='L326'></a> 326         <strong class='reserved'>return</strong> UNSAFE.defineAnonymousClass(targetClass, classBytes, <strong class='reserved'>null</strong>);
-<a id='L327' name='L327'></a> 327     <em class='brace'>}</em>
-<a id='L328' name='L328'></a> 328 
-<a id='L329' name='L329'></a> 329     <em class='comment'>/**</em>
-<a id='L330' name='L330'></a> 330 <em class='comment'>     * Generate the factory method for the class</em>
-<a id='L331' name='L331'></a> 331 <em class='comment'>     */</em>
-<a id='L332' name='L332'></a> 332     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1600.html#L282' title='Referred from 282 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateFactory</a>() <em class='brace'>{</em>
-<a id='L333' name='L333'></a> 333         MethodVisitor m = cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PRIVATE | ACC_STATIC, NAME_FACTORY, invokedType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>(), <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);
-<a id='L334' name='L334'></a> 334         m.<a href='../D/36461.html' title='Multiple defined in 3 places.'>visitCode</a>();
-<a id='L335' name='L335'></a> 335         m.visitTypeInsn(<a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, lambdaClassName);
-<a id='L336' name='L336'></a> 336         m.visitInsn(Opcodes.<a href='../D/2160.html' title='Multiple defined in 3 places.'>DUP</a>);
-<a id='L337' name='L337'></a> 337         <strong class='reserved'>int</strong> <a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a> = invokedType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>();
-<a id='L338' name='L338'></a> 338         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> typeIndex = 0, varIndex = 0; typeIndex &lt; <a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>; typeIndex++) <em class='brace'>{</em>
-<a id='L339' name='L339'></a> 339             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; argType = invokedType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(typeIndex);
-<a id='L340' name='L340'></a> 340             m.visitVarInsn(<a href='../S/1600.html#L534' title='Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getLoadOpcode</a>(argType), varIndex);
-<a id='L341' name='L341'></a> 341             varIndex += <a href='../S/1600.html#L525' title='Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getParameterSize</a>(argType);
-<a id='L342' name='L342'></a> 342         <em class='brace'>}</em>
-<a id='L343' name='L343'></a> 343         m.visitMethodInsn(<a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>, lambdaClassName, NAME_CTOR, constructorType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>(), <strong class='reserved'>false</strong>);
-<a id='L344' name='L344'></a> 344         m.visitInsn(<a href='../S/4753.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ARETURN.java.'>ARETURN</a>);
-<a id='L345' name='L345'></a> 345         m.visitMaxs(-1, -1);
-<a id='L346' name='L346'></a> 346         m.visitEnd();
-<a id='L347' name='L347'></a> 347     <em class='brace'>}</em>
-<a id='L348' name='L348'></a> 348 
-<a id='L349' name='L349'></a> 349     <em class='comment'>/**</em>
-<a id='L350' name='L350'></a> 350 <em class='comment'>     * Generate the constructor for the class</em>
-<a id='L351' name='L351'></a> 351 <em class='comment'>     */</em>
-<a id='L352' name='L352'></a> 352     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1600.html#L279' title='Referred from 279 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateConstructor</a>() <em class='brace'>{</em>
-<a id='L353' name='L353'></a> 353         <em class='comment'>// Generate constructor</em>
-<a id='L354' name='L354'></a> 354         MethodVisitor ctor = cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PRIVATE, NAME_CTOR,
-<a id='L355' name='L355'></a> 355                                             constructorType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>(), <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>);
-<a id='L356' name='L356'></a> 356         ctor.<a href='../D/36461.html' title='Multiple defined in 3 places.'>visitCode</a>();
-<a id='L357' name='L357'></a> 357         ctor.visitVarInsn(<a href='../S/4754.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.'>ALOAD</a>, 0);
-<a id='L358' name='L358'></a> 358         ctor.visitMethodInsn(<a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>, JAVA_LANG_OBJECT, NAME_CTOR,
-<a id='L359' name='L359'></a> 359                              METHOD_DESCRIPTOR_VOID, <strong class='reserved'>false</strong>);
-<a id='L360' name='L360'></a> 360         <strong class='reserved'>int</strong> <a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a> = invokedType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>();
-<a id='L361' name='L361'></a> 361         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0, lvIndex = 0; i &lt; <a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>; i++) <em class='brace'>{</em>
-<a id='L362' name='L362'></a> 362             ctor.visitVarInsn(<a href='../S/4754.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.'>ALOAD</a>, 0);
-<a id='L363' name='L363'></a> 363             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; argType = invokedType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(i);
-<a id='L364' name='L364'></a> 364             ctor.visitVarInsn(<a href='../S/1600.html#L534' title='Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getLoadOpcode</a>(argType), lvIndex + 1);
-<a id='L365' name='L365'></a> 365             lvIndex += <a href='../S/1600.html#L525' title='Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getParameterSize</a>(argType);
-<a id='L366' name='L366'></a> 366             ctor.visitFieldInsn(<a href='../S/4747.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/PUTFIELD.java.'>PUTFIELD</a>, lambdaClassName, argNames[i], argDescs[i]);
-<a id='L367' name='L367'></a> 367         <em class='brace'>}</em>
-<a id='L368' name='L368'></a> 368         ctor.visitInsn(<a href='../D/7024.html' title='Multiple defined in 4 places.'>RETURN</a>);
-<a id='L369' name='L369'></a> 369         <em class='comment'>// Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored</em>
-<a id='L370' name='L370'></a> 370         ctor.visitMaxs(-1, -1);
-<a id='L371' name='L371'></a> 371         ctor.visitEnd();
-<a id='L372' name='L372'></a> 372     <em class='brace'>}</em>
-<a id='L373' name='L373'></a> 373 
-<a id='L374' name='L374'></a> 374     <em class='comment'>/**</em>
-<a id='L375' name='L375'></a> 375 <em class='comment'>     * Generate a writeReplace method that supports serialization</em>
-<a id='L376' name='L376'></a> 376 <em class='comment'>     */</em>
-<a id='L377' name='L377'></a> 377     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1600.html#L302' title='Referred from 302 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateSerializationFriendlyMethods</a>() <em class='brace'>{</em>
-<a id='L378' name='L378'></a> 378         <a href='../S/1625.html#L35' title='Defined at 35 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>TypeConvertingMethodAdapter</a> mv
-<a id='L379' name='L379'></a> 379                 = <strong class='reserved'>new</strong> <a href='../S/1625.html#L35' title='Defined at 35 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>TypeConvertingMethodAdapter</a>(
-<a id='L380' name='L380'></a> 380                     cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PRIVATE + ACC_FINAL,
-<a id='L381' name='L381'></a> 381                     NAME_METHOD_WRITE_REPLACE, DESCR_METHOD_WRITE_REPLACE,
-<a id='L382' name='L382'></a> 382                     <strong class='reserved'>null</strong>, <strong class='reserved'>null</strong>));
-<a id='L383' name='L383'></a> 383 
-<a id='L384' name='L384'></a> 384         mv.<a href='../D/36461.html' title='Multiple defined in 3 places.'>visitCode</a>();
-<a id='L385' name='L385'></a> 385         mv.visitTypeInsn(<a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, NAME_SERIALIZED_LAMBDA);
-<a id='L386' name='L386'></a> 386         mv.visitInsn(<a href='../D/2160.html' title='Multiple defined in 3 places.'>DUP</a>);
-<a id='L387' name='L387'></a> 387         mv.visitLdcInsn(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(targetClass));
-<a id='L388' name='L388'></a> 388         mv.visitLdcInsn(invokedType.<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/'));
-<a id='L389' name='L389'></a> 389         mv.visitLdcInsn(samMethodName);
-<a id='L390' name='L390'></a> 390         mv.visitLdcInsn(samMethodType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>());
-<a id='L391' name='L391'></a> 391         mv.visitLdcInsn(implInfo.<a href='../D/21916.html' title='Multiple defined in 3 places.'>getReferenceKind</a>());
-<a id='L392' name='L392'></a> 392         mv.visitLdcInsn(implInfo.<a href='../D/18264.html' title='Multiple defined in 10 places.'>getDeclaringClass</a>().<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>().<a href='../D/31035.html' title='Multiple defined in 65 places.'>replace</a>('.', '/'));
-<a id='L393' name='L393'></a> 393         mv.visitLdcInsn(implInfo.<a href='../D/20784.html' title='Multiple defined in 355 places.'>getName</a>());
-<a id='L394' name='L394'></a> 394         mv.visitLdcInsn(implInfo.<a href='../D/20598.html' title='Multiple defined in 3 places.'>getMethodType</a>().<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>());
-<a id='L395' name='L395'></a> 395         mv.visitLdcInsn(instantiatedMethodType.<a href='../D/35442.html' title='Multiple defined in 2 places.'>toMethodDescriptorString</a>());
-<a id='L396' name='L396'></a> 396         mv.<a href='../S/1625.html#L291' title='Defined at 291 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>iconst</a>(argDescs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>);
-<a id='L397' name='L397'></a> 397         mv.visitTypeInsn(<a href='../S/4730.html#L68' title='Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/ANEWARRAY.java.'>ANEWARRAY</a>, JAVA_LANG_OBJECT);
-<a id='L398' name='L398'></a> 398         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; argDescs.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
-<a id='L399' name='L399'></a> 399             mv.visitInsn(<a href='../D/2160.html' title='Multiple defined in 3 places.'>DUP</a>);
-<a id='L400' name='L400'></a> 400             mv.<a href='../S/1625.html#L291' title='Defined at 291 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>iconst</a>(i);
-<a id='L401' name='L401'></a> 401             mv.visitVarInsn(<a href='../S/4754.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.'>ALOAD</a>, 0);
-<a id='L402' name='L402'></a> 402             mv.visitFieldInsn(<a href='../S/4792.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/GETFIELD.java.'>GETFIELD</a>, lambdaClassName, argNames[i], argDescs[i]);
-<a id='L403' name='L403'></a> 403             mv.<a href='../S/1625.html#L141' title='Defined at 141 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>boxIfTypePrimitive</a>(<a href='../D/9178.html' title='Multiple defined in 19 places.'>Type</a>.<a href='../D/23311.html' title='Multiple defined in 232 places.'>getType</a>(argDescs[i]));
-<a id='L404' name='L404'></a> 404             mv.visitInsn(<a href='../S/4685.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/AASTORE.java.'>AASTORE</a>);
-<a id='L405' name='L405'></a> 405         <em class='brace'>}</em>
-<a id='L406' name='L406'></a> 406         mv.visitMethodInsn(<a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>, NAME_SERIALIZED_LAMBDA, NAME_CTOR,
-<a id='L407' name='L407'></a> 407                 DESCR_CTOR_SERIALIZED_LAMBDA, <strong class='reserved'>false</strong>);
-<a id='L408' name='L408'></a> 408         mv.visitInsn(<a href='../S/4753.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ARETURN.java.'>ARETURN</a>);
-<a id='L409' name='L409'></a> 409         <em class='comment'>// Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored</em>
-<a id='L410' name='L410'></a> 410         mv.visitMaxs(-1, -1);
-<a id='L411' name='L411'></a> 411         mv.visitEnd();
-<a id='L412' name='L412'></a> 412     <em class='brace'>}</em>
-<a id='L413' name='L413'></a> 413 
-<a id='L414' name='L414'></a> 414     <em class='comment'>/**</em>
-<a id='L415' name='L415'></a> 415 <em class='comment'>     * Generate a readObject/writeObject method that is hostile to serialization</em>
-<a id='L416' name='L416'></a> 416 <em class='comment'>     */</em>
-<a id='L417' name='L417'></a> 417     <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1600.html#L304' title='Referred from 304 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>generateSerializationHostileMethods</a>() <em class='brace'>{</em>
-<a id='L418' name='L418'></a> 418         MethodVisitor mv = cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PRIVATE + ACC_FINAL,
-<a id='L419' name='L419'></a> 419                                           NAME_METHOD_WRITE_OBJECT, DESCR_METHOD_WRITE_OBJECT,
-<a id='L420' name='L420'></a> 420                                           <strong class='reserved'>null</strong>, SER_HOSTILE_EXCEPTIONS);
-<a id='L421' name='L421'></a> 421         mv.<a href='../D/36461.html' title='Multiple defined in 3 places.'>visitCode</a>();
-<a id='L422' name='L422'></a> 422         mv.visitTypeInsn(<a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, NAME_NOT_SERIALIZABLE_EXCEPTION);
-<a id='L423' name='L423'></a> 423         mv.visitInsn(<a href='../D/2160.html' title='Multiple defined in 3 places.'>DUP</a>);
-<a id='L424' name='L424'></a> 424         mv.visitLdcInsn("Non-serializable lambda");
-<a id='L425' name='L425'></a> 425         mv.visitMethodInsn(<a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
-<a id='L426' name='L426'></a> 426                            DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, <strong class='reserved'>false</strong>);
-<a id='L427' name='L427'></a> 427         mv.visitInsn(<a href='../S/4829.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ATHROW.java.'>ATHROW</a>);
-<a id='L428' name='L428'></a> 428         mv.visitMaxs(-1, -1);
-<a id='L429' name='L429'></a> 429         mv.visitEnd();
-<a id='L430' name='L430'></a> 430 
-<a id='L431' name='L431'></a> 431         mv = cw.<a href='../D/36667.html' title='Multiple defined in 7 places.'>visitMethod</a>(ACC_PRIVATE + ACC_FINAL,
-<a id='L432' name='L432'></a> 432                             NAME_METHOD_READ_OBJECT, DESCR_METHOD_READ_OBJECT,
-<a id='L433' name='L433'></a> 433                             <strong class='reserved'>null</strong>, SER_HOSTILE_EXCEPTIONS);
-<a id='L434' name='L434'></a> 434         mv.<a href='../D/36461.html' title='Multiple defined in 3 places.'>visitCode</a>();
-<a id='L435' name='L435'></a> 435         mv.visitTypeInsn(<a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, NAME_NOT_SERIALIZABLE_EXCEPTION);
-<a id='L436' name='L436'></a> 436         mv.visitInsn(<a href='../D/2160.html' title='Multiple defined in 3 places.'>DUP</a>);
-<a id='L437' name='L437'></a> 437         mv.visitLdcInsn("Non-serializable lambda");
-<a id='L438' name='L438'></a> 438         mv.visitMethodInsn(<a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
-<a id='L439' name='L439'></a> 439                            DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, <strong class='reserved'>false</strong>);
-<a id='L440' name='L440'></a> 440         mv.visitInsn(<a href='../S/4829.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ATHROW.java.'>ATHROW</a>);
-<a id='L441' name='L441'></a> 441         mv.visitMaxs(-1, -1);
-<a id='L442' name='L442'></a> 442         mv.visitEnd();
-<a id='L443' name='L443'></a> 443     <em class='brace'>}</em>
-<a id='L444' name='L444'></a> 444 
-<a id='L445' name='L445'></a> 445     <em class='comment'>/**</em>
-<a id='L446' name='L446'></a> 446 <em class='comment'>     * This class generates a method body which calls the lambda implementation</em>
-<a id='L447' name='L447'></a> 447 <em class='comment'>     * method, converting arguments, as needed.</em>
-<a id='L448' name='L448'></a> 448 <em class='comment'>     */</em>
-<a id='L449' name='L449'></a> 449     <strong class='reserved'>private</strong> <strong class='reserved'>class</strong> <a href='../R/3112.html' title='Multiple referred from 2 places.'>ForwardingMethodGenerator</a> <strong class='reserved'>extends</strong> <a href='../S/1625.html#L35' title='Defined at 35 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>TypeConvertingMethodAdapter</a> <em class='brace'>{</em>
-<a id='L450' name='L450'></a> 450 
-<a id='L451' name='L451'></a> 451         ForwardingMethodGenerator(MethodVisitor mv) <em class='brace'>{</em>
-<a id='L452' name='L452'></a> 452             <strong class='reserved'>super</strong>(mv);
-<a id='L453' name='L453'></a> 453         <em class='brace'>}</em>
-<a id='L454' name='L454'></a> 454 
-<a id='L455' name='L455'></a> 455         <strong class='reserved'>void</strong> <a href='../R/14840.html' title='Multiple referred from 4 places.'>generate</a>(<a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> <a href='../D/27690.html' title='Multiple defined in 8 places.'>methodType</a>) <em class='brace'>{</em>
-<a id='L456' name='L456'></a> 456             <a href='../D/36461.html' title='Multiple defined in 3 places.'>visitCode</a>();
-<a id='L457' name='L457'></a> 457 
-<a id='L458' name='L458'></a> 458             <strong class='reserved'>if</strong> (implKind == <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_newInvokeSpecial) <em class='brace'>{</em>
-<a id='L459' name='L459'></a> 459                 visitTypeInsn(<a href='../S/4824.html#L69' title='Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.'>NEW</a>, implMethodClassName);
-<a id='L460' name='L460'></a> 460                 visitInsn(<a href='../D/2160.html' title='Multiple defined in 3 places.'>DUP</a>);
-<a id='L461' name='L461'></a> 461             <em class='brace'>}</em>
-<a id='L462' name='L462'></a> 462             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; argNames.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>; i++) <em class='brace'>{</em>
-<a id='L463' name='L463'></a> 463                 visitVarInsn(<a href='../S/4754.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.'>ALOAD</a>, 0);
-<a id='L464' name='L464'></a> 464                 visitFieldInsn(<a href='../S/4792.html#L72' title='Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/GETFIELD.java.'>GETFIELD</a>, lambdaClassName, argNames[i], argDescs[i]);
-<a id='L465' name='L465'></a> 465             <em class='brace'>}</em>
-<a id='L466' name='L466'></a> 466 
-<a id='L467' name='L467'></a> 467             <a href='../S/1600.html#L485' title='Defined at 485 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>convertArgumentTypes</a>(<a href='../D/27690.html' title='Multiple defined in 8 places.'>methodType</a>);
-<a id='L468' name='L468'></a> 468 
-<a id='L469' name='L469'></a> 469             <em class='comment'>// Invoke the method we want to forward to</em>
-<a id='L470' name='L470'></a> 470             visitMethodInsn(<a href='../S/1600.html#L507' title='Defined at 507 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>invocationOpcode</a>(), implMethodClassName,
-<a id='L471' name='L471'></a> 471                             implMethodName, implMethodDesc,
-<a id='L472' name='L472'></a> 472                             implDefiningClass.<a href='../D/25735.html' title='Multiple defined in 6 places.'>isInterface</a>());
-<a id='L473' name='L473'></a> 473 
-<a id='L474' name='L474'></a> 474             <em class='comment'>// Convert the return value (if any) and return it</em>
-<a id='L475' name='L475'></a> 475             <em class='comment'>// Note: if adapting from non-void to void, the 'return'</em>
-<a id='L476' name='L476'></a> 476             <em class='comment'>// instruction will pop the unneeded result</em>
-<a id='L477' name='L477'></a> 477             <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; samReturnClass = <a href='../D/27690.html' title='Multiple defined in 8 places.'>methodType</a>.<a href='../D/31403.html' title='Multiple defined in 4 places.'>returnType</a>();
-<a id='L478' name='L478'></a> 478             <a href='../S/1625.html#L214' title='Defined at 214 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>convertType</a>(implMethodReturnClass, samReturnClass, samReturnClass);
-<a id='L479' name='L479'></a> 479             visitInsn(<a href='../S/1600.html#L541' title='Defined at 541 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getReturnOpcode</a>(samReturnClass));
-<a id='L480' name='L480'></a> 480             <em class='comment'>// Maxs computed by ClassWriter.COMPUTE_MAXS,these arguments ignored</em>
-<a id='L481' name='L481'></a> 481             visitMaxs(-1, -1);
-<a id='L482' name='L482'></a> 482             visitEnd();
-<a id='L483' name='L483'></a> 483         <em class='brace'>}</em>
-<a id='L484' name='L484'></a> 484 
-<a id='L485' name='L485'></a> 485         <strong class='reserved'>private</strong> <strong class='reserved'>void</strong> <a href='../S/1600.html#L467' title='Referred from 467 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>convertArgumentTypes</a>(<a href='../D/5628.html' title='Multiple defined in 4 places.'>MethodType</a> samType) <em class='brace'>{</em>
-<a id='L486' name='L486'></a> 486             <strong class='reserved'>int</strong> lvIndex = 0;
-<a id='L487' name='L487'></a> 487             <strong class='reserved'>boolean</strong> samIncludesReceiver = implIsInstanceMethod &amp;&amp;
-<a id='L488' name='L488'></a> 488                                                    invokedType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>() == 0;
-<a id='L489' name='L489'></a> 489             <strong class='reserved'>int</strong> samReceiverLength = samIncludesReceiver ? 1 : 0;
-<a id='L490' name='L490'></a> 490             <strong class='reserved'>if</strong> (samIncludesReceiver) <em class='brace'>{</em>
-<a id='L491' name='L491'></a> 491                 <em class='comment'>// push receiver</em>
-<a id='L492' name='L492'></a> 492                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; rcvrType = samType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(0);
-<a id='L493' name='L493'></a> 493                 visitVarInsn(<a href='../S/1600.html#L534' title='Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getLoadOpcode</a>(rcvrType), lvIndex + 1);
-<a id='L494' name='L494'></a> 494                 lvIndex += <a href='../S/1600.html#L525' title='Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getParameterSize</a>(rcvrType);
-<a id='L495' name='L495'></a> 495                 <a href='../S/1625.html#L214' title='Defined at 214 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>convertType</a>(rcvrType, implDefiningClass, instantiatedMethodType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(0));
-<a id='L496' name='L496'></a> 496             <em class='brace'>}</em>
-<a id='L497' name='L497'></a> 497             <strong class='reserved'>int</strong> samParametersLength = samType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>();
-<a id='L498' name='L498'></a> 498             <strong class='reserved'>int</strong> argOffset = implMethodType.<a href='../D/29054.html' title='Multiple defined in 2 places.'>parameterCount</a>() - samParametersLength;
-<a id='L499' name='L499'></a> 499             <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = samReceiverLength; i &lt; samParametersLength; i++) <em class='brace'>{</em>
-<a id='L500' name='L500'></a> 500                 <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; argType = samType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(i);
-<a id='L501' name='L501'></a> 501                 visitVarInsn(<a href='../S/1600.html#L534' title='Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getLoadOpcode</a>(argType), lvIndex + 1);
-<a id='L502' name='L502'></a> 502                 lvIndex += <a href='../S/1600.html#L525' title='Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getParameterSize</a>(argType);
-<a id='L503' name='L503'></a> 503                 <a href='../S/1625.html#L214' title='Defined at 214 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.'>convertType</a>(argType, implMethodType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(argOffset + i), instantiatedMethodType.<a href='../D/29061.html' title='Multiple defined in 3 places.'>parameterType</a>(i));
-<a id='L504' name='L504'></a> 504             <em class='brace'>}</em>
-<a id='L505' name='L505'></a> 505         <em class='brace'>}</em>
-<a id='L506' name='L506'></a> 506 
-<a id='L507' name='L507'></a> 507         <strong class='reserved'>private</strong> <strong class='reserved'>int</strong> <a href='../S/1600.html#L470' title='Referred from 470 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>invocationOpcode</a>() <strong class='reserved'>throws</strong> <a href='../D/4325.html' title='Multiple defined in 2 places.'>InternalError</a> <em class='brace'>{</em>
-<a id='L508' name='L508'></a> 508             <strong class='reserved'>switch</strong> (implKind) <em class='brace'>{</em>
-<a id='L509' name='L509'></a> 509                 <strong class='reserved'>case</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_invokeStatic:
-<a id='L510' name='L510'></a> 510                     <strong class='reserved'>return</strong> <a href='../S/4756.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKESTATIC.java.'>INVOKESTATIC</a>;
-<a id='L511' name='L511'></a> 511                 <strong class='reserved'>case</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_newInvokeSpecial:
-<a id='L512' name='L512'></a> 512                     <strong class='reserved'>return</strong> <a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>;
-<a id='L513' name='L513'></a> 513                  <strong class='reserved'>case</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_invokeVirtual:
-<a id='L514' name='L514'></a> 514                     <strong class='reserved'>return</strong> <a href='../S/4737.html#L70' title='Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKEVIRTUAL.java.'>INVOKEVIRTUAL</a>;
-<a id='L515' name='L515'></a> 515                 <strong class='reserved'>case</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_invokeInterface:
-<a id='L516' name='L516'></a> 516                     <strong class='reserved'>return</strong> <a href='../S/4624.html#L73' title='Defined at 73 in src/com/sun/org/apache/bcel/internal/generic/INVOKEINTERFACE.java.'>INVOKEINTERFACE</a>;
-<a id='L517' name='L517'></a> 517                 <strong class='reserved'>case</strong> <a href='../S/1607.html#L126' title='Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.'>MethodHandleInfo</a>.REF_invokeSpecial:
-<a id='L518' name='L518'></a> 518                     <strong class='reserved'>return</strong> <a href='../S/4695.html#L71' title='Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.'>INVOKESPECIAL</a>;
-<a id='L519' name='L519'></a> 519                 <strong class='reserved'>default</strong>:
-<a id='L520' name='L520'></a> 520                     <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4325.html' title='Multiple defined in 2 places.'>InternalError</a>("Unexpected invocation kind: " + implKind);
-<a id='L521' name='L521'></a> 521             <em class='brace'>}</em>
-<a id='L522' name='L522'></a> 522         <em class='brace'>}</em>
-<a id='L523' name='L523'></a> 523     <em class='brace'>}</em>
-<a id='L524' name='L524'></a> 524 
-<a id='L525' name='L525'></a> 525     <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/18256.html' title='Multiple referred from 4 places.'>getParameterSize</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
-<a id='L526' name='L526'></a> 526         <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE) <em class='brace'>{</em>
-<a id='L527' name='L527'></a> 527             <strong class='reserved'>return</strong> 0;
-<a id='L528' name='L528'></a> 528         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>.TYPE || <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../D/2585.html' title='Multiple defined in 10 places.'>Double</a>.TYPE) <em class='brace'>{</em>
-<a id='L529' name='L529'></a> 529             <strong class='reserved'>return</strong> 2;
-<a id='L530' name='L530'></a> 530         <em class='brace'>}</em>
-<a id='L531' name='L531'></a> 531         <strong class='reserved'>return</strong> 1;
-<a id='L532' name='L532'></a> 532     <em class='brace'>}</em>
-<a id='L533' name='L533'></a> 533 
-<a id='L534' name='L534'></a> 534     <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/17402.html' title='Multiple referred from 4 places.'>getLoadOpcode</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
-<a id='L535' name='L535'></a> 535         <strong class='reserved'>if</strong>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE) <em class='brace'>{</em>
-<a id='L536' name='L536'></a> 536             <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../D/4325.html' title='Multiple defined in 2 places.'>InternalError</a>("Unexpected void type of load opcode");
-<a id='L537' name='L537'></a> 537         <em class='brace'>}</em>
-<a id='L538' name='L538'></a> 538         <strong class='reserved'>return</strong> <a href='../S/4623.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ILOAD.java.'>ILOAD</a> + <a href='../S/1600.html#L548' title='Defined at 548 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getOpcodeOffset</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
-<a id='L539' name='L539'></a> 539     <em class='brace'>}</em>
-<a id='L540' name='L540'></a> 540 
-<a id='L541' name='L541'></a> 541     <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../S/1600.html#L479' title='Referred from 479 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getReturnOpcode</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
-<a id='L542' name='L542'></a> 542         <strong class='reserved'>if</strong>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>.TYPE) <em class='brace'>{</em>
-<a id='L543' name='L543'></a> 543             <strong class='reserved'>return</strong> <a href='../D/7024.html' title='Multiple defined in 4 places.'>RETURN</a>;
-<a id='L544' name='L544'></a> 544         <em class='brace'>}</em>
-<a id='L545' name='L545'></a> 545         <strong class='reserved'>return</strong> <a href='../S/4721.html#L67' title='Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/IRETURN.java.'>IRETURN</a> + <a href='../S/1600.html#L548' title='Defined at 548 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.'>getOpcodeOffset</a>(<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>);
-<a id='L546' name='L546'></a> 546     <em class='brace'>}</em>
-<a id='L547' name='L547'></a> 547 
-<a id='L548' name='L548'></a> 548     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/18140.html' title='Multiple referred from 2 places.'>getOpcodeOffset</a>(<a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;?&gt; <a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>) <em class='brace'>{</em>
-<a id='L549' name='L549'></a> 549         <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a>.<a href='../D/26086.html' title='Multiple defined in 8 places.'>isPrimitive</a>()) <em class='brace'>{</em>
-<a id='L550' name='L550'></a> 550             <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../S/1720.html#L54' title='Defined at 54 in src/java/lang/Long.java.'>Long</a>.TYPE) <em class='brace'>{</em>
-<a id='L551' name='L551'></a> 551                 <strong class='reserved'>return</strong> 1;
-<a id='L552' name='L552'></a> 552             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../D/3293.html' title='Multiple defined in 10 places.'>Float</a>.TYPE) <em class='brace'>{</em>
-<a id='L553' name='L553'></a> 553                 <strong class='reserved'>return</strong> 2;
-<a id='L554' name='L554'></a> 554             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (<a href='../S/986.html#L3167' title='Defined at 3167 in src/java/util/regex/Pattern.java.'>c</a> == <a href='../D/2585.html' title='Multiple defined in 10 places.'>Double</a>.TYPE) <em class='brace'>{</em>
-<a id='L555' name='L555'></a> 555                 <strong class='reserved'>return</strong> 3;
-<a id='L556' name='L556'></a> 556             <em class='brace'>}</em>
-<a id='L557' name='L557'></a> 557             <strong class='reserved'>return</strong> 0;
-<a id='L558' name='L558'></a> 558         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L559' name='L559'></a> 559             <strong class='reserved'>return</strong> 4;
-<a id='L560' name='L560'></a> 560         <em class='brace'>}</em>
-<a id='L561' name='L561'></a> 561     <em class='brace'>}</em>
-<a id='L562' name='L562'></a> 562 
-<a id='L563' name='L563'></a> 563 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.lang.<a href="../D/25050.html" title="Multiple defined in 52 places.">invoke</a>;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> jdk.internal.org.objectweb.asm.*;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> sun.invoke.util.BytecodeDescriptor;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> sun.misc.Unsafe;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> sun.security.action.GetPropertyAction;
+<a id="L32" name="L32"></a>  32 
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.io.FilePermission;
+<a id="L34" name="L34"></a>  34 <strong class="reserved">import</strong> java.io.Serializable;
+<a id="L35" name="L35"></a>  35 <strong class="reserved">import</strong> java.lang.reflect.Constructor;
+<a id="L36" name="L36"></a>  36 <strong class="reserved">import</strong> java.security.AccessController;
+<a id="L37" name="L37"></a>  37 <strong class="reserved">import</strong> java.security.PrivilegedAction;
+<a id="L38" name="L38"></a>  38 <strong class="reserved">import</strong> java.util.LinkedHashSet;
+<a id="L39" name="L39"></a>  39 <strong class="reserved">import</strong> java.util.concurrent.atomic.AtomicInteger;
+<a id="L40" name="L40"></a>  40 <strong class="reserved">import</strong> java.util.PropertyPermission;
+<a id="L41" name="L41"></a>  41 <strong class="reserved">import</strong> java.util.Set;
+<a id="L42" name="L42"></a>  42 
+<a id="L43" name="L43"></a>  43 <strong class="reserved">import</strong> static jdk.internal.org.objectweb.asm.Opcodes.*;
+<a id="L44" name="L44"></a>  44 
+<a id="L45" name="L45"></a>  45 <em class="comment">/**</em>
+<a id="L46" name="L46"></a>  46 <em class="comment"> * Lambda metafactory implementation which dynamically creates an</em>
+<a id="L47" name="L47"></a>  47 <em class="comment"> * inner-class-like class per lambda callsite.</em>
+<a id="L48" name="L48"></a>  48 <em class="comment"> *</em>
+<a id="L49" name="L49"></a>  49 <em class="comment"> * @see LambdaMetafactory</em>
+<a id="L50" name="L50"></a>  50 <em class="comment"> */</em>
+<a id="L51" name="L51"></a>  51 <em class="comment">/* package */</em> <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../R/3827.html" title="Multiple referred from 2 places.">InnerClassLambdaMetafactory</a> <strong class="reserved">extends</strong> <a href="../S/1624.html#L39" title="Defined at 39 in src/java/lang/invoke/AbstractValidatingLambdaMetafactory.java.">AbstractValidatingLambdaMetafactory</a> <em class="brace">{</em>
+<a id="L52" name="L52"></a>  52     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> Unsafe UNSAFE = Unsafe.getUnsafe();
+<a id="L53" name="L53"></a>  53 
+<a id="L54" name="L54"></a>  54     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong> CLASSFILE_VERSION = 52;
+<a id="L55" name="L55"></a>  55     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> METHOD_DESCRIPTOR_VOID = <a href="../D/9178.html" title="Multiple defined in 19 places.">Type</a>.getMethodDescriptor(<a href="../D/9178.html" title="Multiple defined in 19 places.">Type</a>.VOID_TYPE);
+<a id="L56" name="L56"></a>  56     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> JAVA_LANG_OBJECT = "java/lang/Object";
+<a id="L57" name="L57"></a>  57     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_CTOR = "&lt;init&gt;";
+<a id="L58" name="L58"></a>  58     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_FACTORY = "get$Lambda";
+<a id="L59" name="L59"></a>  59 
+<a id="L60" name="L60"></a>  60     <em class="comment">//Serialization support</em>
+<a id="L61" name="L61"></a>  61     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_SERIALIZED_LAMBDA = "java/lang/invoke/SerializedLambda";
+<a id="L62" name="L62"></a>  62     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_NOT_SERIALIZABLE_EXCEPTION = "java/io/NotSerializableException";
+<a id="L63" name="L63"></a>  63     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> DESCR_METHOD_WRITE_REPLACE = "()Ljava/lang/Object;";
+<a id="L64" name="L64"></a>  64     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> DESCR_METHOD_WRITE_OBJECT = "(Ljava/io/ObjectOutputStream;)V";
+<a id="L65" name="L65"></a>  65     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> DESCR_METHOD_READ_OBJECT = "(Ljava/io/ObjectInputStream;)V";
+<a id="L66" name="L66"></a>  66     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_METHOD_WRITE_REPLACE = "writeReplace";
+<a id="L67" name="L67"></a>  67     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_METHOD_READ_OBJECT = "readObject";
+<a id="L68" name="L68"></a>  68     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> NAME_METHOD_WRITE_OBJECT = "writeObject";
+<a id="L69" name="L69"></a>  69     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> DESCR_CTOR_SERIALIZED_LAMBDA
+<a id="L70" name="L70"></a>  70             = <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a>.<a href="../D/27690.html" title="Multiple defined in 8 places.">methodType</a>(<strong class="reserved">void</strong>.<strong class="reserved">class</strong>,
+<a id="L71" name="L71"></a>  71                                     <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>.<strong class="reserved">class</strong>,
+<a id="L72" name="L72"></a>  72                                     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>,
+<a id="L73" name="L73"></a>  73                                     <strong class="reserved">int</strong>.<strong class="reserved">class</strong>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>,
+<a id="L74" name="L74"></a>  74                                     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>,
+<a id="L75" name="L75"></a>  75                                     <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a>[].<strong class="reserved">class</strong>).<a href="../R/29294.html" title="Multiple referred from 16 places.">toMethodDescriptorString</a>();
+<a id="L76" name="L76"></a>  76     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION
+<a id="L77" name="L77"></a>  77             = <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a>.<a href="../D/27690.html" title="Multiple defined in 8 places.">methodType</a>(<strong class="reserved">void</strong>.<strong class="reserved">class</strong>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>.<strong class="reserved">class</strong>).<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>();
+<a id="L78" name="L78"></a>  78     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] SER_HOSTILE_EXCEPTIONS = <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] <em class="brace">{</em>NAME_NOT_SERIALIZABLE_EXCEPTION<em class="brace">}</em>;
+<a id="L79" name="L79"></a>  79 
+<a id="L80" name="L80"></a>  80 
+<a id="L81" name="L81"></a>  81     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] EMPTY_STRING_ARRAY = <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[0];
+<a id="L82" name="L82"></a>  82 
+<a id="L83" name="L83"></a>  83     <em class="comment">// Used to ensure that each spun class name is unique</em>
+<a id="L84" name="L84"></a>  84     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/1089.html#L54" title="Defined at 54 in src/java/util/concurrent/atomic/AtomicInteger.java.">AtomicInteger</a> counter = <strong class="reserved">new</strong> <a href="../S/1089.html#L54" title="Defined at 54 in src/java/util/concurrent/atomic/AtomicInteger.java.">AtomicInteger</a>(0);
+<a id="L85" name="L85"></a>  85 
+<a id="L86" name="L86"></a>  86     <em class="comment">// For dumping generated classes to disk, for debugging purposes</em>
+<a id="L87" name="L87"></a>  87     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <a href="../S/1630.html#L46" title="Defined at 46 in src/java/lang/invoke/ProxyClassesDumper.java.">ProxyClassesDumper</a> dumper;
+<a id="L88" name="L88"></a>  88 
+<a id="L89" name="L89"></a>  89     <strong class="reserved">static</strong> <em class="brace">{</em>
+<a id="L90" name="L90"></a>  90         <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/26706.html" title="Multiple defined in 2 places.">key</a> = "jdk.internal.lambda.dumpProxyClasses";
+<a id="L91" name="L91"></a>  91         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> path = <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(
+<a id="L92" name="L92"></a>  92                 <strong class="reserved">new</strong> <a href="../D/3576.html" title="Multiple defined in 3 places.">GetPropertyAction</a>(<a href="../D/26706.html" title="Multiple defined in 2 places.">key</a>), <strong class="reserved">null</strong>,
+<a id="L93" name="L93"></a>  93                 <strong class="reserved">new</strong> <a href="../S/830.html#L91" title="Defined at 91 in src/java/util/PropertyPermission.java.">PropertyPermission</a>(<a href="../D/26706.html" title="Multiple defined in 2 places.">key</a> , "read"));
+<a id="L94" name="L94"></a>  94         dumper = (<strong class="reserved">null</strong> == path) ? <strong class="reserved">null</strong> : <a href="../S/1630.html#L46" title="Defined at 46 in src/java/lang/invoke/ProxyClassesDumper.java.">ProxyClassesDumper</a>.<a href="../D/19762.html" title="Multiple defined in 157 places.">getInstance</a>(path);
+<a id="L95" name="L95"></a>  95     <em class="brace">}</em>
+<a id="L96" name="L96"></a>  96 
+<a id="L97" name="L97"></a>  97     <em class="comment">// See context values in AbstractValidatingLambdaMetafactory</em>
+<a id="L98" name="L98"></a>  98     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> implMethodClassName;        <em class="comment">// Name of type containing implementation "CC"</em>
+<a id="L99" name="L99"></a>  99     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> implMethodName;             <em class="comment">// Name of implementation method "impl"</em>
+<a id="L100" name="L100"></a> 100     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> implMethodDesc;             <em class="comment">// Type descriptor for implementation methods "(I)Ljava/lang/String;"</em>
+<a id="L101" name="L101"></a> 101     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; implMethodReturnClass;    <em class="comment">// class for implementaion method return type "Ljava/lang/String;"</em>
+<a id="L102" name="L102"></a> 102     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> constructorType;        <em class="comment">// Generated class constructor type "(CC)void"</em>
+<a id="L103" name="L103"></a> 103     <strong class="reserved">private</strong> <strong class="reserved">final</strong> ClassWriter cw;                    <em class="comment">// ASM class writer</em>
+<a id="L104" name="L104"></a> 104     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] argNames;                 <em class="comment">// Generated names for the constructor arguments</em>
+<a id="L105" name="L105"></a> 105     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] argDescs;                 <em class="comment">// Type descriptors for the constructor arguments</em>
+<a id="L106" name="L106"></a> 106     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> lambdaClassName;            <em class="comment">// Generated name for the generated class "X$$Lambda$1"</em>
+<a id="L107" name="L107"></a> 107 
+<a id="L108" name="L108"></a> 108     <em class="comment">/**</em>
+<a id="L109" name="L109"></a> 109 <em class="comment">     * General meta-factory constructor, supporting both standard cases and</em>
+<a id="L110" name="L110"></a> 110 <em class="comment">     * allowing for uncommon options such as serialization or bridging.</em>
+<a id="L111" name="L111"></a> 111 <em class="comment">     *</em>
+<a id="L112" name="L112"></a> 112 <em class="comment">     * @param caller Stacked automatically by VM; represents a lookup context</em>
+<a id="L113" name="L113"></a> 113 <em class="comment">     *               with the accessibility privileges of the caller.</em>
+<a id="L114" name="L114"></a> 114 <em class="comment">     * @param invokedType Stacked automatically by VM; the signature of the</em>
+<a id="L115" name="L115"></a> 115 <em class="comment">     *                    invoked method, which includes the expected static</em>
+<a id="L116" name="L116"></a> 116 <em class="comment">     *                    type of the returned lambda object, and the static</em>
+<a id="L117" name="L117"></a> 117 <em class="comment">     *                    types of the captured arguments for the lambda.  In</em>
+<a id="L118" name="L118"></a> 118 <em class="comment">     *                    the event that the implementation method is an</em>
+<a id="L119" name="L119"></a> 119 <em class="comment">     *                    instance method, the first argument in the invocation</em>
+<a id="L120" name="L120"></a> 120 <em class="comment">     *                    signature will correspond to the receiver.</em>
+<a id="L121" name="L121"></a> 121 <em class="comment">     * @param samMethodName Name of the method in the functional interface to</em>
+<a id="L122" name="L122"></a> 122 <em class="comment">     *                      which the lambda or method reference is being</em>
+<a id="L123" name="L123"></a> 123 <em class="comment">     *                      converted, represented as a String.</em>
+<a id="L124" name="L124"></a> 124 <em class="comment">     * @param samMethodType Type of the method in the functional interface to</em>
+<a id="L125" name="L125"></a> 125 <em class="comment">     *                      which the lambda or method reference is being</em>
+<a id="L126" name="L126"></a> 126 <em class="comment">     *                      converted, represented as a MethodType.</em>
+<a id="L127" name="L127"></a> 127 <em class="comment">     * @param implMethod The implementation method which should be called (with</em>
+<a id="L128" name="L128"></a> 128 <em class="comment">     *                   suitable adaptation of argument types, return types,</em>
+<a id="L129" name="L129"></a> 129 <em class="comment">     *                   and adjustment for captured arguments) when methods of</em>
+<a id="L130" name="L130"></a> 130 <em class="comment">     *                   the resulting functional interface instance are invoked.</em>
+<a id="L131" name="L131"></a> 131 <em class="comment">     * @param instantiatedMethodType The signature of the primary functional</em>
+<a id="L132" name="L132"></a> 132 <em class="comment">     *                               interface method after type variables are</em>
+<a id="L133" name="L133"></a> 133 <em class="comment">     *                               substituted with their instantiation from</em>
+<a id="L134" name="L134"></a> 134 <em class="comment">     *                               the capture site</em>
+<a id="L135" name="L135"></a> 135 <em class="comment">     * @param isSerializable Should the lambda be made serializable?  If set,</em>
+<a id="L136" name="L136"></a> 136 <em class="comment">     *                       either the target type or one of the additional SAM</em>
+<a id="L137" name="L137"></a> 137 <em class="comment">     *                       types must extend {@code Serializable}.</em>
+<a id="L138" name="L138"></a> 138 <em class="comment">     * @param markerInterfaces Additional interfaces which the lambda object</em>
+<a id="L139" name="L139"></a> 139 <em class="comment">     *                       should implement.</em>
+<a id="L140" name="L140"></a> 140 <em class="comment">     * @param additionalBridges Method types for additional signatures to be</em>
+<a id="L141" name="L141"></a> 141 <em class="comment">     *                          bridged to the implementation method</em>
+<a id="L142" name="L142"></a> 142 <em class="comment">     * @throws LambdaConversionException If any of the meta-factory protocol</em>
+<a id="L143" name="L143"></a> 143 <em class="comment">     * invariants are violated</em>
+<a id="L144" name="L144"></a> 144 <em class="comment">     */</em>
+<a id="L145" name="L145"></a> 145     <strong class="reserved">public</strong> InnerClassLambdaMetafactory(<a href="../S/1619.html#L60" title="Defined at 60 in src/java/lang/invoke/MethodHandles.java.">MethodHandles</a>.<a href="../S/1619.html#L512" title="Defined at 512 in src/java/lang/invoke/MethodHandles.java.">Lookup</a> caller,
+<a id="L146" name="L146"></a> 146                                        <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> invokedType,
+<a id="L147" name="L147"></a> 147                                        <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> samMethodName,
+<a id="L148" name="L148"></a> 148                                        <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> samMethodType,
+<a id="L149" name="L149"></a> 149                                        <a href="../S/1623.html#L421" title="Defined at 421 in src/java/lang/invoke/MethodHandle.java.">MethodHandle</a> implMethod,
+<a id="L150" name="L150"></a> 150                                        <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> instantiatedMethodType,
+<a id="L151" name="L151"></a> 151                                        <strong class="reserved">boolean</strong> <a href="../D/26224.html" title="Multiple defined in 4 places.">isSerializable</a>,
+<a id="L152" name="L152"></a> 152                                        <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt;[] markerInterfaces,
+<a id="L153" name="L153"></a> 153                                        <a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a>[] additionalBridges)
+<a id="L154" name="L154"></a> 154             <strong class="reserved">throws</strong> <a href="../S/1632.html#L31" title="Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.">LambdaConversionException</a> <em class="brace">{</em>
+<a id="L155" name="L155"></a> 155         <strong class="reserved">super</strong>(caller, invokedType, samMethodName, samMethodType,
+<a id="L156" name="L156"></a> 156               implMethod, instantiatedMethodType,
+<a id="L157" name="L157"></a> 157               <a href="../D/26224.html" title="Multiple defined in 4 places.">isSerializable</a>, markerInterfaces, additionalBridges);
+<a id="L158" name="L158"></a> 158         implMethodClassName = implDefiningClass.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>().<a href="../D/31035.html" title="Multiple defined in 65 places.">replace</a>('.', '/');
+<a id="L159" name="L159"></a> 159         implMethodName = implInfo.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>();
+<a id="L160" name="L160"></a> 160         implMethodDesc = implMethodType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>();
+<a id="L161" name="L161"></a> 161         implMethodReturnClass = (implKind == <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_newInvokeSpecial)
+<a id="L162" name="L162"></a> 162                 ? implDefiningClass
+<a id="L163" name="L163"></a> 163                 : implMethodType.<a href="../D/31403.html" title="Multiple defined in 4 places.">returnType</a>();
+<a id="L164" name="L164"></a> 164         constructorType = invokedType.<a href="../S/1616.html#L582" title="Defined at 582 in src/java/lang/invoke/MethodType.java.">changeReturnType</a>(<a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a>.TYPE);
+<a id="L165" name="L165"></a> 165         lambdaClassName = targetClass.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>().<a href="../D/31035.html" title="Multiple defined in 65 places.">replace</a>('.', '/') + "$$Lambda$" + counter.<a href="../D/24446.html" title="Multiple defined in 8 places.">incrementAndGet</a>();
+<a id="L166" name="L166"></a> 166         cw = <strong class="reserved">new</strong> ClassWriter(ClassWriter.COMPUTE_MAXS);
+<a id="L167" name="L167"></a> 167         <strong class="reserved">int</strong> <a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a> = invokedType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>();
+<a id="L168" name="L168"></a> 168         <strong class="reserved">if</strong> (<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a> &gt; 0) <em class="brace">{</em>
+<a id="L169" name="L169"></a> 169             argNames = <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>];
+<a id="L170" name="L170"></a> 170             argDescs = <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>];
+<a id="L171" name="L171"></a> 171             <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; <a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>; i++) <em class="brace">{</em>
+<a id="L172" name="L172"></a> 172                 argNames[i] = "arg$" + (i + 1);
+<a id="L173" name="L173"></a> 173                 argDescs[i] = BytecodeDescriptor.unparse(invokedType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(i));
+<a id="L174" name="L174"></a> 174             <em class="brace">}</em>
+<a id="L175" name="L175"></a> 175         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L176" name="L176"></a> 176             argNames = argDescs = EMPTY_STRING_ARRAY;
+<a id="L177" name="L177"></a> 177         <em class="brace">}</em>
+<a id="L178" name="L178"></a> 178     <em class="brace">}</em>
+<a id="L179" name="L179"></a> 179 
+<a id="L180" name="L180"></a> 180     <em class="comment">/**</em>
+<a id="L181" name="L181"></a> 181 <em class="comment">     * Build the CallSite. Generate a class file which implements the functional</em>
+<a id="L182" name="L182"></a> 182 <em class="comment">     * interface, define the class, if there are no parameters create an instance</em>
+<a id="L183" name="L183"></a> 183 <em class="comment">     * of the class which the CallSite will return, otherwise, generate handles</em>
+<a id="L184" name="L184"></a> 184 <em class="comment">     * which will call the class' constructor.</em>
+<a id="L185" name="L185"></a> 185 <em class="comment">     *</em>
+<a id="L186" name="L186"></a> 186 <em class="comment">     * @return a CallSite, which, when invoked, will return an instance of the</em>
+<a id="L187" name="L187"></a> 187 <em class="comment">     * functional interface</em>
+<a id="L188" name="L188"></a> 188 <em class="comment">     * @throws ReflectiveOperationException</em>
+<a id="L189" name="L189"></a> 189 <em class="comment">     * @throws LambdaConversionException If properly formed functional interface</em>
+<a id="L190" name="L190"></a> 190 <em class="comment">     * is not found</em>
+<a id="L191" name="L191"></a> 191 <em class="comment">     */</em>
+<a id="L192" name="L192"></a> 192     @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L193" name="L193"></a> 193     <a href="../S/1601.html#L86" title="Defined at 86 in src/java/lang/invoke/CallSite.java.">CallSite</a> <a href="../R/10692.html" title="Multiple referred from 2 places.">buildCallSite</a>() <strong class="reserved">throws</strong> <a href="../S/1632.html#L31" title="Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.">LambdaConversionException</a> <em class="brace">{</em>
+<a id="L194" name="L194"></a> 194         <strong class="reserved">final</strong> <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; innerClass = <a href="../S/1600.html#L249" title="Defined at 249 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">spinInnerClass</a>();
+<a id="L195" name="L195"></a> 195         <strong class="reserved">if</strong> (invokedType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>() == 0) <em class="brace">{</em>
+<a id="L196" name="L196"></a> 196             <strong class="reserved">final</strong> <a href="../D/1833.html" title="Multiple defined in 2 places.">Constructor</a>&lt;?&gt;[] ctrs = <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(
+<a id="L197" name="L197"></a> 197                     <strong class="reserved">new</strong> <a href="../S/1321.html#L42" title="Defined at 42 in src/java/security/PrivilegedAction.java.">PrivilegedAction</a>&lt;<a href="../D/1833.html" title="Multiple defined in 2 places.">Constructor</a>&lt;?&gt;[]&gt;() <em class="brace">{</em>
+<a id="L198" name="L198"></a> 198                 @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L199" name="L199"></a> 199                 <strong class="reserved">public</strong> <a href="../D/1833.html" title="Multiple defined in 2 places.">Constructor</a>&lt;?&gt;[] <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <em class="brace">{</em>
+<a id="L200" name="L200"></a> 200                     <a href="../D/1833.html" title="Multiple defined in 2 places.">Constructor</a>&lt;?&gt;[] ctrs = innerClass.<a href="../S/1722.html#L2018" title="Defined at 2018 in src/java/lang/Class.java.">getDeclaredConstructors</a>();
+<a id="L201" name="L201"></a> 201                     <strong class="reserved">if</strong> (ctrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> == 1) <em class="brace">{</em>
+<a id="L202" name="L202"></a> 202                         <em class="comment">// The lambda implementing inner class constructor is private, set</em>
+<a id="L203" name="L203"></a> 203                         <em class="comment">// it accessible (by us) before creating the constant sole instance</em>
+<a id="L204" name="L204"></a> 204                         ctrs[0].<a href="../D/31850.html" title="Multiple defined in 2 places.">setAccessible</a>(<strong class="reserved">true</strong>);
+<a id="L205" name="L205"></a> 205                     <em class="brace">}</em>
+<a id="L206" name="L206"></a> 206                     <strong class="reserved">return</strong> ctrs;
+<a id="L207" name="L207"></a> 207                 <em class="brace">}</em>
+<a id="L208" name="L208"></a> 208                     <em class="brace">}</em>);
+<a id="L209" name="L209"></a> 209             <strong class="reserved">if</strong> (ctrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> != 1) <em class="brace">{</em>
+<a id="L210" name="L210"></a> 210                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1632.html#L31" title="Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.">LambdaConversionException</a>("Expected one lambda constructor for "
+<a id="L211" name="L211"></a> 211                         + innerClass.<a href="../D/17480.html" title="Multiple defined in 4 places.">getCanonicalName</a>() + ", got " + ctrs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>);
+<a id="L212" name="L212"></a> 212             <em class="brace">}</em>
+<a id="L213" name="L213"></a> 213 
+<a id="L214" name="L214"></a> 214             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L215" name="L215"></a> 215                 <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> inst = ctrs[0].<a href="../D/28016.html" title="Multiple defined in 74 places.">newInstance</a>();
+<a id="L216" name="L216"></a> 216                 <strong class="reserved">return</strong> <strong class="reserved">new</strong> <a href="../S/1633.html#L34" title="Defined at 34 in src/java/lang/invoke/ConstantCallSite.java.">ConstantCallSite</a>(<a href="../S/1619.html#L60" title="Defined at 60 in src/java/lang/invoke/MethodHandles.java.">MethodHandles</a>.<a href="../D/13273.html" title="Multiple defined in 4 places.">constant</a>(samBase, inst));
+<a id="L217" name="L217"></a> 217             <em class="brace">}</em>
+<a id="L218" name="L218"></a> 218             <strong class="reserved">catch</strong> (<a href="../S/1731.html#L35" title="Defined at 35 in src/java/lang/ReflectiveOperationException.java.">ReflectiveOperationException</a> e) <em class="brace">{</em>
+<a id="L219" name="L219"></a> 219                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1632.html#L31" title="Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.">LambdaConversionException</a>("Exception instantiating lambda object", e);
+<a id="L220" name="L220"></a> 220             <em class="brace">}</em>
+<a id="L221" name="L221"></a> 221         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L222" name="L222"></a> 222             <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L223" name="L223"></a> 223                 UNSAFE.ensureClassInitialized(innerClass);
+<a id="L224" name="L224"></a> 224                 <strong class="reserved">return</strong> <strong class="reserved">new</strong> <a href="../S/1633.html#L34" title="Defined at 34 in src/java/lang/invoke/ConstantCallSite.java.">ConstantCallSite</a>(
+<a id="L225" name="L225"></a> 225                         <a href="../S/1619.html#L60" title="Defined at 60 in src/java/lang/invoke/MethodHandles.java.">MethodHandles</a>.<a href="../S/1619.html#L512" title="Defined at 512 in src/java/lang/invoke/MethodHandles.java.">Lookup</a>.IMPL_LOOKUP
+<a id="L226" name="L226"></a> 226                              .<a href="../S/1619.html#L776" title="Defined at 776 in src/java/lang/invoke/MethodHandles.java.">findStatic</a>(innerClass, NAME_FACTORY, invokedType));
+<a id="L227" name="L227"></a> 227             <em class="brace">}</em>
+<a id="L228" name="L228"></a> 228             <strong class="reserved">catch</strong> (<a href="../S/1731.html#L35" title="Defined at 35 in src/java/lang/ReflectiveOperationException.java.">ReflectiveOperationException</a> e) <em class="brace">{</em>
+<a id="L229" name="L229"></a> 229                 <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1632.html#L31" title="Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.">LambdaConversionException</a>("Exception finding constructor", e);
+<a id="L230" name="L230"></a> 230             <em class="brace">}</em>
+<a id="L231" name="L231"></a> 231         <em class="brace">}</em>
+<a id="L232" name="L232"></a> 232     <em class="brace">}</em>
+<a id="L233" name="L233"></a> 233 
+<a id="L234" name="L234"></a> 234     <em class="comment">/**</em>
+<a id="L235" name="L235"></a> 235 <em class="comment">     * Generate a class file which implements the functional</em>
+<a id="L236" name="L236"></a> 236 <em class="comment">     * interface, define and return the class.</em>
+<a id="L237" name="L237"></a> 237 <em class="comment">     *</em>
+<a id="L238" name="L238"></a> 238 <em class="comment">     * @implNote The class that is generated does not include signature</em>
+<a id="L239" name="L239"></a> 239 <em class="comment">     * information for exceptions that may be present on the SAM method.</em>
+<a id="L240" name="L240"></a> 240 <em class="comment">     * This is to reduce classfile size, and is harmless as checked exceptions</em>
+<a id="L241" name="L241"></a> 241 <em class="comment">     * are erased anyway, no one will ever compile against this classfile,</em>
+<a id="L242" name="L242"></a> 242 <em class="comment">     * and we make no guarantees about the reflective properties of lambda</em>
+<a id="L243" name="L243"></a> 243 <em class="comment">     * objects.</em>
+<a id="L244" name="L244"></a> 244 <em class="comment">     *</em>
+<a id="L245" name="L245"></a> 245 <em class="comment">     * @return a Class which implements the functional interface</em>
+<a id="L246" name="L246"></a> 246 <em class="comment">     * @throws LambdaConversionException If properly formed functional interface</em>
+<a id="L247" name="L247"></a> 247 <em class="comment">     * is not found</em>
+<a id="L248" name="L248"></a> 248 <em class="comment">     */</em>
+<a id="L249" name="L249"></a> 249     <strong class="reserved">private</strong> <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; <a href="../S/1600.html#L194" title="Referred from 194 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">spinInnerClass</a>() <strong class="reserved">throws</strong> <a href="../S/1632.html#L31" title="Defined at 31 in src/java/lang/invoke/LambdaConversionException.java.">LambdaConversionException</a> <em class="brace">{</em>
+<a id="L250" name="L250"></a> 250         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[] <a href="../D/24908.html" title="Multiple defined in 2 places.">interfaces</a>;
+<a id="L251" name="L251"></a> 251         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> samIntf = samBase.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>().<a href="../D/31035.html" title="Multiple defined in 65 places.">replace</a>('.', '/');
+<a id="L252" name="L252"></a> 252         <strong class="reserved">boolean</strong> accidentallySerializable = !<a href="../D/26224.html" title="Multiple defined in 4 places.">isSerializable</a> &amp;&amp; <a href="../S/1407.html#L169" title="Defined at 169 in src/java/io/Serializable.java.">Serializable</a>.<strong class="reserved">class</strong>.<a href="../D/25213.html" title="Multiple defined in 7 places.">isAssignableFrom</a>(samBase);
+<a id="L253" name="L253"></a> 253         <strong class="reserved">if</strong> (markerInterfaces.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> == 0) <em class="brace">{</em>
+<a id="L254" name="L254"></a> 254             <a href="../D/24908.html" title="Multiple defined in 2 places.">interfaces</a> = <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[]<em class="brace">{</em>samIntf<em class="brace">}</em>;
+<a id="L255" name="L255"></a> 255         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L256" name="L256"></a> 256             <em class="comment">// Assure no duplicate interfaces (ClassFormatError)</em>
+<a id="L257" name="L257"></a> 257             <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>&gt; itfs = <strong class="reserved">new</strong> <a href="../S/1146.html#L118" title="Defined at 118 in src/java/util/LinkedHashSet.java.">LinkedHashSet</a>&lt;&gt;(markerInterfaces.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a> + 1);
+<a id="L258" name="L258"></a> 258             itfs.<a href="../D/10632.html" title="Multiple defined in 301 places.">add</a>(samIntf);
+<a id="L259" name="L259"></a> 259             <strong class="reserved">for</strong> (<a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; markerInterface : markerInterfaces) <em class="brace">{</em>
+<a id="L260" name="L260"></a> 260                 itfs.<a href="../D/10632.html" title="Multiple defined in 301 places.">add</a>(markerInterface.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>().<a href="../D/31035.html" title="Multiple defined in 65 places.">replace</a>('.', '/'));
+<a id="L261" name="L261"></a> 261                 accidentallySerializable |= !<a href="../D/26224.html" title="Multiple defined in 4 places.">isSerializable</a> &amp;&amp; <a href="../S/1407.html#L169" title="Defined at 169 in src/java/io/Serializable.java.">Serializable</a>.<strong class="reserved">class</strong>.<a href="../D/25213.html" title="Multiple defined in 7 places.">isAssignableFrom</a>(markerInterface);
+<a id="L262" name="L262"></a> 262             <em class="brace">}</em>
+<a id="L263" name="L263"></a> 263             <a href="../D/24908.html" title="Multiple defined in 2 places.">interfaces</a> = itfs.<a href="../D/35348.html" title="Multiple defined in 117 places.">toArray</a>(<strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>[itfs.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>()]);
+<a id="L264" name="L264"></a> 264         <em class="brace">}</em>
+<a id="L265" name="L265"></a> 265 
+<a id="L266" name="L266"></a> 266         cw.<a href="../D/36419.html" title="Multiple defined in 21 places.">visit</a>(CLASSFILE_VERSION, ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC,
+<a id="L267" name="L267"></a> 267                  lambdaClassName, <strong class="reserved">null</strong>,
+<a id="L268" name="L268"></a> 268                  JAVA_LANG_OBJECT, <a href="../D/24908.html" title="Multiple defined in 2 places.">interfaces</a>);
+<a id="L269" name="L269"></a> 269 
+<a id="L270" name="L270"></a> 270         <em class="comment">// Generate final fields to be filled in by constructor</em>
+<a id="L271" name="L271"></a> 271         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; argDescs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>; i++) <em class="brace">{</em>
+<a id="L272" name="L272"></a> 272             FieldVisitor fv = cw.<a href="../D/36544.html" title="Multiple defined in 4 places.">visitField</a>(ACC_PRIVATE + ACC_FINAL,
+<a id="L273" name="L273"></a> 273                                             argNames[i],
+<a id="L274" name="L274"></a> 274                                             argDescs[i],
+<a id="L275" name="L275"></a> 275                                             <strong class="reserved">null</strong>, <strong class="reserved">null</strong>);
+<a id="L276" name="L276"></a> 276             fv.visitEnd();
+<a id="L277" name="L277"></a> 277         <em class="brace">}</em>
+<a id="L278" name="L278"></a> 278 
+<a id="L279" name="L279"></a> 279         <a href="../S/1600.html#L352" title="Defined at 352 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateConstructor</a>();
+<a id="L280" name="L280"></a> 280 
+<a id="L281" name="L281"></a> 281         <strong class="reserved">if</strong> (invokedType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>() != 0) <em class="brace">{</em>
+<a id="L282" name="L282"></a> 282             <a href="../S/1600.html#L332" title="Defined at 332 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateFactory</a>();
+<a id="L283" name="L283"></a> 283         <em class="brace">}</em>
+<a id="L284" name="L284"></a> 284 
+<a id="L285" name="L285"></a> 285         <em class="comment">// Forward the SAM method</em>
+<a id="L286" name="L286"></a> 286         MethodVisitor mv = cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PUBLIC, samMethodName,
+<a id="L287" name="L287"></a> 287                                           samMethodType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>(), <strong class="reserved">null</strong>, <strong class="reserved">null</strong>);
+<a id="L288" name="L288"></a> 288         mv.<a href="../D/36432.html" title="Multiple defined in 5 places.">visitAnnotation</a>("Ljava/lang/invoke/LambdaForm$Hidden;", <strong class="reserved">true</strong>);
+<a id="L289" name="L289"></a> 289         <strong class="reserved">new</strong> <a href="../S/1600.html#L449" title="Defined at 449 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">ForwardingMethodGenerator</a>(mv).<a href="../D/16632.html" title="Multiple defined in 7 places.">generate</a>(samMethodType);
+<a id="L290" name="L290"></a> 290 
+<a id="L291" name="L291"></a> 291         <em class="comment">// Forward the bridges</em>
+<a id="L292" name="L292"></a> 292         <strong class="reserved">if</strong> (additionalBridges != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L293" name="L293"></a> 293             <strong class="reserved">for</strong> (<a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> mt : additionalBridges) <em class="brace">{</em>
+<a id="L294" name="L294"></a> 294                 mv = cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PUBLIC|ACC_BRIDGE, samMethodName,
+<a id="L295" name="L295"></a> 295                                     mt.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>(), <strong class="reserved">null</strong>, <strong class="reserved">null</strong>);
+<a id="L296" name="L296"></a> 296                 mv.<a href="../D/36432.html" title="Multiple defined in 5 places.">visitAnnotation</a>("Ljava/lang/invoke/LambdaForm$Hidden;", <strong class="reserved">true</strong>);
+<a id="L297" name="L297"></a> 297                 <strong class="reserved">new</strong> <a href="../S/1600.html#L449" title="Defined at 449 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">ForwardingMethodGenerator</a>(mv).<a href="../D/16632.html" title="Multiple defined in 7 places.">generate</a>(mt);
+<a id="L298" name="L298"></a> 298             <em class="brace">}</em>
+<a id="L299" name="L299"></a> 299         <em class="brace">}</em>
+<a id="L300" name="L300"></a> 300 
+<a id="L301" name="L301"></a> 301         <strong class="reserved">if</strong> (<a href="../D/26224.html" title="Multiple defined in 4 places.">isSerializable</a>)
+<a id="L302" name="L302"></a> 302             <a href="../S/1600.html#L377" title="Defined at 377 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateSerializationFriendlyMethods</a>();
+<a id="L303" name="L303"></a> 303         <strong class="reserved">else</strong> <strong class="reserved">if</strong> (accidentallySerializable)
+<a id="L304" name="L304"></a> 304             <a href="../S/1600.html#L417" title="Defined at 417 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateSerializationHostileMethods</a>();
+<a id="L305" name="L305"></a> 305 
+<a id="L306" name="L306"></a> 306         cw.visitEnd();
+<a id="L307" name="L307"></a> 307 
+<a id="L308" name="L308"></a> 308         <em class="comment">// Define the generated class in this VM.</em>
+<a id="L309" name="L309"></a> 309 
+<a id="L310" name="L310"></a> 310         <strong class="reserved">final</strong> <strong class="reserved">byte</strong>[] classBytes = cw.<a href="../D/35362.html" title="Multiple defined in 10 places.">toByteArray</a>();
+<a id="L311" name="L311"></a> 311 
+<a id="L312" name="L312"></a> 312         <em class="comment">// If requested, dump out to a file for debugging purposes</em>
+<a id="L313" name="L313"></a> 313         <strong class="reserved">if</strong> (dumper != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L314" name="L314"></a> 314             <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(<strong class="reserved">new</strong> <a href="../S/1321.html#L42" title="Defined at 42 in src/java/security/PrivilegedAction.java.">PrivilegedAction</a>&lt;<a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a>&gt;() <em class="brace">{</em>
+<a id="L315" name="L315"></a> 315                 @<a href="../S/1740.html#L51" title="Defined at 51 in src/java/lang/Override.java.">Override</a>
+<a id="L316" name="L316"></a> 316                 <strong class="reserved">public</strong> <a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <em class="brace">{</em>
+<a id="L317" name="L317"></a> 317                     dumper.<a href="../D/15247.html" title="Multiple defined in 2 places.">dumpClass</a>(lambdaClassName, classBytes);
+<a id="L318" name="L318"></a> 318                     <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L319" name="L319"></a> 319                 <em class="brace">}</em>
+<a id="L320" name="L320"></a> 320             <em class="brace">}</em>, <strong class="reserved">null</strong>,
+<a id="L321" name="L321"></a> 321             <strong class="reserved">new</strong> <a href="../S/1426.html#L100" title="Defined at 100 in src/java/io/FilePermission.java.">FilePermission</a>("&lt;&lt;ALL FILES&gt;&gt;", "read, write"),
+<a id="L322" name="L322"></a> 322             <em class="comment">// createDirectories may need it</em>
+<a id="L323" name="L323"></a> 323             <strong class="reserved">new</strong> <a href="../S/830.html#L91" title="Defined at 91 in src/java/util/PropertyPermission.java.">PropertyPermission</a>("user.dir", "read"));
+<a id="L324" name="L324"></a> 324         <em class="brace">}</em>
+<a id="L325" name="L325"></a> 325 
+<a id="L326" name="L326"></a> 326         <strong class="reserved">return</strong> UNSAFE.defineAnonymousClass(targetClass, classBytes, <strong class="reserved">null</strong>);
+<a id="L327" name="L327"></a> 327     <em class="brace">}</em>
+<a id="L328" name="L328"></a> 328 
+<a id="L329" name="L329"></a> 329     <em class="comment">/**</em>
+<a id="L330" name="L330"></a> 330 <em class="comment">     * Generate the factory method for the class</em>
+<a id="L331" name="L331"></a> 331 <em class="comment">     */</em>
+<a id="L332" name="L332"></a> 332     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/1600.html#L282" title="Referred from 282 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateFactory</a>() <em class="brace">{</em>
+<a id="L333" name="L333"></a> 333         MethodVisitor m = cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PRIVATE | ACC_STATIC, NAME_FACTORY, invokedType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>(), <strong class="reserved">null</strong>, <strong class="reserved">null</strong>);
+<a id="L334" name="L334"></a> 334         m.<a href="../D/36461.html" title="Multiple defined in 3 places.">visitCode</a>();
+<a id="L335" name="L335"></a> 335         m.visitTypeInsn(<a href="../S/4824.html#L69" title="Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.">NEW</a>, lambdaClassName);
+<a id="L336" name="L336"></a> 336         m.visitInsn(Opcodes.<a href="../D/2160.html" title="Multiple defined in 3 places.">DUP</a>);
+<a id="L337" name="L337"></a> 337         <strong class="reserved">int</strong> <a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a> = invokedType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>();
+<a id="L338" name="L338"></a> 338         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> typeIndex = 0, varIndex = 0; typeIndex &lt; <a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>; typeIndex++) <em class="brace">{</em>
+<a id="L339" name="L339"></a> 339             <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; argType = invokedType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(typeIndex);
+<a id="L340" name="L340"></a> 340             m.visitVarInsn(<a href="../S/1600.html#L534" title="Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getLoadOpcode</a>(argType), varIndex);
+<a id="L341" name="L341"></a> 341             varIndex += <a href="../S/1600.html#L525" title="Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getParameterSize</a>(argType);
+<a id="L342" name="L342"></a> 342         <em class="brace">}</em>
+<a id="L343" name="L343"></a> 343         m.visitMethodInsn(<a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>, lambdaClassName, NAME_CTOR, constructorType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>(), <strong class="reserved">false</strong>);
+<a id="L344" name="L344"></a> 344         m.visitInsn(<a href="../S/4753.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ARETURN.java.">ARETURN</a>);
+<a id="L345" name="L345"></a> 345         m.visitMaxs(-1, -1);
+<a id="L346" name="L346"></a> 346         m.visitEnd();
+<a id="L347" name="L347"></a> 347     <em class="brace">}</em>
+<a id="L348" name="L348"></a> 348 
+<a id="L349" name="L349"></a> 349     <em class="comment">/**</em>
+<a id="L350" name="L350"></a> 350 <em class="comment">     * Generate the constructor for the class</em>
+<a id="L351" name="L351"></a> 351 <em class="comment">     */</em>
+<a id="L352" name="L352"></a> 352     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/1600.html#L279" title="Referred from 279 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateConstructor</a>() <em class="brace">{</em>
+<a id="L353" name="L353"></a> 353         <em class="comment">// Generate constructor</em>
+<a id="L354" name="L354"></a> 354         MethodVisitor ctor = cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PRIVATE, NAME_CTOR,
+<a id="L355" name="L355"></a> 355                                             constructorType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>(), <strong class="reserved">null</strong>, <strong class="reserved">null</strong>);
+<a id="L356" name="L356"></a> 356         ctor.<a href="../D/36461.html" title="Multiple defined in 3 places.">visitCode</a>();
+<a id="L357" name="L357"></a> 357         ctor.visitVarInsn(<a href="../S/4754.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.">ALOAD</a>, 0);
+<a id="L358" name="L358"></a> 358         ctor.visitMethodInsn(<a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>, JAVA_LANG_OBJECT, NAME_CTOR,
+<a id="L359" name="L359"></a> 359                              METHOD_DESCRIPTOR_VOID, <strong class="reserved">false</strong>);
+<a id="L360" name="L360"></a> 360         <strong class="reserved">int</strong> <a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a> = invokedType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>();
+<a id="L361" name="L361"></a> 361         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0, lvIndex = 0; i &lt; <a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>; i++) <em class="brace">{</em>
+<a id="L362" name="L362"></a> 362             ctor.visitVarInsn(<a href="../S/4754.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.">ALOAD</a>, 0);
+<a id="L363" name="L363"></a> 363             <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; argType = invokedType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(i);
+<a id="L364" name="L364"></a> 364             ctor.visitVarInsn(<a href="../S/1600.html#L534" title="Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getLoadOpcode</a>(argType), lvIndex + 1);
+<a id="L365" name="L365"></a> 365             lvIndex += <a href="../S/1600.html#L525" title="Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getParameterSize</a>(argType);
+<a id="L366" name="L366"></a> 366             ctor.visitFieldInsn(<a href="../S/4747.html#L72" title="Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/PUTFIELD.java.">PUTFIELD</a>, lambdaClassName, argNames[i], argDescs[i]);
+<a id="L367" name="L367"></a> 367         <em class="brace">}</em>
+<a id="L368" name="L368"></a> 368         ctor.visitInsn(<a href="../D/7024.html" title="Multiple defined in 4 places.">RETURN</a>);
+<a id="L369" name="L369"></a> 369         <em class="comment">// Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored</em>
+<a id="L370" name="L370"></a> 370         ctor.visitMaxs(-1, -1);
+<a id="L371" name="L371"></a> 371         ctor.visitEnd();
+<a id="L372" name="L372"></a> 372     <em class="brace">}</em>
+<a id="L373" name="L373"></a> 373 
+<a id="L374" name="L374"></a> 374     <em class="comment">/**</em>
+<a id="L375" name="L375"></a> 375 <em class="comment">     * Generate a writeReplace method that supports serialization</em>
+<a id="L376" name="L376"></a> 376 <em class="comment">     */</em>
+<a id="L377" name="L377"></a> 377     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/1600.html#L302" title="Referred from 302 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateSerializationFriendlyMethods</a>() <em class="brace">{</em>
+<a id="L378" name="L378"></a> 378         <a href="../S/1625.html#L35" title="Defined at 35 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">TypeConvertingMethodAdapter</a> mv
+<a id="L379" name="L379"></a> 379                 = <strong class="reserved">new</strong> <a href="../S/1625.html#L35" title="Defined at 35 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">TypeConvertingMethodAdapter</a>(
+<a id="L380" name="L380"></a> 380                     cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PRIVATE + ACC_FINAL,
+<a id="L381" name="L381"></a> 381                     NAME_METHOD_WRITE_REPLACE, DESCR_METHOD_WRITE_REPLACE,
+<a id="L382" name="L382"></a> 382                     <strong class="reserved">null</strong>, <strong class="reserved">null</strong>));
+<a id="L383" name="L383"></a> 383 
+<a id="L384" name="L384"></a> 384         mv.<a href="../D/36461.html" title="Multiple defined in 3 places.">visitCode</a>();
+<a id="L385" name="L385"></a> 385         mv.visitTypeInsn(<a href="../S/4824.html#L69" title="Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.">NEW</a>, NAME_SERIALIZED_LAMBDA);
+<a id="L386" name="L386"></a> 386         mv.visitInsn(<a href="../D/2160.html" title="Multiple defined in 3 places.">DUP</a>);
+<a id="L387" name="L387"></a> 387         mv.visitLdcInsn(<a href="../D/9178.html" title="Multiple defined in 19 places.">Type</a>.<a href="../D/23311.html" title="Multiple defined in 232 places.">getType</a>(targetClass));
+<a id="L388" name="L388"></a> 388         mv.visitLdcInsn(invokedType.<a href="../D/31403.html" title="Multiple defined in 4 places.">returnType</a>().<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>().<a href="../D/31035.html" title="Multiple defined in 65 places.">replace</a>('.', '/'));
+<a id="L389" name="L389"></a> 389         mv.visitLdcInsn(samMethodName);
+<a id="L390" name="L390"></a> 390         mv.visitLdcInsn(samMethodType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>());
+<a id="L391" name="L391"></a> 391         mv.visitLdcInsn(implInfo.<a href="../D/21916.html" title="Multiple defined in 3 places.">getReferenceKind</a>());
+<a id="L392" name="L392"></a> 392         mv.visitLdcInsn(implInfo.<a href="../D/18264.html" title="Multiple defined in 10 places.">getDeclaringClass</a>().<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>().<a href="../D/31035.html" title="Multiple defined in 65 places.">replace</a>('.', '/'));
+<a id="L393" name="L393"></a> 393         mv.visitLdcInsn(implInfo.<a href="../D/20784.html" title="Multiple defined in 355 places.">getName</a>());
+<a id="L394" name="L394"></a> 394         mv.visitLdcInsn(implInfo.<a href="../D/20598.html" title="Multiple defined in 3 places.">getMethodType</a>().<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>());
+<a id="L395" name="L395"></a> 395         mv.visitLdcInsn(instantiatedMethodType.<a href="../D/35442.html" title="Multiple defined in 2 places.">toMethodDescriptorString</a>());
+<a id="L396" name="L396"></a> 396         mv.<a href="../S/1625.html#L291" title="Defined at 291 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">iconst</a>(argDescs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>);
+<a id="L397" name="L397"></a> 397         mv.visitTypeInsn(<a href="../S/4730.html#L68" title="Defined at 68 in src/com/sun/org/apache/bcel/internal/generic/ANEWARRAY.java.">ANEWARRAY</a>, JAVA_LANG_OBJECT);
+<a id="L398" name="L398"></a> 398         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; argDescs.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>; i++) <em class="brace">{</em>
+<a id="L399" name="L399"></a> 399             mv.visitInsn(<a href="../D/2160.html" title="Multiple defined in 3 places.">DUP</a>);
+<a id="L400" name="L400"></a> 400             mv.<a href="../S/1625.html#L291" title="Defined at 291 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">iconst</a>(i);
+<a id="L401" name="L401"></a> 401             mv.visitVarInsn(<a href="../S/4754.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.">ALOAD</a>, 0);
+<a id="L402" name="L402"></a> 402             mv.visitFieldInsn(<a href="../S/4792.html#L72" title="Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/GETFIELD.java.">GETFIELD</a>, lambdaClassName, argNames[i], argDescs[i]);
+<a id="L403" name="L403"></a> 403             mv.<a href="../S/1625.html#L141" title="Defined at 141 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">boxIfTypePrimitive</a>(<a href="../D/9178.html" title="Multiple defined in 19 places.">Type</a>.<a href="../D/23311.html" title="Multiple defined in 232 places.">getType</a>(argDescs[i]));
+<a id="L404" name="L404"></a> 404             mv.visitInsn(<a href="../S/4685.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/AASTORE.java.">AASTORE</a>);
+<a id="L405" name="L405"></a> 405         <em class="brace">}</em>
+<a id="L406" name="L406"></a> 406         mv.visitMethodInsn(<a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>, NAME_SERIALIZED_LAMBDA, NAME_CTOR,
+<a id="L407" name="L407"></a> 407                 DESCR_CTOR_SERIALIZED_LAMBDA, <strong class="reserved">false</strong>);
+<a id="L408" name="L408"></a> 408         mv.visitInsn(<a href="../S/4753.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ARETURN.java.">ARETURN</a>);
+<a id="L409" name="L409"></a> 409         <em class="comment">// Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored</em>
+<a id="L410" name="L410"></a> 410         mv.visitMaxs(-1, -1);
+<a id="L411" name="L411"></a> 411         mv.visitEnd();
+<a id="L412" name="L412"></a> 412     <em class="brace">}</em>
+<a id="L413" name="L413"></a> 413 
+<a id="L414" name="L414"></a> 414     <em class="comment">/**</em>
+<a id="L415" name="L415"></a> 415 <em class="comment">     * Generate a readObject/writeObject method that is hostile to serialization</em>
+<a id="L416" name="L416"></a> 416 <em class="comment">     */</em>
+<a id="L417" name="L417"></a> 417     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/1600.html#L304" title="Referred from 304 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">generateSerializationHostileMethods</a>() <em class="brace">{</em>
+<a id="L418" name="L418"></a> 418         MethodVisitor mv = cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PRIVATE + ACC_FINAL,
+<a id="L419" name="L419"></a> 419                                           NAME_METHOD_WRITE_OBJECT, DESCR_METHOD_WRITE_OBJECT,
+<a id="L420" name="L420"></a> 420                                           <strong class="reserved">null</strong>, SER_HOSTILE_EXCEPTIONS);
+<a id="L421" name="L421"></a> 421         mv.<a href="../D/36461.html" title="Multiple defined in 3 places.">visitCode</a>();
+<a id="L422" name="L422"></a> 422         mv.visitTypeInsn(<a href="../S/4824.html#L69" title="Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.">NEW</a>, NAME_NOT_SERIALIZABLE_EXCEPTION);
+<a id="L423" name="L423"></a> 423         mv.visitInsn(<a href="../D/2160.html" title="Multiple defined in 3 places.">DUP</a>);
+<a id="L424" name="L424"></a> 424         mv.visitLdcInsn("Non-serializable lambda");
+<a id="L425" name="L425"></a> 425         mv.visitMethodInsn(<a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+<a id="L426" name="L426"></a> 426                            DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, <strong class="reserved">false</strong>);
+<a id="L427" name="L427"></a> 427         mv.visitInsn(<a href="../S/4829.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ATHROW.java.">ATHROW</a>);
+<a id="L428" name="L428"></a> 428         mv.visitMaxs(-1, -1);
+<a id="L429" name="L429"></a> 429         mv.visitEnd();
+<a id="L430" name="L430"></a> 430 
+<a id="L431" name="L431"></a> 431         mv = cw.<a href="../D/36667.html" title="Multiple defined in 7 places.">visitMethod</a>(ACC_PRIVATE + ACC_FINAL,
+<a id="L432" name="L432"></a> 432                             NAME_METHOD_READ_OBJECT, DESCR_METHOD_READ_OBJECT,
+<a id="L433" name="L433"></a> 433                             <strong class="reserved">null</strong>, SER_HOSTILE_EXCEPTIONS);
+<a id="L434" name="L434"></a> 434         mv.<a href="../D/36461.html" title="Multiple defined in 3 places.">visitCode</a>();
+<a id="L435" name="L435"></a> 435         mv.visitTypeInsn(<a href="../S/4824.html#L69" title="Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.">NEW</a>, NAME_NOT_SERIALIZABLE_EXCEPTION);
+<a id="L436" name="L436"></a> 436         mv.visitInsn(<a href="../D/2160.html" title="Multiple defined in 3 places.">DUP</a>);
+<a id="L437" name="L437"></a> 437         mv.visitLdcInsn("Non-serializable lambda");
+<a id="L438" name="L438"></a> 438         mv.visitMethodInsn(<a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+<a id="L439" name="L439"></a> 439                            DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, <strong class="reserved">false</strong>);
+<a id="L440" name="L440"></a> 440         mv.visitInsn(<a href="../S/4829.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ATHROW.java.">ATHROW</a>);
+<a id="L441" name="L441"></a> 441         mv.visitMaxs(-1, -1);
+<a id="L442" name="L442"></a> 442         mv.visitEnd();
+<a id="L443" name="L443"></a> 443     <em class="brace">}</em>
+<a id="L444" name="L444"></a> 444 
+<a id="L445" name="L445"></a> 445     <em class="comment">/**</em>
+<a id="L446" name="L446"></a> 446 <em class="comment">     * This class generates a method body which calls the lambda implementation</em>
+<a id="L447" name="L447"></a> 447 <em class="comment">     * method, converting arguments, as needed.</em>
+<a id="L448" name="L448"></a> 448 <em class="comment">     */</em>
+<a id="L449" name="L449"></a> 449     <strong class="reserved">private</strong> <strong class="reserved">class</strong> <a href="../R/3112.html" title="Multiple referred from 2 places.">ForwardingMethodGenerator</a> <strong class="reserved">extends</strong> <a href="../S/1625.html#L35" title="Defined at 35 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">TypeConvertingMethodAdapter</a> <em class="brace">{</em>
+<a id="L450" name="L450"></a> 450 
+<a id="L451" name="L451"></a> 451         ForwardingMethodGenerator(MethodVisitor mv) <em class="brace">{</em>
+<a id="L452" name="L452"></a> 452             <strong class="reserved">super</strong>(mv);
+<a id="L453" name="L453"></a> 453         <em class="brace">}</em>
+<a id="L454" name="L454"></a> 454 
+<a id="L455" name="L455"></a> 455         <strong class="reserved">void</strong> <a href="../R/14840.html" title="Multiple referred from 4 places.">generate</a>(<a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> <a href="../D/27690.html" title="Multiple defined in 8 places.">methodType</a>) <em class="brace">{</em>
+<a id="L456" name="L456"></a> 456             <a href="../D/36461.html" title="Multiple defined in 3 places.">visitCode</a>();
+<a id="L457" name="L457"></a> 457 
+<a id="L458" name="L458"></a> 458             <strong class="reserved">if</strong> (implKind == <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_newInvokeSpecial) <em class="brace">{</em>
+<a id="L459" name="L459"></a> 459                 visitTypeInsn(<a href="../S/4824.html#L69" title="Defined at 69 in src/com/sun/org/apache/bcel/internal/generic/NEW.java.">NEW</a>, implMethodClassName);
+<a id="L460" name="L460"></a> 460                 visitInsn(<a href="../D/2160.html" title="Multiple defined in 3 places.">DUP</a>);
+<a id="L461" name="L461"></a> 461             <em class="brace">}</em>
+<a id="L462" name="L462"></a> 462             <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; argNames.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>; i++) <em class="brace">{</em>
+<a id="L463" name="L463"></a> 463                 visitVarInsn(<a href="../S/4754.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ALOAD.java.">ALOAD</a>, 0);
+<a id="L464" name="L464"></a> 464                 visitFieldInsn(<a href="../S/4792.html#L72" title="Defined at 72 in src/com/sun/org/apache/bcel/internal/generic/GETFIELD.java.">GETFIELD</a>, lambdaClassName, argNames[i], argDescs[i]);
+<a id="L465" name="L465"></a> 465             <em class="brace">}</em>
+<a id="L466" name="L466"></a> 466 
+<a id="L467" name="L467"></a> 467             <a href="../S/1600.html#L485" title="Defined at 485 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">convertArgumentTypes</a>(<a href="../D/27690.html" title="Multiple defined in 8 places.">methodType</a>);
+<a id="L468" name="L468"></a> 468 
+<a id="L469" name="L469"></a> 469             <em class="comment">// Invoke the method we want to forward to</em>
+<a id="L470" name="L470"></a> 470             visitMethodInsn(<a href="../S/1600.html#L507" title="Defined at 507 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">invocationOpcode</a>(), implMethodClassName,
+<a id="L471" name="L471"></a> 471                             implMethodName, implMethodDesc,
+<a id="L472" name="L472"></a> 472                             implDefiningClass.<a href="../D/25735.html" title="Multiple defined in 6 places.">isInterface</a>());
+<a id="L473" name="L473"></a> 473 
+<a id="L474" name="L474"></a> 474             <em class="comment">// Convert the return value (if any) and return it</em>
+<a id="L475" name="L475"></a> 475             <em class="comment">// Note: if adapting from non-void to void, the 'return'</em>
+<a id="L476" name="L476"></a> 476             <em class="comment">// instruction will pop the unneeded result</em>
+<a id="L477" name="L477"></a> 477             <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; samReturnClass = <a href="../D/27690.html" title="Multiple defined in 8 places.">methodType</a>.<a href="../D/31403.html" title="Multiple defined in 4 places.">returnType</a>();
+<a id="L478" name="L478"></a> 478             <a href="../S/1625.html#L214" title="Defined at 214 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">convertType</a>(implMethodReturnClass, samReturnClass, samReturnClass);
+<a id="L479" name="L479"></a> 479             visitInsn(<a href="../S/1600.html#L541" title="Defined at 541 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getReturnOpcode</a>(samReturnClass));
+<a id="L480" name="L480"></a> 480             <em class="comment">// Maxs computed by ClassWriter.COMPUTE_MAXS,these arguments ignored</em>
+<a id="L481" name="L481"></a> 481             visitMaxs(-1, -1);
+<a id="L482" name="L482"></a> 482             visitEnd();
+<a id="L483" name="L483"></a> 483         <em class="brace">}</em>
+<a id="L484" name="L484"></a> 484 
+<a id="L485" name="L485"></a> 485         <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/1600.html#L467" title="Referred from 467 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">convertArgumentTypes</a>(<a href="../D/5628.html" title="Multiple defined in 4 places.">MethodType</a> samType) <em class="brace">{</em>
+<a id="L486" name="L486"></a> 486             <strong class="reserved">int</strong> lvIndex = 0;
+<a id="L487" name="L487"></a> 487             <strong class="reserved">boolean</strong> samIncludesReceiver = implIsInstanceMethod &amp;&amp;
+<a id="L488" name="L488"></a> 488                                                    invokedType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>() == 0;
+<a id="L489" name="L489"></a> 489             <strong class="reserved">int</strong> samReceiverLength = samIncludesReceiver ? 1 : 0;
+<a id="L490" name="L490"></a> 490             <strong class="reserved">if</strong> (samIncludesReceiver) <em class="brace">{</em>
+<a id="L491" name="L491"></a> 491                 <em class="comment">// push receiver</em>
+<a id="L492" name="L492"></a> 492                 <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; rcvrType = samType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(0);
+<a id="L493" name="L493"></a> 493                 visitVarInsn(<a href="../S/1600.html#L534" title="Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getLoadOpcode</a>(rcvrType), lvIndex + 1);
+<a id="L494" name="L494"></a> 494                 lvIndex += <a href="../S/1600.html#L525" title="Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getParameterSize</a>(rcvrType);
+<a id="L495" name="L495"></a> 495                 <a href="../S/1625.html#L214" title="Defined at 214 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">convertType</a>(rcvrType, implDefiningClass, instantiatedMethodType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(0));
+<a id="L496" name="L496"></a> 496             <em class="brace">}</em>
+<a id="L497" name="L497"></a> 497             <strong class="reserved">int</strong> samParametersLength = samType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>();
+<a id="L498" name="L498"></a> 498             <strong class="reserved">int</strong> argOffset = implMethodType.<a href="../D/29054.html" title="Multiple defined in 2 places.">parameterCount</a>() - samParametersLength;
+<a id="L499" name="L499"></a> 499             <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = samReceiverLength; i &lt; samParametersLength; i++) <em class="brace">{</em>
+<a id="L500" name="L500"></a> 500                 <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; argType = samType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(i);
+<a id="L501" name="L501"></a> 501                 visitVarInsn(<a href="../S/1600.html#L534" title="Defined at 534 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getLoadOpcode</a>(argType), lvIndex + 1);
+<a id="L502" name="L502"></a> 502                 lvIndex += <a href="../S/1600.html#L525" title="Defined at 525 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getParameterSize</a>(argType);
+<a id="L503" name="L503"></a> 503                 <a href="../S/1625.html#L214" title="Defined at 214 in src/java/lang/invoke/TypeConvertingMethodAdapter.java.">convertType</a>(argType, implMethodType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(argOffset + i), instantiatedMethodType.<a href="../D/29061.html" title="Multiple defined in 3 places.">parameterType</a>(i));
+<a id="L504" name="L504"></a> 504             <em class="brace">}</em>
+<a id="L505" name="L505"></a> 505         <em class="brace">}</em>
+<a id="L506" name="L506"></a> 506 
+<a id="L507" name="L507"></a> 507         <strong class="reserved">private</strong> <strong class="reserved">int</strong> <a href="../S/1600.html#L470" title="Referred from 470 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">invocationOpcode</a>() <strong class="reserved">throws</strong> <a href="../D/4325.html" title="Multiple defined in 2 places.">InternalError</a> <em class="brace">{</em>
+<a id="L508" name="L508"></a> 508             <strong class="reserved">switch</strong> (implKind) <em class="brace">{</em>
+<a id="L509" name="L509"></a> 509                 <strong class="reserved">case</strong> <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_invokeStatic:
+<a id="L510" name="L510"></a> 510                     <strong class="reserved">return</strong> <a href="../S/4756.html#L70" title="Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKESTATIC.java.">INVOKESTATIC</a>;
+<a id="L511" name="L511"></a> 511                 <strong class="reserved">case</strong> <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_newInvokeSpecial:
+<a id="L512" name="L512"></a> 512                     <strong class="reserved">return</strong> <a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>;
+<a id="L513" name="L513"></a> 513                  <strong class="reserved">case</strong> <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_invokeVirtual:
+<a id="L514" name="L514"></a> 514                     <strong class="reserved">return</strong> <a href="../S/4737.html#L70" title="Defined at 70 in src/com/sun/org/apache/bcel/internal/generic/INVOKEVIRTUAL.java.">INVOKEVIRTUAL</a>;
+<a id="L515" name="L515"></a> 515                 <strong class="reserved">case</strong> <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_invokeInterface:
+<a id="L516" name="L516"></a> 516                     <strong class="reserved">return</strong> <a href="../S/4624.html#L73" title="Defined at 73 in src/com/sun/org/apache/bcel/internal/generic/INVOKEINTERFACE.java.">INVOKEINTERFACE</a>;
+<a id="L517" name="L517"></a> 517                 <strong class="reserved">case</strong> <a href="../S/1607.html#L126" title="Defined at 126 in src/java/lang/invoke/MethodHandleInfo.java.">MethodHandleInfo</a>.REF_invokeSpecial:
+<a id="L518" name="L518"></a> 518                     <strong class="reserved">return</strong> <a href="../S/4695.html#L71" title="Defined at 71 in src/com/sun/org/apache/bcel/internal/generic/INVOKESPECIAL.java.">INVOKESPECIAL</a>;
+<a id="L519" name="L519"></a> 519                 <strong class="reserved">default</strong>:
+<a id="L520" name="L520"></a> 520                     <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4325.html" title="Multiple defined in 2 places.">InternalError</a>("Unexpected invocation kind: " + implKind);
+<a id="L521" name="L521"></a> 521             <em class="brace">}</em>
+<a id="L522" name="L522"></a> 522         <em class="brace">}</em>
+<a id="L523" name="L523"></a> 523     <em class="brace">}</em>
+<a id="L524" name="L524"></a> 524 
+<a id="L525" name="L525"></a> 525     <strong class="reserved">static</strong> <strong class="reserved">int</strong> <a href="../R/18256.html" title="Multiple referred from 4 places.">getParameterSize</a>(<a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; <a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>) <em class="brace">{</em>
+<a id="L526" name="L526"></a> 526         <strong class="reserved">if</strong> (<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a>.TYPE) <em class="brace">{</em>
+<a id="L527" name="L527"></a> 527             <strong class="reserved">return</strong> 0;
+<a id="L528" name="L528"></a> 528         <em class="brace">}</em> <strong class="reserved">else</strong> <strong class="reserved">if</strong> (<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../S/1720.html#L54" title="Defined at 54 in src/java/lang/Long.java.">Long</a>.TYPE || <a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../D/2585.html" title="Multiple defined in 10 places.">Double</a>.TYPE) <em class="brace">{</em>
+<a id="L529" name="L529"></a> 529             <strong class="reserved">return</strong> 2;
+<a id="L530" name="L530"></a> 530         <em class="brace">}</em>
+<a id="L531" name="L531"></a> 531         <strong class="reserved">return</strong> 1;
+<a id="L532" name="L532"></a> 532     <em class="brace">}</em>
+<a id="L533" name="L533"></a> 533 
+<a id="L534" name="L534"></a> 534     <strong class="reserved">static</strong> <strong class="reserved">int</strong> <a href="../R/17402.html" title="Multiple referred from 4 places.">getLoadOpcode</a>(<a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; <a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>) <em class="brace">{</em>
+<a id="L535" name="L535"></a> 535         <strong class="reserved">if</strong>(<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a>.TYPE) <em class="brace">{</em>
+<a id="L536" name="L536"></a> 536             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4325.html" title="Multiple defined in 2 places.">InternalError</a>("Unexpected void type of load opcode");
+<a id="L537" name="L537"></a> 537         <em class="brace">}</em>
+<a id="L538" name="L538"></a> 538         <strong class="reserved">return</strong> <a href="../S/4623.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/ILOAD.java.">ILOAD</a> + <a href="../S/1600.html#L548" title="Defined at 548 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getOpcodeOffset</a>(<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>);
+<a id="L539" name="L539"></a> 539     <em class="brace">}</em>
+<a id="L540" name="L540"></a> 540 
+<a id="L541" name="L541"></a> 541     <strong class="reserved">static</strong> <strong class="reserved">int</strong> <a href="../S/1600.html#L479" title="Referred from 479 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getReturnOpcode</a>(<a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; <a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>) <em class="brace">{</em>
+<a id="L542" name="L542"></a> 542         <strong class="reserved">if</strong>(<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a>.TYPE) <em class="brace">{</em>
+<a id="L543" name="L543"></a> 543             <strong class="reserved">return</strong> <a href="../D/7024.html" title="Multiple defined in 4 places.">RETURN</a>;
+<a id="L544" name="L544"></a> 544         <em class="brace">}</em>
+<a id="L545" name="L545"></a> 545         <strong class="reserved">return</strong> <a href="../S/4721.html#L67" title="Defined at 67 in src/com/sun/org/apache/bcel/internal/generic/IRETURN.java.">IRETURN</a> + <a href="../S/1600.html#L548" title="Defined at 548 in src/java/lang/invoke/InnerClassLambdaMetafactory.java.">getOpcodeOffset</a>(<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>);
+<a id="L546" name="L546"></a> 546     <em class="brace">}</em>
+<a id="L547" name="L547"></a> 547 
+<a id="L548" name="L548"></a> 548     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">int</strong> <a href="../R/18140.html" title="Multiple referred from 2 places.">getOpcodeOffset</a>(<a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;?&gt; <a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>) <em class="brace">{</em>
+<a id="L549" name="L549"></a> 549         <strong class="reserved">if</strong> (<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a>.<a href="../D/26086.html" title="Multiple defined in 8 places.">isPrimitive</a>()) <em class="brace">{</em>
+<a id="L550" name="L550"></a> 550             <strong class="reserved">if</strong> (<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../S/1720.html#L54" title="Defined at 54 in src/java/lang/Long.java.">Long</a>.TYPE) <em class="brace">{</em>
+<a id="L551" name="L551"></a> 551                 <strong class="reserved">return</strong> 1;
+<a id="L552" name="L552"></a> 552             <em class="brace">}</em> <strong class="reserved">else</strong> <strong class="reserved">if</strong> (<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../D/3293.html" title="Multiple defined in 10 places.">Float</a>.TYPE) <em class="brace">{</em>
+<a id="L553" name="L553"></a> 553                 <strong class="reserved">return</strong> 2;
+<a id="L554" name="L554"></a> 554             <em class="brace">}</em> <strong class="reserved">else</strong> <strong class="reserved">if</strong> (<a href="../S/986.html#L3167" title="Defined at 3167 in src/java/util/regex/Pattern.java.">c</a> == <a href="../D/2585.html" title="Multiple defined in 10 places.">Double</a>.TYPE) <em class="brace">{</em>
+<a id="L555" name="L555"></a> 555                 <strong class="reserved">return</strong> 3;
+<a id="L556" name="L556"></a> 556             <em class="brace">}</em>
+<a id="L557" name="L557"></a> 557             <strong class="reserved">return</strong> 0;
+<a id="L558" name="L558"></a> 558         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L559" name="L559"></a> 559             <strong class="reserved">return</strong> 4;
+<a id="L560" name="L560"></a> 560         <em class="brace">}</em>
+<a id="L561" name="L561"></a> 561     <em class="brace">}</em>
+<a id="L562" name="L562"></a> 562 
+<a id="L563" name="L563"></a> 563 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L75'>[^]</a><a href='#L548'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L75">[^]</a><a href="#L548">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

@@ -1,127 +1,125 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/java/util/stream/TerminalOp.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7984.html'>java</a>/<a href='../files/8038.html'>util</a>/<a href='../files/8048.html'>stream</a>/TerminalOp.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L53'>[^]</a><a href='#L96'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8038.html">util</a>/<a href="../files/8048.html">stream</a>/TerminalOp.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L53">[^]</a><a href="#L96">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L53' title='Defined at 53.'>inputShape</a></li>
-<li><a href='#L66' title='Defined at 66.'>getOpFlags</a></li>
-<li><a href='#L80' title='Defined at 80.'>evaluateParallel</a></li>
-<li><a href='#L96' title='Defined at 96.'>evaluateSequential</a></li>
+<li><a href="#L53" title="Defined at 53.">inputShape</a></li>
+<li><a href="#L66" title="Defined at 66.">getOpFlags</a></li>
+<li><a href="#L80" title="Defined at 80.">evaluateParallel</a></li>
+<li><a href="#L96" title="Defined at 96.">evaluateSequential</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 <strong class='reserved'>package</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.util.<a href='../D/34926.html' title='Multiple defined in 21 places.'>stream</a>;
-<a id='L26' name='L26'></a>  26 
-<a id='L27' name='L27'></a>  27 <strong class='reserved'>import</strong> java.util.Spliterator;
-<a id='L28' name='L28'></a>  28 
-<a id='L29' name='L29'></a>  29 <em class='comment'>/**</em>
-<a id='L30' name='L30'></a>  30 <em class='comment'> * An operation in a stream pipeline that takes a stream as input and produces</em>
-<a id='L31' name='L31'></a>  31 <em class='comment'> * a result or side-effect.  A {@code TerminalOp} has an input type and stream</em>
-<a id='L32' name='L32'></a>  32 <em class='comment'> * shape, and a result type.  A {@code TerminalOp} also has a set of</em>
-<a id='L33' name='L33'></a>  33 <em class='comment'> * &lt;em&gt;operation flags&lt;/em&gt; that describes how the operation processes elements</em>
-<a id='L34' name='L34'></a>  34 <em class='comment'> * of the stream (such as short-circuiting or respecting encounter order; see</em>
-<a id='L35' name='L35'></a>  35 <em class='comment'> * {@link StreamOpFlag}).</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> *</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> * &lt;p&gt;A {@code TerminalOp} must provide a sequential and parallel implementation</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> * of the operation relative to a given stream source and set of intermediate</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> * operations.</em>
-<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
-<a id='L41' name='L41'></a>  41 <em class='comment'> * @param &lt;E_IN&gt; the type of input elements</em>
-<a id='L42' name='L42'></a>  42 <em class='comment'> * @param &lt;R&gt;    the type of the result</em>
-<a id='L43' name='L43'></a>  43 <em class='comment'> * @since 1.8</em>
-<a id='L44' name='L44'></a>  44 <em class='comment'> */</em>
-<a id='L45' name='L45'></a>  45 <strong class='reserved'>interface</strong> <a href='../R/8058.html' title='Multiple referred from 32 places.'>TerminalOp</a>&lt;E_IN, R&gt; <em class='brace'>{</em>
-<a id='L46' name='L46'></a>  46     <em class='comment'>/**</em>
-<a id='L47' name='L47'></a>  47 <em class='comment'>     * Gets the shape of the input type of this operation.</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'>     *</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'>     * @implSpec The default returns {@code StreamShape.REFERENCE}.</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'>     *</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'>     * @return StreamShape of the input type of this operation</em>
-<a id='L52' name='L52'></a>  52 <em class='comment'>     */</em>
-<a id='L53' name='L53'></a>  53     <strong class='reserved'>default</strong> <a href='../S/900.html#L49' title='Defined at 49 in src/java/util/stream/StreamShape.java.'>StreamShape</a> <a href='../R/20746.html' title='Multiple referred from 23 places.'>inputShape</a>() <em class='brace'>{</em> <strong class='reserved'>return</strong> <a href='../S/900.html#L49' title='Defined at 49 in src/java/util/stream/StreamShape.java.'>StreamShape</a>.REFERENCE; <em class='brace'>}</em>
-<a id='L54' name='L54'></a>  54 
-<a id='L55' name='L55'></a>  55     <em class='comment'>/**</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'>     * Gets the stream flags of the operation.  Terminal operations may set a</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'>     * limited subset of the stream flags defined in {@link StreamOpFlag}, and</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'>     * these flags are combined with the previously combined stream and</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'>     * intermediate operation flags for the pipeline.</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'>     *</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'>     * @implSpec The default implementation returns zero.</em>
-<a id='L62' name='L62'></a>  62 <em class='comment'>     *</em>
-<a id='L63' name='L63'></a>  63 <em class='comment'>     * @return the stream flags for this operation</em>
-<a id='L64' name='L64'></a>  64 <em class='comment'>     * @see StreamOpFlag</em>
-<a id='L65' name='L65'></a>  65 <em class='comment'>     */</em>
-<a id='L66' name='L66'></a>  66     <strong class='reserved'>default</strong> <strong class='reserved'>int</strong> <a href='../R/18134.html' title='Multiple referred from 3 places.'>getOpFlags</a>() <em class='brace'>{</em> <strong class='reserved'>return</strong> 0; <em class='brace'>}</em>
-<a id='L67' name='L67'></a>  67 
-<a id='L68' name='L68'></a>  68     <em class='comment'>/**</em>
-<a id='L69' name='L69'></a>  69 <em class='comment'>     * Performs a parallel evaluation of the operation using the specified</em>
-<a id='L70' name='L70'></a>  70 <em class='comment'>     * {@code PipelineHelper}, which describes the upstream intermediate</em>
-<a id='L71' name='L71'></a>  71 <em class='comment'>     * operations.</em>
-<a id='L72' name='L72'></a>  72 <em class='comment'>     *</em>
-<a id='L73' name='L73'></a>  73 <em class='comment'>     * @implSpec The default performs a sequential evaluation of the operation</em>
-<a id='L74' name='L74'></a>  74 <em class='comment'>     * using the specified {@code PipelineHelper}.</em>
-<a id='L75' name='L75'></a>  75 <em class='comment'>     *</em>
-<a id='L76' name='L76'></a>  76 <em class='comment'>     * @param helper the pipeline helper</em>
-<a id='L77' name='L77'></a>  77 <em class='comment'>     * @param spliterator the source spliterator</em>
-<a id='L78' name='L78'></a>  78 <em class='comment'>     * @return the result of the evaluation</em>
-<a id='L79' name='L79'></a>  79 <em class='comment'>     */</em>
-<a id='L80' name='L80'></a>  80     <strong class='reserved'>default</strong> &lt;P_IN&gt; R <a href='../R/14051.html' title='Multiple referred from 3 places.'>evaluateParallel</a>(<a href='../S/885.html#L55' title='Defined at 55 in src/java/util/stream/PipelineHelper.java.'>PipelineHelper</a>&lt;E_IN&gt; helper,
-<a id='L81' name='L81'></a>  81                                       <a href='../S/1151.html#L296' title='Defined at 296 in src/java/util/Spliterator.java.'>Spliterator</a>&lt;P_IN&gt; <a href='../D/34729.html' title='Multiple defined in 111 places.'>spliterator</a>) <em class='brace'>{</em>
-<a id='L82' name='L82'></a>  82         <strong class='reserved'>if</strong> (<a href='../D/9170.html' title='Multiple defined in 2 places.'>Tripwire</a>.ENABLED)
-<a id='L83' name='L83'></a>  83             <a href='../D/9170.html' title='Multiple defined in 2 places.'>Tripwire</a>.<a href='../D/35702.html' title='Multiple defined in 2 places.'>trip</a>(<a href='../D/17675.html' title='Multiple defined in 6 places.'>getClass</a>(), "{0} triggering TerminalOp.evaluateParallel serial default");
-<a id='L84' name='L84'></a>  84         <strong class='reserved'>return</strong> <a href='../D/15751.html' title='Multiple defined in 5 places.'>evaluateSequential</a>(helper, <a href='../D/34729.html' title='Multiple defined in 111 places.'>spliterator</a>);
-<a id='L85' name='L85'></a>  85     <em class='brace'>}</em>
-<a id='L86' name='L86'></a>  86 
-<a id='L87' name='L87'></a>  87     <em class='comment'>/**</em>
-<a id='L88' name='L88'></a>  88 <em class='comment'>     * Performs a sequential evaluation of the operation using the specified</em>
-<a id='L89' name='L89'></a>  89 <em class='comment'>     * {@code PipelineHelper}, which describes the upstream intermediate</em>
-<a id='L90' name='L90'></a>  90 <em class='comment'>     * operations.</em>
-<a id='L91' name='L91'></a>  91 <em class='comment'>     *</em>
-<a id='L92' name='L92'></a>  92 <em class='comment'>     * @param helper the pipeline helper</em>
-<a id='L93' name='L93'></a>  93 <em class='comment'>     * @param spliterator the source spliterator</em>
-<a id='L94' name='L94'></a>  94 <em class='comment'>     * @return the result of the evaluation</em>
-<a id='L95' name='L95'></a>  95 <em class='comment'>     */</em>
-<a id='L96' name='L96'></a>  96     &lt;P_IN&gt; R <a href='../R/14052.html' title='Multiple referred from 2 places.'>evaluateSequential</a>(<a href='../S/885.html#L55' title='Defined at 55 in src/java/util/stream/PipelineHelper.java.'>PipelineHelper</a>&lt;E_IN&gt; helper,
-<a id='L97' name='L97'></a>  97                                 <a href='../S/1151.html#L296' title='Defined at 296 in src/java/util/Spliterator.java.'>Spliterator</a>&lt;P_IN&gt; <a href='../D/34729.html' title='Multiple defined in 111 places.'>spliterator</a>);
-<a id='L98' name='L98'></a>  98 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.util.<a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>;
+<a id="L26" name="L26"></a>  26 
+<a id="L27" name="L27"></a>  27 <strong class="reserved">import</strong> java.util.Spliterator;
+<a id="L28" name="L28"></a>  28 
+<a id="L29" name="L29"></a>  29 <em class="comment">/**</em>
+<a id="L30" name="L30"></a>  30 <em class="comment"> * An operation in a stream pipeline that takes a stream as input and produces</em>
+<a id="L31" name="L31"></a>  31 <em class="comment"> * a result or side-effect.  A {@code TerminalOp} has an input type and stream</em>
+<a id="L32" name="L32"></a>  32 <em class="comment"> * shape, and a result type.  A {@code TerminalOp} also has a set of</em>
+<a id="L33" name="L33"></a>  33 <em class="comment"> * <em>operation flags</em> that describes how the operation processes elements</em>
+<a id="L34" name="L34"></a>  34 <em class="comment"> * of the stream (such as short-circuiting or respecting encounter order; see</em>
+<a id="L35" name="L35"></a>  35 <em class="comment"> * {@link StreamOpFlag}).</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> *</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> * A {@code TerminalOp} must provide a sequential and parallel implementation</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> * of the operation relative to a given stream source and set of intermediate</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> * operations.</em>
+<a id="L40" name="L40"></a>  40 <em class="comment"> *</em>
+<a id="L41" name="L41"></a>  41 <em class="comment"> * @param <e_in> the type of input elements</e_in></em>
+<a id="L42" name="L42"></a>  42 <em class="comment"> * @param <r>    the type of the result</r></em>
+<a id="L43" name="L43"></a>  43 <em class="comment"> * @since 1.8</em>
+<a id="L44" name="L44"></a>  44 <em class="comment"> */</em>
+<a id="L45" name="L45"></a>  45 <strong class="reserved">interface</strong> <a href="../R/8058.html" title="Multiple referred from 32 places.">TerminalOp</a>&lt;E_IN, R&gt; <em class="brace">{</em>
+<a id="L46" name="L46"></a>  46     <em class="comment">/**</em>
+<a id="L47" name="L47"></a>  47 <em class="comment">     * Gets the shape of the input type of this operation.</em>
+<a id="L48" name="L48"></a>  48 <em class="comment">     *</em>
+<a id="L49" name="L49"></a>  49 <em class="comment">     * @implSpec The default returns {@code StreamShape.REFERENCE}.</em>
+<a id="L50" name="L50"></a>  50 <em class="comment">     *</em>
+<a id="L51" name="L51"></a>  51 <em class="comment">     * @return StreamShape of the input type of this operation</em>
+<a id="L52" name="L52"></a>  52 <em class="comment">     */</em>
+<a id="L53" name="L53"></a>  53     <strong class="reserved">default</strong> <a href="../S/900.html#L49" title="Defined at 49 in src/java/util/stream/StreamShape.java.">StreamShape</a> <a href="../R/20746.html" title="Multiple referred from 23 places.">inputShape</a>() <em class="brace">{</em> <strong class="reserved">return</strong> <a href="../S/900.html#L49" title="Defined at 49 in src/java/util/stream/StreamShape.java.">StreamShape</a>.REFERENCE; <em class="brace">}</em>
+<a id="L54" name="L54"></a>  54 
+<a id="L55" name="L55"></a>  55     <em class="comment">/**</em>
+<a id="L56" name="L56"></a>  56 <em class="comment">     * Gets the stream flags of the operation.  Terminal operations may set a</em>
+<a id="L57" name="L57"></a>  57 <em class="comment">     * limited subset of the stream flags defined in {@link StreamOpFlag}, and</em>
+<a id="L58" name="L58"></a>  58 <em class="comment">     * these flags are combined with the previously combined stream and</em>
+<a id="L59" name="L59"></a>  59 <em class="comment">     * intermediate operation flags for the pipeline.</em>
+<a id="L60" name="L60"></a>  60 <em class="comment">     *</em>
+<a id="L61" name="L61"></a>  61 <em class="comment">     * @implSpec The default implementation returns zero.</em>
+<a id="L62" name="L62"></a>  62 <em class="comment">     *</em>
+<a id="L63" name="L63"></a>  63 <em class="comment">     * @return the stream flags for this operation</em>
+<a id="L64" name="L64"></a>  64 <em class="comment">     * @see StreamOpFlag</em>
+<a id="L65" name="L65"></a>  65 <em class="comment">     */</em>
+<a id="L66" name="L66"></a>  66     <strong class="reserved">default</strong> <strong class="reserved">int</strong> <a href="../R/18134.html" title="Multiple referred from 3 places.">getOpFlags</a>() <em class="brace">{</em> <strong class="reserved">return</strong> 0; <em class="brace">}</em>
+<a id="L67" name="L67"></a>  67 
+<a id="L68" name="L68"></a>  68     <em class="comment">/**</em>
+<a id="L69" name="L69"></a>  69 <em class="comment">     * Performs a parallel evaluation of the operation using the specified</em>
+<a id="L70" name="L70"></a>  70 <em class="comment">     * {@code PipelineHelper}, which describes the upstream intermediate</em>
+<a id="L71" name="L71"></a>  71 <em class="comment">     * operations.</em>
+<a id="L72" name="L72"></a>  72 <em class="comment">     *</em>
+<a id="L73" name="L73"></a>  73 <em class="comment">     * @implSpec The default performs a sequential evaluation of the operation</em>
+<a id="L74" name="L74"></a>  74 <em class="comment">     * using the specified {@code PipelineHelper}.</em>
+<a id="L75" name="L75"></a>  75 <em class="comment">     *</em>
+<a id="L76" name="L76"></a>  76 <em class="comment">     * @param helper the pipeline helper</em>
+<a id="L77" name="L77"></a>  77 <em class="comment">     * @param spliterator the source spliterator</em>
+<a id="L78" name="L78"></a>  78 <em class="comment">     * @return the result of the evaluation</em>
+<a id="L79" name="L79"></a>  79 <em class="comment">     */</em>
+<a id="L80" name="L80"></a>  80     <strong class="reserved">default</strong> &lt;P_IN&gt; R <a href="../R/14051.html" title="Multiple referred from 3 places.">evaluateParallel</a>(<a href="../S/885.html#L55" title="Defined at 55 in src/java/util/stream/PipelineHelper.java.">PipelineHelper</a>&lt;E_IN&gt; helper,
+<a id="L81" name="L81"></a>  81                                       <a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>) <em class="brace">{</em>
+<a id="L82" name="L82"></a>  82         <strong class="reserved">if</strong> (<a href="../D/9170.html" title="Multiple defined in 2 places.">Tripwire</a>.ENABLED)
+<a id="L83" name="L83"></a>  83             <a href="../D/9170.html" title="Multiple defined in 2 places.">Tripwire</a>.<a href="../D/35702.html" title="Multiple defined in 2 places.">trip</a>(<a href="../D/17675.html" title="Multiple defined in 6 places.">getClass</a>(), "{0} triggering TerminalOp.evaluateParallel serial default");
+<a id="L84" name="L84"></a>  84         <strong class="reserved">return</strong> <a href="../D/15751.html" title="Multiple defined in 5 places.">evaluateSequential</a>(helper, <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
+<a id="L85" name="L85"></a>  85     <em class="brace">}</em>
+<a id="L86" name="L86"></a>  86 
+<a id="L87" name="L87"></a>  87     <em class="comment">/**</em>
+<a id="L88" name="L88"></a>  88 <em class="comment">     * Performs a sequential evaluation of the operation using the specified</em>
+<a id="L89" name="L89"></a>  89 <em class="comment">     * {@code PipelineHelper}, which describes the upstream intermediate</em>
+<a id="L90" name="L90"></a>  90 <em class="comment">     * operations.</em>
+<a id="L91" name="L91"></a>  91 <em class="comment">     *</em>
+<a id="L92" name="L92"></a>  92 <em class="comment">     * @param helper the pipeline helper</em>
+<a id="L93" name="L93"></a>  93 <em class="comment">     * @param spliterator the source spliterator</em>
+<a id="L94" name="L94"></a>  94 <em class="comment">     * @return the result of the evaluation</em>
+<a id="L95" name="L95"></a>  95 <em class="comment">     */</em>
+<a id="L96" name="L96"></a>  96     &lt;P_IN&gt; R <a href="../R/14052.html" title="Multiple referred from 2 places.">evaluateSequential</a>(<a href="../S/885.html#L55" title="Defined at 55 in src/java/util/stream/PipelineHelper.java.">PipelineHelper</a>&lt;E_IN&gt; helper,
+<a id="L97" name="L97"></a>  97                                 <a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
+<a id="L98" name="L98"></a>  98 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L53'>[^]</a><a href='#L96'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L53">[^]</a><a href="#L96">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

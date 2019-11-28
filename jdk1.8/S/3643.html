@@ -1,292 +1,290 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/javax/annotation/processing/Filer.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8052.html'>annotation</a>/<a href='../files/8053.html'>processing</a>/Filer.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L173'>[^]</a><a href='#L260'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/8050.html">javax</a>/<a href="../files/8052.html">annotation</a>/<a href="../files/8053.html">processing</a>/Filer.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L173">[^]</a><a href="#L260">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L173' title='Defined at 173.'>createSourceFile</a></li>
-<li><a href='#L203' title='Defined at 203.'>createClassFile</a></li>
-<li><a href='#L238' title='Defined at 238.'>createResource</a></li>
-<li><a href='#L260' title='Defined at 260.'>getResource</a></li>
+<li><a href="#L173" title="Defined at 173.">createSourceFile</a></li>
+<li><a href="#L203" title="Defined at 203.">createClassFile</a></li>
+<li><a href="#L238" title="Defined at 238.">createResource</a></li>
+<li><a href="#L260" title="Defined at 260.">getResource</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.annotation.processing;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> javax.tools.JavaFileManager;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> javax.tools.*;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> javax.lang.model.element.Element;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.io.IOException;
-<a id='L32' name='L32'></a>  32 
-<a id='L33' name='L33'></a>  33 <em class='comment'>/**</em>
-<a id='L34' name='L34'></a>  34 <em class='comment'> * This interface supports the creation of new files by an annotation</em>
-<a id='L35' name='L35'></a>  35 <em class='comment'> * processor.  Files created in this way will be known to the</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> * annotation processing tool implementing this interface, better</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> * enabling the tool to manage them.  Source and class files so</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> * created will be {@linkplain RoundEnvironment#getRootElements</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> * considered for processing} by the tool in a subsequent {@linkplain</em>
-<a id='L40' name='L40'></a>  40 <em class='comment'> * RoundEnvironment round of processing} after the {@code close}</em>
-<a id='L41' name='L41'></a>  41 <em class='comment'> * method has been called on the {@code Writer} or {@code</em>
-<a id='L42' name='L42'></a>  42 <em class='comment'> * OutputStream} used to write the contents of the file.</em>
-<a id='L43' name='L43'></a>  43 <em class='comment'> *</em>
-<a id='L44' name='L44'></a>  44 <em class='comment'> * Three kinds of files are distinguished: source files, class files,</em>
-<a id='L45' name='L45'></a>  45 <em class='comment'> * and auxiliary resource files.</em>
-<a id='L46' name='L46'></a>  46 <em class='comment'> *</em>
-<a id='L47' name='L47'></a>  47 <em class='comment'> * &lt;p&gt; There are two distinguished supported locations (subtrees</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'> * within the logical file system) where newly created files are</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'> * placed: one for {@linkplain</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'> * javax.tools.StandardLocation#SOURCE_OUTPUT new source files}, and</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'> * one for {@linkplain javax.tools.StandardLocation#CLASS_OUTPUT new</em>
-<a id='L52' name='L52'></a>  52 <em class='comment'> * class files}.  (These might be specified on a tool's command line,</em>
-<a id='L53' name='L53'></a>  53 <em class='comment'> * for example, using flags such as {@code -s} and {@code -d}.)  The</em>
-<a id='L54' name='L54'></a>  54 <em class='comment'> * actual locations for new source files and new class files may or</em>
-<a id='L55' name='L55'></a>  55 <em class='comment'> * may not be distinct on a particular run of the tool.  Resource</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'> * files may be created in either location.  The methods for reading</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'> * and writing resources take a relative name argument.  A relative</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'> * name is a non-null, non-empty sequence of path segments separated</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'> * by {@code '/'}; {@code '.'} and {@code '..'} are invalid path</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'> * segments.  A valid relative name must match the</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'> * &amp;quot;path-rootless&amp;quot; rule of &lt;a</em>
-<a id='L62' name='L62'></a>  62 <em class='comment'> * href="http://www.ietf.org/rfc/rfc3986.txt"&gt;RFC 3986&lt;/a&gt;, section</em>
-<a id='L63' name='L63'></a>  63 <em class='comment'> * 3.3.</em>
-<a id='L64' name='L64'></a>  64 <em class='comment'> *</em>
-<a id='L65' name='L65'></a>  65 <em class='comment'> * &lt;p&gt;The file creation methods take a variable number of arguments to</em>
-<a id='L66' name='L66'></a>  66 <em class='comment'> * allow the &lt;em&gt;originating elements&lt;/em&gt; to be provided as hints to</em>
-<a id='L67' name='L67'></a>  67 <em class='comment'> * the tool infrastructure to better manage dependencies.  The</em>
-<a id='L68' name='L68'></a>  68 <em class='comment'> * originating elements are the types or packages (representing {@code</em>
-<a id='L69' name='L69'></a>  69 <em class='comment'> * package-info} files) which caused an annotation processor to</em>
-<a id='L70' name='L70'></a>  70 <em class='comment'> * attempt to create a new file.  For example, if an annotation</em>
-<a id='L71' name='L71'></a>  71 <em class='comment'> * processor tries to create a source file, {@code</em>
-<a id='L72' name='L72'></a>  72 <em class='comment'> * GeneratedFromUserSource}, in response to processing</em>
-<a id='L73' name='L73'></a>  73 <em class='comment'> *</em>
-<a id='L74' name='L74'></a>  74 <em class='comment'> * &lt;blockquote&gt;&lt;pre&gt;</em>
-<a id='L75' name='L75'></a>  75 <em class='comment'> *  &amp;#64;Generate</em>
-<a id='L76' name='L76'></a>  76 <em class='comment'> *  public class UserSource {}</em>
-<a id='L77' name='L77'></a>  77 <em class='comment'> * &lt;/pre&gt;&lt;/blockquote&gt;</em>
-<a id='L78' name='L78'></a>  78 <em class='comment'> *</em>
-<a id='L79' name='L79'></a>  79 <em class='comment'> * the type element for {@code UserSource} should be passed as part of</em>
-<a id='L80' name='L80'></a>  80 <em class='comment'> * the creation method call as in:</em>
-<a id='L81' name='L81'></a>  81 <em class='comment'> *</em>
-<a id='L82' name='L82'></a>  82 <em class='comment'> * &lt;blockquote&gt;&lt;pre&gt;</em>
-<a id='L83' name='L83'></a>  83 <em class='comment'> *      filer.createSourceFile("GeneratedFromUserSource",</em>
-<a id='L84' name='L84'></a>  84 <em class='comment'> *                             eltUtils.getTypeElement("UserSource"));</em>
-<a id='L85' name='L85'></a>  85 <em class='comment'> * &lt;/pre&gt;&lt;/blockquote&gt;</em>
-<a id='L86' name='L86'></a>  86 <em class='comment'> *</em>
-<a id='L87' name='L87'></a>  87 <em class='comment'> * If there are no originating elements, none need to be passed.  This</em>
-<a id='L88' name='L88'></a>  88 <em class='comment'> * information may be used in an incremental environment to determine</em>
-<a id='L89' name='L89'></a>  89 <em class='comment'> * the need to rerun processors or remove generated files.</em>
-<a id='L90' name='L90'></a>  90 <em class='comment'> * Non-incremental environments may ignore the originating element</em>
-<a id='L91' name='L91'></a>  91 <em class='comment'> * information.</em>
-<a id='L92' name='L92'></a>  92 <em class='comment'> *</em>
-<a id='L93' name='L93'></a>  93 <em class='comment'> * &lt;p&gt; During each run of an annotation processing tool, a file with a</em>
-<a id='L94' name='L94'></a>  94 <em class='comment'> * given pathname may be created only once.  If that file already</em>
-<a id='L95' name='L95'></a>  95 <em class='comment'> * exists before the first attempt to create it, the old contents will</em>
-<a id='L96' name='L96'></a>  96 <em class='comment'> * be deleted.  Any subsequent attempt to create the same file during</em>
-<a id='L97' name='L97'></a>  97 <em class='comment'> * a run will throw a {@link FilerException}, as will attempting to</em>
-<a id='L98' name='L98'></a>  98 <em class='comment'> * create both a class file and source file for the same type name or</em>
-<a id='L99' name='L99'></a>  99 <em class='comment'> * same package name.  The {@linkplain Processor initial inputs} to</em>
-<a id='L100' name='L100'></a> 100 <em class='comment'> * the tool are considered to be created by the zeroth round;</em>
-<a id='L101' name='L101'></a> 101 <em class='comment'> * therefore, attempting to create a source or class file</em>
-<a id='L102' name='L102'></a> 102 <em class='comment'> * corresponding to one of those inputs will result in a {@link</em>
-<a id='L103' name='L103'></a> 103 <em class='comment'> * FilerException}.</em>
-<a id='L104' name='L104'></a> 104 <em class='comment'> *</em>
-<a id='L105' name='L105'></a> 105 <em class='comment'> * &lt;p&gt; In general, processors must not knowingly attempt to overwrite</em>
-<a id='L106' name='L106'></a> 106 <em class='comment'> * existing files that were not generated by some processor.  A {@code</em>
-<a id='L107' name='L107'></a> 107 <em class='comment'> * Filer} may reject attempts to open a file corresponding to an</em>
-<a id='L108' name='L108'></a> 108 <em class='comment'> * existing type, like {@code java.lang.Object}.  Likewise, the</em>
-<a id='L109' name='L109'></a> 109 <em class='comment'> * invoker of the annotation processing tool must not knowingly</em>
-<a id='L110' name='L110'></a> 110 <em class='comment'> * configure the tool such that the discovered processors will attempt</em>
-<a id='L111' name='L111'></a> 111 <em class='comment'> * to overwrite existing files that were not generated.</em>
-<a id='L112' name='L112'></a> 112 <em class='comment'> *</em>
-<a id='L113' name='L113'></a> 113 <em class='comment'> * &lt;p&gt; Processors can indicate a source or class file is generated by</em>
-<a id='L114' name='L114'></a> 114 <em class='comment'> * including an {@link javax.annotation.Generated @Generated}</em>
-<a id='L115' name='L115'></a> 115 <em class='comment'> * annotation.</em>
-<a id='L116' name='L116'></a> 116 <em class='comment'> *</em>
-<a id='L117' name='L117'></a> 117 <em class='comment'> * &lt;p&gt; Note that some of the effect of overwriting a file can be</em>
-<a id='L118' name='L118'></a> 118 <em class='comment'> * achieved by using a &lt;i&gt;decorator&lt;/i&gt;-style pattern.  Instead of</em>
-<a id='L119' name='L119'></a> 119 <em class='comment'> * modifying a class directly, the class is designed so that either</em>
-<a id='L120' name='L120'></a> 120 <em class='comment'> * its superclass is generated by annotation processing or subclasses</em>
-<a id='L121' name='L121'></a> 121 <em class='comment'> * of the class are generated by annotation processing.  If the</em>
-<a id='L122' name='L122'></a> 122 <em class='comment'> * subclasses are generated, the parent class may be designed to use</em>
-<a id='L123' name='L123'></a> 123 <em class='comment'> * factories instead of public constructors so that only subclass</em>
-<a id='L124' name='L124'></a> 124 <em class='comment'> * instances would be presented to clients of the parent class.</em>
-<a id='L125' name='L125'></a> 125 <em class='comment'> *</em>
-<a id='L126' name='L126'></a> 126 <em class='comment'> * @author Joseph D. Darcy</em>
-<a id='L127' name='L127'></a> 127 <em class='comment'> * @author Scott Seligman</em>
-<a id='L128' name='L128'></a> 128 <em class='comment'> * @author Peter von der Ah&amp;eacute;</em>
-<a id='L129' name='L129'></a> 129 <em class='comment'> * @since 1.6</em>
-<a id='L130' name='L130'></a> 130 <em class='comment'> */</em>
-<a id='L131' name='L131'></a> 131 <strong class='reserved'>public</strong> <strong class='reserved'>interface</strong> <a href='../S/3641.html#L96' title='Referred from 96 in src/javax/annotation/processing/ProcessingEnvironment.java.'>Filer</a> <em class='brace'>{</em>
-<a id='L132' name='L132'></a> 132     <em class='comment'>/**</em>
-<a id='L133' name='L133'></a> 133 <em class='comment'>     * Creates a new source file and returns an object to allow</em>
-<a id='L134' name='L134'></a> 134 <em class='comment'>     * writing to it.  The file's name and path (relative to the</em>
-<a id='L135' name='L135'></a> 135 <em class='comment'>     * {@linkplain StandardLocation#SOURCE_OUTPUT root output location</em>
-<a id='L136' name='L136'></a> 136 <em class='comment'>     * for source files}) are based on the type to be declared in that</em>
-<a id='L137' name='L137'></a> 137 <em class='comment'>     * file.  If more than one type is being declared, the name of the</em>
-<a id='L138' name='L138'></a> 138 <em class='comment'>     * principal top-level type (the public one, for example) should</em>
-<a id='L139' name='L139'></a> 139 <em class='comment'>     * be used.  A source file can also be created to hold information</em>
-<a id='L140' name='L140'></a> 140 <em class='comment'>     * about a package, including package annotations.  To create a</em>
-<a id='L141' name='L141'></a> 141 <em class='comment'>     * source file for a named package, have {@code name} be the</em>
-<a id='L142' name='L142'></a> 142 <em class='comment'>     * package's name followed by {@code ".package-info"}; to create a</em>
-<a id='L143' name='L143'></a> 143 <em class='comment'>     * source file for an unnamed package, use {@code "package-info"}.</em>
-<a id='L144' name='L144'></a> 144 <em class='comment'>     *</em>
-<a id='L145' name='L145'></a> 145 <em class='comment'>     * &lt;p&gt; Note that to use a particular {@linkplain</em>
-<a id='L146' name='L146'></a> 146 <em class='comment'>     * java.nio.charset.Charset charset} to encode the contents of the</em>
-<a id='L147' name='L147'></a> 147 <em class='comment'>     * file, an {@code OutputStreamWriter} with the chosen charset can</em>
-<a id='L148' name='L148'></a> 148 <em class='comment'>     * be created from the {@code OutputStream} from the returned</em>
-<a id='L149' name='L149'></a> 149 <em class='comment'>     * object. If the {@code Writer} from the returned object is</em>
-<a id='L150' name='L150'></a> 150 <em class='comment'>     * directly used for writing, its charset is determined by the</em>
-<a id='L151' name='L151'></a> 151 <em class='comment'>     * implementation.  An annotation processing tool may have an</em>
-<a id='L152' name='L152'></a> 152 <em class='comment'>     * {@code -encoding} flag or analogous option for specifying this;</em>
-<a id='L153' name='L153'></a> 153 <em class='comment'>     * otherwise, it will typically be the platform's default</em>
-<a id='L154' name='L154'></a> 154 <em class='comment'>     * encoding.</em>
-<a id='L155' name='L155'></a> 155 <em class='comment'>     *</em>
-<a id='L156' name='L156'></a> 156 <em class='comment'>     * &lt;p&gt;To avoid subsequent errors, the contents of the source file</em>
-<a id='L157' name='L157'></a> 157 <em class='comment'>     * should be compatible with the {@linkplain</em>
-<a id='L158' name='L158'></a> 158 <em class='comment'>     * ProcessingEnvironment#getSourceVersion source version} being used</em>
-<a id='L159' name='L159'></a> 159 <em class='comment'>     * for this run.</em>
-<a id='L160' name='L160'></a> 160 <em class='comment'>     *</em>
-<a id='L161' name='L161'></a> 161 <em class='comment'>     * @param name  canonical (fully qualified) name of the principal type</em>
-<a id='L162' name='L162'></a> 162 <em class='comment'>     *          being declared in this file or a package name followed by</em>
-<a id='L163' name='L163'></a> 163 <em class='comment'>     *          {@code ".package-info"} for a package information file</em>
-<a id='L164' name='L164'></a> 164 <em class='comment'>     * @param originatingElements type or package elements causally</em>
-<a id='L165' name='L165'></a> 165 <em class='comment'>     * associated with the creation of this file, may be elided or</em>
-<a id='L166' name='L166'></a> 166 <em class='comment'>     * {@code null}</em>
-<a id='L167' name='L167'></a> 167 <em class='comment'>     * @return a {@code JavaFileObject} to write the new source file</em>
-<a id='L168' name='L168'></a> 168 <em class='comment'>     * @throws FilerException if the same pathname has already been</em>
-<a id='L169' name='L169'></a> 169 <em class='comment'>     * created, the same type has already been created, or the name is</em>
-<a id='L170' name='L170'></a> 170 <em class='comment'>     * not valid for a type</em>
-<a id='L171' name='L171'></a> 171 <em class='comment'>     * @throws IOException if the file cannot be created</em>
-<a id='L172' name='L172'></a> 172 <em class='comment'>     */</em>
-<a id='L173' name='L173'></a> 173     <a href='../S/2614.html#L46' title='Defined at 46 in src/javax/tools/JavaFileObject.java.'>JavaFileObject</a> createSourceFile(<a href='../S/1675.html#L59' title='Defined at 59 in src/java/lang/CharSequence.java.'>CharSequence</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
-<a id='L174' name='L174'></a> 174                                     <a href='../D/2794.html' title='Multiple defined in 8 places.'>Element</a>... originatingElements) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
-<a id='L175' name='L175'></a> 175 
-<a id='L176' name='L176'></a> 176     <em class='comment'>/**</em>
-<a id='L177' name='L177'></a> 177 <em class='comment'>     * Creates a new class file, and returns an object to allow</em>
-<a id='L178' name='L178'></a> 178 <em class='comment'>     * writing to it.  The file's name and path (relative to the</em>
-<a id='L179' name='L179'></a> 179 <em class='comment'>     * {@linkplain StandardLocation#CLASS_OUTPUT root output location</em>
-<a id='L180' name='L180'></a> 180 <em class='comment'>     * for class files}) are based on the name of the type being</em>
-<a id='L181' name='L181'></a> 181 <em class='comment'>     * written.  A class file can also be created to hold information</em>
-<a id='L182' name='L182'></a> 182 <em class='comment'>     * about a package, including package annotations.  To create a</em>
-<a id='L183' name='L183'></a> 183 <em class='comment'>     * class file for a named package, have {@code name} be the</em>
-<a id='L184' name='L184'></a> 184 <em class='comment'>     * package's name followed by {@code ".package-info"}; creating a</em>
-<a id='L185' name='L185'></a> 185 <em class='comment'>     * class file for an unnamed package is not supported.</em>
-<a id='L186' name='L186'></a> 186 <em class='comment'>     *</em>
-<a id='L187' name='L187'></a> 187 <em class='comment'>     * &lt;p&gt;To avoid subsequent errors, the contents of the class file</em>
-<a id='L188' name='L188'></a> 188 <em class='comment'>     * should be compatible with the {@linkplain</em>
-<a id='L189' name='L189'></a> 189 <em class='comment'>     * ProcessingEnvironment#getSourceVersion source version} being used</em>
-<a id='L190' name='L190'></a> 190 <em class='comment'>     * for this run.</em>
-<a id='L191' name='L191'></a> 191 <em class='comment'>     *</em>
-<a id='L192' name='L192'></a> 192 <em class='comment'>     * @param name binary name of the type being written or a package name followed by</em>
-<a id='L193' name='L193'></a> 193 <em class='comment'>     *          {@code ".package-info"} for a package information file</em>
-<a id='L194' name='L194'></a> 194 <em class='comment'>     * @param originatingElements type or package elements causally</em>
-<a id='L195' name='L195'></a> 195 <em class='comment'>     * associated with the creation of this file, may be elided or</em>
-<a id='L196' name='L196'></a> 196 <em class='comment'>     * {@code null}</em>
-<a id='L197' name='L197'></a> 197 <em class='comment'>     * @return a {@code JavaFileObject} to write the new class file</em>
-<a id='L198' name='L198'></a> 198 <em class='comment'>     * @throws FilerException if the same pathname has already been</em>
-<a id='L199' name='L199'></a> 199 <em class='comment'>     * created, the same type has already been created, or the name is</em>
-<a id='L200' name='L200'></a> 200 <em class='comment'>     * not valid for a type</em>
-<a id='L201' name='L201'></a> 201 <em class='comment'>     * @throws IOException if the file cannot be created</em>
-<a id='L202' name='L202'></a> 202 <em class='comment'>     */</em>
-<a id='L203' name='L203'></a> 203     <a href='../S/2614.html#L46' title='Defined at 46 in src/javax/tools/JavaFileObject.java.'>JavaFileObject</a> createClassFile(<a href='../S/1675.html#L59' title='Defined at 59 in src/java/lang/CharSequence.java.'>CharSequence</a> <a href='../D/27856.html' title='Multiple defined in 46 places.'>name</a>,
-<a id='L204' name='L204'></a> 204                                    <a href='../D/2794.html' title='Multiple defined in 8 places.'>Element</a>... originatingElements) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
-<a id='L205' name='L205'></a> 205 
-<a id='L206' name='L206'></a> 206     <em class='comment'>/**</em>
-<a id='L207' name='L207'></a> 207 <em class='comment'>     * Creates a new auxiliary resource file for writing and returns a</em>
-<a id='L208' name='L208'></a> 208 <em class='comment'>     * file object for it.  The file may be located along with the</em>
-<a id='L209' name='L209'></a> 209 <em class='comment'>     * newly created source files, newly created binary files, or</em>
-<a id='L210' name='L210'></a> 210 <em class='comment'>     * other supported location.  The locations {@link</em>
-<a id='L211' name='L211'></a> 211 <em class='comment'>     * StandardLocation#CLASS_OUTPUT CLASS_OUTPUT} and {@link</em>
-<a id='L212' name='L212'></a> 212 <em class='comment'>     * StandardLocation#SOURCE_OUTPUT SOURCE_OUTPUT} must be</em>
-<a id='L213' name='L213'></a> 213 <em class='comment'>     * supported.  The resource may be named relative to some package</em>
-<a id='L214' name='L214'></a> 214 <em class='comment'>     * (as are source and class files), and from there by a relative</em>
-<a id='L215' name='L215'></a> 215 <em class='comment'>     * pathname.  In a loose sense, the full pathname of the new file</em>
-<a id='L216' name='L216'></a> 216 <em class='comment'>     * will be the concatenation of {@code location}, {@code pkg}, and</em>
-<a id='L217' name='L217'></a> 217 <em class='comment'>     * {@code relativeName}.</em>
-<a id='L218' name='L218'></a> 218 <em class='comment'>     *</em>
-<a id='L219' name='L219'></a> 219 <em class='comment'>     * &lt;p&gt;Files created via this method are not registered for</em>
-<a id='L220' name='L220'></a> 220 <em class='comment'>     * annotation processing, even if the full pathname of the file</em>
-<a id='L221' name='L221'></a> 221 <em class='comment'>     * would correspond to the full pathname of a new source file</em>
-<a id='L222' name='L222'></a> 222 <em class='comment'>     * or new class file.</em>
-<a id='L223' name='L223'></a> 223 <em class='comment'>     *</em>
-<a id='L224' name='L224'></a> 224 <em class='comment'>     * @param location location of the new file</em>
-<a id='L225' name='L225'></a> 225 <em class='comment'>     * @param pkg package relative to which the file should be named,</em>
-<a id='L226' name='L226'></a> 226 <em class='comment'>     *          or the empty string if none</em>
-<a id='L227' name='L227'></a> 227 <em class='comment'>     * @param relativeName final pathname components of the file</em>
-<a id='L228' name='L228'></a> 228 <em class='comment'>     * @param originatingElements type or package elements causally</em>
-<a id='L229' name='L229'></a> 229 <em class='comment'>     * associated with the creation of this file, may be elided or</em>
-<a id='L230' name='L230'></a> 230 <em class='comment'>     * {@code null}</em>
-<a id='L231' name='L231'></a> 231 <em class='comment'>     * @return a {@code FileObject} to write the new resource</em>
-<a id='L232' name='L232'></a> 232 <em class='comment'>     * @throws IOException if the file cannot be created</em>
-<a id='L233' name='L233'></a> 233 <em class='comment'>     * @throws FilerException if the same pathname has already been</em>
-<a id='L234' name='L234'></a> 234 <em class='comment'>     * created</em>
-<a id='L235' name='L235'></a> 235 <em class='comment'>     * @throws IllegalArgumentException for an unsupported location</em>
-<a id='L236' name='L236'></a> 236 <em class='comment'>     * @throws IllegalArgumentException if {@code relativeName} is not relative</em>
-<a id='L237' name='L237'></a> 237 <em class='comment'>     */</em>
-<a id='L238' name='L238'></a> 238    <a href='../S/2620.html#L51' title='Defined at 51 in src/javax/tools/FileObject.java.'>FileObject</a> createResource(<a href='../S/2616.html#L105' title='Defined at 105 in src/javax/tools/JavaFileManager.java.'>JavaFileManager</a>.<a href='../D/5187.html' title='Multiple defined in 3 places.'>Location</a> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>,
-<a id='L239' name='L239'></a> 239                              <a href='../S/1675.html#L59' title='Defined at 59 in src/java/lang/CharSequence.java.'>CharSequence</a> pkg,
-<a id='L240' name='L240'></a> 240                              <a href='../S/1675.html#L59' title='Defined at 59 in src/java/lang/CharSequence.java.'>CharSequence</a> relativeName,
-<a id='L241' name='L241'></a> 241                              <a href='../D/2794.html' title='Multiple defined in 8 places.'>Element</a>... originatingElements) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
-<a id='L242' name='L242'></a> 242 
-<a id='L243' name='L243'></a> 243     <em class='comment'>/**</em>
-<a id='L244' name='L244'></a> 244 <em class='comment'>     * Returns an object for reading an existing resource.  The</em>
-<a id='L245' name='L245'></a> 245 <em class='comment'>     * locations {@link StandardLocation#CLASS_OUTPUT CLASS_OUTPUT}</em>
-<a id='L246' name='L246'></a> 246 <em class='comment'>     * and {@link StandardLocation#SOURCE_OUTPUT SOURCE_OUTPUT} must</em>
-<a id='L247' name='L247'></a> 247 <em class='comment'>     * be supported.</em>
-<a id='L248' name='L248'></a> 248 <em class='comment'>     *</em>
-<a id='L249' name='L249'></a> 249 <em class='comment'>     * @param location location of the file</em>
-<a id='L250' name='L250'></a> 250 <em class='comment'>     * @param pkg package relative to which the file should be searched,</em>
-<a id='L251' name='L251'></a> 251 <em class='comment'>     *          or the empty string if none</em>
-<a id='L252' name='L252'></a> 252 <em class='comment'>     * @param relativeName final pathname components of the file</em>
-<a id='L253' name='L253'></a> 253 <em class='comment'>     * @return an object to read the file</em>
-<a id='L254' name='L254'></a> 254 <em class='comment'>     * @throws FilerException if the same pathname has already been</em>
-<a id='L255' name='L255'></a> 255 <em class='comment'>     * opened for writing</em>
-<a id='L256' name='L256'></a> 256 <em class='comment'>     * @throws IOException if the file cannot be opened</em>
-<a id='L257' name='L257'></a> 257 <em class='comment'>     * @throws IllegalArgumentException for an unsupported location</em>
-<a id='L258' name='L258'></a> 258 <em class='comment'>     * @throws IllegalArgumentException if {@code relativeName} is not relative</em>
-<a id='L259' name='L259'></a> 259 <em class='comment'>     */</em>
-<a id='L260' name='L260'></a> 260     <a href='../S/2620.html#L51' title='Defined at 51 in src/javax/tools/FileObject.java.'>FileObject</a> <a href='../R/18711.html' title='Multiple referred from 79 places.'>getResource</a>(<a href='../S/2616.html#L105' title='Defined at 105 in src/javax/tools/JavaFileManager.java.'>JavaFileManager</a>.<a href='../D/5187.html' title='Multiple defined in 3 places.'>Location</a> <a href='../D/27026.html' title='Multiple defined in 4 places.'>location</a>,
-<a id='L261' name='L261'></a> 261                            <a href='../S/1675.html#L59' title='Defined at 59 in src/java/lang/CharSequence.java.'>CharSequence</a> pkg,
-<a id='L262' name='L262'></a> 262                            <a href='../S/1675.html#L59' title='Defined at 59 in src/java/lang/CharSequence.java.'>CharSequence</a> relativeName) <strong class='reserved'>throws</strong> <a href='../S/1392.html#L39' title='Defined at 39 in src/java/io/IOException.java.'>IOException</a>;
-<a id='L263' name='L263'></a> 263 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> <a href="../D/26637.html" title="Multiple defined in 6 places.">javax</a>.annotation.processing;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> javax.tools.JavaFileManager;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> javax.tools.*;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> javax.lang.model.element.Element;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> java.io.IOException;
+<a id="L32" name="L32"></a>  32 
+<a id="L33" name="L33"></a>  33 <em class="comment">/**</em>
+<a id="L34" name="L34"></a>  34 <em class="comment"> * This interface supports the creation of new files by an annotation</em>
+<a id="L35" name="L35"></a>  35 <em class="comment"> * processor.  Files created in this way will be known to the</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> * annotation processing tool implementing this interface, better</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> * enabling the tool to manage them.  Source and class files so</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> * created will be {@linkplain RoundEnvironment#getRootElements</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> * considered for processing} by the tool in a subsequent {@linkplain</em>
+<a id="L40" name="L40"></a>  40 <em class="comment"> * RoundEnvironment round of processing} after the {@code close}</em>
+<a id="L41" name="L41"></a>  41 <em class="comment"> * method has been called on the {@code Writer} or {@code</em>
+<a id="L42" name="L42"></a>  42 <em class="comment"> * OutputStream} used to write the contents of the file.</em>
+<a id="L43" name="L43"></a>  43 <em class="comment"> *</em>
+<a id="L44" name="L44"></a>  44 <em class="comment"> * Three kinds of files are distinguished: source files, class files,</em>
+<a id="L45" name="L45"></a>  45 <em class="comment"> * and auxiliary resource files.</em>
+<a id="L46" name="L46"></a>  46 <em class="comment"> *</em>
+<a id="L47" name="L47"></a>  47 <em class="comment"> *  There are two distinguished supported locations (subtrees</em>
+<a id="L48" name="L48"></a>  48 <em class="comment"> * within the logical file system) where newly created files are</em>
+<a id="L49" name="L49"></a>  49 <em class="comment"> * placed: one for {@linkplain</em>
+<a id="L50" name="L50"></a>  50 <em class="comment"> * javax.tools.StandardLocation#SOURCE_OUTPUT new source files}, and</em>
+<a id="L51" name="L51"></a>  51 <em class="comment"> * one for {@linkplain javax.tools.StandardLocation#CLASS_OUTPUT new</em>
+<a id="L52" name="L52"></a>  52 <em class="comment"> * class files}.  (These might be specified on a tool's command line,</em>
+<a id="L53" name="L53"></a>  53 <em class="comment"> * for example, using flags such as {@code -s} and {@code -d}.)  The</em>
+<a id="L54" name="L54"></a>  54 <em class="comment"> * actual locations for new source files and new class files may or</em>
+<a id="L55" name="L55"></a>  55 <em class="comment"> * may not be distinct on a particular run of the tool.  Resource</em>
+<a id="L56" name="L56"></a>  56 <em class="comment"> * files may be created in either location.  The methods for reading</em>
+<a id="L57" name="L57"></a>  57 <em class="comment"> * and writing resources take a relative name argument.  A relative</em>
+<a id="L58" name="L58"></a>  58 <em class="comment"> * name is a non-null, non-empty sequence of path segments separated</em>
+<a id="L59" name="L59"></a>  59 <em class="comment"> * by {@code '/'}; {@code '.'} and {@code '..'} are invalid path</em>
+<a id="L60" name="L60"></a>  60 <em class="comment"> * segments.  A valid relative name must match the</em>
+<a id="L61" name="L61"></a>  61 <em class="comment"> * "path-rootless" rule of </em>
+<a id="L62" name="L62"></a>  62 <em class="comment"> * href="http://www.ietf.org/rfc/rfc3986.txt"&gt;RFC 3986, section</em>
+<a id="L63" name="L63"></a>  63 <em class="comment"> * 3.3.</em>
+<a id="L64" name="L64"></a>  64 <em class="comment"> *</em>
+<a id="L65" name="L65"></a>  65 <em class="comment"> * The file creation methods take a variable number of arguments to</em>
+<a id="L66" name="L66"></a>  66 <em class="comment"> * allow the <em>originating elements</em> to be provided as hints to</em>
+<a id="L67" name="L67"></a>  67 <em class="comment"> * the tool infrastructure to better manage dependencies.  The</em>
+<a id="L68" name="L68"></a>  68 <em class="comment"> * originating elements are the types or packages (representing {@code</em>
+<a id="L69" name="L69"></a>  69 <em class="comment"> * package-info} files) which caused an annotation processor to</em>
+<a id="L70" name="L70"></a>  70 <em class="comment"> * attempt to create a new file.  For example, if an annotation</em>
+<a id="L71" name="L71"></a>  71 <em class="comment"> * processor tries to create a source file, {@code</em>
+<a id="L72" name="L72"></a>  72 <em class="comment"> * GeneratedFromUserSource}, in response to processing</em>
+<a id="L73" name="L73"></a>  73 <em class="comment"> *</em>
+<a id="L74" name="L74"></a>  74 <em class="comment"> * <blockquote><pre></pre></blockquote></em>
+<a id="L75" name="L75"></a>  75 <em class="comment"> *  @Generate</em>
+<a id="L76" name="L76"></a>  76 <em class="comment"> *  public class UserSource {}</em>
+<a id="L77" name="L77"></a>  77 <em class="comment"> * </em>
+<a id="L78" name="L78"></a>  78 <em class="comment"> *</em>
+<a id="L79" name="L79"></a>  79 <em class="comment"> * the type element for {@code UserSource} should be passed as part of</em>
+<a id="L80" name="L80"></a>  80 <em class="comment"> * the creation method call as in:</em>
+<a id="L81" name="L81"></a>  81 <em class="comment"> *</em>
+<a id="L82" name="L82"></a>  82 <em class="comment"> * <blockquote><pre></pre></blockquote></em>
+<a id="L83" name="L83"></a>  83 <em class="comment"> *      filer.createSourceFile("GeneratedFromUserSource",</em>
+<a id="L84" name="L84"></a>  84 <em class="comment"> *                             eltUtils.getTypeElement("UserSource"));</em>
+<a id="L85" name="L85"></a>  85 <em class="comment"> * </em>
+<a id="L86" name="L86"></a>  86 <em class="comment"> *</em>
+<a id="L87" name="L87"></a>  87 <em class="comment"> * If there are no originating elements, none need to be passed.  This</em>
+<a id="L88" name="L88"></a>  88 <em class="comment"> * information may be used in an incremental environment to determine</em>
+<a id="L89" name="L89"></a>  89 <em class="comment"> * the need to rerun processors or remove generated files.</em>
+<a id="L90" name="L90"></a>  90 <em class="comment"> * Non-incremental environments may ignore the originating element</em>
+<a id="L91" name="L91"></a>  91 <em class="comment"> * information.</em>
+<a id="L92" name="L92"></a>  92 <em class="comment"> *</em>
+<a id="L93" name="L93"></a>  93 <em class="comment"> *  During each run of an annotation processing tool, a file with a</em>
+<a id="L94" name="L94"></a>  94 <em class="comment"> * given pathname may be created only once.  If that file already</em>
+<a id="L95" name="L95"></a>  95 <em class="comment"> * exists before the first attempt to create it, the old contents will</em>
+<a id="L96" name="L96"></a>  96 <em class="comment"> * be deleted.  Any subsequent attempt to create the same file during</em>
+<a id="L97" name="L97"></a>  97 <em class="comment"> * a run will throw a {@link FilerException}, as will attempting to</em>
+<a id="L98" name="L98"></a>  98 <em class="comment"> * create both a class file and source file for the same type name or</em>
+<a id="L99" name="L99"></a>  99 <em class="comment"> * same package name.  The {@linkplain Processor initial inputs} to</em>
+<a id="L100" name="L100"></a> 100 <em class="comment"> * the tool are considered to be created by the zeroth round;</em>
+<a id="L101" name="L101"></a> 101 <em class="comment"> * therefore, attempting to create a source or class file</em>
+<a id="L102" name="L102"></a> 102 <em class="comment"> * corresponding to one of those inputs will result in a {@link</em>
+<a id="L103" name="L103"></a> 103 <em class="comment"> * FilerException}.</em>
+<a id="L104" name="L104"></a> 104 <em class="comment"> *</em>
+<a id="L105" name="L105"></a> 105 <em class="comment"> *  In general, processors must not knowingly attempt to overwrite</em>
+<a id="L106" name="L106"></a> 106 <em class="comment"> * existing files that were not generated by some processor.  A {@code</em>
+<a id="L107" name="L107"></a> 107 <em class="comment"> * Filer} may reject attempts to open a file corresponding to an</em>
+<a id="L108" name="L108"></a> 108 <em class="comment"> * existing type, like {@code java.lang.Object}.  Likewise, the</em>
+<a id="L109" name="L109"></a> 109 <em class="comment"> * invoker of the annotation processing tool must not knowingly</em>
+<a id="L110" name="L110"></a> 110 <em class="comment"> * configure the tool such that the discovered processors will attempt</em>
+<a id="L111" name="L111"></a> 111 <em class="comment"> * to overwrite existing files that were not generated.</em>
+<a id="L112" name="L112"></a> 112 <em class="comment"> *</em>
+<a id="L113" name="L113"></a> 113 <em class="comment"> *  Processors can indicate a source or class file is generated by</em>
+<a id="L114" name="L114"></a> 114 <em class="comment"> * including an {@link javax.annotation.Generated @Generated}</em>
+<a id="L115" name="L115"></a> 115 <em class="comment"> * annotation.</em>
+<a id="L116" name="L116"></a> 116 <em class="comment"> *</em>
+<a id="L117" name="L117"></a> 117 <em class="comment"> *  Note that some of the effect of overwriting a file can be</em>
+<a id="L118" name="L118"></a> 118 <em class="comment"> * achieved by using a <i>decorator</i>-style pattern.  Instead of</em>
+<a id="L119" name="L119"></a> 119 <em class="comment"> * modifying a class directly, the class is designed so that either</em>
+<a id="L120" name="L120"></a> 120 <em class="comment"> * its superclass is generated by annotation processing or subclasses</em>
+<a id="L121" name="L121"></a> 121 <em class="comment"> * of the class are generated by annotation processing.  If the</em>
+<a id="L122" name="L122"></a> 122 <em class="comment"> * subclasses are generated, the parent class may be designed to use</em>
+<a id="L123" name="L123"></a> 123 <em class="comment"> * factories instead of public constructors so that only subclass</em>
+<a id="L124" name="L124"></a> 124 <em class="comment"> * instances would be presented to clients of the parent class.</em>
+<a id="L125" name="L125"></a> 125 <em class="comment"> *</em>
+<a id="L126" name="L126"></a> 126 <em class="comment"> * @author Joseph D. Darcy</em>
+<a id="L127" name="L127"></a> 127 <em class="comment"> * @author Scott Seligman</em>
+<a id="L128" name="L128"></a> 128 <em class="comment"> * @author Peter von der Ahé</em>
+<a id="L129" name="L129"></a> 129 <em class="comment"> * @since 1.6</em>
+<a id="L130" name="L130"></a> 130 <em class="comment"> */</em>
+<a id="L131" name="L131"></a> 131 <strong class="reserved">public</strong> <strong class="reserved">interface</strong> <a href="../S/3641.html#L96" title="Referred from 96 in src/javax/annotation/processing/ProcessingEnvironment.java.">Filer</a> <em class="brace">{</em>
+<a id="L132" name="L132"></a> 132     <em class="comment">/**</em>
+<a id="L133" name="L133"></a> 133 <em class="comment">     * Creates a new source file and returns an object to allow</em>
+<a id="L134" name="L134"></a> 134 <em class="comment">     * writing to it.  The file's name and path (relative to the</em>
+<a id="L135" name="L135"></a> 135 <em class="comment">     * {@linkplain StandardLocation#SOURCE_OUTPUT root output location</em>
+<a id="L136" name="L136"></a> 136 <em class="comment">     * for source files}) are based on the type to be declared in that</em>
+<a id="L137" name="L137"></a> 137 <em class="comment">     * file.  If more than one type is being declared, the name of the</em>
+<a id="L138" name="L138"></a> 138 <em class="comment">     * principal top-level type (the public one, for example) should</em>
+<a id="L139" name="L139"></a> 139 <em class="comment">     * be used.  A source file can also be created to hold information</em>
+<a id="L140" name="L140"></a> 140 <em class="comment">     * about a package, including package annotations.  To create a</em>
+<a id="L141" name="L141"></a> 141 <em class="comment">     * source file for a named package, have {@code name} be the</em>
+<a id="L142" name="L142"></a> 142 <em class="comment">     * package's name followed by {@code ".package-info"}; to create a</em>
+<a id="L143" name="L143"></a> 143 <em class="comment">     * source file for an unnamed package, use {@code "package-info"}.</em>
+<a id="L144" name="L144"></a> 144 <em class="comment">     *</em>
+<a id="L145" name="L145"></a> 145 <em class="comment">     *  Note that to use a particular {@linkplain</em>
+<a id="L146" name="L146"></a> 146 <em class="comment">     * java.nio.charset.Charset charset} to encode the contents of the</em>
+<a id="L147" name="L147"></a> 147 <em class="comment">     * file, an {@code OutputStreamWriter} with the chosen charset can</em>
+<a id="L148" name="L148"></a> 148 <em class="comment">     * be created from the {@code OutputStream} from the returned</em>
+<a id="L149" name="L149"></a> 149 <em class="comment">     * object. If the {@code Writer} from the returned object is</em>
+<a id="L150" name="L150"></a> 150 <em class="comment">     * directly used for writing, its charset is determined by the</em>
+<a id="L151" name="L151"></a> 151 <em class="comment">     * implementation.  An annotation processing tool may have an</em>
+<a id="L152" name="L152"></a> 152 <em class="comment">     * {@code -encoding} flag or analogous option for specifying this;</em>
+<a id="L153" name="L153"></a> 153 <em class="comment">     * otherwise, it will typically be the platform's default</em>
+<a id="L154" name="L154"></a> 154 <em class="comment">     * encoding.</em>
+<a id="L155" name="L155"></a> 155 <em class="comment">     *</em>
+<a id="L156" name="L156"></a> 156 <em class="comment">     * To avoid subsequent errors, the contents of the source file</em>
+<a id="L157" name="L157"></a> 157 <em class="comment">     * should be compatible with the {@linkplain</em>
+<a id="L158" name="L158"></a> 158 <em class="comment">     * ProcessingEnvironment#getSourceVersion source version} being used</em>
+<a id="L159" name="L159"></a> 159 <em class="comment">     * for this run.</em>
+<a id="L160" name="L160"></a> 160 <em class="comment">     *</em>
+<a id="L161" name="L161"></a> 161 <em class="comment">     * @param name  canonical (fully qualified) name of the principal type</em>
+<a id="L162" name="L162"></a> 162 <em class="comment">     *          being declared in this file or a package name followed by</em>
+<a id="L163" name="L163"></a> 163 <em class="comment">     *          {@code ".package-info"} for a package information file</em>
+<a id="L164" name="L164"></a> 164 <em class="comment">     * @param originatingElements type or package elements causally</em>
+<a id="L165" name="L165"></a> 165 <em class="comment">     * associated with the creation of this file, may be elided or</em>
+<a id="L166" name="L166"></a> 166 <em class="comment">     * {@code null}</em>
+<a id="L167" name="L167"></a> 167 <em class="comment">     * @return a {@code JavaFileObject} to write the new source file</em>
+<a id="L168" name="L168"></a> 168 <em class="comment">     * @throws FilerException if the same pathname has already been</em>
+<a id="L169" name="L169"></a> 169 <em class="comment">     * created, the same type has already been created, or the name is</em>
+<a id="L170" name="L170"></a> 170 <em class="comment">     * not valid for a type</em>
+<a id="L171" name="L171"></a> 171 <em class="comment">     * @throws IOException if the file cannot be created</em>
+<a id="L172" name="L172"></a> 172 <em class="comment">     */</em>
+<a id="L173" name="L173"></a> 173     <a href="../S/2614.html#L46" title="Defined at 46 in src/javax/tools/JavaFileObject.java.">JavaFileObject</a> createSourceFile(<a href="../S/1675.html#L59" title="Defined at 59 in src/java/lang/CharSequence.java.">CharSequence</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,
+<a id="L174" name="L174"></a> 174                                     <a href="../D/2794.html" title="Multiple defined in 8 places.">Element</a>... originatingElements) <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>;
+<a id="L175" name="L175"></a> 175 
+<a id="L176" name="L176"></a> 176     <em class="comment">/**</em>
+<a id="L177" name="L177"></a> 177 <em class="comment">     * Creates a new class file, and returns an object to allow</em>
+<a id="L178" name="L178"></a> 178 <em class="comment">     * writing to it.  The file's name and path (relative to the</em>
+<a id="L179" name="L179"></a> 179 <em class="comment">     * {@linkplain StandardLocation#CLASS_OUTPUT root output location</em>
+<a id="L180" name="L180"></a> 180 <em class="comment">     * for class files}) are based on the name of the type being</em>
+<a id="L181" name="L181"></a> 181 <em class="comment">     * written.  A class file can also be created to hold information</em>
+<a id="L182" name="L182"></a> 182 <em class="comment">     * about a package, including package annotations.  To create a</em>
+<a id="L183" name="L183"></a> 183 <em class="comment">     * class file for a named package, have {@code name} be the</em>
+<a id="L184" name="L184"></a> 184 <em class="comment">     * package's name followed by {@code ".package-info"}; creating a</em>
+<a id="L185" name="L185"></a> 185 <em class="comment">     * class file for an unnamed package is not supported.</em>
+<a id="L186" name="L186"></a> 186 <em class="comment">     *</em>
+<a id="L187" name="L187"></a> 187 <em class="comment">     * To avoid subsequent errors, the contents of the class file</em>
+<a id="L188" name="L188"></a> 188 <em class="comment">     * should be compatible with the {@linkplain</em>
+<a id="L189" name="L189"></a> 189 <em class="comment">     * ProcessingEnvironment#getSourceVersion source version} being used</em>
+<a id="L190" name="L190"></a> 190 <em class="comment">     * for this run.</em>
+<a id="L191" name="L191"></a> 191 <em class="comment">     *</em>
+<a id="L192" name="L192"></a> 192 <em class="comment">     * @param name binary name of the type being written or a package name followed by</em>
+<a id="L193" name="L193"></a> 193 <em class="comment">     *          {@code ".package-info"} for a package information file</em>
+<a id="L194" name="L194"></a> 194 <em class="comment">     * @param originatingElements type or package elements causally</em>
+<a id="L195" name="L195"></a> 195 <em class="comment">     * associated with the creation of this file, may be elided or</em>
+<a id="L196" name="L196"></a> 196 <em class="comment">     * {@code null}</em>
+<a id="L197" name="L197"></a> 197 <em class="comment">     * @return a {@code JavaFileObject} to write the new class file</em>
+<a id="L198" name="L198"></a> 198 <em class="comment">     * @throws FilerException if the same pathname has already been</em>
+<a id="L199" name="L199"></a> 199 <em class="comment">     * created, the same type has already been created, or the name is</em>
+<a id="L200" name="L200"></a> 200 <em class="comment">     * not valid for a type</em>
+<a id="L201" name="L201"></a> 201 <em class="comment">     * @throws IOException if the file cannot be created</em>
+<a id="L202" name="L202"></a> 202 <em class="comment">     */</em>
+<a id="L203" name="L203"></a> 203     <a href="../S/2614.html#L46" title="Defined at 46 in src/javax/tools/JavaFileObject.java.">JavaFileObject</a> createClassFile(<a href="../S/1675.html#L59" title="Defined at 59 in src/java/lang/CharSequence.java.">CharSequence</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>,
+<a id="L204" name="L204"></a> 204                                    <a href="../D/2794.html" title="Multiple defined in 8 places.">Element</a>... originatingElements) <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>;
+<a id="L205" name="L205"></a> 205 
+<a id="L206" name="L206"></a> 206     <em class="comment">/**</em>
+<a id="L207" name="L207"></a> 207 <em class="comment">     * Creates a new auxiliary resource file for writing and returns a</em>
+<a id="L208" name="L208"></a> 208 <em class="comment">     * file object for it.  The file may be located along with the</em>
+<a id="L209" name="L209"></a> 209 <em class="comment">     * newly created source files, newly created binary files, or</em>
+<a id="L210" name="L210"></a> 210 <em class="comment">     * other supported location.  The locations {@link</em>
+<a id="L211" name="L211"></a> 211 <em class="comment">     * StandardLocation#CLASS_OUTPUT CLASS_OUTPUT} and {@link</em>
+<a id="L212" name="L212"></a> 212 <em class="comment">     * StandardLocation#SOURCE_OUTPUT SOURCE_OUTPUT} must be</em>
+<a id="L213" name="L213"></a> 213 <em class="comment">     * supported.  The resource may be named relative to some package</em>
+<a id="L214" name="L214"></a> 214 <em class="comment">     * (as are source and class files), and from there by a relative</em>
+<a id="L215" name="L215"></a> 215 <em class="comment">     * pathname.  In a loose sense, the full pathname of the new file</em>
+<a id="L216" name="L216"></a> 216 <em class="comment">     * will be the concatenation of {@code location}, {@code pkg}, and</em>
+<a id="L217" name="L217"></a> 217 <em class="comment">     * {@code relativeName}.</em>
+<a id="L218" name="L218"></a> 218 <em class="comment">     *</em>
+<a id="L219" name="L219"></a> 219 <em class="comment">     * Files created via this method are not registered for</em>
+<a id="L220" name="L220"></a> 220 <em class="comment">     * annotation processing, even if the full pathname of the file</em>
+<a id="L221" name="L221"></a> 221 <em class="comment">     * would correspond to the full pathname of a new source file</em>
+<a id="L222" name="L222"></a> 222 <em class="comment">     * or new class file.</em>
+<a id="L223" name="L223"></a> 223 <em class="comment">     *</em>
+<a id="L224" name="L224"></a> 224 <em class="comment">     * @param location location of the new file</em>
+<a id="L225" name="L225"></a> 225 <em class="comment">     * @param pkg package relative to which the file should be named,</em>
+<a id="L226" name="L226"></a> 226 <em class="comment">     *          or the empty string if none</em>
+<a id="L227" name="L227"></a> 227 <em class="comment">     * @param relativeName final pathname components of the file</em>
+<a id="L228" name="L228"></a> 228 <em class="comment">     * @param originatingElements type or package elements causally</em>
+<a id="L229" name="L229"></a> 229 <em class="comment">     * associated with the creation of this file, may be elided or</em>
+<a id="L230" name="L230"></a> 230 <em class="comment">     * {@code null}</em>
+<a id="L231" name="L231"></a> 231 <em class="comment">     * @return a {@code FileObject} to write the new resource</em>
+<a id="L232" name="L232"></a> 232 <em class="comment">     * @throws IOException if the file cannot be created</em>
+<a id="L233" name="L233"></a> 233 <em class="comment">     * @throws FilerException if the same pathname has already been</em>
+<a id="L234" name="L234"></a> 234 <em class="comment">     * created</em>
+<a id="L235" name="L235"></a> 235 <em class="comment">     * @throws IllegalArgumentException for an unsupported location</em>
+<a id="L236" name="L236"></a> 236 <em class="comment">     * @throws IllegalArgumentException if {@code relativeName} is not relative</em>
+<a id="L237" name="L237"></a> 237 <em class="comment">     */</em>
+<a id="L238" name="L238"></a> 238    <a href="../S/2620.html#L51" title="Defined at 51 in src/javax/tools/FileObject.java.">FileObject</a> createResource(<a href="../S/2616.html#L105" title="Defined at 105 in src/javax/tools/JavaFileManager.java.">JavaFileManager</a>.<a href="../D/5187.html" title="Multiple defined in 3 places.">Location</a> <a href="../D/27026.html" title="Multiple defined in 4 places.">location</a>,
+<a id="L239" name="L239"></a> 239                              <a href="../S/1675.html#L59" title="Defined at 59 in src/java/lang/CharSequence.java.">CharSequence</a> pkg,
+<a id="L240" name="L240"></a> 240                              <a href="../S/1675.html#L59" title="Defined at 59 in src/java/lang/CharSequence.java.">CharSequence</a> relativeName,
+<a id="L241" name="L241"></a> 241                              <a href="../D/2794.html" title="Multiple defined in 8 places.">Element</a>... originatingElements) <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>;
+<a id="L242" name="L242"></a> 242 
+<a id="L243" name="L243"></a> 243     <em class="comment">/**</em>
+<a id="L244" name="L244"></a> 244 <em class="comment">     * Returns an object for reading an existing resource.  The</em>
+<a id="L245" name="L245"></a> 245 <em class="comment">     * locations {@link StandardLocation#CLASS_OUTPUT CLASS_OUTPUT}</em>
+<a id="L246" name="L246"></a> 246 <em class="comment">     * and {@link StandardLocation#SOURCE_OUTPUT SOURCE_OUTPUT} must</em>
+<a id="L247" name="L247"></a> 247 <em class="comment">     * be supported.</em>
+<a id="L248" name="L248"></a> 248 <em class="comment">     *</em>
+<a id="L249" name="L249"></a> 249 <em class="comment">     * @param location location of the file</em>
+<a id="L250" name="L250"></a> 250 <em class="comment">     * @param pkg package relative to which the file should be searched,</em>
+<a id="L251" name="L251"></a> 251 <em class="comment">     *          or the empty string if none</em>
+<a id="L252" name="L252"></a> 252 <em class="comment">     * @param relativeName final pathname components of the file</em>
+<a id="L253" name="L253"></a> 253 <em class="comment">     * @return an object to read the file</em>
+<a id="L254" name="L254"></a> 254 <em class="comment">     * @throws FilerException if the same pathname has already been</em>
+<a id="L255" name="L255"></a> 255 <em class="comment">     * opened for writing</em>
+<a id="L256" name="L256"></a> 256 <em class="comment">     * @throws IOException if the file cannot be opened</em>
+<a id="L257" name="L257"></a> 257 <em class="comment">     * @throws IllegalArgumentException for an unsupported location</em>
+<a id="L258" name="L258"></a> 258 <em class="comment">     * @throws IllegalArgumentException if {@code relativeName} is not relative</em>
+<a id="L259" name="L259"></a> 259 <em class="comment">     */</em>
+<a id="L260" name="L260"></a> 260     <a href="../S/2620.html#L51" title="Defined at 51 in src/javax/tools/FileObject.java.">FileObject</a> <a href="../R/18711.html" title="Multiple referred from 79 places.">getResource</a>(<a href="../S/2616.html#L105" title="Defined at 105 in src/javax/tools/JavaFileManager.java.">JavaFileManager</a>.<a href="../D/5187.html" title="Multiple defined in 3 places.">Location</a> <a href="../D/27026.html" title="Multiple defined in 4 places.">location</a>,
+<a id="L261" name="L261"></a> 261                            <a href="../S/1675.html#L59" title="Defined at 59 in src/java/lang/CharSequence.java.">CharSequence</a> pkg,
+<a id="L262" name="L262"></a> 262                            <a href="../S/1675.html#L59" title="Defined at 59 in src/java/lang/CharSequence.java.">CharSequence</a> relativeName) <strong class="reserved">throws</strong> <a href="../S/1392.html#L39" title="Defined at 39 in src/java/io/IOException.java.">IOException</a>;
+<a id="L263" name="L263"></a> 263 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L173'>[^]</a><a href='#L260'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L173">[^]</a><a href="#L260">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

@@ -1,392 +1,390 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/javax/security/auth/Policy.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/8050.html'>javax</a>/<a href='../files/8089.html'>security</a>/<a href='../files/8090.html'>auth</a>/Policy.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L194'>[^]</a><a href='#L361'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/8050.html">javax</a>/<a href="../files/8089.html">security</a>/<a href="../files/8090.html">auth</a>/Policy.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L194">[^]</a><a href="#L361">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L194' title='Defined at 194.'>getPolicy</a></li>
-<li><a href='#L206' title='Defined at 206.'>getPolicyNoCheck</a></li>
-<li><a href='#L275' title='Defined at 275.'>setPolicy</a></li>
-<li><a href='#L293' title='Defined at 293.'>isCustomPolicySet</a></li>
-<li><a href='#L361' title='Defined at 361.'>refresh</a></li>
+<li><a href="#L194" title="Defined at 194.">getPolicy</a></li>
+<li><a href="#L206" title="Defined at 206.">getPolicyNoCheck</a></li>
+<li><a href="#L275" title="Defined at 275.">setPolicy</a></li>
+<li><a href="#L293" title="Defined at 293.">isCustomPolicySet</a></li>
+<li><a href="#L361" title="Defined at 361.">refresh</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> *</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'> *</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> *</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> *</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> *</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> *</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> *</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> *</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> *</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> *</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> *</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> *</em>
-<a id='L20' name='L20'></a>  20 <em class='comment'> *</em>
-<a id='L21' name='L21'></a>  21 <em class='comment'> *</em>
-<a id='L22' name='L22'></a>  22 <em class='comment'> *</em>
-<a id='L23' name='L23'></a>  23 <em class='comment'> *</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> */</em>
-<a id='L25' name='L25'></a>  25 
-<a id='L26' name='L26'></a>  26 <strong class='reserved'>package</strong> <a href='../D/26637.html' title='Multiple defined in 6 places.'>javax</a>.security.auth;
-<a id='L27' name='L27'></a>  27 
-<a id='L28' name='L28'></a>  28 <strong class='reserved'>import</strong> java.security.Security;
-<a id='L29' name='L29'></a>  29 <strong class='reserved'>import</strong> java.security.AccessController;
-<a id='L30' name='L30'></a>  30 <strong class='reserved'>import</strong> java.security.PrivilegedAction;
-<a id='L31' name='L31'></a>  31 <strong class='reserved'>import</strong> java.security.PrivilegedExceptionAction;
-<a id='L32' name='L32'></a>  32 <strong class='reserved'>import</strong> java.util.Objects;
-<a id='L33' name='L33'></a>  33 <strong class='reserved'>import</strong> sun.security.util.Debug;
-<a id='L34' name='L34'></a>  34 
-<a id='L35' name='L35'></a>  35 <em class='comment'>/**</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> * &lt;p&gt; This is an abstract class for representing the system policy for</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> * Subject-based authorization.  A subclass implementation</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> * of this class provides a means to specify a Subject-based</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> * access control {@code Policy}.</em>
-<a id='L40' name='L40'></a>  40 <em class='comment'> *</em>
-<a id='L41' name='L41'></a>  41 <em class='comment'> * &lt;p&gt; A {@code Policy} object can be queried for the set of</em>
-<a id='L42' name='L42'></a>  42 <em class='comment'> * Permissions granted to code running as a</em>
-<a id='L43' name='L43'></a>  43 <em class='comment'> * {@code Principal} in the following manner:</em>
-<a id='L44' name='L44'></a>  44 <em class='comment'> *</em>
-<a id='L45' name='L45'></a>  45 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L46' name='L46'></a>  46 <em class='comment'> *      policy = Policy.getPolicy();</em>
-<a id='L47' name='L47'></a>  47 <em class='comment'> *      PermissionCollection perms = policy.getPermissions(subject,</em>
-<a id='L48' name='L48'></a>  48 <em class='comment'> *                                                      codeSource);</em>
-<a id='L49' name='L49'></a>  49 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L50' name='L50'></a>  50 <em class='comment'> *</em>
-<a id='L51' name='L51'></a>  51 <em class='comment'> * The {@code Policy} object consults the local policy and returns</em>
-<a id='L52' name='L52'></a>  52 <em class='comment'> * and appropriate {@code Permissions} object with the</em>
-<a id='L53' name='L53'></a>  53 <em class='comment'> * Permissions granted to the Principals associated with the</em>
-<a id='L54' name='L54'></a>  54 <em class='comment'> * provided &lt;i&gt;subject&lt;/i&gt;, and granted to the code specified</em>
-<a id='L55' name='L55'></a>  55 <em class='comment'> * by the provided &lt;i&gt;codeSource&lt;/i&gt;.</em>
-<a id='L56' name='L56'></a>  56 <em class='comment'> *</em>
-<a id='L57' name='L57'></a>  57 <em class='comment'> * &lt;p&gt; A {@code Policy} contains the following information.</em>
-<a id='L58' name='L58'></a>  58 <em class='comment'> * Note that this example only represents the syntax for the default</em>
-<a id='L59' name='L59'></a>  59 <em class='comment'> * {@code Policy} implementation. Subclass implementations of this class</em>
-<a id='L60' name='L60'></a>  60 <em class='comment'> * may implement alternative syntaxes and may retrieve the</em>
-<a id='L61' name='L61'></a>  61 <em class='comment'> * {@code Policy} from any source such as files, databases,</em>
-<a id='L62' name='L62'></a>  62 <em class='comment'> * or servers.</em>
-<a id='L63' name='L63'></a>  63 <em class='comment'> *</em>
-<a id='L64' name='L64'></a>  64 <em class='comment'> * &lt;p&gt; Each entry in the {@code Policy} is represented as</em>
-<a id='L65' name='L65'></a>  65 <em class='comment'> * a &lt;b&gt;&lt;i&gt;grant&lt;/i&gt;&lt;/b&gt; entry.  Each &lt;b&gt;&lt;i&gt;grant&lt;/i&gt;&lt;/b&gt; entry</em>
-<a id='L66' name='L66'></a>  66 <em class='comment'> * specifies a codebase, code signers, and Principals triplet,</em>
-<a id='L67' name='L67'></a>  67 <em class='comment'> * as well as the Permissions granted to that triplet.</em>
-<a id='L68' name='L68'></a>  68 <em class='comment'> *</em>
-<a id='L69' name='L69'></a>  69 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L70' name='L70'></a>  70 <em class='comment'> *      grant CodeBase ["URL"], Signedby ["signers"],</em>
-<a id='L71' name='L71'></a>  71 <em class='comment'> *            Principal [Principal_Class] "Principal_Name" {</em>
-<a id='L72' name='L72'></a>  72 <em class='comment'> *          Permission Permission_Class ["Target_Name"]</em>
-<a id='L73' name='L73'></a>  73 <em class='comment'> *                                      [, "Permission_Actions"]</em>
-<a id='L74' name='L74'></a>  74 <em class='comment'> *                                      [, signedBy "SignerName"];</em>
-<a id='L75' name='L75'></a>  75 <em class='comment'> *      };</em>
-<a id='L76' name='L76'></a>  76 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L77' name='L77'></a>  77 <em class='comment'> *</em>
-<a id='L78' name='L78'></a>  78 <em class='comment'> * The CodeBase and Signedby components of the triplet name/value pairs</em>
-<a id='L79' name='L79'></a>  79 <em class='comment'> * are optional.  If they are not present, then any any codebase will match,</em>
-<a id='L80' name='L80'></a>  80 <em class='comment'> * and any signer (including unsigned code) will match.</em>
-<a id='L81' name='L81'></a>  81 <em class='comment'> * For Example,</em>
-<a id='L82' name='L82'></a>  82 <em class='comment'> *</em>
-<a id='L83' name='L83'></a>  83 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L84' name='L84'></a>  84 <em class='comment'> *      grant CodeBase "foo.com", Signedby "foo",</em>
-<a id='L85' name='L85'></a>  85 <em class='comment'> *            Principal com.sun.security.auth.SolarisPrincipal "duke" {</em>
-<a id='L86' name='L86'></a>  86 <em class='comment'> *          permission java.io.FilePermission "/home/duke", "read, write";</em>
-<a id='L87' name='L87'></a>  87 <em class='comment'> *      };</em>
-<a id='L88' name='L88'></a>  88 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L89' name='L89'></a>  89 <em class='comment'> *</em>
-<a id='L90' name='L90'></a>  90 <em class='comment'> * This &lt;b&gt;&lt;i&gt;grant&lt;/i&gt;&lt;/b&gt; entry specifies that code from "foo.com",</em>
-<a id='L91' name='L91'></a>  91 <em class='comment'> * signed by "foo', and running as a {@code SolarisPrincipal} with the</em>
-<a id='L92' name='L92'></a>  92 <em class='comment'> * name, duke, has one {@code Permission}.  This {@code Permission}</em>
-<a id='L93' name='L93'></a>  93 <em class='comment'> * permits the executing code to read and write files in the directory,</em>
-<a id='L94' name='L94'></a>  94 <em class='comment'> * "/home/duke".</em>
-<a id='L95' name='L95'></a>  95 <em class='comment'> *</em>
-<a id='L96' name='L96'></a>  96 <em class='comment'> * &lt;p&gt; To "run" as a particular {@code Principal},</em>
-<a id='L97' name='L97'></a>  97 <em class='comment'> * code invokes the {@code Subject.doAs(subject, ...)} method.</em>
-<a id='L98' name='L98'></a>  98 <em class='comment'> * After invoking that method, the code runs as all the Principals</em>
-<a id='L99' name='L99'></a>  99 <em class='comment'> * associated with the specified {@code Subject}.</em>
-<a id='L100' name='L100'></a> 100 <em class='comment'> * Note that this {@code Policy} (and the Permissions</em>
-<a id='L101' name='L101'></a> 101 <em class='comment'> * granted in this {@code Policy}) only become effective</em>
-<a id='L102' name='L102'></a> 102 <em class='comment'> * after the call to {@code Subject.doAs} has occurred.</em>
-<a id='L103' name='L103'></a> 103 <em class='comment'> *</em>
-<a id='L104' name='L104'></a> 104 <em class='comment'> * &lt;p&gt; Multiple Principals may be listed within one &lt;b&gt;&lt;i&gt;grant&lt;/i&gt;&lt;/b&gt; entry.</em>
-<a id='L105' name='L105'></a> 105 <em class='comment'> * All the Principals in the grant entry must be associated with</em>
-<a id='L106' name='L106'></a> 106 <em class='comment'> * the {@code Subject} provided to {@code Subject.doAs}</em>
-<a id='L107' name='L107'></a> 107 <em class='comment'> * for that {@code Subject} to be granted the specified Permissions.</em>
-<a id='L108' name='L108'></a> 108 <em class='comment'> *</em>
-<a id='L109' name='L109'></a> 109 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L110' name='L110'></a> 110 <em class='comment'> *      grant Principal com.sun.security.auth.SolarisPrincipal "duke",</em>
-<a id='L111' name='L111'></a> 111 <em class='comment'> *            Principal com.sun.security.auth.SolarisNumericUserPrincipal "0" {</em>
-<a id='L112' name='L112'></a> 112 <em class='comment'> *          permission java.io.FilePermission "/home/duke", "read, write";</em>
-<a id='L113' name='L113'></a> 113 <em class='comment'> *          permission java.net.SocketPermission "duke.com", "connect";</em>
-<a id='L114' name='L114'></a> 114 <em class='comment'> *      };</em>
-<a id='L115' name='L115'></a> 115 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L116' name='L116'></a> 116 <em class='comment'> *</em>
-<a id='L117' name='L117'></a> 117 <em class='comment'> * This entry grants any code running as both "duke" and "0"</em>
-<a id='L118' name='L118'></a> 118 <em class='comment'> * permission to read and write files in duke's home directory,</em>
-<a id='L119' name='L119'></a> 119 <em class='comment'> * as well as permission to make socket connections to "duke.com".</em>
-<a id='L120' name='L120'></a> 120 <em class='comment'> *</em>
-<a id='L121' name='L121'></a> 121 <em class='comment'> * &lt;p&gt; Note that non Principal-based grant entries are not permitted</em>
-<a id='L122' name='L122'></a> 122 <em class='comment'> * in this {@code Policy}.  Therefore, grant entries such as:</em>
-<a id='L123' name='L123'></a> 123 <em class='comment'> *</em>
-<a id='L124' name='L124'></a> 124 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L125' name='L125'></a> 125 <em class='comment'> *      grant CodeBase "foo.com", Signedby "foo" {</em>
-<a id='L126' name='L126'></a> 126 <em class='comment'> *          permission java.io.FilePermission "/tmp/scratch", "read, write";</em>
-<a id='L127' name='L127'></a> 127 <em class='comment'> *      };</em>
-<a id='L128' name='L128'></a> 128 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L129' name='L129'></a> 129 <em class='comment'> *</em>
-<a id='L130' name='L130'></a> 130 <em class='comment'> * are rejected.  Such permission must be listed in the</em>
-<a id='L131' name='L131'></a> 131 <em class='comment'> * {@code java.security.Policy}.</em>
-<a id='L132' name='L132'></a> 132 <em class='comment'> *</em>
-<a id='L133' name='L133'></a> 133 <em class='comment'> * &lt;p&gt; The default {@code Policy} implementation can be changed by</em>
-<a id='L134' name='L134'></a> 134 <em class='comment'> * setting the value of the {@code auth.policy.provider} security property to</em>
-<a id='L135' name='L135'></a> 135 <em class='comment'> * the fully qualified name of the desired {@code Policy} implementation class.</em>
-<a id='L136' name='L136'></a> 136 <em class='comment'> *</em>
-<a id='L137' name='L137'></a> 137 <em class='comment'> * @deprecated  as of JDK version 1.4 -- Replaced by java.security.Policy.</em>
-<a id='L138' name='L138'></a> 138 <em class='comment'> *              java.security.Policy has a method:</em>
-<a id='L139' name='L139'></a> 139 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L140' name='L140'></a> 140 <em class='comment'> *      public PermissionCollection getPermissions</em>
-<a id='L141' name='L141'></a> 141 <em class='comment'> *          (java.security.ProtectionDomain pd)</em>
-<a id='L142' name='L142'></a> 142 <em class='comment'> *</em>
-<a id='L143' name='L143'></a> 143 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L144' name='L144'></a> 144 <em class='comment'> * and ProtectionDomain has a constructor:</em>
-<a id='L145' name='L145'></a> 145 <em class='comment'> * &lt;pre&gt;</em>
-<a id='L146' name='L146'></a> 146 <em class='comment'> *      public ProtectionDomain</em>
-<a id='L147' name='L147'></a> 147 <em class='comment'> *          (CodeSource cs,</em>
-<a id='L148' name='L148'></a> 148 <em class='comment'> *           PermissionCollection permissions,</em>
-<a id='L149' name='L149'></a> 149 <em class='comment'> *           ClassLoader loader,</em>
-<a id='L150' name='L150'></a> 150 <em class='comment'> *           Principal[] principals)</em>
-<a id='L151' name='L151'></a> 151 <em class='comment'> * &lt;/pre&gt;</em>
-<a id='L152' name='L152'></a> 152 <em class='comment'> *</em>
-<a id='L153' name='L153'></a> 153 <em class='comment'> * These two APIs provide callers the means to query the</em>
-<a id='L154' name='L154'></a> 154 <em class='comment'> * Policy for Principal-based Permission entries.</em>
-<a id='L155' name='L155'></a> 155 <em class='comment'> *</em>
-<a id='L156' name='L156'></a> 156 <em class='comment'> * @see java.security.Security security properties</em>
-<a id='L157' name='L157'></a> 157 <em class='comment'> */</em>
-<a id='L158' name='L158'></a> 158 @<a href='../D/2383.html' title='Multiple defined in 2 places.'>Deprecated</a>
-<a id='L159' name='L159'></a> 159 <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>class</strong> <a href='../R/6129.html' title='Multiple referred from 162 places.'>Policy</a> <em class='brace'>{</em>
-<a id='L160' name='L160'></a> 160 
-<a id='L161' name='L161'></a> 161     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> policy;
-<a id='L162' name='L162'></a> 162     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> AUTH_POLICY =
-<a id='L163' name='L163'></a> 163         "sun.security.provider.AuthPolicyFile";
-<a id='L164' name='L164'></a> 164 
-<a id='L165' name='L165'></a> 165     <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1212.html#L77' title='Defined at 77 in src/java/security/AccessControlContext.java.'>AccessControlContext</a> acc =
-<a id='L166' name='L166'></a> 166             <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/17976.html' title='Multiple defined in 99 places.'>getContext</a>();
-<a id='L167' name='L167'></a> 167 
-<a id='L168' name='L168'></a> 168     <em class='comment'>// true if a custom (not AUTH_POLICY) system-wide policy object is set</em>
-<a id='L169' name='L169'></a> 169     <strong class='reserved'>private</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> isCustomPolicy;
-<a id='L170' name='L170'></a> 170 
-<a id='L171' name='L171'></a> 171     <em class='comment'>/**</em>
-<a id='L172' name='L172'></a> 172 <em class='comment'>     * Sole constructor.  (For invocation by subclass constructors, typically</em>
-<a id='L173' name='L173'></a> 173 <em class='comment'>     * implicit.)</em>
-<a id='L174' name='L174'></a> 174 <em class='comment'>     */</em>
-<a id='L175' name='L175'></a> 175     <strong class='reserved'>protected</strong> Policy() <em class='brace'>{</em> <em class='brace'>}</em>
-<a id='L176' name='L176'></a> 176 
-<a id='L177' name='L177'></a> 177     <em class='comment'>/**</em>
-<a id='L178' name='L178'></a> 178 <em class='comment'>     * Returns the installed Policy object.</em>
-<a id='L179' name='L179'></a> 179 <em class='comment'>     * This method first calls</em>
-<a id='L180' name='L180'></a> 180 <em class='comment'>     * {@code SecurityManager.checkPermission} with the</em>
-<a id='L181' name='L181'></a> 181 <em class='comment'>     * {@code AuthPermission("getPolicy")} permission</em>
-<a id='L182' name='L182'></a> 182 <em class='comment'>     * to ensure the caller has permission to get the Policy object.</em>
-<a id='L183' name='L183'></a> 183 <em class='comment'>     *</em>
-<a id='L184' name='L184'></a> 184 <em class='comment'>     * &lt;p&gt;</em>
-<a id='L185' name='L185'></a> 185 <em class='comment'>     *</em>
-<a id='L186' name='L186'></a> 186 <em class='comment'>     * @return the installed Policy.  The return value cannot be</em>
-<a id='L187' name='L187'></a> 187 <em class='comment'>     *          {@code null}.</em>
-<a id='L188' name='L188'></a> 188 <em class='comment'>     *</em>
-<a id='L189' name='L189'></a> 189 <em class='comment'>     * @exception java.lang.SecurityException if the current thread does not</em>
-<a id='L190' name='L190'></a> 190 <em class='comment'>     *      have permission to get the Policy object.</em>
-<a id='L191' name='L191'></a> 191 <em class='comment'>     *</em>
-<a id='L192' name='L192'></a> 192 <em class='comment'>     * @see #setPolicy</em>
-<a id='L193' name='L193'></a> 193 <em class='comment'>     */</em>
-<a id='L194' name='L194'></a> 194     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> <a href='../R/18358.html' title='Multiple referred from 5 places.'>getPolicy</a>() <em class='brace'>{</em>
-<a id='L195' name='L195'></a> 195         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/7682.html' title='Multiple defined in 2 places.'>SecurityManager</a> sm = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>();
-<a id='L196' name='L196'></a> 196         <strong class='reserved'>if</strong> (sm != <strong class='reserved'>null</strong>) sm.<a href='../D/12594.html' title='Multiple defined in 22 places.'>checkPermission</a>(<strong class='reserved'>new</strong> <a href='../S/2649.html#L129' title='Defined at 129 in src/javax/security/auth/AuthPermission.java.'>AuthPermission</a>("getPolicy"));
-<a id='L197' name='L197'></a> 197         <strong class='reserved'>return</strong> <a href='../D/21518.html' title='Multiple defined in 2 places.'>getPolicyNoCheck</a>();
-<a id='L198' name='L198'></a> 198     <em class='brace'>}</em>
-<a id='L199' name='L199'></a> 199 
-<a id='L200' name='L200'></a> 200     <em class='comment'>/**</em>
-<a id='L201' name='L201'></a> 201 <em class='comment'>     * Returns the installed Policy object, skipping the security check.</em>
-<a id='L202' name='L202'></a> 202 <em class='comment'>     *</em>
-<a id='L203' name='L203'></a> 203 <em class='comment'>     * @return the installed Policy.</em>
-<a id='L204' name='L204'></a> 204 <em class='comment'>     *</em>
-<a id='L205' name='L205'></a> 205 <em class='comment'>     */</em>
-<a id='L206' name='L206'></a> 206     <strong class='reserved'>static</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> <a href='../R/18359.html' title='Multiple referred from 5 places.'>getPolicyNoCheck</a>() <em class='brace'>{</em>
-<a id='L207' name='L207'></a> 207         <strong class='reserved'>if</strong> (policy == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L208' name='L208'></a> 208 
-<a id='L209' name='L209'></a> 209             <strong class='reserved'>synchronized</strong>(<a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a>.<strong class='reserved'>class</strong>) <em class='brace'>{</em>
-<a id='L210' name='L210'></a> 210 
-<a id='L211' name='L211'></a> 211                 <strong class='reserved'>if</strong> (policy == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L212' name='L212'></a> 212                     <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> policy_class = <strong class='reserved'>null</strong>;
-<a id='L213' name='L213'></a> 213                     policy_class = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>
-<a id='L214' name='L214'></a> 214                         (<strong class='reserved'>new</strong> <a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt;() <em class='brace'>{</em>
-<a id='L215' name='L215'></a> 215                         <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
-<a id='L216' name='L216'></a> 216                             <strong class='reserved'>return</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1265.html#L49' title='Defined at 49 in src/java/security/Security.java.'>Security</a>.<a href='../D/21720.html' title='Multiple defined in 77 places.'>getProperty</a>
-<a id='L217' name='L217'></a> 217                                 ("auth.policy.provider");
-<a id='L218' name='L218'></a> 218                         <em class='brace'>}</em>
-<a id='L219' name='L219'></a> 219                     <em class='brace'>}</em>);
-<a id='L220' name='L220'></a> 220                     <strong class='reserved'>if</strong> (policy_class == <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L221' name='L221'></a> 221                         policy_class = AUTH_POLICY;
-<a id='L222' name='L222'></a> 222                     <em class='brace'>}</em>
-<a id='L223' name='L223'></a> 223 
-<a id='L224' name='L224'></a> 224                     <strong class='reserved'>try</strong> <em class='brace'>{</em>
-<a id='L225' name='L225'></a> 225                         <strong class='reserved'>final</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> finalClass = policy_class;
-<a id='L226' name='L226'></a> 226 
-<a id='L227' name='L227'></a> 227                         <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> untrustedImpl = <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
-<a id='L228' name='L228'></a> 228                                 <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a>&gt;() <em class='brace'>{</em>
-<a id='L229' name='L229'></a> 229                                     <strong class='reserved'>public</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <strong class='reserved'>throws</strong> <a href='../S/1705.html#L53' title='Defined at 53 in src/java/lang/ClassNotFoundException.java.'>ClassNotFoundException</a>,
-<a id='L230' name='L230'></a> 230                                             <a href='../S/1743.html#L46' title='Defined at 46 in src/java/lang/InstantiationException.java.'>InstantiationException</a>,
-<a id='L231' name='L231'></a> 231                                             <a href='../S/1574.html#L59' title='Defined at 59 in src/java/lang/IllegalAccessException.java.'>IllegalAccessException</a> <em class='brace'>{</em>
-<a id='L232' name='L232'></a> 232                                         <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>&lt;? <strong class='reserved'>extends</strong> <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a>&gt; implClass = <a href='../S/1722.html#L119' title='Defined at 119 in src/java/lang/Class.java.'>Class</a>.<a href='../D/16518.html' title='Multiple defined in 6 places.'>forName</a>(
-<a id='L233' name='L233'></a> 233                                                 finalClass, <strong class='reserved'>false</strong>,
-<a id='L234' name='L234'></a> 234                                                 <a href='../S/1769.html#L141' title='Defined at 141 in src/java/lang/Thread.java.'>Thread</a>.<a href='../S/1769.html#L264' title='Defined at 264 in src/java/lang/Thread.java.'>currentThread</a>().<a href='../D/17977.html' title='Multiple defined in 21 places.'>getContextClassLoader</a>()
-<a id='L235' name='L235'></a> 235                                         ).<a href='../S/1722.html#L3400' title='Defined at 3400 in src/java/lang/Class.java.'>asSubclass</a>(<a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a>.<strong class='reserved'>class</strong>);
-<a id='L236' name='L236'></a> 236                                         <strong class='reserved'>return</strong> implClass.<a href='../D/28016.html' title='Multiple defined in 74 places.'>newInstance</a>();
-<a id='L237' name='L237'></a> 237                                     <em class='brace'>}</em>
-<a id='L238' name='L238'></a> 238                                 <em class='brace'>}</em>);
-<a id='L239' name='L239'></a> 239                         <a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>(
-<a id='L240' name='L240'></a> 240                                 <strong class='reserved'>new</strong> <a href='../S/1263.html#L45' title='Defined at 45 in src/java/security/PrivilegedExceptionAction.java.'>PrivilegedExceptionAction</a>&lt;<a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a>&gt;() <em class='brace'>{</em>
-<a id='L241' name='L241'></a> 241                                     <strong class='reserved'>public</strong> <a href='../S/1638.html#L37' title='Defined at 37 in src/java/lang/Void.java.'>Void</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
-<a id='L242' name='L242'></a> 242                                         <a href='../D/33554.html' title='Multiple defined in 3 places.'>setPolicy</a>(untrustedImpl);
-<a id='L243' name='L243'></a> 243                                         isCustomPolicy = !finalClass.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(AUTH_POLICY);
-<a id='L244' name='L244'></a> 244                                         <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L245' name='L245'></a> 245                                     <em class='brace'>}</em>
-<a id='L246' name='L246'></a> 246                                 <em class='brace'>}</em>, <a href='../S/859.html#L38' title='Defined at 38 in src/java/util/Objects.java.'>Objects</a>.<a href='../D/31141.html' title='Multiple defined in 4 places.'>requireNonNull</a>(untrustedImpl.acc)
-<a id='L247' name='L247'></a> 247                         );
-<a id='L248' name='L248'></a> 248                     <em class='brace'>}</em> <strong class='reserved'>catch</strong> (<a href='../S/1582.html#L45' title='Defined at 45 in src/java/lang/Exception.java.'>Exception</a> e) <em class='brace'>{</em>
-<a id='L249' name='L249'></a> 249                         <strong class='reserved'>throw</strong> <strong class='reserved'>new</strong> <a href='../S/1580.html#L34' title='Defined at 34 in src/java/lang/SecurityException.java.'>SecurityException</a>
-<a id='L250' name='L250'></a> 250                                 (sun.security.util.ResourcesMgr.<a href='../D/22769.html' title='Multiple defined in 35 places.'>getString</a>
-<a id='L251' name='L251'></a> 251                                 ("unable.to.instantiate.Subject.based.policy"));
-<a id='L252' name='L252'></a> 252                     <em class='brace'>}</em>
-<a id='L253' name='L253'></a> 253                 <em class='brace'>}</em>
-<a id='L254' name='L254'></a> 254             <em class='brace'>}</em>
-<a id='L255' name='L255'></a> 255         <em class='brace'>}</em>
-<a id='L256' name='L256'></a> 256         <strong class='reserved'>return</strong> policy;
-<a id='L257' name='L257'></a> 257     <em class='brace'>}</em>
-<a id='L258' name='L258'></a> 258 
-<a id='L259' name='L259'></a> 259 
-<a id='L260' name='L260'></a> 260     <em class='comment'>/**</em>
-<a id='L261' name='L261'></a> 261 <em class='comment'>     * Sets the system-wide Policy object. This method first calls</em>
-<a id='L262' name='L262'></a> 262 <em class='comment'>     * {@code SecurityManager.checkPermission} with the</em>
-<a id='L263' name='L263'></a> 263 <em class='comment'>     * {@code AuthPermission("setPolicy")}</em>
-<a id='L264' name='L264'></a> 264 <em class='comment'>     * permission to ensure the caller has permission to set the Policy.</em>
-<a id='L265' name='L265'></a> 265 <em class='comment'>     *</em>
-<a id='L266' name='L266'></a> 266 <em class='comment'>     * &lt;p&gt;</em>
-<a id='L267' name='L267'></a> 267 <em class='comment'>     *</em>
-<a id='L268' name='L268'></a> 268 <em class='comment'>     * @param policy the new system Policy object.</em>
-<a id='L269' name='L269'></a> 269 <em class='comment'>     *</em>
-<a id='L270' name='L270'></a> 270 <em class='comment'>     * @exception java.lang.SecurityException if the current thread does not</em>
-<a id='L271' name='L271'></a> 271 <em class='comment'>     *          have permission to set the Policy.</em>
-<a id='L272' name='L272'></a> 272 <em class='comment'>     *</em>
-<a id='L273' name='L273'></a> 273 <em class='comment'>     * @see #getPolicy</em>
-<a id='L274' name='L274'></a> 274 <em class='comment'>     */</em>
-<a id='L275' name='L275'></a> 275     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>void</strong> <a href='../S/2677.html#L242' title='Referred from 242 in src/javax/security/auth/Policy.java.'>setPolicy</a>(<a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a> policy) <em class='brace'>{</em>
-<a id='L276' name='L276'></a> 276         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.lang.<a href='../D/7682.html' title='Multiple defined in 2 places.'>SecurityManager</a> sm = <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L333' title='Defined at 333 in src/java/lang/System.java.'>getSecurityManager</a>();
-<a id='L277' name='L277'></a> 277         <strong class='reserved'>if</strong> (sm != <strong class='reserved'>null</strong>) sm.<a href='../D/12594.html' title='Multiple defined in 22 places.'>checkPermission</a>(<strong class='reserved'>new</strong> <a href='../S/2649.html#L129' title='Defined at 129 in src/javax/security/auth/AuthPermission.java.'>AuthPermission</a>("setPolicy"));
-<a id='L278' name='L278'></a> 278         <a href='../D/6725.html' title='Multiple defined in 3 places.'>Policy</a>.policy = policy;
-<a id='L279' name='L279'></a> 279         <em class='comment'>// all non-null policy objects are assumed to be custom</em>
-<a id='L280' name='L280'></a> 280         isCustomPolicy = policy != <strong class='reserved'>null</strong> ? <strong class='reserved'>true</strong> : <strong class='reserved'>false</strong>;
-<a id='L281' name='L281'></a> 281     <em class='brace'>}</em>
-<a id='L282' name='L282'></a> 282 
-<a id='L283' name='L283'></a> 283     <em class='comment'>/**</em>
-<a id='L284' name='L284'></a> 284 <em class='comment'>     * Returns true if a custom (not AUTH_POLICY) system-wide policy object</em>
-<a id='L285' name='L285'></a> 285 <em class='comment'>     * has been set or installed. This method is called by</em>
-<a id='L286' name='L286'></a> 286 <em class='comment'>     * SubjectDomainCombiner to provide backwards compatibility for</em>
-<a id='L287' name='L287'></a> 287 <em class='comment'>     * developers that provide their own javax.security.auth.Policy</em>
-<a id='L288' name='L288'></a> 288 <em class='comment'>     * implementations.</em>
-<a id='L289' name='L289'></a> 289 <em class='comment'>     *</em>
-<a id='L290' name='L290'></a> 290 <em class='comment'>     * @return true if a custom (not AUTH_POLICY) system-wide policy object</em>
-<a id='L291' name='L291'></a> 291 <em class='comment'>     * has been set; false otherwise</em>
-<a id='L292' name='L292'></a> 292 <em class='comment'>     */</em>
-<a id='L293' name='L293'></a> 293     <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../S/2641.html#L62' title='Referred from 62 in src/javax/security/auth/SubjectDomainCombiner.java.'>isCustomPolicySet</a>(<a href='../D/2238.html' title='Multiple defined in 2 places.'>Debug</a> <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>) <em class='brace'>{</em>
-<a id='L294' name='L294'></a> 294         <strong class='reserved'>if</strong> (policy != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L295' name='L295'></a> 295             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> != <strong class='reserved'>null</strong> &amp;&amp; isCustomPolicy) <em class='brace'>{</em>
-<a id='L296' name='L296'></a> 296                 <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("Providing backwards compatibility for " +
-<a id='L297' name='L297'></a> 297                               "javax.security.auth.policy implementation: " +
-<a id='L298' name='L298'></a> 298                               policy.<a href='../D/35493.html' title='Multiple defined in 1021 places.'>toString</a>());
-<a id='L299' name='L299'></a> 299             <em class='brace'>}</em>
-<a id='L300' name='L300'></a> 300             <strong class='reserved'>return</strong> isCustomPolicy;
-<a id='L301' name='L301'></a> 301         <em class='brace'>}</em>
-<a id='L302' name='L302'></a> 302         <em class='comment'>// check if custom policy has been set using auth.policy.provider prop</em>
-<a id='L303' name='L303'></a> 303         <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> policyClass = <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1248.html#L264' title='Defined at 264 in src/java/security/AccessController.java.'>AccessController</a>.<a href='../D/15060.html' title='Multiple defined in 7 places.'>doPrivileged</a>
-<a id='L304' name='L304'></a> 304             (<strong class='reserved'>new</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1321.html#L42' title='Defined at 42 in src/java/security/PrivilegedAction.java.'>PrivilegedAction</a>&lt;<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>&gt;() <em class='brace'>{</em>
-<a id='L305' name='L305'></a> 305                 <strong class='reserved'>public</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../D/31480.html' title='Multiple defined in 101 places.'>run</a>() <em class='brace'>{</em>
-<a id='L306' name='L306'></a> 306                     <strong class='reserved'>return</strong> <a href='../S/1265.html#L49' title='Defined at 49 in src/java/security/Security.java.'>Security</a>.<a href='../D/21720.html' title='Multiple defined in 77 places.'>getProperty</a>("auth.policy.provider");
-<a id='L307' name='L307'></a> 307                 <em class='brace'>}</em>
-<a id='L308' name='L308'></a> 308         <em class='brace'>}</em>);
-<a id='L309' name='L309'></a> 309         <strong class='reserved'>if</strong> (policyClass != <strong class='reserved'>null</strong> &amp;&amp; !policyClass.<a href='../D/15685.html' title='Multiple defined in 654 places.'>equals</a>(AUTH_POLICY)) <em class='brace'>{</em>
-<a id='L310' name='L310'></a> 310             <strong class='reserved'>if</strong> (<a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a> != <strong class='reserved'>null</strong>) <em class='brace'>{</em>
-<a id='L311' name='L311'></a> 311                 <a href='../D/14486.html' title='Multiple defined in 5 places.'>debug</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("Providing backwards compatibility for " +
-<a id='L312' name='L312'></a> 312                               "javax.security.auth.policy implementation: " +
-<a id='L313' name='L313'></a> 313                               policyClass);
-<a id='L314' name='L314'></a> 314             <em class='brace'>}</em>
-<a id='L315' name='L315'></a> 315             <strong class='reserved'>return</strong> <strong class='reserved'>true</strong>;
-<a id='L316' name='L316'></a> 316         <em class='brace'>}</em>
-<a id='L317' name='L317'></a> 317         <strong class='reserved'>return</strong> <strong class='reserved'>false</strong>;
-<a id='L318' name='L318'></a> 318     <em class='brace'>}</em>
-<a id='L319' name='L319'></a> 319 
-<a id='L320' name='L320'></a> 320     <em class='comment'>/**</em>
-<a id='L321' name='L321'></a> 321 <em class='comment'>     * Retrieve the Permissions granted to the Principals associated with</em>
-<a id='L322' name='L322'></a> 322 <em class='comment'>     * the specified {@code CodeSource}.</em>
-<a id='L323' name='L323'></a> 323 <em class='comment'>     *</em>
-<a id='L324' name='L324'></a> 324 <em class='comment'>     * &lt;p&gt;</em>
-<a id='L325' name='L325'></a> 325 <em class='comment'>     *</em>
-<a id='L326' name='L326'></a> 326 <em class='comment'>     * @param subject the {@code Subject}</em>
-<a id='L327' name='L327'></a> 327 <em class='comment'>     *                  whose associated Principals,</em>
-<a id='L328' name='L328'></a> 328 <em class='comment'>     *                  in conjunction with the provided</em>
-<a id='L329' name='L329'></a> 329 <em class='comment'>     *                  {@code CodeSource}, determines the Permissions</em>
-<a id='L330' name='L330'></a> 330 <em class='comment'>     *                  returned by this method.  This parameter</em>
-<a id='L331' name='L331'></a> 331 <em class='comment'>     *                  may be {@code null}. &lt;p&gt;</em>
-<a id='L332' name='L332'></a> 332 <em class='comment'>     *</em>
-<a id='L333' name='L333'></a> 333 <em class='comment'>     * @param cs the code specified by its {@code CodeSource}</em>
-<a id='L334' name='L334'></a> 334 <em class='comment'>     *                  that determines, in conjunction with the provided</em>
-<a id='L335' name='L335'></a> 335 <em class='comment'>     *                  {@code Subject}, the Permissions</em>
-<a id='L336' name='L336'></a> 336 <em class='comment'>     *                  returned by this method.  This parameter may be</em>
-<a id='L337' name='L337'></a> 337 <em class='comment'>     *                  {@code null}.</em>
-<a id='L338' name='L338'></a> 338 <em class='comment'>     *</em>
-<a id='L339' name='L339'></a> 339 <em class='comment'>     * @return the Collection of Permissions granted to all the</em>
-<a id='L340' name='L340'></a> 340 <em class='comment'>     *                  {@code Subject} and code specified in</em>
-<a id='L341' name='L341'></a> 341 <em class='comment'>     *                  the provided &lt;i&gt;subject&lt;/i&gt; and &lt;i&gt;cs&lt;/i&gt;</em>
-<a id='L342' name='L342'></a> 342 <em class='comment'>     *                  parameters.</em>
-<a id='L343' name='L343'></a> 343 <em class='comment'>     */</em>
-<a id='L344' name='L344'></a> 344     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1216.html#L94' title='Defined at 94 in src/java/security/PermissionCollection.java.'>PermissionCollection</a> <a href='../R/18335.html' title='Multiple referred from 13 places.'>getPermissions</a>
-<a id='L345' name='L345'></a> 345                                         (<a href='../S/2639.html#L100' title='Defined at 100 in src/javax/security/auth/Subject.java.'>Subject</a> subject,
-<a id='L346' name='L346'></a> 346                                         <a href='../S/3625.html#L43' title='Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.'>java</a>.security.<a href='../S/1318.html#L48' title='Defined at 48 in src/java/security/CodeSource.java.'>CodeSource</a> cs);
-<a id='L347' name='L347'></a> 347 
-<a id='L348' name='L348'></a> 348     <em class='comment'>/**</em>
-<a id='L349' name='L349'></a> 349 <em class='comment'>     * Refresh and reload the Policy.</em>
-<a id='L350' name='L350'></a> 350 <em class='comment'>     *</em>
-<a id='L351' name='L351'></a> 351 <em class='comment'>     * &lt;p&gt;This method causes this object to refresh/reload its current</em>
-<a id='L352' name='L352'></a> 352 <em class='comment'>     * Policy. This is implementation-dependent.</em>
-<a id='L353' name='L353'></a> 353 <em class='comment'>     * For example, if the Policy object is stored in</em>
-<a id='L354' name='L354'></a> 354 <em class='comment'>     * a file, calling {@code refresh} will cause the file to be re-read.</em>
-<a id='L355' name='L355'></a> 355 <em class='comment'>     *</em>
-<a id='L356' name='L356'></a> 356 <em class='comment'>     * &lt;p&gt;</em>
-<a id='L357' name='L357'></a> 357 <em class='comment'>     *</em>
-<a id='L358' name='L358'></a> 358 <em class='comment'>     * @exception SecurityException if the caller does not have permission</em>
-<a id='L359' name='L359'></a> 359 <em class='comment'>     *                          to refresh the Policy.</em>
-<a id='L360' name='L360'></a> 360 <em class='comment'>     */</em>
-<a id='L361' name='L361'></a> 361     <strong class='reserved'>public</strong> <strong class='reserved'>abstract</strong> <strong class='reserved'>void</strong> <a href='../R/25739.html' title='Multiple referred from 7 places.'>refresh</a>();
-<a id='L362' name='L362'></a> 362 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
+<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
+<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
+<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
+<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
+<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<a id="L25" name="L25"></a>  25 
+<a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> <a href="../D/26637.html" title="Multiple defined in 6 places.">javax</a>.security.auth;
+<a id="L27" name="L27"></a>  27 
+<a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.security.Security;
+<a id="L29" name="L29"></a>  29 <strong class="reserved">import</strong> java.security.AccessController;
+<a id="L30" name="L30"></a>  30 <strong class="reserved">import</strong> java.security.PrivilegedAction;
+<a id="L31" name="L31"></a>  31 <strong class="reserved">import</strong> java.security.PrivilegedExceptionAction;
+<a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> java.util.Objects;
+<a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> sun.security.util.Debug;
+<a id="L34" name="L34"></a>  34 
+<a id="L35" name="L35"></a>  35 <em class="comment">/**</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> *  This is an abstract class for representing the system policy for</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> * Subject-based authorization.  A subclass implementation</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> * of this class provides a means to specify a Subject-based</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> * access control {@code Policy}.</em>
+<a id="L40" name="L40"></a>  40 <em class="comment"> *</em>
+<a id="L41" name="L41"></a>  41 <em class="comment"> *  A {@code Policy} object can be queried for the set of</em>
+<a id="L42" name="L42"></a>  42 <em class="comment"> * Permissions granted to code running as a</em>
+<a id="L43" name="L43"></a>  43 <em class="comment"> * {@code Principal} in the following manner:</em>
+<a id="L44" name="L44"></a>  44 <em class="comment"> *</em>
+<a id="L45" name="L45"></a>  45 <em class="comment"> * <pre></pre></em>
+<a id="L46" name="L46"></a>  46 <em class="comment"> *      policy = Policy.getPolicy();</em>
+<a id="L47" name="L47"></a>  47 <em class="comment"> *      PermissionCollection perms = policy.getPermissions(subject,</em>
+<a id="L48" name="L48"></a>  48 <em class="comment"> *                                                      codeSource);</em>
+<a id="L49" name="L49"></a>  49 <em class="comment"> * </em>
+<a id="L50" name="L50"></a>  50 <em class="comment"> *</em>
+<a id="L51" name="L51"></a>  51 <em class="comment"> * The {@code Policy} object consults the local policy and returns</em>
+<a id="L52" name="L52"></a>  52 <em class="comment"> * and appropriate {@code Permissions} object with the</em>
+<a id="L53" name="L53"></a>  53 <em class="comment"> * Permissions granted to the Principals associated with the</em>
+<a id="L54" name="L54"></a>  54 <em class="comment"> * provided <i>subject</i>, and granted to the code specified</em>
+<a id="L55" name="L55"></a>  55 <em class="comment"> * by the provided <i>codeSource</i>.</em>
+<a id="L56" name="L56"></a>  56 <em class="comment"> *</em>
+<a id="L57" name="L57"></a>  57 <em class="comment"> *  A {@code Policy} contains the following information.</em>
+<a id="L58" name="L58"></a>  58 <em class="comment"> * Note that this example only represents the syntax for the default</em>
+<a id="L59" name="L59"></a>  59 <em class="comment"> * {@code Policy} implementation. Subclass implementations of this class</em>
+<a id="L60" name="L60"></a>  60 <em class="comment"> * may implement alternative syntaxes and may retrieve the</em>
+<a id="L61" name="L61"></a>  61 <em class="comment"> * {@code Policy} from any source such as files, databases,</em>
+<a id="L62" name="L62"></a>  62 <em class="comment"> * or servers.</em>
+<a id="L63" name="L63"></a>  63 <em class="comment"> *</em>
+<a id="L64" name="L64"></a>  64 <em class="comment"> *  Each entry in the {@code Policy} is represented as</em>
+<a id="L65" name="L65"></a>  65 <em class="comment"> * a <b><i>grant</i></b> entry.  Each <b><i>grant</i></b> entry</em>
+<a id="L66" name="L66"></a>  66 <em class="comment"> * specifies a codebase, code signers, and Principals triplet,</em>
+<a id="L67" name="L67"></a>  67 <em class="comment"> * as well as the Permissions granted to that triplet.</em>
+<a id="L68" name="L68"></a>  68 <em class="comment"> *</em>
+<a id="L69" name="L69"></a>  69 <em class="comment"> * <pre></pre></em>
+<a id="L70" name="L70"></a>  70 <em class="comment"> *      grant CodeBase ["URL"], Signedby ["signers"],</em>
+<a id="L71" name="L71"></a>  71 <em class="comment"> *            Principal [Principal_Class] "Principal_Name" {</em>
+<a id="L72" name="L72"></a>  72 <em class="comment"> *          Permission Permission_Class ["Target_Name"]</em>
+<a id="L73" name="L73"></a>  73 <em class="comment"> *                                      [, "Permission_Actions"]</em>
+<a id="L74" name="L74"></a>  74 <em class="comment"> *                                      [, signedBy "SignerName"];</em>
+<a id="L75" name="L75"></a>  75 <em class="comment"> *      };</em>
+<a id="L76" name="L76"></a>  76 <em class="comment"> * </em>
+<a id="L77" name="L77"></a>  77 <em class="comment"> *</em>
+<a id="L78" name="L78"></a>  78 <em class="comment"> * The CodeBase and Signedby components of the triplet name/value pairs</em>
+<a id="L79" name="L79"></a>  79 <em class="comment"> * are optional.  If they are not present, then any any codebase will match,</em>
+<a id="L80" name="L80"></a>  80 <em class="comment"> * and any signer (including unsigned code) will match.</em>
+<a id="L81" name="L81"></a>  81 <em class="comment"> * For Example,</em>
+<a id="L82" name="L82"></a>  82 <em class="comment"> *</em>
+<a id="L83" name="L83"></a>  83 <em class="comment"> * <pre></pre></em>
+<a id="L84" name="L84"></a>  84 <em class="comment"> *      grant CodeBase "foo.com", Signedby "foo",</em>
+<a id="L85" name="L85"></a>  85 <em class="comment"> *            Principal com.sun.security.auth.SolarisPrincipal "duke" {</em>
+<a id="L86" name="L86"></a>  86 <em class="comment"> *          permission java.io.FilePermission "/home/duke", "read, write";</em>
+<a id="L87" name="L87"></a>  87 <em class="comment"> *      };</em>
+<a id="L88" name="L88"></a>  88 <em class="comment"> * </em>
+<a id="L89" name="L89"></a>  89 <em class="comment"> *</em>
+<a id="L90" name="L90"></a>  90 <em class="comment"> * This <b><i>grant</i></b> entry specifies that code from "foo.com",</em>
+<a id="L91" name="L91"></a>  91 <em class="comment"> * signed by "foo', and running as a {@code SolarisPrincipal} with the</em>
+<a id="L92" name="L92"></a>  92 <em class="comment"> * name, duke, has one {@code Permission}.  This {@code Permission}</em>
+<a id="L93" name="L93"></a>  93 <em class="comment"> * permits the executing code to read and write files in the directory,</em>
+<a id="L94" name="L94"></a>  94 <em class="comment"> * "/home/duke".</em>
+<a id="L95" name="L95"></a>  95 <em class="comment"> *</em>
+<a id="L96" name="L96"></a>  96 <em class="comment"> *  To "run" as a particular {@code Principal},</em>
+<a id="L97" name="L97"></a>  97 <em class="comment"> * code invokes the {@code Subject.doAs(subject, ...)} method.</em>
+<a id="L98" name="L98"></a>  98 <em class="comment"> * After invoking that method, the code runs as all the Principals</em>
+<a id="L99" name="L99"></a>  99 <em class="comment"> * associated with the specified {@code Subject}.</em>
+<a id="L100" name="L100"></a> 100 <em class="comment"> * Note that this {@code Policy} (and the Permissions</em>
+<a id="L101" name="L101"></a> 101 <em class="comment"> * granted in this {@code Policy}) only become effective</em>
+<a id="L102" name="L102"></a> 102 <em class="comment"> * after the call to {@code Subject.doAs} has occurred.</em>
+<a id="L103" name="L103"></a> 103 <em class="comment"> *</em>
+<a id="L104" name="L104"></a> 104 <em class="comment"> *  Multiple Principals may be listed within one <b><i>grant</i></b> entry.</em>
+<a id="L105" name="L105"></a> 105 <em class="comment"> * All the Principals in the grant entry must be associated with</em>
+<a id="L106" name="L106"></a> 106 <em class="comment"> * the {@code Subject} provided to {@code Subject.doAs}</em>
+<a id="L107" name="L107"></a> 107 <em class="comment"> * for that {@code Subject} to be granted the specified Permissions.</em>
+<a id="L108" name="L108"></a> 108 <em class="comment"> *</em>
+<a id="L109" name="L109"></a> 109 <em class="comment"> * <pre></pre></em>
+<a id="L110" name="L110"></a> 110 <em class="comment"> *      grant Principal com.sun.security.auth.SolarisPrincipal "duke",</em>
+<a id="L111" name="L111"></a> 111 <em class="comment"> *            Principal com.sun.security.auth.SolarisNumericUserPrincipal "0" {</em>
+<a id="L112" name="L112"></a> 112 <em class="comment"> *          permission java.io.FilePermission "/home/duke", "read, write";</em>
+<a id="L113" name="L113"></a> 113 <em class="comment"> *          permission java.net.SocketPermission "duke.com", "connect";</em>
+<a id="L114" name="L114"></a> 114 <em class="comment"> *      };</em>
+<a id="L115" name="L115"></a> 115 <em class="comment"> * </em>
+<a id="L116" name="L116"></a> 116 <em class="comment"> *</em>
+<a id="L117" name="L117"></a> 117 <em class="comment"> * This entry grants any code running as both "duke" and "0"</em>
+<a id="L118" name="L118"></a> 118 <em class="comment"> * permission to read and write files in duke's home directory,</em>
+<a id="L119" name="L119"></a> 119 <em class="comment"> * as well as permission to make socket connections to "duke.com".</em>
+<a id="L120" name="L120"></a> 120 <em class="comment"> *</em>
+<a id="L121" name="L121"></a> 121 <em class="comment"> *  Note that non Principal-based grant entries are not permitted</em>
+<a id="L122" name="L122"></a> 122 <em class="comment"> * in this {@code Policy}.  Therefore, grant entries such as:</em>
+<a id="L123" name="L123"></a> 123 <em class="comment"> *</em>
+<a id="L124" name="L124"></a> 124 <em class="comment"> * <pre></pre></em>
+<a id="L125" name="L125"></a> 125 <em class="comment"> *      grant CodeBase "foo.com", Signedby "foo" {</em>
+<a id="L126" name="L126"></a> 126 <em class="comment"> *          permission java.io.FilePermission "/tmp/scratch", "read, write";</em>
+<a id="L127" name="L127"></a> 127 <em class="comment"> *      };</em>
+<a id="L128" name="L128"></a> 128 <em class="comment"> * </em>
+<a id="L129" name="L129"></a> 129 <em class="comment"> *</em>
+<a id="L130" name="L130"></a> 130 <em class="comment"> * are rejected.  Such permission must be listed in the</em>
+<a id="L131" name="L131"></a> 131 <em class="comment"> * {@code java.security.Policy}.</em>
+<a id="L132" name="L132"></a> 132 <em class="comment"> *</em>
+<a id="L133" name="L133"></a> 133 <em class="comment"> *  The default {@code Policy} implementation can be changed by</em>
+<a id="L134" name="L134"></a> 134 <em class="comment"> * setting the value of the {@code auth.policy.provider} security property to</em>
+<a id="L135" name="L135"></a> 135 <em class="comment"> * the fully qualified name of the desired {@code Policy} implementation class.</em>
+<a id="L136" name="L136"></a> 136 <em class="comment"> *</em>
+<a id="L137" name="L137"></a> 137 <em class="comment"> * @deprecated  as of JDK version 1.4 -- Replaced by java.security.Policy.</em>
+<a id="L138" name="L138"></a> 138 <em class="comment"> *              java.security.Policy has a method:</em>
+<a id="L139" name="L139"></a> 139 <em class="comment"> * <pre></pre></em>
+<a id="L140" name="L140"></a> 140 <em class="comment"> *      public PermissionCollection getPermissions</em>
+<a id="L141" name="L141"></a> 141 <em class="comment"> *          (java.security.ProtectionDomain pd)</em>
+<a id="L142" name="L142"></a> 142 <em class="comment"> *</em>
+<a id="L143" name="L143"></a> 143 <em class="comment"> * </em>
+<a id="L144" name="L144"></a> 144 <em class="comment"> * and ProtectionDomain has a constructor:</em>
+<a id="L145" name="L145"></a> 145 <em class="comment"> * <pre></pre></em>
+<a id="L146" name="L146"></a> 146 <em class="comment"> *      public ProtectionDomain</em>
+<a id="L147" name="L147"></a> 147 <em class="comment"> *          (CodeSource cs,</em>
+<a id="L148" name="L148"></a> 148 <em class="comment"> *           PermissionCollection permissions,</em>
+<a id="L149" name="L149"></a> 149 <em class="comment"> *           ClassLoader loader,</em>
+<a id="L150" name="L150"></a> 150 <em class="comment"> *           Principal[] principals)</em>
+<a id="L151" name="L151"></a> 151 <em class="comment"> * </em>
+<a id="L152" name="L152"></a> 152 <em class="comment"> *</em>
+<a id="L153" name="L153"></a> 153 <em class="comment"> * These two APIs provide callers the means to query the</em>
+<a id="L154" name="L154"></a> 154 <em class="comment"> * Policy for Principal-based Permission entries.</em>
+<a id="L155" name="L155"></a> 155 <em class="comment"> *</em>
+<a id="L156" name="L156"></a> 156 <em class="comment"> * @see java.security.Security security properties</em>
+<a id="L157" name="L157"></a> 157 <em class="comment"> */</em>
+<a id="L158" name="L158"></a> 158 @<a href="../D/2383.html" title="Multiple defined in 2 places.">Deprecated</a>
+<a id="L159" name="L159"></a> 159 <strong class="reserved">public</strong> <strong class="reserved">abstract</strong> <strong class="reserved">class</strong> <a href="../R/6129.html" title="Multiple referred from 162 places.">Policy</a> <em class="brace">{</em>
+<a id="L160" name="L160"></a> 160 
+<a id="L161" name="L161"></a> 161     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a> policy;
+<a id="L162" name="L162"></a> 162     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">static</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> AUTH_POLICY =
+<a id="L163" name="L163"></a> 163         "sun.security.provider.AuthPolicyFile";
+<a id="L164" name="L164"></a> 164 
+<a id="L165" name="L165"></a> 165     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1212.html#L77" title="Defined at 77 in src/java/security/AccessControlContext.java.">AccessControlContext</a> acc =
+<a id="L166" name="L166"></a> 166             <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/17976.html" title="Multiple defined in 99 places.">getContext</a>();
+<a id="L167" name="L167"></a> 167 
+<a id="L168" name="L168"></a> 168     <em class="comment">// true if a custom (not AUTH_POLICY) system-wide policy object is set</em>
+<a id="L169" name="L169"></a> 169     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">boolean</strong> isCustomPolicy;
+<a id="L170" name="L170"></a> 170 
+<a id="L171" name="L171"></a> 171     <em class="comment">/**</em>
+<a id="L172" name="L172"></a> 172 <em class="comment">     * Sole constructor.  (For invocation by subclass constructors, typically</em>
+<a id="L173" name="L173"></a> 173 <em class="comment">     * implicit.)</em>
+<a id="L174" name="L174"></a> 174 <em class="comment">     */</em>
+<a id="L175" name="L175"></a> 175     <strong class="reserved">protected</strong> Policy() <em class="brace">{</em> <em class="brace">}</em>
+<a id="L176" name="L176"></a> 176 
+<a id="L177" name="L177"></a> 177     <em class="comment">/**</em>
+<a id="L178" name="L178"></a> 178 <em class="comment">     * Returns the installed Policy object.</em>
+<a id="L179" name="L179"></a> 179 <em class="comment">     * This method first calls</em>
+<a id="L180" name="L180"></a> 180 <em class="comment">     * {@code SecurityManager.checkPermission} with the</em>
+<a id="L181" name="L181"></a> 181 <em class="comment">     * {@code AuthPermission("getPolicy")} permission</em>
+<a id="L182" name="L182"></a> 182 <em class="comment">     * to ensure the caller has permission to get the Policy object.</em>
+<a id="L183" name="L183"></a> 183 <em class="comment">     *</em>
+<a id="L184" name="L184"></a> 184 <em class="comment">     * </em>
+<a id="L185" name="L185"></a> 185 <em class="comment">     *</em>
+<a id="L186" name="L186"></a> 186 <em class="comment">     * @return the installed Policy.  The return value cannot be</em>
+<a id="L187" name="L187"></a> 187 <em class="comment">     *          {@code null}.</em>
+<a id="L188" name="L188"></a> 188 <em class="comment">     *</em>
+<a id="L189" name="L189"></a> 189 <em class="comment">     * @exception java.lang.SecurityException if the current thread does not</em>
+<a id="L190" name="L190"></a> 190 <em class="comment">     *      have permission to get the Policy object.</em>
+<a id="L191" name="L191"></a> 191 <em class="comment">     *</em>
+<a id="L192" name="L192"></a> 192 <em class="comment">     * @see #setPolicy</em>
+<a id="L193" name="L193"></a> 193 <em class="comment">     */</em>
+<a id="L194" name="L194"></a> 194     <strong class="reserved">public</strong> <strong class="reserved">static</strong> <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a> <a href="../R/18358.html" title="Multiple referred from 5 places.">getPolicy</a>() <em class="brace">{</em>
+<a id="L195" name="L195"></a> 195         <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.lang.<a href="../D/7682.html" title="Multiple defined in 2 places.">SecurityManager</a> sm = <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L333" title="Defined at 333 in src/java/lang/System.java.">getSecurityManager</a>();
+<a id="L196" name="L196"></a> 196         <strong class="reserved">if</strong> (sm != <strong class="reserved">null</strong>) sm.<a href="../D/12594.html" title="Multiple defined in 22 places.">checkPermission</a>(<strong class="reserved">new</strong> <a href="../S/2649.html#L129" title="Defined at 129 in src/javax/security/auth/AuthPermission.java.">AuthPermission</a>("getPolicy"));
+<a id="L197" name="L197"></a> 197         <strong class="reserved">return</strong> <a href="../D/21518.html" title="Multiple defined in 2 places.">getPolicyNoCheck</a>();
+<a id="L198" name="L198"></a> 198     <em class="brace">}</em>
+<a id="L199" name="L199"></a> 199 
+<a id="L200" name="L200"></a> 200     <em class="comment">/**</em>
+<a id="L201" name="L201"></a> 201 <em class="comment">     * Returns the installed Policy object, skipping the security check.</em>
+<a id="L202" name="L202"></a> 202 <em class="comment">     *</em>
+<a id="L203" name="L203"></a> 203 <em class="comment">     * @return the installed Policy.</em>
+<a id="L204" name="L204"></a> 204 <em class="comment">     *</em>
+<a id="L205" name="L205"></a> 205 <em class="comment">     */</em>
+<a id="L206" name="L206"></a> 206     <strong class="reserved">static</strong> <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a> <a href="../R/18359.html" title="Multiple referred from 5 places.">getPolicyNoCheck</a>() <em class="brace">{</em>
+<a id="L207" name="L207"></a> 207         <strong class="reserved">if</strong> (policy == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L208" name="L208"></a> 208 
+<a id="L209" name="L209"></a> 209             <strong class="reserved">synchronized</strong>(<a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a>.<strong class="reserved">class</strong>) <em class="brace">{</em>
+<a id="L210" name="L210"></a> 210 
+<a id="L211" name="L211"></a> 211                 <strong class="reserved">if</strong> (policy == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L212" name="L212"></a> 212                     <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> policy_class = <strong class="reserved">null</strong>;
+<a id="L213" name="L213"></a> 213                     policy_class = <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>
+<a id="L214" name="L214"></a> 214                         (<strong class="reserved">new</strong> <a href="../S/1321.html#L42" title="Defined at 42 in src/java/security/PrivilegedAction.java.">PrivilegedAction</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>&gt;() <em class="brace">{</em>
+<a id="L215" name="L215"></a> 215                         <strong class="reserved">public</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <em class="brace">{</em>
+<a id="L216" name="L216"></a> 216                             <strong class="reserved">return</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1265.html#L49" title="Defined at 49 in src/java/security/Security.java.">Security</a>.<a href="../D/21720.html" title="Multiple defined in 77 places.">getProperty</a>
+<a id="L217" name="L217"></a> 217                                 ("auth.policy.provider");
+<a id="L218" name="L218"></a> 218                         <em class="brace">}</em>
+<a id="L219" name="L219"></a> 219                     <em class="brace">}</em>);
+<a id="L220" name="L220"></a> 220                     <strong class="reserved">if</strong> (policy_class == <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L221" name="L221"></a> 221                         policy_class = AUTH_POLICY;
+<a id="L222" name="L222"></a> 222                     <em class="brace">}</em>
+<a id="L223" name="L223"></a> 223 
+<a id="L224" name="L224"></a> 224                     <strong class="reserved">try</strong> <em class="brace">{</em>
+<a id="L225" name="L225"></a> 225                         <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> finalClass = policy_class;
+<a id="L226" name="L226"></a> 226 
+<a id="L227" name="L227"></a> 227                         <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a> untrustedImpl = <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(
+<a id="L228" name="L228"></a> 228                                 <strong class="reserved">new</strong> <a href="../S/1263.html#L45" title="Defined at 45 in src/java/security/PrivilegedExceptionAction.java.">PrivilegedExceptionAction</a>&lt;<a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a>&gt;() <em class="brace">{</em>
+<a id="L229" name="L229"></a> 229                                     <strong class="reserved">public</strong> <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <strong class="reserved">throws</strong> <a href="../S/1705.html#L53" title="Defined at 53 in src/java/lang/ClassNotFoundException.java.">ClassNotFoundException</a>,
+<a id="L230" name="L230"></a> 230                                             <a href="../S/1743.html#L46" title="Defined at 46 in src/java/lang/InstantiationException.java.">InstantiationException</a>,
+<a id="L231" name="L231"></a> 231                                             <a href="../S/1574.html#L59" title="Defined at 59 in src/java/lang/IllegalAccessException.java.">IllegalAccessException</a> <em class="brace">{</em>
+<a id="L232" name="L232"></a> 232                                         <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>&lt;? <strong class="reserved">extends</strong> <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a>&gt; implClass = <a href="../S/1722.html#L119" title="Defined at 119 in src/java/lang/Class.java.">Class</a>.<a href="../D/16518.html" title="Multiple defined in 6 places.">forName</a>(
+<a id="L233" name="L233"></a> 233                                                 finalClass, <strong class="reserved">false</strong>,
+<a id="L234" name="L234"></a> 234                                                 <a href="../S/1769.html#L141" title="Defined at 141 in src/java/lang/Thread.java.">Thread</a>.<a href="../S/1769.html#L264" title="Defined at 264 in src/java/lang/Thread.java.">currentThread</a>().<a href="../D/17977.html" title="Multiple defined in 21 places.">getContextClassLoader</a>()
+<a id="L235" name="L235"></a> 235                                         ).<a href="../S/1722.html#L3400" title="Defined at 3400 in src/java/lang/Class.java.">asSubclass</a>(<a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a>.<strong class="reserved">class</strong>);
+<a id="L236" name="L236"></a> 236                                         <strong class="reserved">return</strong> implClass.<a href="../D/28016.html" title="Multiple defined in 74 places.">newInstance</a>();
+<a id="L237" name="L237"></a> 237                                     <em class="brace">}</em>
+<a id="L238" name="L238"></a> 238                                 <em class="brace">}</em>);
+<a id="L239" name="L239"></a> 239                         <a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>(
+<a id="L240" name="L240"></a> 240                                 <strong class="reserved">new</strong> <a href="../S/1263.html#L45" title="Defined at 45 in src/java/security/PrivilegedExceptionAction.java.">PrivilegedExceptionAction</a>&lt;<a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a>&gt;() <em class="brace">{</em>
+<a id="L241" name="L241"></a> 241                                     <strong class="reserved">public</strong> <a href="../S/1638.html#L37" title="Defined at 37 in src/java/lang/Void.java.">Void</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <em class="brace">{</em>
+<a id="L242" name="L242"></a> 242                                         <a href="../D/33554.html" title="Multiple defined in 3 places.">setPolicy</a>(untrustedImpl);
+<a id="L243" name="L243"></a> 243                                         isCustomPolicy = !finalClass.<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(AUTH_POLICY);
+<a id="L244" name="L244"></a> 244                                         <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L245" name="L245"></a> 245                                     <em class="brace">}</em>
+<a id="L246" name="L246"></a> 246                                 <em class="brace">}</em>, <a href="../S/859.html#L38" title="Defined at 38 in src/java/util/Objects.java.">Objects</a>.<a href="../D/31141.html" title="Multiple defined in 4 places.">requireNonNull</a>(untrustedImpl.acc)
+<a id="L247" name="L247"></a> 247                         );
+<a id="L248" name="L248"></a> 248                     <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
+<a id="L249" name="L249"></a> 249                         <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1580.html#L34" title="Defined at 34 in src/java/lang/SecurityException.java.">SecurityException</a>
+<a id="L250" name="L250"></a> 250                                 (sun.security.util.ResourcesMgr.<a href="../D/22769.html" title="Multiple defined in 35 places.">getString</a>
+<a id="L251" name="L251"></a> 251                                 ("unable.to.instantiate.Subject.based.policy"));
+<a id="L252" name="L252"></a> 252                     <em class="brace">}</em>
+<a id="L253" name="L253"></a> 253                 <em class="brace">}</em>
+<a id="L254" name="L254"></a> 254             <em class="brace">}</em>
+<a id="L255" name="L255"></a> 255         <em class="brace">}</em>
+<a id="L256" name="L256"></a> 256         <strong class="reserved">return</strong> policy;
+<a id="L257" name="L257"></a> 257     <em class="brace">}</em>
+<a id="L258" name="L258"></a> 258 
+<a id="L259" name="L259"></a> 259 
+<a id="L260" name="L260"></a> 260     <em class="comment">/**</em>
+<a id="L261" name="L261"></a> 261 <em class="comment">     * Sets the system-wide Policy object. This method first calls</em>
+<a id="L262" name="L262"></a> 262 <em class="comment">     * {@code SecurityManager.checkPermission} with the</em>
+<a id="L263" name="L263"></a> 263 <em class="comment">     * {@code AuthPermission("setPolicy")}</em>
+<a id="L264" name="L264"></a> 264 <em class="comment">     * permission to ensure the caller has permission to set the Policy.</em>
+<a id="L265" name="L265"></a> 265 <em class="comment">     *</em>
+<a id="L266" name="L266"></a> 266 <em class="comment">     * </em>
+<a id="L267" name="L267"></a> 267 <em class="comment">     *</em>
+<a id="L268" name="L268"></a> 268 <em class="comment">     * @param policy the new system Policy object.</em>
+<a id="L269" name="L269"></a> 269 <em class="comment">     *</em>
+<a id="L270" name="L270"></a> 270 <em class="comment">     * @exception java.lang.SecurityException if the current thread does not</em>
+<a id="L271" name="L271"></a> 271 <em class="comment">     *          have permission to set the Policy.</em>
+<a id="L272" name="L272"></a> 272 <em class="comment">     *</em>
+<a id="L273" name="L273"></a> 273 <em class="comment">     * @see #getPolicy</em>
+<a id="L274" name="L274"></a> 274 <em class="comment">     */</em>
+<a id="L275" name="L275"></a> 275     <strong class="reserved">public</strong> <strong class="reserved">static</strong> <strong class="reserved">void</strong> <a href="../S/2677.html#L242" title="Referred from 242 in src/javax/security/auth/Policy.java.">setPolicy</a>(<a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a> policy) <em class="brace">{</em>
+<a id="L276" name="L276"></a> 276         <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.lang.<a href="../D/7682.html" title="Multiple defined in 2 places.">SecurityManager</a> sm = <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L333" title="Defined at 333 in src/java/lang/System.java.">getSecurityManager</a>();
+<a id="L277" name="L277"></a> 277         <strong class="reserved">if</strong> (sm != <strong class="reserved">null</strong>) sm.<a href="../D/12594.html" title="Multiple defined in 22 places.">checkPermission</a>(<strong class="reserved">new</strong> <a href="../S/2649.html#L129" title="Defined at 129 in src/javax/security/auth/AuthPermission.java.">AuthPermission</a>("setPolicy"));
+<a id="L278" name="L278"></a> 278         <a href="../D/6725.html" title="Multiple defined in 3 places.">Policy</a>.policy = policy;
+<a id="L279" name="L279"></a> 279         <em class="comment">// all non-null policy objects are assumed to be custom</em>
+<a id="L280" name="L280"></a> 280         isCustomPolicy = policy != <strong class="reserved">null</strong> ? <strong class="reserved">true</strong> : <strong class="reserved">false</strong>;
+<a id="L281" name="L281"></a> 281     <em class="brace">}</em>
+<a id="L282" name="L282"></a> 282 
+<a id="L283" name="L283"></a> 283     <em class="comment">/**</em>
+<a id="L284" name="L284"></a> 284 <em class="comment">     * Returns true if a custom (not AUTH_POLICY) system-wide policy object</em>
+<a id="L285" name="L285"></a> 285 <em class="comment">     * has been set or installed. This method is called by</em>
+<a id="L286" name="L286"></a> 286 <em class="comment">     * SubjectDomainCombiner to provide backwards compatibility for</em>
+<a id="L287" name="L287"></a> 287 <em class="comment">     * developers that provide their own javax.security.auth.Policy</em>
+<a id="L288" name="L288"></a> 288 <em class="comment">     * implementations.</em>
+<a id="L289" name="L289"></a> 289 <em class="comment">     *</em>
+<a id="L290" name="L290"></a> 290 <em class="comment">     * @return true if a custom (not AUTH_POLICY) system-wide policy object</em>
+<a id="L291" name="L291"></a> 291 <em class="comment">     * has been set; false otherwise</em>
+<a id="L292" name="L292"></a> 292 <em class="comment">     */</em>
+<a id="L293" name="L293"></a> 293     <strong class="reserved">static</strong> <strong class="reserved">boolean</strong> <a href="../S/2641.html#L62" title="Referred from 62 in src/javax/security/auth/SubjectDomainCombiner.java.">isCustomPolicySet</a>(<a href="../D/2238.html" title="Multiple defined in 2 places.">Debug</a> <a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>) <em class="brace">{</em>
+<a id="L294" name="L294"></a> 294         <strong class="reserved">if</strong> (policy != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L295" name="L295"></a> 295             <strong class="reserved">if</strong> (<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a> != <strong class="reserved">null</strong> &amp;&amp; isCustomPolicy) <em class="brace">{</em>
+<a id="L296" name="L296"></a> 296                 <a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>("Providing backwards compatibility for " +
+<a id="L297" name="L297"></a> 297                               "javax.security.auth.policy implementation: " +
+<a id="L298" name="L298"></a> 298                               policy.<a href="../D/35493.html" title="Multiple defined in 1021 places.">toString</a>());
+<a id="L299" name="L299"></a> 299             <em class="brace">}</em>
+<a id="L300" name="L300"></a> 300             <strong class="reserved">return</strong> isCustomPolicy;
+<a id="L301" name="L301"></a> 301         <em class="brace">}</em>
+<a id="L302" name="L302"></a> 302         <em class="comment">// check if custom policy has been set using auth.policy.provider prop</em>
+<a id="L303" name="L303"></a> 303         <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> policyClass = <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1248.html#L264" title="Defined at 264 in src/java/security/AccessController.java.">AccessController</a>.<a href="../D/15060.html" title="Multiple defined in 7 places.">doPrivileged</a>
+<a id="L304" name="L304"></a> 304             (<strong class="reserved">new</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1321.html#L42" title="Defined at 42 in src/java/security/PrivilegedAction.java.">PrivilegedAction</a>&lt;<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>&gt;() <em class="brace">{</em>
+<a id="L305" name="L305"></a> 305                 <strong class="reserved">public</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../D/31480.html" title="Multiple defined in 101 places.">run</a>() <em class="brace">{</em>
+<a id="L306" name="L306"></a> 306                     <strong class="reserved">return</strong> <a href="../S/1265.html#L49" title="Defined at 49 in src/java/security/Security.java.">Security</a>.<a href="../D/21720.html" title="Multiple defined in 77 places.">getProperty</a>("auth.policy.provider");
+<a id="L307" name="L307"></a> 307                 <em class="brace">}</em>
+<a id="L308" name="L308"></a> 308         <em class="brace">}</em>);
+<a id="L309" name="L309"></a> 309         <strong class="reserved">if</strong> (policyClass != <strong class="reserved">null</strong> &amp;&amp; !policyClass.<a href="../D/15685.html" title="Multiple defined in 654 places.">equals</a>(AUTH_POLICY)) <em class="brace">{</em>
+<a id="L310" name="L310"></a> 310             <strong class="reserved">if</strong> (<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a> != <strong class="reserved">null</strong>) <em class="brace">{</em>
+<a id="L311" name="L311"></a> 311                 <a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>("Providing backwards compatibility for " +
+<a id="L312" name="L312"></a> 312                               "javax.security.auth.policy implementation: " +
+<a id="L313" name="L313"></a> 313                               policyClass);
+<a id="L314" name="L314"></a> 314             <em class="brace">}</em>
+<a id="L315" name="L315"></a> 315             <strong class="reserved">return</strong> <strong class="reserved">true</strong>;
+<a id="L316" name="L316"></a> 316         <em class="brace">}</em>
+<a id="L317" name="L317"></a> 317         <strong class="reserved">return</strong> <strong class="reserved">false</strong>;
+<a id="L318" name="L318"></a> 318     <em class="brace">}</em>
+<a id="L319" name="L319"></a> 319 
+<a id="L320" name="L320"></a> 320     <em class="comment">/**</em>
+<a id="L321" name="L321"></a> 321 <em class="comment">     * Retrieve the Permissions granted to the Principals associated with</em>
+<a id="L322" name="L322"></a> 322 <em class="comment">     * the specified {@code CodeSource}.</em>
+<a id="L323" name="L323"></a> 323 <em class="comment">     *</em>
+<a id="L324" name="L324"></a> 324 <em class="comment">     * </em>
+<a id="L325" name="L325"></a> 325 <em class="comment">     *</em>
+<a id="L326" name="L326"></a> 326 <em class="comment">     * @param subject the {@code Subject}</em>
+<a id="L327" name="L327"></a> 327 <em class="comment">     *                  whose associated Principals,</em>
+<a id="L328" name="L328"></a> 328 <em class="comment">     *                  in conjunction with the provided</em>
+<a id="L329" name="L329"></a> 329 <em class="comment">     *                  {@code CodeSource}, determines the Permissions</em>
+<a id="L330" name="L330"></a> 330 <em class="comment">     *                  returned by this method.  This parameter</em>
+<a id="L331" name="L331"></a> 331 <em class="comment">     *                  may be {@code null}. </em>
+<a id="L332" name="L332"></a> 332 <em class="comment">     *</em>
+<a id="L333" name="L333"></a> 333 <em class="comment">     * @param cs the code specified by its {@code CodeSource}</em>
+<a id="L334" name="L334"></a> 334 <em class="comment">     *                  that determines, in conjunction with the provided</em>
+<a id="L335" name="L335"></a> 335 <em class="comment">     *                  {@code Subject}, the Permissions</em>
+<a id="L336" name="L336"></a> 336 <em class="comment">     *                  returned by this method.  This parameter may be</em>
+<a id="L337" name="L337"></a> 337 <em class="comment">     *                  {@code null}.</em>
+<a id="L338" name="L338"></a> 338 <em class="comment">     *</em>
+<a id="L339" name="L339"></a> 339 <em class="comment">     * @return the Collection of Permissions granted to all the</em>
+<a id="L340" name="L340"></a> 340 <em class="comment">     *                  {@code Subject} and code specified in</em>
+<a id="L341" name="L341"></a> 341 <em class="comment">     *                  the provided <i>subject</i> and <i>cs</i></em>
+<a id="L342" name="L342"></a> 342 <em class="comment">     *                  parameters.</em>
+<a id="L343" name="L343"></a> 343 <em class="comment">     */</em>
+<a id="L344" name="L344"></a> 344     <strong class="reserved">public</strong> <strong class="reserved">abstract</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1216.html#L94" title="Defined at 94 in src/java/security/PermissionCollection.java.">PermissionCollection</a> <a href="../R/18335.html" title="Multiple referred from 13 places.">getPermissions</a>
+<a id="L345" name="L345"></a> 345                                         (<a href="../S/2639.html#L100" title="Defined at 100 in src/javax/security/auth/Subject.java.">Subject</a> subject,
+<a id="L346" name="L346"></a> 346                                         <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.security.<a href="../S/1318.html#L48" title="Defined at 48 in src/java/security/CodeSource.java.">CodeSource</a> cs);
+<a id="L347" name="L347"></a> 347 
+<a id="L348" name="L348"></a> 348     <em class="comment">/**</em>
+<a id="L349" name="L349"></a> 349 <em class="comment">     * Refresh and reload the Policy.</em>
+<a id="L350" name="L350"></a> 350 <em class="comment">     *</em>
+<a id="L351" name="L351"></a> 351 <em class="comment">     * This method causes this object to refresh/reload its current</em>
+<a id="L352" name="L352"></a> 352 <em class="comment">     * Policy. This is implementation-dependent.</em>
+<a id="L353" name="L353"></a> 353 <em class="comment">     * For example, if the Policy object is stored in</em>
+<a id="L354" name="L354"></a> 354 <em class="comment">     * a file, calling {@code refresh} will cause the file to be re-read.</em>
+<a id="L355" name="L355"></a> 355 <em class="comment">     *</em>
+<a id="L356" name="L356"></a> 356 <em class="comment">     * </em>
+<a id="L357" name="L357"></a> 357 <em class="comment">     *</em>
+<a id="L358" name="L358"></a> 358 <em class="comment">     * @exception SecurityException if the caller does not have permission</em>
+<a id="L359" name="L359"></a> 359 <em class="comment">     *                          to refresh the Policy.</em>
+<a id="L360" name="L360"></a> 360 <em class="comment">     */</em>
+<a id="L361" name="L361"></a> 361     <strong class="reserved">public</strong> <strong class="reserved">abstract</strong> <strong class="reserved">void</strong> <a href="../R/25739.html" title="Multiple referred from 7 places.">refresh</a>();
+<a id="L362" name="L362"></a> 362 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L194'>[^]</a><a href='#L361'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L194">[^]</a><a href="#L361">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>

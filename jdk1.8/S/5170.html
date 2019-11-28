@@ -1,339 +1,337 @@
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-<html xmlns='http://www.w3.org/1999/xhtml'>
-<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
 <title>src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java</title>
-<meta name='robots' content='noindex,nofollow' />
-<meta name='generator' content='GLOBAL-6.6.3' />
-<meta http-equiv='Content-Style-Type' content='text/css' />
-<link rel='stylesheet' type='text/css' href='../style.css' />
+<meta name="robots" content="noindex,nofollow">
+<meta name="generator" content="GLOBAL-6.6.3">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id='TOP' name='TOP'></a><h2 class='header'><a href='../mains.html'>root</a>/<a href='../files/7725.html'>src</a>/<a href='../files/7726.html'>com</a>/<a href='../files/7727.html'>sun</a>/<a href='../files/7861.html'>org</a>/<a href='../files/7862.html'>apache</a>/<a href='../files/7888.html'>xerces</a>/<a href='../files/7889.html'>internal</a>/<a href='../files/7892.html'>impl</a>/<a href='../files/7895.html'>dv</a>/<a href='../files/7897.html'>util</a>/Base64.java</h2>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L294'>[v]</a>[top]<a href='#BOTTOM'>[bottom]</a><a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-<hr />
-<h2 class='header'>DEFINITIONS</h2>
+<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7861.html">org</a>/<a href="../files/7862.html">apache</a>/<a href="../files/7888.html">xerces</a>/<a href="../files/7889.html">internal</a>/<a href="../files/7892.html">impl</a>/<a href="../files/7895.html">dv</a>/<a href="../files/7897.html">util</a>/Base64.java</h2>
+<em class="comment">/* [&lt;][&gt;]<a href="#L87">[^]</a><a href="#L294">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<hr>
+<h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
 <ol>
-<li><a href='#L87' title='Defined at 87.'>isWhiteSpace</a></li>
-<li><a href='#L91' title='Defined at 91.'>isPad</a></li>
-<li><a href='#L95' title='Defined at 95.'>isData</a></li>
-<li><a href='#L99' title='Defined at 99.'>isBase64</a></li>
-<li><a href='#L109' title='Defined at 109.'>encode</a></li>
-<li><a href='#L200' title='Defined at 200.'>decode</a></li>
-<li><a href='#L294' title='Defined at 294.'>removeWhiteSpace</a></li>
+<li><a href="#L87" title="Defined at 87.">isWhiteSpace</a></li>
+<li><a href="#L91" title="Defined at 91.">isPad</a></li>
+<li><a href="#L95" title="Defined at 95.">isData</a></li>
+<li><a href="#L99" title="Defined at 99.">isBase64</a></li>
+<li><a href="#L109" title="Defined at 109.">encode</a></li>
+<li><a href="#L200" title="Defined at 200.">decode</a></li>
+<li><a href="#L294" title="Defined at 294.">removeWhiteSpace</a></li>
 </ol>
-<hr />
-<pre>
-<a id='L1' name='L1'></a>   1 <em class='comment'>/*</em>
-<a id='L2' name='L2'></a>   2 <em class='comment'> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
-<a id='L3' name='L3'></a>   3 <em class='comment'> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id='L4' name='L4'></a>   4 <em class='comment'> */</em>
-<a id='L5' name='L5'></a>   5 <em class='comment'>/*</em>
-<a id='L6' name='L6'></a>   6 <em class='comment'> * Copyright 1999-2002,2004 The Apache Software Foundation.</em>
-<a id='L7' name='L7'></a>   7 <em class='comment'> *</em>
-<a id='L8' name='L8'></a>   8 <em class='comment'> * Licensed under the Apache License, Version 2.0 (the "License");</em>
-<a id='L9' name='L9'></a>   9 <em class='comment'> * you may not use this file except in compliance with the License.</em>
-<a id='L10' name='L10'></a>  10 <em class='comment'> * You may obtain a copy of the License at</em>
-<a id='L11' name='L11'></a>  11 <em class='comment'> *</em>
-<a id='L12' name='L12'></a>  12 <em class='comment'> *      http://www.apache.org/licenses/LICENSE-2.0</em>
-<a id='L13' name='L13'></a>  13 <em class='comment'> *</em>
-<a id='L14' name='L14'></a>  14 <em class='comment'> * Unless required by applicable law or agreed to in writing, software</em>
-<a id='L15' name='L15'></a>  15 <em class='comment'> * distributed under the License is distributed on an "AS IS" BASIS,</em>
-<a id='L16' name='L16'></a>  16 <em class='comment'> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
-<a id='L17' name='L17'></a>  17 <em class='comment'> * See the License for the specific language governing permissions and</em>
-<a id='L18' name='L18'></a>  18 <em class='comment'> * limitations under the License.</em>
-<a id='L19' name='L19'></a>  19 <em class='comment'> */</em>
-<a id='L20' name='L20'></a>  20 
-<a id='L21' name='L21'></a>  21 <strong class='reserved'>package</strong> com.sun.org.apache.xerces.internal.<a href='../S/7010.html#L693' title='Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.'>impl</a>.dv.util;
-<a id='L22' name='L22'></a>  22 
-<a id='L23' name='L23'></a>  23 <em class='comment'>/**</em>
-<a id='L24' name='L24'></a>  24 <em class='comment'> * This class provides encode/decode for RFC 2045 Base64 as</em>
-<a id='L25' name='L25'></a>  25 <em class='comment'> * defined by RFC 2045, N. Freed and N. Borenstein.</em>
-<a id='L26' name='L26'></a>  26 <em class='comment'> * RFC 2045: Multipurpose Internet Mail Extensions (MIME)</em>
-<a id='L27' name='L27'></a>  27 <em class='comment'> * Part One: Format of Internet Message Bodies. Reference</em>
-<a id='L28' name='L28'></a>  28 <em class='comment'> * 1996 Available at: http://www.ietf.org/rfc/rfc2045.txt</em>
-<a id='L29' name='L29'></a>  29 <em class='comment'> * This class is used by XML Schema binary format validation</em>
-<a id='L30' name='L30'></a>  30 <em class='comment'> *</em>
-<a id='L31' name='L31'></a>  31 <em class='comment'> * This implementation does not encode/decode streaming</em>
-<a id='L32' name='L32'></a>  32 <em class='comment'> * data. You need the data that you will encode/decode</em>
-<a id='L33' name='L33'></a>  33 <em class='comment'> * already on a byte arrray.</em>
-<a id='L34' name='L34'></a>  34 <em class='comment'> *</em>
-<a id='L35' name='L35'></a>  35 <em class='comment'> * @xerces.internal</em>
-<a id='L36' name='L36'></a>  36 <em class='comment'> *</em>
-<a id='L37' name='L37'></a>  37 <em class='comment'> * @author Jeffrey Rodriguez</em>
-<a id='L38' name='L38'></a>  38 <em class='comment'> * @author Sandy Gao</em>
-<a id='L39' name='L39'></a>  39 <em class='comment'> */</em>
-<a id='L40' name='L40'></a>  40 <strong class='reserved'>public</strong> <strong class='reserved'>final</strong> <strong class='reserved'>class</strong>  <a href='../R/650.html' title='Multiple referred from 49 places.'>Base64</a> <em class='brace'>{</em>
-<a id='L41' name='L41'></a>  41 
-<a id='L42' name='L42'></a>  42     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  BASELENGTH         = 128;
-<a id='L43' name='L43'></a>  43     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  LOOKUPLENGTH       = 64;
-<a id='L44' name='L44'></a>  44     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  TWENTYFOURBITGROUP = 24;
-<a id='L45' name='L45'></a>  45     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  EIGHTBIT           = 8;
-<a id='L46' name='L46'></a>  46     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  SIXTEENBIT         = 16;
-<a id='L47' name='L47'></a>  47     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  SIXBIT             = 6;
-<a id='L48' name='L48'></a>  48     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  FOURBYTE           = 4;
-<a id='L49' name='L49'></a>  49     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>int</strong>  SIGN               = -128;
-<a id='L50' name='L50'></a>  50     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>char</strong> PAD                = '=';
-<a id='L51' name='L51'></a>  51     <strong class='reserved'>static</strong> <strong class='reserved'>private</strong> <strong class='reserved'>final</strong> <strong class='reserved'>boolean</strong> fDebug          = <strong class='reserved'>false</strong>;
-<a id='L52' name='L52'></a>  52     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>private</strong> <strong class='reserved'>byte</strong> [] base64Alphabet        = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[BASELENGTH];
-<a id='L53' name='L53'></a>  53     <strong class='reserved'>static</strong> <strong class='reserved'>final</strong> <strong class='reserved'>private</strong> <strong class='reserved'>char</strong> [] lookUpBase64Alphabet  = <strong class='reserved'>new</strong> <strong class='reserved'>char</strong>[LOOKUPLENGTH];
-<a id='L54' name='L54'></a>  54 
-<a id='L55' name='L55'></a>  55     <strong class='reserved'>static</strong> <em class='brace'>{</em>
-<a id='L56' name='L56'></a>  56 
-<a id='L57' name='L57'></a>  57         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; BASELENGTH; ++i) <em class='brace'>{</em>
-<a id='L58' name='L58'></a>  58             base64Alphabet[i] = -1;
-<a id='L59' name='L59'></a>  59         <em class='brace'>}</em>
-<a id='L60' name='L60'></a>  60         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 'Z'; i &gt;= 'A'; i--) <em class='brace'>{</em>
-<a id='L61' name='L61'></a>  61             base64Alphabet[i] = (<strong class='reserved'>byte</strong>) (i-'A');
-<a id='L62' name='L62'></a>  62         <em class='brace'>}</em>
-<a id='L63' name='L63'></a>  63         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 'z'; i&gt;= 'a'; i--) <em class='brace'>{</em>
-<a id='L64' name='L64'></a>  64             base64Alphabet[i] = (<strong class='reserved'>byte</strong>) ( i-'a' + 26);
-<a id='L65' name='L65'></a>  65         <em class='brace'>}</em>
-<a id='L66' name='L66'></a>  66 
-<a id='L67' name='L67'></a>  67         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = '9'; i &gt;= '0'; i--) <em class='brace'>{</em>
-<a id='L68' name='L68'></a>  68             base64Alphabet[i] = (<strong class='reserved'>byte</strong>) (i-'0' + 52);
-<a id='L69' name='L69'></a>  69         <em class='brace'>}</em>
-<a id='L70' name='L70'></a>  70 
-<a id='L71' name='L71'></a>  71         base64Alphabet['+']  = 62;
-<a id='L72' name='L72'></a>  72         base64Alphabet['/']  = 63;
-<a id='L73' name='L73'></a>  73 
-<a id='L74' name='L74'></a>  74         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i&lt;=25; i++)
-<a id='L75' name='L75'></a>  75             lookUpBase64Alphabet[i] = (<strong class='reserved'>char</strong>)('A'+i);
-<a id='L76' name='L76'></a>  76 
-<a id='L77' name='L77'></a>  77         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 26,  j = 0; i&lt;=51; i++, j++)
-<a id='L78' name='L78'></a>  78             lookUpBase64Alphabet[i] = (<strong class='reserved'>char</strong>)('a'+ j);
-<a id='L79' name='L79'></a>  79 
-<a id='L80' name='L80'></a>  80         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 52,  j = 0; i&lt;=61; i++, j++)
-<a id='L81' name='L81'></a>  81             lookUpBase64Alphabet[i] = (<strong class='reserved'>char</strong>)('0' + j);
-<a id='L82' name='L82'></a>  82         lookUpBase64Alphabet[62] = (<strong class='reserved'>char</strong>)'+';
-<a id='L83' name='L83'></a>  83         lookUpBase64Alphabet[63] = (<strong class='reserved'>char</strong>)'/';
-<a id='L84' name='L84'></a>  84 
-<a id='L85' name='L85'></a>  85     <em class='brace'>}</em>
-<a id='L86' name='L86'></a>  86 
-<a id='L87' name='L87'></a>  87     <strong class='reserved'>protected</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/22236.html' title='Multiple referred from 40 places.'>isWhiteSpace</a>(<strong class='reserved'>char</strong> octect) <em class='brace'>{</em>
-<a id='L88' name='L88'></a>  88         <strong class='reserved'>return</strong> (octect == 0x20 || octect == 0xd || octect == 0xa || octect == 0x9);
-<a id='L89' name='L89'></a>  89     <em class='brace'>}</em>
-<a id='L90' name='L90'></a>  90 
-<a id='L91' name='L91'></a>  91     <strong class='reserved'>protected</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21851.html' title='Multiple referred from 10 places.'>isPad</a>(<strong class='reserved'>char</strong> octect) <em class='brace'>{</em>
-<a id='L92' name='L92'></a>  92         <strong class='reserved'>return</strong> (octect == PAD);
-<a id='L93' name='L93'></a>  93     <em class='brace'>}</em>
-<a id='L94' name='L94'></a>  94 
-<a id='L95' name='L95'></a>  95     <strong class='reserved'>protected</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> <a href='../R/21322.html' title='Multiple referred from 39 places.'>isData</a>(<strong class='reserved'>char</strong> octect) <em class='brace'>{</em>
-<a id='L96' name='L96'></a>  96         <strong class='reserved'>return</strong> (octect &lt; BASELENGTH &amp;&amp; base64Alphabet[octect] != -1);
-<a id='L97' name='L97'></a>  97     <em class='brace'>}</em>
-<a id='L98' name='L98'></a>  98 
-<a id='L99' name='L99'></a>  99     <strong class='reserved'>protected</strong> <strong class='reserved'>static</strong> <strong class='reserved'>boolean</strong> isBase64(<strong class='reserved'>char</strong> octect) <em class='brace'>{</em>
-<a id='L100' name='L100'></a> 100         <strong class='reserved'>return</strong> (<a href='../D/26505.html' title='Multiple defined in 15 places.'>isWhiteSpace</a>(octect) || <a href='../D/26028.html' title='Multiple defined in 2 places.'>isPad</a>(octect) || <a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>(octect));
-<a id='L101' name='L101'></a> 101     <em class='brace'>}</em>
-<a id='L102' name='L102'></a> 102 
-<a id='L103' name='L103'></a> 103     <em class='comment'>/**</em>
-<a id='L104' name='L104'></a> 104 <em class='comment'>     * Encodes hex octects into Base64</em>
-<a id='L105' name='L105'></a> 105 <em class='comment'>     *</em>
-<a id='L106' name='L106'></a> 106 <em class='comment'>     * @param binaryData Array containing binaryData</em>
-<a id='L107' name='L107'></a> 107 <em class='comment'>     * @return Encoded Base64 array</em>
-<a id='L108' name='L108'></a> 108 <em class='comment'>     */</em>
-<a id='L109' name='L109'></a> 109     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> <a href='../R/13718.html' title='Multiple referred from 69 places.'>encode</a>(<strong class='reserved'>byte</strong>[] binaryData) <em class='brace'>{</em>
-<a id='L110' name='L110'></a> 110 
-<a id='L111' name='L111'></a> 111         <strong class='reserved'>if</strong> (binaryData == <strong class='reserved'>null</strong>)
-<a id='L112' name='L112'></a> 112             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L113' name='L113'></a> 113 
-<a id='L114' name='L114'></a> 114         <strong class='reserved'>int</strong>      lengthDataBits    = binaryData.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>*EIGHTBIT;
-<a id='L115' name='L115'></a> 115         <strong class='reserved'>if</strong> (lengthDataBits == 0) <em class='brace'>{</em>
-<a id='L116' name='L116'></a> 116             <strong class='reserved'>return</strong> "";
-<a id='L117' name='L117'></a> 117         <em class='brace'>}</em>
-<a id='L118' name='L118'></a> 118 
-<a id='L119' name='L119'></a> 119         <strong class='reserved'>int</strong>      fewerThan24bits   = lengthDataBits%TWENTYFOURBITGROUP;
-<a id='L120' name='L120'></a> 120         <strong class='reserved'>int</strong>      numberTriplets    = lengthDataBits/TWENTYFOURBITGROUP;
-<a id='L121' name='L121'></a> 121         <strong class='reserved'>int</strong>      numberQuartet     = fewerThan24bits != 0 ? numberTriplets+1 : numberTriplets;
-<a id='L122' name='L122'></a> 122         <strong class='reserved'>char</strong>     encodedData[]     = <strong class='reserved'>null</strong>;
-<a id='L123' name='L123'></a> 123 
-<a id='L124' name='L124'></a> 124         encodedData = <strong class='reserved'>new</strong> <strong class='reserved'>char</strong>[numberQuartet*4];
-<a id='L125' name='L125'></a> 125 
-<a id='L126' name='L126'></a> 126         <strong class='reserved'>byte</strong> k=0, l=0, b1=0,b2=0,b3=0;
-<a id='L127' name='L127'></a> 127 
-<a id='L128' name='L128'></a> 128         <strong class='reserved'>int</strong> encodedIndex = 0;
-<a id='L129' name='L129'></a> 129         <strong class='reserved'>int</strong> dataIndex   = 0;
-<a id='L130' name='L130'></a> 130         <strong class='reserved'>if</strong> (fDebug) <em class='brace'>{</em>
-<a id='L131' name='L131'></a> 131             <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("number of triplets = " + numberTriplets );
-<a id='L132' name='L132'></a> 132         <em class='brace'>}</em>
-<a id='L133' name='L133'></a> 133 
-<a id='L134' name='L134'></a> 134         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i=0; i&lt;numberTriplets; i++) <em class='brace'>{</em>
-<a id='L135' name='L135'></a> 135             b1 = binaryData[dataIndex++];
-<a id='L136' name='L136'></a> 136             b2 = binaryData[dataIndex++];
-<a id='L137' name='L137'></a> 137             b3 = binaryData[dataIndex++];
-<a id='L138' name='L138'></a> 138 
-<a id='L139' name='L139'></a> 139             <strong class='reserved'>if</strong> (fDebug) <em class='brace'>{</em>
-<a id='L140' name='L140'></a> 140                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "b1= " + b1 +", b2= " + b2 + ", b3= " + b3 );
-<a id='L141' name='L141'></a> 141             <em class='brace'>}</em>
-<a id='L142' name='L142'></a> 142 
-<a id='L143' name='L143'></a> 143             l  = (<strong class='reserved'>byte</strong>)(b2 &amp; 0x0f);
-<a id='L144' name='L144'></a> 144             k  = (<strong class='reserved'>byte</strong>)(b1 &amp; 0x03);
-<a id='L145' name='L145'></a> 145 
-<a id='L146' name='L146'></a> 146             <strong class='reserved'>byte</strong> val1 = ((b1 &amp; SIGN)==0)?(<strong class='reserved'>byte</strong>)(b1&gt;&gt;2):(<strong class='reserved'>byte</strong>)((b1)&gt;&gt;2^0xc0);
-<a id='L147' name='L147'></a> 147 
-<a id='L148' name='L148'></a> 148             <strong class='reserved'>byte</strong> val2 = ((b2 &amp; SIGN)==0)?(<strong class='reserved'>byte</strong>)(b2&gt;&gt;4):(<strong class='reserved'>byte</strong>)((b2)&gt;&gt;4^0xf0);
-<a id='L149' name='L149'></a> 149             <strong class='reserved'>byte</strong> val3 = ((b3 &amp; SIGN)==0)?(<strong class='reserved'>byte</strong>)(b3&gt;&gt;6):(<strong class='reserved'>byte</strong>)((b3)&gt;&gt;6^0xfc);
-<a id='L150' name='L150'></a> 150 
-<a id='L151' name='L151'></a> 151             <strong class='reserved'>if</strong> (fDebug) <em class='brace'>{</em>
-<a id='L152' name='L152'></a> 152                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "val2 = " + val2 );
-<a id='L153' name='L153'></a> 153                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "k4   = " + (k&lt;&lt;4));
-<a id='L154' name='L154'></a> 154                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>( "vak  = " + (val2 | (k&lt;&lt;4)));
-<a id='L155' name='L155'></a> 155             <em class='brace'>}</em>
-<a id='L156' name='L156'></a> 156 
-<a id='L157' name='L157'></a> 157             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
-<a id='L158' name='L158'></a> 158             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val2 | ( k&lt;&lt;4 )];
-<a id='L159' name='L159'></a> 159             encodedData[encodedIndex++] = lookUpBase64Alphabet[ (l &lt;&lt;2 ) | val3 ];
-<a id='L160' name='L160'></a> 160             encodedData[encodedIndex++] = lookUpBase64Alphabet[ b3 &amp; 0x3f ];
-<a id='L161' name='L161'></a> 161         <em class='brace'>}</em>
-<a id='L162' name='L162'></a> 162 
-<a id='L163' name='L163'></a> 163         <em class='comment'>// form integral number of 6-bit groups</em>
-<a id='L164' name='L164'></a> 164         <strong class='reserved'>if</strong> (fewerThan24bits == EIGHTBIT) <em class='brace'>{</em>
-<a id='L165' name='L165'></a> 165             b1 = binaryData[dataIndex];
-<a id='L166' name='L166'></a> 166             k = (<strong class='reserved'>byte</strong>) ( b1 &amp;0x03 );
-<a id='L167' name='L167'></a> 167             <strong class='reserved'>if</strong> (fDebug) <em class='brace'>{</em>
-<a id='L168' name='L168'></a> 168                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("b1=" + b1);
-<a id='L169' name='L169'></a> 169                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1038.html#L2317' title='Defined at 2317 in src/java/util/Formatter.java.'>out</a>.<a href='../D/29725.html' title='Multiple defined in 27 places.'>println</a>("b1&lt;&lt;2 = " + (b1&gt;&gt;2) );
-<a id='L170' name='L170'></a> 170             <em class='brace'>}</em>
-<a id='L171' name='L171'></a> 171             <strong class='reserved'>byte</strong> val1 = ((b1 &amp; SIGN)==0)?(<strong class='reserved'>byte</strong>)(b1&gt;&gt;2):(<strong class='reserved'>byte</strong>)((b1)&gt;&gt;2^0xc0);
-<a id='L172' name='L172'></a> 172             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
-<a id='L173' name='L173'></a> 173             encodedData[encodedIndex++] = lookUpBase64Alphabet[ k&lt;&lt;4 ];
-<a id='L174' name='L174'></a> 174             encodedData[encodedIndex++] = PAD;
-<a id='L175' name='L175'></a> 175             encodedData[encodedIndex++] = PAD;
-<a id='L176' name='L176'></a> 176         <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (fewerThan24bits == SIXTEENBIT) <em class='brace'>{</em>
-<a id='L177' name='L177'></a> 177             b1 = binaryData[dataIndex];
-<a id='L178' name='L178'></a> 178             b2 = binaryData[dataIndex +1 ];
-<a id='L179' name='L179'></a> 179             l = ( <strong class='reserved'>byte</strong> ) ( b2 &amp;0x0f );
-<a id='L180' name='L180'></a> 180             k = ( <strong class='reserved'>byte</strong> ) ( b1 &amp;0x03 );
-<a id='L181' name='L181'></a> 181 
-<a id='L182' name='L182'></a> 182             <strong class='reserved'>byte</strong> val1 = ((b1 &amp; SIGN)==0)?(<strong class='reserved'>byte</strong>)(b1&gt;&gt;2):(<strong class='reserved'>byte</strong>)((b1)&gt;&gt;2^0xc0);
-<a id='L183' name='L183'></a> 183             <strong class='reserved'>byte</strong> val2 = ((b2 &amp; SIGN)==0)?(<strong class='reserved'>byte</strong>)(b2&gt;&gt;4):(<strong class='reserved'>byte</strong>)((b2)&gt;&gt;4^0xf0);
-<a id='L184' name='L184'></a> 184 
-<a id='L185' name='L185'></a> 185             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
-<a id='L186' name='L186'></a> 186             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val2 | ( k&lt;&lt;4 )];
-<a id='L187' name='L187'></a> 187             encodedData[encodedIndex++] = lookUpBase64Alphabet[ l&lt;&lt;2 ];
-<a id='L188' name='L188'></a> 188             encodedData[encodedIndex++] = PAD;
-<a id='L189' name='L189'></a> 189         <em class='brace'>}</em>
-<a id='L190' name='L190'></a> 190 
-<a id='L191' name='L191'></a> 191         <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a>(encodedData);
-<a id='L192' name='L192'></a> 192     <em class='brace'>}</em>
-<a id='L193' name='L193'></a> 193 
-<a id='L194' name='L194'></a> 194     <em class='comment'>/**</em>
-<a id='L195' name='L195'></a> 195 <em class='comment'>     * Decodes Base64 data into octects</em>
-<a id='L196' name='L196'></a> 196 <em class='comment'>     *</em>
-<a id='L197' name='L197'></a> 197 <em class='comment'>     * @param encoded string containing Base64 data</em>
-<a id='L198' name='L198'></a> 198 <em class='comment'>     * @return Array containind decoded data.</em>
-<a id='L199' name='L199'></a> 199 <em class='comment'>     */</em>
-<a id='L200' name='L200'></a> 200     <strong class='reserved'>public</strong> <strong class='reserved'>static</strong> <strong class='reserved'>byte</strong>[] <a href='../R/12941.html' title='Multiple referred from 73 places.'>decode</a>(<a href='../D/8419.html' title='Multiple defined in 2 places.'>String</a> encoded) <em class='brace'>{</em>
-<a id='L201' name='L201'></a> 201 
-<a id='L202' name='L202'></a> 202         <strong class='reserved'>if</strong> (encoded == <strong class='reserved'>null</strong>)
-<a id='L203' name='L203'></a> 203             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L204' name='L204'></a> 204 
-<a id='L205' name='L205'></a> 205         <strong class='reserved'>char</strong>[] base64Data = encoded.<a href='../D/35368.html' title='Multiple defined in 3 places.'>toCharArray</a>();
-<a id='L206' name='L206'></a> 206         <em class='comment'>// remove white spaces</em>
-<a id='L207' name='L207'></a> 207         <strong class='reserved'>int</strong> len = <a href='../D/30994.html' title='Multiple defined in 3 places.'>removeWhiteSpace</a>(base64Data);
-<a id='L208' name='L208'></a> 208 
-<a id='L209' name='L209'></a> 209         <strong class='reserved'>if</strong> (len%FOURBYTE != 0) <em class='brace'>{</em>
-<a id='L210' name='L210'></a> 210             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;<em class='comment'>//should be divisible by four</em>
-<a id='L211' name='L211'></a> 211         <em class='brace'>}</em>
-<a id='L212' name='L212'></a> 212 
-<a id='L213' name='L213'></a> 213         <strong class='reserved'>int</strong>      numberQuadruple    = (len/FOURBYTE );
-<a id='L214' name='L214'></a> 214 
-<a id='L215' name='L215'></a> 215         <strong class='reserved'>if</strong> (numberQuadruple == 0)
-<a id='L216' name='L216'></a> 216             <strong class='reserved'>return</strong> <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[0];
-<a id='L217' name='L217'></a> 217 
-<a id='L218' name='L218'></a> 218         <strong class='reserved'>byte</strong>     decodedData[]      = <strong class='reserved'>null</strong>;
-<a id='L219' name='L219'></a> 219         <strong class='reserved'>byte</strong>     b1=0,b2=0,b3=0,b4=0;
-<a id='L220' name='L220'></a> 220         <strong class='reserved'>char</strong>     d1=0,d2=0,d3=0,d4=0;
-<a id='L221' name='L221'></a> 221 
-<a id='L222' name='L222'></a> 222         <strong class='reserved'>int</strong> i = 0;
-<a id='L223' name='L223'></a> 223         <strong class='reserved'>int</strong> encodedIndex = 0;
-<a id='L224' name='L224'></a> 224         <strong class='reserved'>int</strong> dataIndex    = 0;
-<a id='L225' name='L225'></a> 225         decodedData      = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[ (numberQuadruple)*3];
-<a id='L226' name='L226'></a> 226 
-<a id='L227' name='L227'></a> 227         <strong class='reserved'>for</strong> (; i&lt;numberQuadruple-1; i++) <em class='brace'>{</em>
-<a id='L228' name='L228'></a> 228 
-<a id='L229' name='L229'></a> 229             <strong class='reserved'>if</strong> (!<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d1 = base64Data[dataIndex++]) )||
-<a id='L230' name='L230'></a> 230                 !<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d2 = base64Data[dataIndex++]) )||
-<a id='L231' name='L231'></a> 231                 !<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d3 = base64Data[dataIndex++]) )||
-<a id='L232' name='L232'></a> 232                 !<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d4 = base64Data[dataIndex++]) ))
-<a id='L233' name='L233'></a> 233                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;<em class='comment'>//if found "no data" just return null</em>
-<a id='L234' name='L234'></a> 234 
-<a id='L235' name='L235'></a> 235             b1 = base64Alphabet[d1];
-<a id='L236' name='L236'></a> 236             b2 = base64Alphabet[d2];
-<a id='L237' name='L237'></a> 237             b3 = base64Alphabet[d3];
-<a id='L238' name='L238'></a> 238             b4 = base64Alphabet[d4];
-<a id='L239' name='L239'></a> 239 
-<a id='L240' name='L240'></a> 240             decodedData[encodedIndex++] = (<strong class='reserved'>byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 ) ;
-<a id='L241' name='L241'></a> 241             decodedData[encodedIndex++] = (<strong class='reserved'>byte</strong>)(((b2 &amp; 0xf)&lt;&lt;4 ) |( (b3&gt;&gt;2) &amp; 0xf) );
-<a id='L242' name='L242'></a> 242             decodedData[encodedIndex++] = (<strong class='reserved'>byte</strong>)( b3&lt;&lt;6 | b4 );
-<a id='L243' name='L243'></a> 243         <em class='brace'>}</em>
-<a id='L244' name='L244'></a> 244 
-<a id='L245' name='L245'></a> 245         <strong class='reserved'>if</strong> (!<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d1 = base64Data[dataIndex++]) ) ||
-<a id='L246' name='L246'></a> 246             !<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d2 = base64Data[dataIndex++]) )) <em class='brace'>{</em>
-<a id='L247' name='L247'></a> 247             <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;<em class='comment'>//if found "no data" just return null</em>
-<a id='L248' name='L248'></a> 248         <em class='brace'>}</em>
-<a id='L249' name='L249'></a> 249 
-<a id='L250' name='L250'></a> 250         b1 = base64Alphabet[d1];
-<a id='L251' name='L251'></a> 251         b2 = base64Alphabet[d2];
-<a id='L252' name='L252'></a> 252 
-<a id='L253' name='L253'></a> 253         d3 = base64Data[dataIndex++];
-<a id='L254' name='L254'></a> 254         d4 = base64Data[dataIndex++];
-<a id='L255' name='L255'></a> 255         <strong class='reserved'>if</strong> (!<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d3 ) ) ||
-<a id='L256' name='L256'></a> 256             !<a href='../S/5170.html#L95' title='Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.'>isData</a>( (d4 ) )) <em class='brace'>{</em><em class='comment'>//Check if they are PAD characters</em>
-<a id='L257' name='L257'></a> 257             <strong class='reserved'>if</strong> (<a href='../D/26028.html' title='Multiple defined in 2 places.'>isPad</a>( d3 ) &amp;&amp; <a href='../D/26028.html' title='Multiple defined in 2 places.'>isPad</a>( d4)) <em class='brace'>{</em>               <em class='comment'>//Two PAD e.g. 3c[Pad][Pad]</em>
-<a id='L258' name='L258'></a> 258                 <strong class='reserved'>if</strong> ((b2 &amp; 0xf) != 0)<em class='comment'>//last 4 bits should be zero</em>
-<a id='L259' name='L259'></a> 259                     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L260' name='L260'></a> 260                 <strong class='reserved'>byte</strong>[] tmp = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[ i*3 + 1 ];
-<a id='L261' name='L261'></a> 261                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>( decodedData, 0, tmp, 0, i*3 );
-<a id='L262' name='L262'></a> 262                 tmp[encodedIndex]   = (<strong class='reserved'>byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 ) ;
-<a id='L263' name='L263'></a> 263                 <strong class='reserved'>return</strong> tmp;
-<a id='L264' name='L264'></a> 264             <em class='brace'>}</em> <strong class='reserved'>else</strong> <strong class='reserved'>if</strong> (!<a href='../D/26028.html' title='Multiple defined in 2 places.'>isPad</a>( d3) &amp;&amp; <a href='../D/26028.html' title='Multiple defined in 2 places.'>isPad</a>(d4)) <em class='brace'>{</em>               <em class='comment'>//One PAD  e.g. 3cQ[Pad]</em>
-<a id='L265' name='L265'></a> 265                 b3 = base64Alphabet[ d3 ];
-<a id='L266' name='L266'></a> 266                 <strong class='reserved'>if</strong> ((b3 &amp; 0x3 ) != 0)<em class='comment'>//last 2 bits should be zero</em>
-<a id='L267' name='L267'></a> 267                     <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;
-<a id='L268' name='L268'></a> 268                 <strong class='reserved'>byte</strong>[] tmp = <strong class='reserved'>new</strong> <strong class='reserved'>byte</strong>[ i*3 + 2 ];
-<a id='L269' name='L269'></a> 269                 <a href='../S/1557.html#L59' title='Defined at 59 in src/java/lang/System.java.'>System</a>.<a href='../S/1557.html#L493' title='Defined at 493 in src/java/lang/System.java.'>arraycopy</a>( decodedData, 0, tmp, 0, i*3 );
-<a id='L270' name='L270'></a> 270                 tmp[encodedIndex++] = (<strong class='reserved'>byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 );
-<a id='L271' name='L271'></a> 271                 tmp[encodedIndex]   = (<strong class='reserved'>byte</strong>)(((b2 &amp; 0xf)&lt;&lt;4 ) |( (b3&gt;&gt;2) &amp; 0xf) );
-<a id='L272' name='L272'></a> 272                 <strong class='reserved'>return</strong> tmp;
-<a id='L273' name='L273'></a> 273             <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em>
-<a id='L274' name='L274'></a> 274                 <strong class='reserved'>return</strong> <strong class='reserved'>null</strong>;<em class='comment'>//an error  like "3c[Pad]r", "3cdX", "3cXd", "3cXX" where X is non data</em>
-<a id='L275' name='L275'></a> 275             <em class='brace'>}</em>
-<a id='L276' name='L276'></a> 276         <em class='brace'>}</em> <strong class='reserved'>else</strong> <em class='brace'>{</em> <em class='comment'>//No PAD e.g 3cQl</em>
-<a id='L277' name='L277'></a> 277             b3 = base64Alphabet[ d3 ];
-<a id='L278' name='L278'></a> 278             b4 = base64Alphabet[ d4 ];
-<a id='L279' name='L279'></a> 279             decodedData[encodedIndex++] = (<strong class='reserved'>byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 ) ;
-<a id='L280' name='L280'></a> 280             decodedData[encodedIndex++] = (<strong class='reserved'>byte</strong>)(((b2 &amp; 0xf)&lt;&lt;4 ) |( (b3&gt;&gt;2) &amp; 0xf) );
-<a id='L281' name='L281'></a> 281             decodedData[encodedIndex++] = (<strong class='reserved'>byte</strong>)( b3&lt;&lt;6 | b4 );
-<a id='L282' name='L282'></a> 282 
-<a id='L283' name='L283'></a> 283         <em class='brace'>}</em>
-<a id='L284' name='L284'></a> 284 
-<a id='L285' name='L285'></a> 285         <strong class='reserved'>return</strong> decodedData;
-<a id='L286' name='L286'></a> 286     <em class='brace'>}</em>
-<a id='L287' name='L287'></a> 287 
-<a id='L288' name='L288'></a> 288     <em class='comment'>/**</em>
-<a id='L289' name='L289'></a> 289 <em class='comment'>     * remove WhiteSpace from MIME containing encoded Base64 data.</em>
-<a id='L290' name='L290'></a> 290 <em class='comment'>     *</em>
-<a id='L291' name='L291'></a> 291 <em class='comment'>     * @param data  the byte array of base64 data (with WS)</em>
-<a id='L292' name='L292'></a> 292 <em class='comment'>     * @return      the new length</em>
-<a id='L293' name='L293'></a> 293 <em class='comment'>     */</em>
-<a id='L294' name='L294'></a> 294     <strong class='reserved'>protected</strong> <strong class='reserved'>static</strong> <strong class='reserved'>int</strong> <a href='../R/26102.html' title='Multiple referred from 3 places.'>removeWhiteSpace</a>(<strong class='reserved'>char</strong>[] <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>) <em class='brace'>{</em>
-<a id='L295' name='L295'></a> 295         <strong class='reserved'>if</strong> (<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a> == <strong class='reserved'>null</strong>)
-<a id='L296' name='L296'></a> 296             <strong class='reserved'>return</strong> 0;
-<a id='L297' name='L297'></a> 297 
-<a id='L298' name='L298'></a> 298         <em class='comment'>// count characters that's not whitespace</em>
-<a id='L299' name='L299'></a> 299         <strong class='reserved'>int</strong> newSize = 0;
-<a id='L300' name='L300'></a> 300         <strong class='reserved'>int</strong> len = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>.<a href='../D/26813.html' title='Multiple defined in 43 places.'>length</a>;
-<a id='L301' name='L301'></a> 301         <strong class='reserved'>for</strong> (<strong class='reserved'>int</strong> i = 0; i &lt; len; i++) <em class='brace'>{</em>
-<a id='L302' name='L302'></a> 302             <strong class='reserved'>if</strong> (!<a href='../D/26505.html' title='Multiple defined in 15 places.'>isWhiteSpace</a>(<a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i]))
-<a id='L303' name='L303'></a> 303                 <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[newSize++] = <a href='../S/6040.html#L177' title='Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.'>data</a>[i];
-<a id='L304' name='L304'></a> 304         <em class='brace'>}</em>
-<a id='L305' name='L305'></a> 305         <strong class='reserved'>return</strong> newSize;
-<a id='L306' name='L306'></a> 306     <em class='brace'>}</em>
-<a id='L307' name='L307'></a> 307 <em class='brace'>}</em>
+<hr>
+<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
+<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
+<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
+<a id="L4" name="L4"></a>   4 <em class="comment"> */</em>
+<a id="L5" name="L5"></a>   5 <em class="comment">/*</em>
+<a id="L6" name="L6"></a>   6 <em class="comment"> * Copyright 1999-2002,2004 The Apache Software Foundation.</em>
+<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
+<a id="L8" name="L8"></a>   8 <em class="comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a id="L9" name="L9"></a>   9 <em class="comment"> * you may not use this file except in compliance with the License.</em>
+<a id="L10" name="L10"></a>  10 <em class="comment"> * You may obtain a copy of the License at</em>
+<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
+<a id="L12" name="L12"></a>  12 <em class="comment"> *      http://www.apache.org/licenses/LICENSE-2.0</em>
+<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
+<a id="L14" name="L14"></a>  14 <em class="comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a id="L15" name="L15"></a>  15 <em class="comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a id="L16" name="L16"></a>  16 <em class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a id="L17" name="L17"></a>  17 <em class="comment"> * See the License for the specific language governing permissions and</em>
+<a id="L18" name="L18"></a>  18 <em class="comment"> * limitations under the License.</em>
+<a id="L19" name="L19"></a>  19 <em class="comment"> */</em>
+<a id="L20" name="L20"></a>  20 
+<a id="L21" name="L21"></a>  21 <strong class="reserved">package</strong> com.sun.org.apache.xerces.internal.<a href="../S/7010.html#L693" title="Defined at 693 in src/com/sun/corba/se/impl/encoding/CodeSetConversion.java.">impl</a>.dv.util;
+<a id="L22" name="L22"></a>  22 
+<a id="L23" name="L23"></a>  23 <em class="comment">/**</em>
+<a id="L24" name="L24"></a>  24 <em class="comment"> * This class provides encode/decode for RFC 2045 Base64 as</em>
+<a id="L25" name="L25"></a>  25 <em class="comment"> * defined by RFC 2045, N. Freed and N. Borenstein.</em>
+<a id="L26" name="L26"></a>  26 <em class="comment"> * RFC 2045: Multipurpose Internet Mail Extensions (MIME)</em>
+<a id="L27" name="L27"></a>  27 <em class="comment"> * Part One: Format of Internet Message Bodies. Reference</em>
+<a id="L28" name="L28"></a>  28 <em class="comment"> * 1996 Available at: http://www.ietf.org/rfc/rfc2045.txt</em>
+<a id="L29" name="L29"></a>  29 <em class="comment"> * This class is used by XML Schema binary format validation</em>
+<a id="L30" name="L30"></a>  30 <em class="comment"> *</em>
+<a id="L31" name="L31"></a>  31 <em class="comment"> * This implementation does not encode/decode streaming</em>
+<a id="L32" name="L32"></a>  32 <em class="comment"> * data. You need the data that you will encode/decode</em>
+<a id="L33" name="L33"></a>  33 <em class="comment"> * already on a byte arrray.</em>
+<a id="L34" name="L34"></a>  34 <em class="comment"> *</em>
+<a id="L35" name="L35"></a>  35 <em class="comment"> * @xerces.internal</em>
+<a id="L36" name="L36"></a>  36 <em class="comment"> *</em>
+<a id="L37" name="L37"></a>  37 <em class="comment"> * @author Jeffrey Rodriguez</em>
+<a id="L38" name="L38"></a>  38 <em class="comment"> * @author Sandy Gao</em>
+<a id="L39" name="L39"></a>  39 <em class="comment"> */</em>
+<a id="L40" name="L40"></a>  40 <strong class="reserved">public</strong> <strong class="reserved">final</strong> <strong class="reserved">class</strong>  <a href="../R/650.html" title="Multiple referred from 49 places.">Base64</a> <em class="brace">{</em>
+<a id="L41" name="L41"></a>  41 
+<a id="L42" name="L42"></a>  42     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  BASELENGTH         = 128;
+<a id="L43" name="L43"></a>  43     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  LOOKUPLENGTH       = 64;
+<a id="L44" name="L44"></a>  44     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  TWENTYFOURBITGROUP = 24;
+<a id="L45" name="L45"></a>  45     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  EIGHTBIT           = 8;
+<a id="L46" name="L46"></a>  46     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  SIXTEENBIT         = 16;
+<a id="L47" name="L47"></a>  47     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  SIXBIT             = 6;
+<a id="L48" name="L48"></a>  48     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  FOURBYTE           = 4;
+<a id="L49" name="L49"></a>  49     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">int</strong>  SIGN               = -128;
+<a id="L50" name="L50"></a>  50     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">char</strong> PAD                = '=';
+<a id="L51" name="L51"></a>  51     <strong class="reserved">static</strong> <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">boolean</strong> fDebug          = <strong class="reserved">false</strong>;
+<a id="L52" name="L52"></a>  52     <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">private</strong> <strong class="reserved">byte</strong> [] base64Alphabet        = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[BASELENGTH];
+<a id="L53" name="L53"></a>  53     <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">private</strong> <strong class="reserved">char</strong> [] lookUpBase64Alphabet  = <strong class="reserved">new</strong> <strong class="reserved">char</strong>[LOOKUPLENGTH];
+<a id="L54" name="L54"></a>  54 
+<a id="L55" name="L55"></a>  55     <strong class="reserved">static</strong> <em class="brace">{</em>
+<a id="L56" name="L56"></a>  56 
+<a id="L57" name="L57"></a>  57         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; BASELENGTH; ++i) <em class="brace">{</em>
+<a id="L58" name="L58"></a>  58             base64Alphabet[i] = -1;
+<a id="L59" name="L59"></a>  59         <em class="brace">}</em>
+<a id="L60" name="L60"></a>  60         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 'Z'; i &gt;= 'A'; i--) <em class="brace">{</em>
+<a id="L61" name="L61"></a>  61             base64Alphabet[i] = (<strong class="reserved">byte</strong>) (i-'A');
+<a id="L62" name="L62"></a>  62         <em class="brace">}</em>
+<a id="L63" name="L63"></a>  63         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 'z'; i&gt;= 'a'; i--) <em class="brace">{</em>
+<a id="L64" name="L64"></a>  64             base64Alphabet[i] = (<strong class="reserved">byte</strong>) ( i-'a' + 26);
+<a id="L65" name="L65"></a>  65         <em class="brace">}</em>
+<a id="L66" name="L66"></a>  66 
+<a id="L67" name="L67"></a>  67         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = '9'; i &gt;= '0'; i--) <em class="brace">{</em>
+<a id="L68" name="L68"></a>  68             base64Alphabet[i] = (<strong class="reserved">byte</strong>) (i-'0' + 52);
+<a id="L69" name="L69"></a>  69         <em class="brace">}</em>
+<a id="L70" name="L70"></a>  70 
+<a id="L71" name="L71"></a>  71         base64Alphabet['+']  = 62;
+<a id="L72" name="L72"></a>  72         base64Alphabet['/']  = 63;
+<a id="L73" name="L73"></a>  73 
+<a id="L74" name="L74"></a>  74         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i&lt;=25; i++)
+<a id="L75" name="L75"></a>  75             lookUpBase64Alphabet[i] = (<strong class="reserved">char</strong>)('A'+i);
+<a id="L76" name="L76"></a>  76 
+<a id="L77" name="L77"></a>  77         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 26,  j = 0; i&lt;=51; i++, j++)
+<a id="L78" name="L78"></a>  78             lookUpBase64Alphabet[i] = (<strong class="reserved">char</strong>)('a'+ j);
+<a id="L79" name="L79"></a>  79 
+<a id="L80" name="L80"></a>  80         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 52,  j = 0; i&lt;=61; i++, j++)
+<a id="L81" name="L81"></a>  81             lookUpBase64Alphabet[i] = (<strong class="reserved">char</strong>)('0' + j);
+<a id="L82" name="L82"></a>  82         lookUpBase64Alphabet[62] = (<strong class="reserved">char</strong>)'+';
+<a id="L83" name="L83"></a>  83         lookUpBase64Alphabet[63] = (<strong class="reserved">char</strong>)'/';
+<a id="L84" name="L84"></a>  84 
+<a id="L85" name="L85"></a>  85     <em class="brace">}</em>
+<a id="L86" name="L86"></a>  86 
+<a id="L87" name="L87"></a>  87     <strong class="reserved">protected</strong> <strong class="reserved">static</strong> <strong class="reserved">boolean</strong> <a href="../R/22236.html" title="Multiple referred from 40 places.">isWhiteSpace</a>(<strong class="reserved">char</strong> octect) <em class="brace">{</em>
+<a id="L88" name="L88"></a>  88         <strong class="reserved">return</strong> (octect == 0x20 || octect == 0xd || octect == 0xa || octect == 0x9);
+<a id="L89" name="L89"></a>  89     <em class="brace">}</em>
+<a id="L90" name="L90"></a>  90 
+<a id="L91" name="L91"></a>  91     <strong class="reserved">protected</strong> <strong class="reserved">static</strong> <strong class="reserved">boolean</strong> <a href="../R/21851.html" title="Multiple referred from 10 places.">isPad</a>(<strong class="reserved">char</strong> octect) <em class="brace">{</em>
+<a id="L92" name="L92"></a>  92         <strong class="reserved">return</strong> (octect == PAD);
+<a id="L93" name="L93"></a>  93     <em class="brace">}</em>
+<a id="L94" name="L94"></a>  94 
+<a id="L95" name="L95"></a>  95     <strong class="reserved">protected</strong> <strong class="reserved">static</strong> <strong class="reserved">boolean</strong> <a href="../R/21322.html" title="Multiple referred from 39 places.">isData</a>(<strong class="reserved">char</strong> octect) <em class="brace">{</em>
+<a id="L96" name="L96"></a>  96         <strong class="reserved">return</strong> (octect &lt; BASELENGTH &amp;&amp; base64Alphabet[octect] != -1);
+<a id="L97" name="L97"></a>  97     <em class="brace">}</em>
+<a id="L98" name="L98"></a>  98 
+<a id="L99" name="L99"></a>  99     <strong class="reserved">protected</strong> <strong class="reserved">static</strong> <strong class="reserved">boolean</strong> isBase64(<strong class="reserved">char</strong> octect) <em class="brace">{</em>
+<a id="L100" name="L100"></a> 100         <strong class="reserved">return</strong> (<a href="../D/26505.html" title="Multiple defined in 15 places.">isWhiteSpace</a>(octect) || <a href="../D/26028.html" title="Multiple defined in 2 places.">isPad</a>(octect) || <a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>(octect));
+<a id="L101" name="L101"></a> 101     <em class="brace">}</em>
+<a id="L102" name="L102"></a> 102 
+<a id="L103" name="L103"></a> 103     <em class="comment">/**</em>
+<a id="L104" name="L104"></a> 104 <em class="comment">     * Encodes hex octects into Base64</em>
+<a id="L105" name="L105"></a> 105 <em class="comment">     *</em>
+<a id="L106" name="L106"></a> 106 <em class="comment">     * @param binaryData Array containing binaryData</em>
+<a id="L107" name="L107"></a> 107 <em class="comment">     * @return Encoded Base64 array</em>
+<a id="L108" name="L108"></a> 108 <em class="comment">     */</em>
+<a id="L109" name="L109"></a> 109     <strong class="reserved">public</strong> <strong class="reserved">static</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> <a href="../R/13718.html" title="Multiple referred from 69 places.">encode</a>(<strong class="reserved">byte</strong>[] binaryData) <em class="brace">{</em>
+<a id="L110" name="L110"></a> 110 
+<a id="L111" name="L111"></a> 111         <strong class="reserved">if</strong> (binaryData == <strong class="reserved">null</strong>)
+<a id="L112" name="L112"></a> 112             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L113" name="L113"></a> 113 
+<a id="L114" name="L114"></a> 114         <strong class="reserved">int</strong>      lengthDataBits    = binaryData.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>*EIGHTBIT;
+<a id="L115" name="L115"></a> 115         <strong class="reserved">if</strong> (lengthDataBits == 0) <em class="brace">{</em>
+<a id="L116" name="L116"></a> 116             <strong class="reserved">return</strong> "";
+<a id="L117" name="L117"></a> 117         <em class="brace">}</em>
+<a id="L118" name="L118"></a> 118 
+<a id="L119" name="L119"></a> 119         <strong class="reserved">int</strong>      fewerThan24bits   = lengthDataBits%TWENTYFOURBITGROUP;
+<a id="L120" name="L120"></a> 120         <strong class="reserved">int</strong>      numberTriplets    = lengthDataBits/TWENTYFOURBITGROUP;
+<a id="L121" name="L121"></a> 121         <strong class="reserved">int</strong>      numberQuartet     = fewerThan24bits != 0 ? numberTriplets+1 : numberTriplets;
+<a id="L122" name="L122"></a> 122         <strong class="reserved">char</strong>     encodedData[]     = <strong class="reserved">null</strong>;
+<a id="L123" name="L123"></a> 123 
+<a id="L124" name="L124"></a> 124         encodedData = <strong class="reserved">new</strong> <strong class="reserved">char</strong>[numberQuartet*4];
+<a id="L125" name="L125"></a> 125 
+<a id="L126" name="L126"></a> 126         <strong class="reserved">byte</strong> k=0, l=0, b1=0,b2=0,b3=0;
+<a id="L127" name="L127"></a> 127 
+<a id="L128" name="L128"></a> 128         <strong class="reserved">int</strong> encodedIndex = 0;
+<a id="L129" name="L129"></a> 129         <strong class="reserved">int</strong> dataIndex   = 0;
+<a id="L130" name="L130"></a> 130         <strong class="reserved">if</strong> (fDebug) <em class="brace">{</em>
+<a id="L131" name="L131"></a> 131             <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>("number of triplets = " + numberTriplets );
+<a id="L132" name="L132"></a> 132         <em class="brace">}</em>
+<a id="L133" name="L133"></a> 133 
+<a id="L134" name="L134"></a> 134         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i=0; i&lt;numberTriplets; i++) <em class="brace">{</em>
+<a id="L135" name="L135"></a> 135             b1 = binaryData[dataIndex++];
+<a id="L136" name="L136"></a> 136             b2 = binaryData[dataIndex++];
+<a id="L137" name="L137"></a> 137             b3 = binaryData[dataIndex++];
+<a id="L138" name="L138"></a> 138 
+<a id="L139" name="L139"></a> 139             <strong class="reserved">if</strong> (fDebug) <em class="brace">{</em>
+<a id="L140" name="L140"></a> 140                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>( "b1= " + b1 +", b2= " + b2 + ", b3= " + b3 );
+<a id="L141" name="L141"></a> 141             <em class="brace">}</em>
+<a id="L142" name="L142"></a> 142 
+<a id="L143" name="L143"></a> 143             l  = (<strong class="reserved">byte</strong>)(b2 &amp; 0x0f);
+<a id="L144" name="L144"></a> 144             k  = (<strong class="reserved">byte</strong>)(b1 &amp; 0x03);
+<a id="L145" name="L145"></a> 145 
+<a id="L146" name="L146"></a> 146             <strong class="reserved">byte</strong> val1 = ((b1 &amp; SIGN)==0)?(<strong class="reserved">byte</strong>)(b1&gt;&gt;2):(<strong class="reserved">byte</strong>)((b1)&gt;&gt;2^0xc0);
+<a id="L147" name="L147"></a> 147 
+<a id="L148" name="L148"></a> 148             <strong class="reserved">byte</strong> val2 = ((b2 &amp; SIGN)==0)?(<strong class="reserved">byte</strong>)(b2&gt;&gt;4):(<strong class="reserved">byte</strong>)((b2)&gt;&gt;4^0xf0);
+<a id="L149" name="L149"></a> 149             <strong class="reserved">byte</strong> val3 = ((b3 &amp; SIGN)==0)?(<strong class="reserved">byte</strong>)(b3&gt;&gt;6):(<strong class="reserved">byte</strong>)((b3)&gt;&gt;6^0xfc);
+<a id="L150" name="L150"></a> 150 
+<a id="L151" name="L151"></a> 151             <strong class="reserved">if</strong> (fDebug) <em class="brace">{</em>
+<a id="L152" name="L152"></a> 152                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>( "val2 = " + val2 );
+<a id="L153" name="L153"></a> 153                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>( "k4   = " + (k&lt;&lt;4));
+<a id="L154" name="L154"></a> 154                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>( "vak  = " + (val2 | (k&lt;&lt;4)));
+<a id="L155" name="L155"></a> 155             <em class="brace">}</em>
+<a id="L156" name="L156"></a> 156 
+<a id="L157" name="L157"></a> 157             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
+<a id="L158" name="L158"></a> 158             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val2 | ( k&lt;&lt;4 )];
+<a id="L159" name="L159"></a> 159             encodedData[encodedIndex++] = lookUpBase64Alphabet[ (l &lt;&lt;2 ) | val3 ];
+<a id="L160" name="L160"></a> 160             encodedData[encodedIndex++] = lookUpBase64Alphabet[ b3 &amp; 0x3f ];
+<a id="L161" name="L161"></a> 161         <em class="brace">}</em>
+<a id="L162" name="L162"></a> 162 
+<a id="L163" name="L163"></a> 163         <em class="comment">// form integral number of 6-bit groups</em>
+<a id="L164" name="L164"></a> 164         <strong class="reserved">if</strong> (fewerThan24bits == EIGHTBIT) <em class="brace">{</em>
+<a id="L165" name="L165"></a> 165             b1 = binaryData[dataIndex];
+<a id="L166" name="L166"></a> 166             k = (<strong class="reserved">byte</strong>) ( b1 &amp;0x03 );
+<a id="L167" name="L167"></a> 167             <strong class="reserved">if</strong> (fDebug) <em class="brace">{</em>
+<a id="L168" name="L168"></a> 168                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>("b1=" + b1);
+<a id="L169" name="L169"></a> 169                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1038.html#L2317" title="Defined at 2317 in src/java/util/Formatter.java.">out</a>.<a href="../D/29725.html" title="Multiple defined in 27 places.">println</a>("b1&lt;&lt;2 = " + (b1&gt;&gt;2) );
+<a id="L170" name="L170"></a> 170             <em class="brace">}</em>
+<a id="L171" name="L171"></a> 171             <strong class="reserved">byte</strong> val1 = ((b1 &amp; SIGN)==0)?(<strong class="reserved">byte</strong>)(b1&gt;&gt;2):(<strong class="reserved">byte</strong>)((b1)&gt;&gt;2^0xc0);
+<a id="L172" name="L172"></a> 172             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
+<a id="L173" name="L173"></a> 173             encodedData[encodedIndex++] = lookUpBase64Alphabet[ k&lt;&lt;4 ];
+<a id="L174" name="L174"></a> 174             encodedData[encodedIndex++] = PAD;
+<a id="L175" name="L175"></a> 175             encodedData[encodedIndex++] = PAD;
+<a id="L176" name="L176"></a> 176         <em class="brace">}</em> <strong class="reserved">else</strong> <strong class="reserved">if</strong> (fewerThan24bits == SIXTEENBIT) <em class="brace">{</em>
+<a id="L177" name="L177"></a> 177             b1 = binaryData[dataIndex];
+<a id="L178" name="L178"></a> 178             b2 = binaryData[dataIndex +1 ];
+<a id="L179" name="L179"></a> 179             l = ( <strong class="reserved">byte</strong> ) ( b2 &amp;0x0f );
+<a id="L180" name="L180"></a> 180             k = ( <strong class="reserved">byte</strong> ) ( b1 &amp;0x03 );
+<a id="L181" name="L181"></a> 181 
+<a id="L182" name="L182"></a> 182             <strong class="reserved">byte</strong> val1 = ((b1 &amp; SIGN)==0)?(<strong class="reserved">byte</strong>)(b1&gt;&gt;2):(<strong class="reserved">byte</strong>)((b1)&gt;&gt;2^0xc0);
+<a id="L183" name="L183"></a> 183             <strong class="reserved">byte</strong> val2 = ((b2 &amp; SIGN)==0)?(<strong class="reserved">byte</strong>)(b2&gt;&gt;4):(<strong class="reserved">byte</strong>)((b2)&gt;&gt;4^0xf0);
+<a id="L184" name="L184"></a> 184 
+<a id="L185" name="L185"></a> 185             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
+<a id="L186" name="L186"></a> 186             encodedData[encodedIndex++] = lookUpBase64Alphabet[ val2 | ( k&lt;&lt;4 )];
+<a id="L187" name="L187"></a> 187             encodedData[encodedIndex++] = lookUpBase64Alphabet[ l&lt;&lt;2 ];
+<a id="L188" name="L188"></a> 188             encodedData[encodedIndex++] = PAD;
+<a id="L189" name="L189"></a> 189         <em class="brace">}</em>
+<a id="L190" name="L190"></a> 190 
+<a id="L191" name="L191"></a> 191         <strong class="reserved">return</strong> <strong class="reserved">new</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a>(encodedData);
+<a id="L192" name="L192"></a> 192     <em class="brace">}</em>
+<a id="L193" name="L193"></a> 193 
+<a id="L194" name="L194"></a> 194     <em class="comment">/**</em>
+<a id="L195" name="L195"></a> 195 <em class="comment">     * Decodes Base64 data into octects</em>
+<a id="L196" name="L196"></a> 196 <em class="comment">     *</em>
+<a id="L197" name="L197"></a> 197 <em class="comment">     * @param encoded string containing Base64 data</em>
+<a id="L198" name="L198"></a> 198 <em class="comment">     * @return Array containind decoded data.</em>
+<a id="L199" name="L199"></a> 199 <em class="comment">     */</em>
+<a id="L200" name="L200"></a> 200     <strong class="reserved">public</strong> <strong class="reserved">static</strong> <strong class="reserved">byte</strong>[] <a href="../R/12941.html" title="Multiple referred from 73 places.">decode</a>(<a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> encoded) <em class="brace">{</em>
+<a id="L201" name="L201"></a> 201 
+<a id="L202" name="L202"></a> 202         <strong class="reserved">if</strong> (encoded == <strong class="reserved">null</strong>)
+<a id="L203" name="L203"></a> 203             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L204" name="L204"></a> 204 
+<a id="L205" name="L205"></a> 205         <strong class="reserved">char</strong>[] base64Data = encoded.<a href="../D/35368.html" title="Multiple defined in 3 places.">toCharArray</a>();
+<a id="L206" name="L206"></a> 206         <em class="comment">// remove white spaces</em>
+<a id="L207" name="L207"></a> 207         <strong class="reserved">int</strong> len = <a href="../D/30994.html" title="Multiple defined in 3 places.">removeWhiteSpace</a>(base64Data);
+<a id="L208" name="L208"></a> 208 
+<a id="L209" name="L209"></a> 209         <strong class="reserved">if</strong> (len%FOURBYTE != 0) <em class="brace">{</em>
+<a id="L210" name="L210"></a> 210             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;<em class="comment">//should be divisible by four</em>
+<a id="L211" name="L211"></a> 211         <em class="brace">}</em>
+<a id="L212" name="L212"></a> 212 
+<a id="L213" name="L213"></a> 213         <strong class="reserved">int</strong>      numberQuadruple    = (len/FOURBYTE );
+<a id="L214" name="L214"></a> 214 
+<a id="L215" name="L215"></a> 215         <strong class="reserved">if</strong> (numberQuadruple == 0)
+<a id="L216" name="L216"></a> 216             <strong class="reserved">return</strong> <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[0];
+<a id="L217" name="L217"></a> 217 
+<a id="L218" name="L218"></a> 218         <strong class="reserved">byte</strong>     decodedData[]      = <strong class="reserved">null</strong>;
+<a id="L219" name="L219"></a> 219         <strong class="reserved">byte</strong>     b1=0,b2=0,b3=0,b4=0;
+<a id="L220" name="L220"></a> 220         <strong class="reserved">char</strong>     d1=0,d2=0,d3=0,d4=0;
+<a id="L221" name="L221"></a> 221 
+<a id="L222" name="L222"></a> 222         <strong class="reserved">int</strong> i = 0;
+<a id="L223" name="L223"></a> 223         <strong class="reserved">int</strong> encodedIndex = 0;
+<a id="L224" name="L224"></a> 224         <strong class="reserved">int</strong> dataIndex    = 0;
+<a id="L225" name="L225"></a> 225         decodedData      = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[ (numberQuadruple)*3];
+<a id="L226" name="L226"></a> 226 
+<a id="L227" name="L227"></a> 227         <strong class="reserved">for</strong> (; i&lt;numberQuadruple-1; i++) <em class="brace">{</em>
+<a id="L228" name="L228"></a> 228 
+<a id="L229" name="L229"></a> 229             <strong class="reserved">if</strong> (!<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d1 = base64Data[dataIndex++]) )||
+<a id="L230" name="L230"></a> 230                 !<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d2 = base64Data[dataIndex++]) )||
+<a id="L231" name="L231"></a> 231                 !<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d3 = base64Data[dataIndex++]) )||
+<a id="L232" name="L232"></a> 232                 !<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d4 = base64Data[dataIndex++]) ))
+<a id="L233" name="L233"></a> 233                 <strong class="reserved">return</strong> <strong class="reserved">null</strong>;<em class="comment">//if found "no data" just return null</em>
+<a id="L234" name="L234"></a> 234 
+<a id="L235" name="L235"></a> 235             b1 = base64Alphabet[d1];
+<a id="L236" name="L236"></a> 236             b2 = base64Alphabet[d2];
+<a id="L237" name="L237"></a> 237             b3 = base64Alphabet[d3];
+<a id="L238" name="L238"></a> 238             b4 = base64Alphabet[d4];
+<a id="L239" name="L239"></a> 239 
+<a id="L240" name="L240"></a> 240             decodedData[encodedIndex++] = (<strong class="reserved">byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 ) ;
+<a id="L241" name="L241"></a> 241             decodedData[encodedIndex++] = (<strong class="reserved">byte</strong>)(((b2 &amp; 0xf)&lt;&lt;4 ) |( (b3&gt;&gt;2) &amp; 0xf) );
+<a id="L242" name="L242"></a> 242             decodedData[encodedIndex++] = (<strong class="reserved">byte</strong>)( b3&lt;&lt;6 | b4 );
+<a id="L243" name="L243"></a> 243         <em class="brace">}</em>
+<a id="L244" name="L244"></a> 244 
+<a id="L245" name="L245"></a> 245         <strong class="reserved">if</strong> (!<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d1 = base64Data[dataIndex++]) ) ||
+<a id="L246" name="L246"></a> 246             !<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d2 = base64Data[dataIndex++]) )) <em class="brace">{</em>
+<a id="L247" name="L247"></a> 247             <strong class="reserved">return</strong> <strong class="reserved">null</strong>;<em class="comment">//if found "no data" just return null</em>
+<a id="L248" name="L248"></a> 248         <em class="brace">}</em>
+<a id="L249" name="L249"></a> 249 
+<a id="L250" name="L250"></a> 250         b1 = base64Alphabet[d1];
+<a id="L251" name="L251"></a> 251         b2 = base64Alphabet[d2];
+<a id="L252" name="L252"></a> 252 
+<a id="L253" name="L253"></a> 253         d3 = base64Data[dataIndex++];
+<a id="L254" name="L254"></a> 254         d4 = base64Data[dataIndex++];
+<a id="L255" name="L255"></a> 255         <strong class="reserved">if</strong> (!<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d3 ) ) ||
+<a id="L256" name="L256"></a> 256             !<a href="../S/5170.html#L95" title="Defined at 95 in src/com/sun/org/apache/xerces/internal/impl/dv/util/Base64.java.">isData</a>( (d4 ) )) <em class="brace">{</em><em class="comment">//Check if they are PAD characters</em>
+<a id="L257" name="L257"></a> 257             <strong class="reserved">if</strong> (<a href="../D/26028.html" title="Multiple defined in 2 places.">isPad</a>( d3 ) &amp;&amp; <a href="../D/26028.html" title="Multiple defined in 2 places.">isPad</a>( d4)) <em class="brace">{</em>               <em class="comment">//Two PAD e.g. 3c[Pad][Pad]</em>
+<a id="L258" name="L258"></a> 258                 <strong class="reserved">if</strong> ((b2 &amp; 0xf) != 0)<em class="comment">//last 4 bits should be zero</em>
+<a id="L259" name="L259"></a> 259                     <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L260" name="L260"></a> 260                 <strong class="reserved">byte</strong>[] tmp = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[ i*3 + 1 ];
+<a id="L261" name="L261"></a> 261                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L493" title="Defined at 493 in src/java/lang/System.java.">arraycopy</a>( decodedData, 0, tmp, 0, i*3 );
+<a id="L262" name="L262"></a> 262                 tmp[encodedIndex]   = (<strong class="reserved">byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 ) ;
+<a id="L263" name="L263"></a> 263                 <strong class="reserved">return</strong> tmp;
+<a id="L264" name="L264"></a> 264             <em class="brace">}</em> <strong class="reserved">else</strong> <strong class="reserved">if</strong> (!<a href="../D/26028.html" title="Multiple defined in 2 places.">isPad</a>( d3) &amp;&amp; <a href="../D/26028.html" title="Multiple defined in 2 places.">isPad</a>(d4)) <em class="brace">{</em>               <em class="comment">//One PAD  e.g. 3cQ[Pad]</em>
+<a id="L265" name="L265"></a> 265                 b3 = base64Alphabet[ d3 ];
+<a id="L266" name="L266"></a> 266                 <strong class="reserved">if</strong> ((b3 &amp; 0x3 ) != 0)<em class="comment">//last 2 bits should be zero</em>
+<a id="L267" name="L267"></a> 267                     <strong class="reserved">return</strong> <strong class="reserved">null</strong>;
+<a id="L268" name="L268"></a> 268                 <strong class="reserved">byte</strong>[] tmp = <strong class="reserved">new</strong> <strong class="reserved">byte</strong>[ i*3 + 2 ];
+<a id="L269" name="L269"></a> 269                 <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L493" title="Defined at 493 in src/java/lang/System.java.">arraycopy</a>( decodedData, 0, tmp, 0, i*3 );
+<a id="L270" name="L270"></a> 270                 tmp[encodedIndex++] = (<strong class="reserved">byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 );
+<a id="L271" name="L271"></a> 271                 tmp[encodedIndex]   = (<strong class="reserved">byte</strong>)(((b2 &amp; 0xf)&lt;&lt;4 ) |( (b3&gt;&gt;2) &amp; 0xf) );
+<a id="L272" name="L272"></a> 272                 <strong class="reserved">return</strong> tmp;
+<a id="L273" name="L273"></a> 273             <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
+<a id="L274" name="L274"></a> 274                 <strong class="reserved">return</strong> <strong class="reserved">null</strong>;<em class="comment">//an error  like "3c[Pad]r", "3cdX", "3cXd", "3cXX" where X is non data</em>
+<a id="L275" name="L275"></a> 275             <em class="brace">}</em>
+<a id="L276" name="L276"></a> 276         <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em> <em class="comment">//No PAD e.g 3cQl</em>
+<a id="L277" name="L277"></a> 277             b3 = base64Alphabet[ d3 ];
+<a id="L278" name="L278"></a> 278             b4 = base64Alphabet[ d4 ];
+<a id="L279" name="L279"></a> 279             decodedData[encodedIndex++] = (<strong class="reserved">byte</strong>)(  b1 &lt;&lt;2 | b2&gt;&gt;4 ) ;
+<a id="L280" name="L280"></a> 280             decodedData[encodedIndex++] = (<strong class="reserved">byte</strong>)(((b2 &amp; 0xf)&lt;&lt;4 ) |( (b3&gt;&gt;2) &amp; 0xf) );
+<a id="L281" name="L281"></a> 281             decodedData[encodedIndex++] = (<strong class="reserved">byte</strong>)( b3&lt;&lt;6 | b4 );
+<a id="L282" name="L282"></a> 282 
+<a id="L283" name="L283"></a> 283         <em class="brace">}</em>
+<a id="L284" name="L284"></a> 284 
+<a id="L285" name="L285"></a> 285         <strong class="reserved">return</strong> decodedData;
+<a id="L286" name="L286"></a> 286     <em class="brace">}</em>
+<a id="L287" name="L287"></a> 287 
+<a id="L288" name="L288"></a> 288     <em class="comment">/**</em>
+<a id="L289" name="L289"></a> 289 <em class="comment">     * remove WhiteSpace from MIME containing encoded Base64 data.</em>
+<a id="L290" name="L290"></a> 290 <em class="comment">     *</em>
+<a id="L291" name="L291"></a> 291 <em class="comment">     * @param data  the byte array of base64 data (with WS)</em>
+<a id="L292" name="L292"></a> 292 <em class="comment">     * @return      the new length</em>
+<a id="L293" name="L293"></a> 293 <em class="comment">     */</em>
+<a id="L294" name="L294"></a> 294     <strong class="reserved">protected</strong> <strong class="reserved">static</strong> <strong class="reserved">int</strong> <a href="../R/26102.html" title="Multiple referred from 3 places.">removeWhiteSpace</a>(<strong class="reserved">char</strong>[] <a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>) <em class="brace">{</em>
+<a id="L295" name="L295"></a> 295         <strong class="reserved">if</strong> (<a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a> == <strong class="reserved">null</strong>)
+<a id="L296" name="L296"></a> 296             <strong class="reserved">return</strong> 0;
+<a id="L297" name="L297"></a> 297 
+<a id="L298" name="L298"></a> 298         <em class="comment">// count characters that's not whitespace</em>
+<a id="L299" name="L299"></a> 299         <strong class="reserved">int</strong> newSize = 0;
+<a id="L300" name="L300"></a> 300         <strong class="reserved">int</strong> len = <a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>.<a href="../D/26813.html" title="Multiple defined in 43 places.">length</a>;
+<a id="L301" name="L301"></a> 301         <strong class="reserved">for</strong> (<strong class="reserved">int</strong> i = 0; i &lt; len; i++) <em class="brace">{</em>
+<a id="L302" name="L302"></a> 302             <strong class="reserved">if</strong> (!<a href="../D/26505.html" title="Multiple defined in 15 places.">isWhiteSpace</a>(<a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>[i]))
+<a id="L303" name="L303"></a> 303                 <a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>[newSize++] = <a href="../S/6040.html#L177" title="Defined at 177 in src/com/sun/org/apache/xalan/internal/xsltc/dom/BitArray.java.">data</a>[i];
+<a id="L304" name="L304"></a> 304         <em class="brace">}</em>
+<a id="L305" name="L305"></a> 305         <strong class="reserved">return</strong> newSize;
+<a id="L306" name="L306"></a> 306     <em class="brace">}</em>
+<a id="L307" name="L307"></a> 307 <em class="brace">}</em>
 </pre>
-<hr />
-<a id='BOTTOM' name='BOTTOM'></a>
-<em class='comment'>/* [&lt;][&gt;]<a href='#L87'>[^]</a><a href='#L294'>[v]</a><a href='#TOP'>[top]</a>[bottom]<a href='../mains.html'>[index]</a><a href='../help.html'>[help]</a> */</em>
-</body>
-</html>
+<hr>
+<a id="BOTTOM" name="BOTTOM"></a>
+<em class="comment">/* [&lt;][&gt;]<a href="#L87">[^]</a><a href="#L294">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+
+
+</body></html>
