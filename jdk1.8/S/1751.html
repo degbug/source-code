@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8003.html">lang</a>/ProcessEnvironment.java</h2>
-<em class="comment">/* [&lt;][&gt;]<a href="#L74">[^]</a><a href="#L347">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<a id="TOP" name="TOP"></a><div class="comment">
+/* [&lt;][&gt;]<a href="#L74">[^]</a><a href="#L347">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 <hr>
 <h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
@@ -62,68 +62,42 @@ This source file includes following definitions.
 <li><a href="#L347" title="Defined at 347.">toEnvironmentBlock</a></li>
 </ol>
 <hr>
-<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
-<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.</em>
-<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
-<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
-<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
-<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
-<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
-<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
-<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
-<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
-<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
-<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
-<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
-<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
-<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
-<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
-<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
-<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
-<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
-<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
-<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
-<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
-<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<pre>
+<div class="comment">
+  Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+  ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</div>
 <a id="L25" name="L25"></a>  25 
-<a id="L26" name="L26"></a>  26 <em class="comment">/* We use APIs that access a so-called Windows "Environment Block",</em>
-<a id="L27" name="L27"></a>  27 <em class="comment"> * which looks like an array of jchars like this:</em>
-<a id="L28" name="L28"></a>  28 <em class="comment"> *</em>
-<a id="L29" name="L29"></a>  29 <em class="comment"> * FOO=BAR\u0000 ... GORP=QUUX\u0000\u0000</em>
-<a id="L30" name="L30"></a>  30 <em class="comment"> *</em>
-<a id="L31" name="L31"></a>  31 <em class="comment"> * This data structure has a number of peculiarities we must contend with:</em>
-<a id="L32" name="L32"></a>  32 <em class="comment"> * (see: http://windowssdk.msdn.microsoft.com/en-us/library/ms682009.aspx)</em>
-<a id="L33" name="L33"></a>  33 <em class="comment"> * - The NUL jchar separators, and a double NUL jchar terminator.</em>
-<a id="L34" name="L34"></a>  34 <em class="comment"> *   It appears that the Windows implementation requires double NUL</em>
-<a id="L35" name="L35"></a>  35 <em class="comment"> *   termination even if the environment is empty.  We should always</em>
-<a id="L36" name="L36"></a>  36 <em class="comment"> *   generate environments with double NUL termination, while accepting</em>
-<a id="L37" name="L37"></a>  37 <em class="comment"> *   empty environments consisting of a single NUL.</em>
-<a id="L38" name="L38"></a>  38 <em class="comment"> * - on Windows9x, this is actually an array of 8-bit chars, not jchars,</em>
-<a id="L39" name="L39"></a>  39 <em class="comment"> *   encoded in the system default encoding.</em>
-<a id="L40" name="L40"></a>  40 <em class="comment"> * - The block must be sorted by Unicode value, case-insensitively,</em>
-<a id="L41" name="L41"></a>  41 <em class="comment"> *   as if folded to upper case.</em>
-<a id="L42" name="L42"></a>  42 <em class="comment"> * - There are magic environment variables maintained by Windows</em>
-<a id="L43" name="L43"></a>  43 <em class="comment"> *   that start with a `=' (!) character.  These are used for</em>
-<a id="L44" name="L44"></a>  44 <em class="comment"> *   Windows drive current directory (e.g. "=C:=C:\WINNT") or the</em>
-<a id="L45" name="L45"></a>  45 <em class="comment"> *   exit code of the last command (e.g. "=ExitCode=0000001").</em>
-<a id="L46" name="L46"></a>  46 <em class="comment"> *</em>
-<a id="L47" name="L47"></a>  47 <em class="comment"> * Since Java and non-9x Windows speak the same character set, and</em>
-<a id="L48" name="L48"></a>  48 <em class="comment"> * even the same encoding, we don't have to deal with unreliable</em>
-<a id="L49" name="L49"></a>  49 <em class="comment"> * conversion to byte streams.  Just add a few NUL terminators.</em>
-<a id="L50" name="L50"></a>  50 <em class="comment"> *</em>
-<a id="L51" name="L51"></a>  51 <em class="comment"> * System.getenv(String) is case-insensitive, while System.getenv()</em>
-<a id="L52" name="L52"></a>  52 <em class="comment"> * returns a map that is case-sensitive, which is consistent with</em>
-<a id="L53" name="L53"></a>  53 <em class="comment"> * native Windows APIs.</em>
-<a id="L54" name="L54"></a>  54 <em class="comment"> *</em>
-<a id="L55" name="L55"></a>  55 <em class="comment"> * The non-private methods in this class are not for general use even</em>
-<a id="L56" name="L56"></a>  56 <em class="comment"> * within this package.  Instead, they are the system-dependent parts</em>
-<a id="L57" name="L57"></a>  57 <em class="comment"> * of the system-independent method of the same name.  Don't even</em>
-<a id="L58" name="L58"></a>  58 <em class="comment"> * think of using this class unless your method's name appears below.</em>
-<a id="L59" name="L59"></a>  59 <em class="comment"> *</em>
-<a id="L60" name="L60"></a>  60 <em class="comment"> * @author Martin Buchholz</em>
-<a id="L61" name="L61"></a>  61 <em class="comment"> * @since 1.5</em>
-<a id="L62" name="L62"></a>  62 <em class="comment"> */</em>
+<div class="comment">
+ We use APIs that access a so-called Windows "Environment Block",
+  which looks like an array of jchars like this:
+  FOO=BAR\u0000 ... GORP=QUUX\u0000\u0000
+  This data structure has a number of peculiarities we must contend with:
+  (see: http://windowssdk.msdn.microsoft.com/en-us/library/ms682009.aspx)
+  - The NUL jchar separators, and a double NUL jchar terminator.
+    It appears that the Windows implementation requires double NUL
+    termination even if the environment is empty.  We should always
+    generate environments with double NUL termination, while accepting
+    empty environments consisting of a single NUL.
+  - on Windows9x, this is actually an array of 8-bit chars, not jchars,
+    encoded in the system default encoding.
+  - The block must be sorted by Unicode value, case-insensitively,
+    as if folded to upper case.
+  - There are magic environment variables maintained by Windows
+    that start with a `=' (!) character.  These are used for
+    Windows drive current directory (e.g. "=C:=C:\WINNT") or the
+    exit code of the last command (e.g. "=ExitCode=0000001").
+  Since Java and non-9x Windows speak the same character set, and
+  even the same encoding, we don't have to deal with unreliable
+  conversion to byte streams.  Just add a few NUL terminators.
+  System.getenv(String) is case-insensitive, while System.getenv()
+  returns a map that is case-sensitive, which is consistent with
+  native Windows APIs.
+  The non-private methods in this class are not for general use even
+  within this package.  Instead, they are the system-dependent parts
+  of the system-independent method of the same name.  Don't even
+  think of using this class unless your method's name appears below.
+  @author Martin Buchholz
+  @since 1.5</div>
 <a id="L63" name="L63"></a>  63 
 <a id="L64" name="L64"></a>  64 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.lang;
 <a id="L65" name="L65"></a>  65 
@@ -415,8 +389,6 @@ This source file includes following definitions.
 <a id="L351" name="L351"></a> 351 <em class="brace">}</em>
 </pre>
 <hr>
-<a id="BOTTOM" name="BOTTOM"></a>
-<em class="comment">/* [&lt;][&gt;]<a href="#L74">[^]</a><a href="#L347">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
-
-
+<div class="comment">
+/* [&lt;][&gt;]<a href="#L74">[^]</a><a href="#L347">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 </body></html>

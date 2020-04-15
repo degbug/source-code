@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7840.html">jmx</a>/<a href="../files/7844.html">remote</a>/<a href="../files/7845.html">internal</a>/ArrayNotificationBuffer.java</h2>
-<em class="comment">/* [&lt;][&gt;]<a href="#L122">[^]</a><a href="#L832">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<a id="TOP" name="TOP"></a><div class="comment">
+/* [&lt;][&gt;]<a href="#L122">[^]</a><a href="#L832">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 <hr>
 <h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
@@ -46,30 +46,10 @@ This source file includes following definitions.
 <li><a href="#L832" title="Defined at 832.">extractException</a></li>
 </ol>
 <hr>
-<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
-<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
-<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
-<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
-<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
-<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
-<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
-<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
-<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
-<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
-<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
-<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
-<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
-<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
-<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
-<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
-<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
-<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
-<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
-<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
-<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
-<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<pre>
+<div class="comment">
+  Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+  ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</div>
 <a id="L25" name="L25"></a>  25 
 <a id="L26" name="L26"></a>  26 <strong class="reserved">package</strong> com.sun.jmx.remote.internal;
 <a id="L27" name="L27"></a>  27 
@@ -105,57 +85,49 @@ This source file includes following definitions.
 <a id="L57" name="L57"></a>  57 <strong class="reserved">import</strong> com.sun.jmx.remote.util.EnvHelp;
 <a id="L58" name="L58"></a>  58 <strong class="reserved">import</strong> com.sun.jmx.remote.util.ClassLogger;
 <a id="L59" name="L59"></a>  59 
-<a id="L60" name="L60"></a>  60 <em class="comment">/** A circular buffer of notifications received from an MBean server. */</em>
-<a id="L61" name="L61"></a>  61 <em class="comment">/*</em>
-<a id="L62" name="L62"></a>  62 <em class="comment">  There is one instance of ArrayNotificationBuffer for every</em>
-<a id="L63" name="L63"></a>  63 <em class="comment">  MBeanServer object that has an attached ConnectorServer.  Then, for</em>
-<a id="L64" name="L64"></a>  64 <em class="comment">  every ConnectorServer attached to a given MBeanServer, there is an</em>
-<a id="L65" name="L65"></a>  65 <em class="comment">  instance of the inner class ShareBuffer.  So for example with two</em>
-<a id="L66" name="L66"></a>  66 <em class="comment">  ConnectorServers it looks like this:</em>
-<a id="L67" name="L67"></a>  67 <em class="comment"></em>
-<a id="L68" name="L68"></a>  68 <em class="comment">  ConnectorServer1 -&gt; ShareBuffer1 -\</em>
-<a id="L69" name="L69"></a>  69 <em class="comment">                                     }-&gt; ArrayNotificationBuffer</em>
-<a id="L70" name="L70"></a>  70 <em class="comment">  ConnectorServer2 -&gt; ShareBuffer2 -/              |</em>
-<a id="L71" name="L71"></a>  71 <em class="comment">                                                   |</em>
-<a id="L72" name="L72"></a>  72 <em class="comment">                                                   v</em>
-<a id="L73" name="L73"></a>  73 <em class="comment">                                              MBeanServer</em>
-<a id="L74" name="L74"></a>  74 <em class="comment"></em>
-<a id="L75" name="L75"></a>  75 <em class="comment">  The ArrayNotificationBuffer has a circular buffer of</em>
-<a id="L76" name="L76"></a>  76 <em class="comment">  NamedNotification objects.  Each ConnectorServer defines a</em>
-<a id="L77" name="L77"></a>  77 <em class="comment">  notification buffer size, and this size is recorded by the</em>
-<a id="L78" name="L78"></a>  78 <em class="comment">  corresponding ShareBuffer.  The buffer size of the</em>
-<a id="L79" name="L79"></a>  79 <em class="comment">  ArrayNotificationBuffer is the maximum of all of its ShareBuffers.</em>
-<a id="L80" name="L80"></a>  80 <em class="comment">  When a ShareBuffer is added or removed, the ArrayNotificationBuffer</em>
-<a id="L81" name="L81"></a>  81 <em class="comment">  size is adjusted accordingly.</em>
-<a id="L82" name="L82"></a>  82 <em class="comment"></em>
-<a id="L83" name="L83"></a>  83 <em class="comment">  An ArrayNotificationBuffer also has a BufferListener (which is a</em>
-<a id="L84" name="L84"></a>  84 <em class="comment">  NotificationListener) registered on every NotificationBroadcaster</em>
-<a id="L85" name="L85"></a>  85 <em class="comment">  MBean in the MBeanServer to which it is attached.  The cost of this</em>
-<a id="L86" name="L86"></a>  86 <em class="comment">  potentially large set of listeners is the principal motivation for</em>
-<a id="L87" name="L87"></a>  87 <em class="comment">  sharing the ArrayNotificationBuffer between ConnectorServers, and</em>
-<a id="L88" name="L88"></a>  88 <em class="comment">  also the reason that we are careful to discard the</em>
-<a id="L89" name="L89"></a>  89 <em class="comment">  ArrayNotificationBuffer (and its BufferListeners) when there are no</em>
-<a id="L90" name="L90"></a>  90 <em class="comment">  longer any ConnectorServers using it.</em>
-<a id="L91" name="L91"></a>  91 <em class="comment"></em>
-<a id="L92" name="L92"></a>  92 <em class="comment">  The synchronization of this class is inherently complex.  In an attempt</em>
-<a id="L93" name="L93"></a>  93 <em class="comment">  to limit the complexity, we use just two locks:</em>
-<a id="L94" name="L94"></a>  94 <em class="comment"></em>
-<a id="L95" name="L95"></a>  95 <em class="comment">  - globalLock controls access to the mapping between an MBeanServer</em>
-<a id="L96" name="L96"></a>  96 <em class="comment">    and its ArrayNotificationBuffer and to the set of ShareBuffers for</em>
-<a id="L97" name="L97"></a>  97 <em class="comment">    each ArrayNotificationBuffer.</em>
-<a id="L98" name="L98"></a>  98 <em class="comment"></em>
-<a id="L99" name="L99"></a>  99 <em class="comment">  - the instance lock of each ArrayNotificationBuffer controls access</em>
-<a id="L100" name="L100"></a> 100 <em class="comment">    to the array of notifications, including its size, and to the</em>
-<a id="L101" name="L101"></a> 101 <em class="comment">    dispose flag of the ArrayNotificationBuffer.  The wait/notify</em>
-<a id="L102" name="L102"></a> 102 <em class="comment">    mechanism is used to indicate changes to the array.</em>
-<a id="L103" name="L103"></a> 103 <em class="comment"></em>
-<a id="L104" name="L104"></a> 104 <em class="comment">  If both locks are held at the same time, the globalLock must be</em>
-<a id="L105" name="L105"></a> 105 <em class="comment">  taken first.</em>
-<a id="L106" name="L106"></a> 106 <em class="comment"></em>
-<a id="L107" name="L107"></a> 107 <em class="comment">  Since adding or removing a BufferListener to an MBean can involve</em>
-<a id="L108" name="L108"></a> 108 <em class="comment">  calling user code, we are careful not to hold any locks while it is</em>
-<a id="L109" name="L109"></a> 109 <em class="comment">  done.</em>
-<a id="L110" name="L110"></a> 110 <em class="comment"> */</em>
+<div class="comment">
+ /** A circular buffer of notifications received from an MBean server. */</div>
+<div class="comment">
+  There is one instance of ArrayNotificationBuffer for every
+  MBeanServer object that has an attached ConnectorServer.  Then, for
+  every ConnectorServer attached to a given MBeanServer, there is an
+  instance of the inner class ShareBuffer.  So for example with two
+  ConnectorServers it looks like this:
+  ConnectorServer1 -&gt; ShareBuffer1 -\
+                                     }-&gt; ArrayNotificationBuffer
+  ConnectorServer2 -&gt; ShareBuffer2 -/              |
+                                                   |
+                                                   v
+                                              MBeanServer
+  The ArrayNotificationBuffer has a circular buffer of
+  NamedNotification objects.  Each ConnectorServer defines a
+  notification buffer size, and this size is recorded by the
+  corresponding ShareBuffer.  The buffer size of the
+  ArrayNotificationBuffer is the maximum of all of its ShareBuffers.
+  When a ShareBuffer is added or removed, the ArrayNotificationBuffer
+  size is adjusted accordingly.
+  An ArrayNotificationBuffer also has a BufferListener (which is a
+  NotificationListener) registered on every NotificationBroadcaster
+  MBean in the MBeanServer to which it is attached.  The cost of this
+  potentially large set of listeners is the principal motivation for
+  sharing the ArrayNotificationBuffer between ConnectorServers, and
+  also the reason that we are careful to discard the
+  ArrayNotificationBuffer (and its BufferListeners) when there are no
+  longer any ConnectorServers using it.
+  The synchronization of this class is inherently complex.  In an attempt
+  to limit the complexity, we use just two locks:
+  - globalLock controls access to the mapping between an MBeanServer
+    and its ArrayNotificationBuffer and to the set of ShareBuffers for
+    each ArrayNotificationBuffer.
+  - the instance lock of each ArrayNotificationBuffer controls access
+    to the array of notifications, including its size, and to the
+    dispose flag of the ArrayNotificationBuffer.  The wait/notify
+    mechanism is used to indicate changes to the array.
+  If both locks are held at the same time, the globalLock must be
+  taken first.
+  Since adding or removing a BufferListener to an MBean can involve
+  calling user code, we are careful not to hold any locks while it is
+  done.</div>
 <a id="L111" name="L111"></a> 111 <strong class="reserved">public</strong> <strong class="reserved">class</strong> <a href="../R/457.html" title="Multiple referred from 8 places.">ArrayNotificationBuffer</a> <strong class="reserved">implements</strong> <a href="../S/6509.html#L33" title="Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBuffer.java.">NotificationBuffer</a> <em class="brace">{</em>
 <a id="L112" name="L112"></a> 112     <strong class="reserved">private</strong> <strong class="reserved">boolean</strong> disposed = <strong class="reserved">false</strong>;
 <a id="L113" name="L113"></a> 113 
@@ -188,24 +160,24 @@ This source file includes following definitions.
 <a id="L140" name="L140"></a> 140             <em class="brace">}</em>
 <a id="L141" name="L141"></a> 141             sharer = <a href="../D/11927.html" title="Multiple defined in 8 places.">buf</a>.<strong class="reserved">new</strong> <a href="../S/6507.html#L214" title="Defined at 214 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">ShareBuffer</a>(<a href="../S/1063.html#L833" title="Defined at 833 in src/java/util/concurrent/ForkJoinPool.java.">queueSize</a>);
 <a id="L142" name="L142"></a> 142         <em class="brace">}</em>
-<a id="L143" name="L143"></a> 143         <em class="comment">/* We avoid holding any locks while calling createListeners.</em>
-<a id="L144" name="L144"></a> 144 <em class="comment">         * This prevents possible deadlocks involving user code, but</em>
-<a id="L145" name="L145"></a> 145 <em class="comment">         * does mean that a second ConnectorServer created and started</em>
-<a id="L146" name="L146"></a> 146 <em class="comment">         * in this window will return before all the listeners are ready,</em>
-<a id="L147" name="L147"></a> 147 <em class="comment">         * which could lead to surprising behaviour.  The alternative</em>
-<a id="L148" name="L148"></a> 148 <em class="comment">         * would be to block the second ConnectorServer until the first</em>
-<a id="L149" name="L149"></a> 149 <em class="comment">         * one has finished adding all the listeners, but that would then</em>
-<a id="L150" name="L150"></a> 150 <em class="comment">         * be subject to deadlock.</em>
-<a id="L151" name="L151"></a> 151 <em class="comment">         */</em>
+<div class="comment">
+ We avoid holding any locks while calling createListeners.
+          This prevents possible deadlocks involving user code, but
+          does mean that a second ConnectorServer created and started
+          in this window will return before all the listeners are ready,
+          which could lead to surprising behaviour.  The alternative
+          would be to block the second ConnectorServer until the first
+          one has finished adding all the listeners, but that would then
+          be subject to deadlock.</div>
 <a id="L152" name="L152"></a> 152         <strong class="reserved">if</strong> (<a href="../D/13587.html" title="Multiple defined in 90 places.">create</a>)
 <a id="L153" name="L153"></a> 153             <a href="../D/11927.html" title="Multiple defined in 8 places.">buf</a>.<a href="../S/6507.html#L600" title="Defined at 600 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">createListeners</a>();
 <a id="L154" name="L154"></a> 154         <strong class="reserved">return</strong> sharer;
 <a id="L155" name="L155"></a> 155     <em class="brace">}</em>
 <a id="L156" name="L156"></a> 156 
-<a id="L157" name="L157"></a> 157     <em class="comment">/* Ensure that this buffer is no longer the one that will be returned by</em>
-<a id="L158" name="L158"></a> 158 <em class="comment">     * getNotificationBuffer.  This method is idempotent - calling it more</em>
-<a id="L159" name="L159"></a> 159 <em class="comment">     * than once has no effect beyond that of calling it once.</em>
-<a id="L160" name="L160"></a> 160 <em class="comment">     */</em>
+<div class="comment">
+ Ensure that this buffer is no longer the one that will be returned by
+      getNotificationBuffer.  This method is idempotent - calling it more
+      than once has no effect beyond that of calling it once.</div>
 <a id="L161" name="L161"></a> 161     <strong class="reserved">static</strong> <strong class="reserved">void</strong> <a href="../S/6507.html#L183" title="Referred from 183 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">removeNotificationBuffer</a>(<a href="../S/3578.html#L260" title="Defined at 260 in src/javax/management/MBeanServer.java.">MBeanServer</a> mbs) <em class="brace">{</em>
 <a id="L162" name="L162"></a> 162         <strong class="reserved">synchronized</strong> (globalLock) <em class="brace">{</em>
 <a id="L163" name="L163"></a> 163             mbsToBuffer.<a href="../D/30677.html" title="Multiple defined in 356 places.">remove</a>(mbs);
@@ -317,33 +289,29 @@ This source file includes following definitions.
 <a id="L269" name="L269"></a> 269         <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../S/1777.html#L38" title="Defined at 38 in src/java/lang/UnsupportedOperationException.java.">UnsupportedOperationException</a>();
 <a id="L270" name="L270"></a> 270     <em class="brace">}</em>
 <a id="L271" name="L271"></a> 271 
-<a id="L272" name="L272"></a> 272     <em class="comment">/**</em>
-<a id="L273" name="L273"></a> 273 <em class="comment">     * Fetch notifications that match the given listeners.</em>
-<a id="L274" name="L274"></a> 274 <em class="comment">     *</em>
-<a id="L275" name="L275"></a> 275 <em class="comment">     * The operation only considers notifications with a sequence</em>
-<a id="L276" name="L276"></a> 276 <em class="comment">     * number at least <code>startSequenceNumber</code>.  It will take</em>
-<a id="L277" name="L277"></a> 277 <em class="comment">     * no longer than <code>timeout</code>, and will return no more</em>
-<a id="L278" name="L278"></a> 278 <em class="comment">     * than <code>maxNotifications</code> different notifications.</em>
-<a id="L279" name="L279"></a> 279 <em class="comment">     *</em>
-<a id="L280" name="L280"></a> 280 <em class="comment">     * If there are no notifications matching the criteria, the</em>
-<a id="L281" name="L281"></a> 281 <em class="comment">     * operation will block until one arrives, subject to the</em>
-<a id="L282" name="L282"></a> 282 <em class="comment">     * timeout.</em>
-<a id="L283" name="L283"></a> 283 <em class="comment">     *</em>
-<a id="L284" name="L284"></a> 284 <em class="comment">     * @param filter an object that will add notifications to a</em>
-<a id="L285" name="L285"></a> 285 <em class="comment">     * {@code List<targetednotification>} if they match the current</targetednotification></em>
-<a id="L286" name="L286"></a> 286 <em class="comment">     * listeners with their filters.</em>
-<a id="L287" name="L287"></a> 287 <em class="comment">     * @param startSequenceNumber the first sequence number to</em>
-<a id="L288" name="L288"></a> 288 <em class="comment">     * consider.</em>
-<a id="L289" name="L289"></a> 289 <em class="comment">     * @param timeout the maximum time to wait.  May be 0 to indicate</em>
-<a id="L290" name="L290"></a> 290 <em class="comment">     * not to wait if there are no notifications.</em>
-<a id="L291" name="L291"></a> 291 <em class="comment">     * @param maxNotifications the maximum number of notifications to</em>
-<a id="L292" name="L292"></a> 292 <em class="comment">     * return.  May be 0 to indicate a wait for eligible notifications</em>
-<a id="L293" name="L293"></a> 293 <em class="comment">     * that will return a usable <code>nextSequenceNumber</code>.  The</em>
-<a id="L294" name="L294"></a> 294 <em class="comment">     * {@link TargetedNotification} array in the returned {@link</em>
-<a id="L295" name="L295"></a> 295 <em class="comment">     * NotificationResult} may contain more than this number of</em>
-<a id="L296" name="L296"></a> 296 <em class="comment">     * elements but will not contain more than this number of</em>
-<a id="L297" name="L297"></a> 297 <em class="comment">     * different notifications.</em>
-<a id="L298" name="L298"></a> 298 <em class="comment">     */</em>
+<div class="comment">
+      <p>Fetch notifications that match the given listeners.</p>
+      <p>The operation only considers notifications with a sequence
+      number at least <code>startSequenceNumber</code>.  It will take
+      no longer than <code>timeout</code>, and will return no more
+      than <code>maxNotifications</code> different notifications.</p>
+      <p>If there are no notifications matching the criteria, the
+      operation will block until one arrives, subject to the
+      timeout.</p>
+      @param filter an object that will add notifications to a
+      <code>List<targetednotification></targetednotification></code> if they match the current
+      listeners with their filters.
+      @param startSequenceNumber the first sequence number to
+      consider.
+      @param timeout the maximum time to wait.  May be 0 to indicate
+      not to wait if there are no notifications.
+      @param maxNotifications the maximum number of notifications to
+      return.  May be 0 to indicate a wait for eligible notifications
+      that will return a usable <code>nextSequenceNumber</code>.  The
+      {@link TargetedNotification} array in the returned {@link
+      NotificationResult} may contain more than this number of
+      elements but will not contain more than this number of
+      different notifications.</div>
 <a id="L299" name="L299"></a> 299     <strong class="reserved">public</strong> <a href="../S/3614.html#L59" title="Defined at 59 in src/javax/management/remote/NotificationResult.java.">NotificationResult</a>
 <a id="L300" name="L300"></a> 300         <a href="../R/14265.html" title="Multiple referred from 4 places.">fetchNotifications</a>(<a href="../S/6504.html#L33" title="Defined at 33 in src/com/sun/jmx/remote/internal/NotificationBufferFilter.java.">NotificationBufferFilter</a> <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>,
 <a id="L301" name="L301"></a> 301                            <strong class="reserved">long</strong> startSequenceNumber,
@@ -383,11 +351,12 @@ This source file includes following definitions.
 <a id="L335" name="L335"></a> 335             <strong class="reserved">throw</strong> <strong class="reserved">new</strong> <a href="../D/4055.html" title="Multiple defined in 2 places.">IllegalArgumentException</a>(<a href="../S/6957.html#L1026" title="Defined at 1026 in src/com/sun/corba/se/impl/io/ObjectStreamClass.java.">msg</a>);
 <a id="L336" name="L336"></a> 336         <em class="brace">}</em>
 <a id="L337" name="L337"></a> 337 
-<a id="L338" name="L338"></a> 338         <em class="comment">/* Determine the end time corresponding to the timeout value.</em>
-<a id="L339" name="L339"></a> 339 <em class="comment">           Caller may legitimately supply Long.MAX_VALUE to indicate no</em>
-<a id="L340" name="L340"></a> 340 <em class="comment">           timeout.  In that case the addition will overflow and produce</em>
-<a id="L341" name="L341"></a> 341 <em class="comment">           a negative end time.  Set end time to Long.MAX_VALUE in that</em>
-<a id="L342" name="L342"></a> 342 <em class="comment">           case.  We assume System.currentTimeMillis() is positive.  */</em>
+<div class="comment">
+ Determine the end time corresponding to the timeout value.
+           Caller may legitimately supply Long.MAX_VALUE to indicate no
+           timeout.  In that case the addition will overflow and produce
+           a negative end time.  Set end time to Long.MAX_VALUE in that
+           case.  We assume System.currentTimeMillis() is positive.  </div>
 <a id="L343" name="L343"></a> 343         <strong class="reserved">long</strong> endTime = <a href="../S/1557.html#L59" title="Defined at 59 in src/java/lang/System.java.">System</a>.<a href="../S/1557.html#L353" title="Defined at 353 in src/java/lang/System.java.">currentTimeMillis</a>() + timeout;
 <a id="L344" name="L344"></a> 344         <strong class="reserved">if</strong> (endTime &lt; 0) <em class="comment">// overflow</em>
 <a id="L345" name="L345"></a> 345             endTime = <a href="../S/1720.html#L54" title="Defined at 54 in src/java/lang/Long.java.">Long</a>.MAX_VALUE;
@@ -395,28 +364,32 @@ This source file includes following definitions.
 <a id="L347" name="L347"></a> 347         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L65" title="Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.">debugOn</a>())
 <a id="L348" name="L348"></a> 348             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifications", "endTime=" + endTime);
 <a id="L349" name="L349"></a> 349 
-<a id="L350" name="L350"></a> 350         <em class="comment">/* We set earliestSeq the first time through the loop.  If we</em>
-<a id="L351" name="L351"></a> 351 <em class="comment">           set it here, notifications could be dropped before we</em>
-<a id="L352" name="L352"></a> 352 <em class="comment">           started examining them, so earliestSeq might not correspond</em>
-<a id="L353" name="L353"></a> 353 <em class="comment">           to the earliest notification we examined.  */</em>
+<div class="comment">
+ We set earliestSeq the first time through the loop.  If we
+           set it here, notifications could be dropped before we
+           started examining them, so earliestSeq might not correspond
+           to the earliest notification we examined.  </div>
 <a id="L354" name="L354"></a> 354         <strong class="reserved">long</strong> earliestSeq = -1;
 <a id="L355" name="L355"></a> 355         <strong class="reserved">long</strong> nextSeq = startSequenceNumber;
 <a id="L356" name="L356"></a> 356         <a href="../D/5090.html" title="Multiple defined in 5 places.">List</a>&lt;<a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>&gt; notifs =
 <a id="L357" name="L357"></a> 357             <strong class="reserved">new</strong> <a href="../D/498.html" title="Multiple defined in 2 places.">ArrayList</a>&lt;<a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>&gt;();
 <a id="L358" name="L358"></a> 358 
-<a id="L359" name="L359"></a> 359         <em class="comment">/* On exit from this loop, notifs, earliestSeq, and nextSeq must</em>
-<a id="L360" name="L360"></a> 360 <em class="comment">           all be correct values for the returned NotificationResult.  */</em>
+<div class="comment">
+ On exit from this loop, notifs, earliestSeq, and nextSeq must
+           all be correct values for the returned NotificationResult.  </div>
 <a id="L361" name="L361"></a> 361         <strong class="reserved">while</strong> (<strong class="reserved">true</strong>) <em class="brace">{</em>
 <a id="L362" name="L362"></a> 362             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifications", "main loop starts");
 <a id="L363" name="L363"></a> 363 
 <a id="L364" name="L364"></a> 364             <a href="../S/6507.html#L546" title="Defined at 546 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">NamedNotification</a> candidate;
 <a id="L365" name="L365"></a> 365 
-<a id="L366" name="L366"></a> 366             <em class="comment">/* Get the next available notification regardless of filters,</em>
-<a id="L367" name="L367"></a> 367 <em class="comment">               or wait for one to arrive if there is none.  */</em>
+<div class="comment">
+ Get the next available notification regardless of filters,
+               or wait for one to arrive if there is none.  </div>
 <a id="L368" name="L368"></a> 368             <strong class="reserved">synchronized</strong> (<strong class="reserved">this</strong>) <em class="brace">{</em>
 <a id="L369" name="L369"></a> 369 
-<a id="L370" name="L370"></a> 370                 <em class="comment">/* First time through.  The current earliestSequenceNumber</em>
-<a id="L371" name="L371"></a> 371 <em class="comment">                   is the first one we could have examined.  */</em>
+<div class="comment">
+ First time through.  The current earliestSequenceNumber
+                   is the first one we could have examined.  </div>
 <a id="L372" name="L372"></a> 372                 <strong class="reserved">if</strong> (earliestSeq &lt; 0) <em class="brace">{</em>
 <a id="L373" name="L373"></a> 373                     earliestSeq = <a href="../S/6507.html#L503" title="Defined at 503 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">earliestSequenceNumber</a>();
 <a id="L374" name="L374"></a> 374                     <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L65" title="Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.">debugOn</a>()) <em class="brace">{</em>
@@ -431,11 +404,12 @@ This source file includes following definitions.
 <a id="L383" name="L383"></a> 383                 <em class="brace">}</em> <strong class="reserved">else</strong>
 <a id="L384" name="L384"></a> 384                     earliestSeq = <a href="../S/6507.html#L503" title="Defined at 503 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">earliestSequenceNumber</a>();
 <a id="L385" name="L385"></a> 385 
-<a id="L386" name="L386"></a> 386                 <em class="comment">/* If many notifications have been dropped since the</em>
-<a id="L387" name="L387"></a> 387 <em class="comment">                   last time through, nextSeq could now be earlier</em>
-<a id="L388" name="L388"></a> 388 <em class="comment">                   than the current earliest.  If so, notifications</em>
-<a id="L389" name="L389"></a> 389 <em class="comment">                   may have been lost and we return now so the caller</em>
-<a id="L390" name="L390"></a> 390 <em class="comment">                   can see this next time it calls.  */</em>
+<div class="comment">
+ If many notifications have been dropped since the
+                   last time through, nextSeq could now be earlier
+                   than the current earliest.  If so, notifications
+                   may have been lost and we return now so the caller
+                   can see this next time it calls.  </div>
 <a id="L391" name="L391"></a> 391                 <strong class="reserved">if</strong> (nextSeq &lt; earliestSeq) <em class="brace">{</em>
 <a id="L392" name="L392"></a> 392                     <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("fetchNotifications",
 <a id="L393" name="L393"></a> 393                           "nextSeq=" + nextSeq + " &lt; " + "earliestSeq=" +
@@ -466,10 +440,11 @@ This source file includes following definitions.
 <a id="L418" name="L418"></a> 418                                      nextSeq);
 <a id="L419" name="L419"></a> 419                     <em class="brace">}</em>
 <a id="L420" name="L420"></a> 420                 <em class="brace">}</em> <strong class="reserved">else</strong> <em class="brace">{</em>
-<a id="L421" name="L421"></a> 421                     <em class="comment">/* nextSeq is the largest sequence number.  If we</em>
-<a id="L422" name="L422"></a> 422 <em class="comment">                       already got notifications, return them now.</em>
-<a id="L423" name="L423"></a> 423 <em class="comment">                       Otherwise wait for some to arrive, with</em>
-<a id="L424" name="L424"></a> 424 <em class="comment">                       timeout.  */</em>
+<div class="comment">
+ nextSeq is the largest sequence number.  If we
+                       already got notifications, return them now.
+                       Otherwise wait for some to arrive, with
+                       timeout.  </div>
 <a id="L425" name="L425"></a> 425                     <strong class="reserved">if</strong> (notifs.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>() &gt; 0) <em class="brace">{</em>
 <a id="L426" name="L426"></a> 426                         <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifications",
 <a id="L427" name="L427"></a> 427                               "no more notifs but have some so don't wait");
@@ -481,7 +456,8 @@ This source file includes following definitions.
 <a id="L433" name="L433"></a> 433                         <strong class="reserved">break</strong>;
 <a id="L434" name="L434"></a> 434                     <em class="brace">}</em>
 <a id="L435" name="L435"></a> 435 
-<a id="L436" name="L436"></a> 436                     <em class="comment">/* dispose called */</em>
+<div class="comment">
+                     /* dispose called */</div>
 <a id="L437" name="L437"></a> 437                     <strong class="reserved">if</strong> (<a href="../D/25453.html" title="Multiple defined in 2 places.">isDisposed</a>()) <em class="brace">{</em>
 <a id="L438" name="L438"></a> 438                         <strong class="reserved">if</strong> (<a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../S/6492.html#L65" title="Defined at 65 in src/com/sun/jmx/remote/util/ClassLogger.java.">debugOn</a>())
 <a id="L439" name="L439"></a> 439                             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifications",
@@ -500,11 +476,12 @@ This source file includes following definitions.
 <a id="L452" name="L452"></a> 452                 <em class="brace">}</em>
 <a id="L453" name="L453"></a> 453             <em class="brace">}</em>
 <a id="L454" name="L454"></a> 454 
-<a id="L455" name="L455"></a> 455             <em class="comment">/* We have a candidate notification.  See if it matches</em>
-<a id="L456" name="L456"></a> 456 <em class="comment">               our filters.  We do this outside the synchronized block</em>
-<a id="L457" name="L457"></a> 457 <em class="comment">               so we don't hold up everyone accessing the buffer</em>
-<a id="L458" name="L458"></a> 458 <em class="comment">               (including notification senders) while we evaluate</em>
-<a id="L459" name="L459"></a> 459 <em class="comment">               potentially slow filters.  */</em>
+<div class="comment">
+ We have a candidate notification.  See if it matches
+               our filters.  We do this outside the synchronized block
+               so we don't hold up everyone accessing the buffer
+               (including notification senders) while we evaluate
+               potentially slow filters.  </div>
 <a id="L460" name="L460"></a> 460             <a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a> <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a> = candidate.<a href="../D/21151.html" title="Multiple defined in 7 places.">getObjectName</a>();
 <a id="L461" name="L461"></a> 461             <a href="../S/3507.html#L57" title="Defined at 57 in src/javax/management/Notification.java.">Notification</a> notif = candidate.<a href="../D/21029.html" title="Multiple defined in 4 places.">getNotification</a>();
 <a id="L462" name="L462"></a> 462             <a href="../D/5090.html" title="Multiple defined in 5 places.">List</a>&lt;<a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>&gt; matchedNotifs =
@@ -514,11 +491,12 @@ This source file includes following definitions.
 <a id="L466" name="L466"></a> 466             <a href="../D/16061.html" title="Multiple defined in 29 places.">filter</a>.<a href="../D/11441.html" title="Multiple defined in 32 places.">apply</a>(matchedNotifs, <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, notif);
 <a id="L467" name="L467"></a> 467 
 <a id="L468" name="L468"></a> 468             <strong class="reserved">if</strong> (matchedNotifs.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>() &gt; 0) <em class="brace">{</em>
-<a id="L469" name="L469"></a> 469                 <em class="comment">/* We only check the max size now, so that our</em>
-<a id="L470" name="L470"></a> 470 <em class="comment">                   returned nextSeq is as large as possible.  This</em>
-<a id="L471" name="L471"></a> 471 <em class="comment">                   prevents the caller from thinking it missed</em>
-<a id="L472" name="L472"></a> 472 <em class="comment">                   interesting notifications when in fact we knew they</em>
-<a id="L473" name="L473"></a> 473 <em class="comment">                   weren't.  */</em>
+<div class="comment">
+ We only check the max size now, so that our
+                   returned nextSeq is as large as possible.  This
+                   prevents the caller from thinking it missed
+                   interesting notifications when in fact we knew they
+                   weren't.  </div>
 <a id="L474" name="L474"></a> 474                 <strong class="reserved">if</strong> (maxNotifications &lt;= 0) <em class="brace">{</em>
 <a id="L475" name="L475"></a> 475                     <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("fetchNotifications",
 <a id="L476" name="L476"></a> 476                                  "reached maxNotifications");
@@ -534,7 +512,8 @@ This source file includes following definitions.
 <a id="L486" name="L486"></a> 486             ++nextSeq;
 <a id="L487" name="L487"></a> 487         <em class="brace">}</em> <em class="comment">// end while</em>
 <a id="L488" name="L488"></a> 488 
-<a id="L489" name="L489"></a> 489         <em class="comment">/* Construct and return the result.  */</em>
+<div class="comment">
+         /* Construct and return the result.  */</div>
 <a id="L490" name="L490"></a> 490         <strong class="reserved">int</strong> nnotifs = notifs.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>();
 <a id="L491" name="L491"></a> 491         <a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>[] resultNotifs =
 <a id="L492" name="L492"></a> 492             <strong class="reserved">new</strong> <a href="../S/3618.html#L42" title="Defined at 42 in src/javax/management/remote/TargetedNotification.java.">TargetedNotification</a>[nnotifs];
@@ -613,38 +592,33 @@ This source file includes following definitions.
 <a id="L565" name="L565"></a> 565         <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/3507.html#L57" title="Defined at 57 in src/javax/management/Notification.java.">Notification</a> notification;
 <a id="L566" name="L566"></a> 566     <em class="brace">}</em>
 <a id="L567" name="L567"></a> 567 
-<a id="L568" name="L568"></a> 568     <em class="comment">/*</em>
-<a id="L569" name="L569"></a> 569 <em class="comment">     * Add our listener to every NotificationBroadcaster MBean</em>
-<a id="L570" name="L570"></a> 570 <em class="comment">     * currently in the MBean server and to every</em>
-<a id="L571" name="L571"></a> 571 <em class="comment">     * NotificationBroadcaster later created.</em>
-<a id="L572" name="L572"></a> 572 <em class="comment">     *</em>
-<a id="L573" name="L573"></a> 573 <em class="comment">     * It would be really nice if we could just do</em>
-<a id="L574" name="L574"></a> 574 <em class="comment">     * mbs.addNotificationListener(new ObjectName("*:*"), ...);</em>
-<a id="L575" name="L575"></a> 575 <em class="comment">     * Definitely something for the next version of JMX.</em>
-<a id="L576" name="L576"></a> 576 <em class="comment">     *</em>
-<a id="L577" name="L577"></a> 577 <em class="comment">     * There is a nasty race condition that we must handle.  We</em>
-<a id="L578" name="L578"></a> 578 <em class="comment">     * first register for MBean-creation notifications so we can add</em>
-<a id="L579" name="L579"></a> 579 <em class="comment">     * listeners to new MBeans, then we query the existing MBeans to</em>
-<a id="L580" name="L580"></a> 580 <em class="comment">     * add listeners to them.  The problem is that a new MBean could</em>
-<a id="L581" name="L581"></a> 581 <em class="comment">     * arrive after we register for creations but before the query has</em>
-<a id="L582" name="L582"></a> 582 <em class="comment">     * completed.  Then we could see the MBean both in the query and</em>
-<a id="L583" name="L583"></a> 583 <em class="comment">     * in an MBean-creation notification, and we would end up</em>
-<a id="L584" name="L584"></a> 584 <em class="comment">     * registering our listener twice.</em>
-<a id="L585" name="L585"></a> 585 <em class="comment">     *</em>
-<a id="L586" name="L586"></a> 586 <em class="comment">     * To solve this problem, we arrange for new MBeans that arrive</em>
-<a id="L587" name="L587"></a> 587 <em class="comment">     * while the query is being done to be added to the Set createdDuringQuery</em>
-<a id="L588" name="L588"></a> 588 <em class="comment">     * and we do not add a listener immediately.  When the query is done,</em>
-<a id="L589" name="L589"></a> 589 <em class="comment">     * we atomically turn off the addition of new names to createdDuringQuery</em>
-<a id="L590" name="L590"></a> 590 <em class="comment">     * and add all the names that were there to the result of the query.</em>
-<a id="L591" name="L591"></a> 591 <em class="comment">     * Since we are dealing with Sets, the result is the same whether or not</em>
-<a id="L592" name="L592"></a> 592 <em class="comment">     * the newly-created MBean was included in the query result.</em>
-<a id="L593" name="L593"></a> 593 <em class="comment">     *</em>
-<a id="L594" name="L594"></a> 594 <em class="comment">     * It is important not to hold any locks during the operation of adding</em>
-<a id="L595" name="L595"></a> 595 <em class="comment">     * listeners to MBeans.  An MBean's addNotificationListener can be</em>
-<a id="L596" name="L596"></a> 596 <em class="comment">     * arbitrary user code, and this could deadlock with any locks we hold</em>
-<a id="L597" name="L597"></a> 597 <em class="comment">     * (see bug 6239400).  The corollary is that we must not do any operations</em>
-<a id="L598" name="L598"></a> 598 <em class="comment">     * in this method or the methods it calls that require locks.</em>
-<a id="L599" name="L599"></a> 599 <em class="comment">     */</em>
+<div class="comment">
+      Add our listener to every NotificationBroadcaster MBean
+      currently in the MBean server and to every
+      NotificationBroadcaster later created.
+      It would be really nice if we could just do
+      mbs.addNotificationListener(new ObjectName("*:*"), ...);
+      Definitely something for the next version of JMX.
+      There is a nasty race condition that we must handle.  We
+      first register for MBean-creation notifications so we can add
+      listeners to new MBeans, then we query the existing MBeans to
+      add listeners to them.  The problem is that a new MBean could
+      arrive after we register for creations but before the query has
+      completed.  Then we could see the MBean both in the query and
+      in an MBean-creation notification, and we would end up
+      registering our listener twice.
+      To solve this problem, we arrange for new MBeans that arrive
+      while the query is being done to be added to the Set createdDuringQuery
+      and we do not add a listener immediately.  When the query is done,
+      we atomically turn off the addition of new names to createdDuringQuery
+      and add all the names that were there to the result of the query.
+      Since we are dealing with Sets, the result is the same whether or not
+      the newly-created MBean was included in the query result.
+      It is important not to hold any locks during the operation of adding
+      listeners to MBeans.  An MBean's addNotificationListener can be
+      arbitrary user code, and this could deadlock with any locks we hold
+      (see bug 6239400).  The corollary is that we must not do any operations
+      in this method or the methods it calls that require locks.</div>
 <a id="L600" name="L600"></a> 600     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/6507.html#L153" title="Referred from 153 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">createListeners</a>() <em class="brace">{</em>
 <a id="L601" name="L601"></a> 601         <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/14486.html" title="Multiple defined in 5 places.">debug</a>("createListeners", "starts");
 <a id="L602" name="L602"></a> 602 
@@ -665,8 +639,9 @@ This source file includes following definitions.
 <a id="L617" name="L617"></a> 617             <strong class="reserved">throw</strong> re;
 <a id="L618" name="L618"></a> 618         <em class="brace">}</em>
 <a id="L619" name="L619"></a> 619 
-<a id="L620" name="L620"></a> 620         <em class="comment">/* Spec doesn't say whether Set returned by QueryNames can be modified</em>
-<a id="L621" name="L621"></a> 621 <em class="comment">           so we clone it. */</em>
+<div class="comment">
+ Spec doesn't say whether Set returned by QueryNames can be modified
+           so we clone it. </div>
 <a id="L622" name="L622"></a> 622         <a href="../S/1160.html#L85" title="Defined at 85 in src/java/util/Set.java.">Set</a>&lt;<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a>&gt; names = <a href="../D/30064.html" title="Multiple defined in 9 places.">queryNames</a>(<strong class="reserved">null</strong>, broadcasterQuery);
 <a id="L623" name="L623"></a> 623         names = <strong class="reserved">new</strong> <a href="../S/1136.html#L89" title="Defined at 89 in src/java/util/HashSet.java.">HashSet</a>&lt;<a href="../S/3486.html#L223" title="Defined at 223 in src/javax/management/ObjectName.java.">ObjectName</a>&gt;(names);
 <a id="L624" name="L624"></a> 624 
@@ -688,9 +663,10 @@ This source file includes following definitions.
 <a id="L640" name="L640"></a> 640             <a href="../D/10974.html" title="Multiple defined in 26 places.">addNotificationListener</a>(<a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>, bufferListener, <strong class="reserved">null</strong>, <a href="../D/27856.html" title="Multiple defined in 46 places.">name</a>);
 <a id="L641" name="L641"></a> 641         <em class="brace">}</em> <strong class="reserved">catch</strong> (<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
 <a id="L642" name="L642"></a> 642             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/35559.html" title="Multiple defined in 6 places.">trace</a>("addBufferListener", e);
-<a id="L643" name="L643"></a> 643             <em class="comment">/* This can happen if the MBean was unregistered just</em>
-<a id="L644" name="L644"></a> 644 <em class="comment">               after the query.  Or user NotificationBroadcaster might</em>
-<a id="L645" name="L645"></a> 645 <em class="comment">               throw unexpected exception.  */</em>
+<div class="comment">
+ This can happen if the MBean was unregistered just
+               after the query.  Or user NotificationBroadcaster might
+               throw unexpected exception.  </div>
 <a id="L646" name="L646"></a> 646         <em class="brace">}</em>
 <a id="L647" name="L647"></a> 647     <em class="brace">}</em>
 <a id="L648" name="L648"></a> 648 
@@ -775,14 +751,13 @@ This source file includes following definitions.
 <a id="L727" name="L727"></a> 727         <em class="brace">}</em>
 <a id="L728" name="L728"></a> 728     <em class="brace">}</em>
 <a id="L729" name="L729"></a> 729 
-<a id="L730" name="L730"></a> 730     <em class="comment">/* This method must not be synchronized.  See the comment on the</em>
-<a id="L731" name="L731"></a> 731 <em class="comment">     * createListeners method.</em>
-<a id="L732" name="L732"></a> 732 <em class="comment">     *</em>
-<a id="L733" name="L733"></a> 733 <em class="comment">     * The notification could arrive after our buffer has been destroyed</em>
-<a id="L734" name="L734"></a> 734 <em class="comment">     * or even during its destruction.  So we always add our listener</em>
-<a id="L735" name="L735"></a> 735 <em class="comment">     * (without synchronization), then we check if the buffer has been</em>
-<a id="L736" name="L736"></a> 736 <em class="comment">     * destroyed and if so remove the listener we just added.</em>
-<a id="L737" name="L737"></a> 737 <em class="comment">     */</em>
+<div class="comment">
+ This method must not be synchronized.  See the comment on the
+      createListeners method.
+      The notification could arrive after our buffer has been destroyed
+      or even during its destruction.  So we always add our listener
+      (without synchronization), then we check if the buffer has been
+      destroyed and if so remove the listener we just added.</div>
 <a id="L738" name="L738"></a> 738     <strong class="reserved">private</strong> <strong class="reserved">void</strong> <a href="../S/6507.html#L800" title="Referred from 800 in src/com/sun/jmx/remote/internal/ArrayNotificationBuffer.java.">createdNotification</a>(<a href="../S/3447.html#L98" title="Defined at 98 in src/javax/management/MBeanServerNotification.java.">MBeanServerNotification</a> n) <em class="brace">{</em>
 <a id="L739" name="L739"></a> 739         <strong class="reserved">final</strong> <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> shouldEqual =
 <a id="L740" name="L740"></a> 740             <a href="../S/3447.html#L98" title="Defined at 98 in src/javax/management/MBeanServerNotification.java.">MBeanServerNotification</a>.REGISTRATION_NOTIFICATION;
@@ -873,10 +848,9 @@ This source file includes following definitions.
 <a id="L825" name="L825"></a> 825             <a href="../S/835.html#L1128" title="Defined at 1128 in src/java/util/prefs/WindowsPreferences.java.">logger</a>.<a href="../D/36831.html" title="Multiple defined in 36 places.">warning</a>("checkNoLocks", "lock protocol violation");
 <a id="L826" name="L826"></a> 826     <em class="brace">}</em>
 <a id="L827" name="L827"></a> 827 
-<a id="L828" name="L828"></a> 828     <em class="comment">/**</em>
-<a id="L829" name="L829"></a> 829 <em class="comment">     * Iterate until we extract the real exception</em>
-<a id="L830" name="L830"></a> 830 <em class="comment">     * from a stack of PrivilegedActionExceptions.</em>
-<a id="L831" name="L831"></a> 831 <em class="comment">     */</em>
+<div class="comment">
+      Iterate until we extract the real exception
+      from a stack of PrivilegedActionExceptions.</div>
 <a id="L832" name="L832"></a> 832     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> <a href="../R/14201.html" title="Multiple referred from 32 places.">extractException</a>(<a href="../S/1582.html#L45" title="Defined at 45 in src/java/lang/Exception.java.">Exception</a> e) <em class="brace">{</em>
 <a id="L833" name="L833"></a> 833         <strong class="reserved">while</strong> (e <strong class="reserved">instanceof</strong> <a href="../S/1259.html#L50" title="Defined at 50 in src/java/security/PrivilegedActionException.java.">PrivilegedActionException</a>) <em class="brace">{</em>
 <a id="L834" name="L834"></a> 834             e = ((<a href="../S/1259.html#L50" title="Defined at 50 in src/java/security/PrivilegedActionException.java.">PrivilegedActionException</a>)e).<a href="../D/18894.html" title="Multiple defined in 26 places.">getException</a>();
@@ -900,8 +874,6 @@ This source file includes following definitions.
 <a id="L852" name="L852"></a> 852 <em class="brace">}</em>
 </pre>
 <hr>
-<a id="BOTTOM" name="BOTTOM"></a>
-<em class="comment">/* [&lt;][&gt;]<a href="#L122">[^]</a><a href="#L832">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
-
-
+<div class="comment">
+/* [&lt;][&gt;]<a href="#L122">[^]</a><a href="#L832">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 </body></html>

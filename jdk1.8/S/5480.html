@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7726.html">com</a>/<a href="../files/7727.html">sun</a>/<a href="../files/7861.html">org</a>/<a href="../files/7862.html">apache</a>/<a href="../files/7888.html">xerces</a>/<a href="../files/7889.html">internal</a>/<a href="../files/7890.html">dom</a>/DeepNodeListImpl.java</h2>
-<em class="comment">/* [&lt;][&gt;]<a href="#L115">[^]</a><a href="#L166">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<a id="TOP" name="TOP"></a><div class="comment">
+/* [&lt;][&gt;]<a href="#L115">[^]</a><a href="#L166">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 <hr>
 <h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
@@ -17,25 +17,21 @@ This source file includes following definitions.
 <li><a href="#L166" title="Defined at 166.">nextMatchingElementAfter</a></li>
 </ol>
 <hr>
-<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
-<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.</em>
-<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id="L4" name="L4"></a>   4 <em class="comment"> */</em>
-<a id="L5" name="L5"></a>   5 <em class="comment">/*</em>
-<a id="L6" name="L6"></a>   6 <em class="comment"> * Copyright 1999-2002,2004 The Apache Software Foundation.</em>
-<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
-<a id="L8" name="L8"></a>   8 <em class="comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
-<a id="L9" name="L9"></a>   9 <em class="comment"> * you may not use this file except in compliance with the License.</em>
-<a id="L10" name="L10"></a>  10 <em class="comment"> * You may obtain a copy of the License at</em>
-<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
-<a id="L12" name="L12"></a>  12 <em class="comment"> *      http://www.apache.org/licenses/LICENSE-2.0</em>
-<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
-<a id="L14" name="L14"></a>  14 <em class="comment"> * Unless required by applicable law or agreed to in writing, software</em>
-<a id="L15" name="L15"></a>  15 <em class="comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
-<a id="L16" name="L16"></a>  16 <em class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
-<a id="L17" name="L17"></a>  17 <em class="comment"> * See the License for the specific language governing permissions and</em>
-<a id="L18" name="L18"></a>  18 <em class="comment"> * limitations under the License.</em>
-<a id="L19" name="L19"></a>  19 <em class="comment"> */</em>
+<pre>
+<div class="comment">
+  Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+  ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</div>
+<div class="comment">
+  Copyright 1999-2002,2004 The Apache Software Foundation.
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.</div>
 <a id="L20" name="L20"></a>  20 
 <a id="L21" name="L21"></a>  21 <strong class="reserved">package</strong> com.sun.org.apache.xerces.internal.dom;
 <a id="L22" name="L22"></a>  22 
@@ -44,54 +40,51 @@ This source file includes following definitions.
 <a id="L25" name="L25"></a>  25 
 <a id="L26" name="L26"></a>  26 <strong class="reserved">import</strong> java.util.Vector;
 <a id="L27" name="L27"></a>  27 
-<a id="L28" name="L28"></a>  28 <em class="comment">/**</em>
-<a id="L29" name="L29"></a>  29 <em class="comment"> * This class implements the DOM's NodeList behavior for</em>
-<a id="L30" name="L30"></a>  30 <em class="comment"> * Element.getElementsByTagName()</em>
-<a id="L31" name="L31"></a>  31 <em class="comment"> * </em>
-<a id="L32" name="L32"></a>  32 <em class="comment"> * The DOM describes NodeList as follows:</em>
-<a id="L33" name="L33"></a>  33 <em class="comment"> * </em>
-<a id="L34" name="L34"></a>  34 <em class="comment"> * 1) It may represent EITHER nodes scattered through a subtree (when</em>
-<a id="L35" name="L35"></a>  35 <em class="comment"> * returned by Element.getElementsByTagName), or just the immediate</em>
-<a id="L36" name="L36"></a>  36 <em class="comment"> * children (when returned by Node.getChildNodes). The latter is easy,</em>
-<a id="L37" name="L37"></a>  37 <em class="comment"> * but the former (which this class addresses) is more challenging.</em>
-<a id="L38" name="L38"></a>  38 <em class="comment"> * </em>
-<a id="L39" name="L39"></a>  39 <em class="comment"> * 2) Its behavior is "live" -- that is, it always reflects the</em>
-<a id="L40" name="L40"></a>  40 <em class="comment"> * current state of the document tree. To put it another way, the</em>
-<a id="L41" name="L41"></a>  41 <em class="comment"> * NodeLists obtained before and after a series of insertions and</em>
-<a id="L42" name="L42"></a>  42 <em class="comment"> * deletions are effectively identical (as far as the user is</em>
-<a id="L43" name="L43"></a>  43 <em class="comment"> * concerned, the former has been dynamically updated as the changes</em>
-<a id="L44" name="L44"></a>  44 <em class="comment"> * have been made).</em>
-<a id="L45" name="L45"></a>  45 <em class="comment"> * </em>
-<a id="L46" name="L46"></a>  46 <em class="comment"> * 3) Its API accesses individual nodes via an integer index, with the</em>
-<a id="L47" name="L47"></a>  47 <em class="comment"> * listed nodes numbered sequentially in the order that they were</em>
-<a id="L48" name="L48"></a>  48 <em class="comment"> * found during a preorder depth-first left-to-right search of the tree.</em>
-<a id="L49" name="L49"></a>  49 <em class="comment"> * (Of course in the case of getChildNodes, depth is not involved.) As</em>
-<a id="L50" name="L50"></a>  50 <em class="comment"> * nodes are inserted or deleted in the tree, and hence the NodeList,</em>
-<a id="L51" name="L51"></a>  51 <em class="comment"> * the numbering of nodes that follow them in the NodeList will</em>
-<a id="L52" name="L52"></a>  52 <em class="comment"> * change.</em>
-<a id="L53" name="L53"></a>  53 <em class="comment"> * </em>
-<a id="L54" name="L54"></a>  54 <em class="comment"> * It is rather painful to support the latter two in the</em>
-<a id="L55" name="L55"></a>  55 <em class="comment"> * getElementsByTagName case. The current solution is for Nodes to</em>
-<a id="L56" name="L56"></a>  56 <em class="comment"> * maintain a change count (eventually that may be a Digest instead),</em>
-<a id="L57" name="L57"></a>  57 <em class="comment"> * which the NodeList tracks and uses to invalidate itself.</em>
-<a id="L58" name="L58"></a>  58 <em class="comment"> * </em>
-<a id="L59" name="L59"></a>  59 <em class="comment"> * Unfortunately, this does _not_ respond efficiently in the case that</em>
-<a id="L60" name="L60"></a>  60 <em class="comment"> * the dynamic behavior was supposed to address: scanning a tree while</em>
-<a id="L61" name="L61"></a>  61 <em class="comment"> * it is being extended. That requires knowing which subtrees have</em>
-<a id="L62" name="L62"></a>  62 <em class="comment"> * changed, which can become an arbitrarily complex problem.</em>
-<a id="L63" name="L63"></a>  63 <em class="comment"> * </em>
-<a id="L64" name="L64"></a>  64 <em class="comment"> * We save some work by filling the vector only as we access the</em>
-<a id="L65" name="L65"></a>  65 <em class="comment"> * item()s... but I suspect the same users who demanded index-based</em>
-<a id="L66" name="L66"></a>  66 <em class="comment"> * access will also start by doing a getLength() to control their loop,</em>
-<a id="L67" name="L67"></a>  67 <em class="comment"> * blowing this optimization out of the water.</em>
-<a id="L68" name="L68"></a>  68 <em class="comment"> * </em>
-<a id="L69" name="L69"></a>  69 <em class="comment"> * NOTE: Level 2 of the DOM will probably _not_ use NodeList for its</em>
-<a id="L70" name="L70"></a>  70 <em class="comment"> * extended search mechanisms, partly for the reasons just discussed.</em>
-<a id="L71" name="L71"></a>  71 <em class="comment"> *</em>
-<a id="L72" name="L72"></a>  72 <em class="comment"> * @xerces.internal</em>
-<a id="L73" name="L73"></a>  73 <em class="comment"> *</em>
-<a id="L74" name="L74"></a>  74 <em class="comment"> * @since  PR-DOM-Level-1-19980818.</em>
-<a id="L75" name="L75"></a>  75 <em class="comment"> */</em>
+<div class="comment">
+  This class implements the DOM's NodeList behavior for
+  Element.getElementsByTagName()
+  <p>
+  The DOM describes NodeList as follows:
+  </p><p>
+  1) It may represent EITHER nodes scattered through a subtree (when
+  returned by Element.getElementsByTagName), or just the immediate
+  children (when returned by Node.getChildNodes). The latter is easy,
+  but the former (which this class addresses) is more challenging.
+  </p><p>
+  2) Its behavior is "live" -- that is, it always reflects the
+  current state of the document tree. To put it another way, the
+  NodeLists obtained before and after a series of insertions and
+  deletions are effectively identical (as far as the user is
+  concerned, the former has been dynamically updated as the changes
+  have been made).
+  </p><p>
+  3) Its API accesses individual nodes via an integer index, with the
+  listed nodes numbered sequentially in the order that they were
+  found during a preorder depth-first left-to-right search of the tree.
+  (Of course in the case of getChildNodes, depth is not involved.) As
+  nodes are inserted or deleted in the tree, and hence the NodeList,
+  the numbering of nodes that follow them in the NodeList will
+  change.
+  </p><p>
+  It is rather painful to support the latter two in the
+  getElementsByTagName case. The current solution is for Nodes to
+  maintain a change count (eventually that may be a Digest instead),
+  which the NodeList tracks and uses to invalidate itself.
+  </p><p>
+  Unfortunately, this does _not_ respond efficiently in the case that
+  the dynamic behavior was supposed to address: scanning a tree while
+  it is being extended. That requires knowing which subtrees have
+  changed, which can become an arbitrarily complex problem.
+  </p><p>
+  We save some work by filling the vector only as we access the
+  item()s... but I suspect the same users who demanded index-based
+  access will also start by doing a getLength() to control their loop,
+  blowing this optimization out of the water.
+  </p><p>
+  NOTE: Level 2 of the DOM will probably _not_ use NodeList for its
+  extended search mechanisms, partly for the reasons just discussed.
+  @xerces.internal
+  @since  PR-DOM-Level-1-19980818.</p></div>
 <a id="L76" name="L76"></a>  76 <strong class="reserved">public</strong> <strong class="reserved">class</strong> <a href="../R/2069.html" title="Multiple referred from 4 places.">DeepNodeListImpl</a>
 <a id="L77" name="L77"></a>  77     <strong class="reserved">implements</strong> <a href="../S/115.html#L52" title="Defined at 52 in src/org/w3c/dom/NodeList.java.">NodeList</a> <em class="brace">{</em>
 <a id="L78" name="L78"></a>  78 
@@ -111,14 +104,16 @@ This source file includes following definitions.
 <a id="L92" name="L92"></a>  92     <em class="comment">// Constructors</em>
 <a id="L93" name="L93"></a>  93     <em class="comment">//</em>
 <a id="L94" name="L94"></a>  94 
-<a id="L95" name="L95"></a>  95     <em class="comment">/** Constructor. */</em>
+<div class="comment">
+     /** Constructor. */</div>
 <a id="L96" name="L96"></a>  96     <strong class="reserved">public</strong> DeepNodeListImpl(<a href="../D/6088.html" title="Multiple defined in 3 places.">NodeImpl</a> <a href="../S/6357.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/IPAcl/JJTParserState.java.">rootNode</a>, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> tagName) <em class="brace">{</em>
 <a id="L97" name="L97"></a>  97         <strong class="reserved">this</strong>.<a href="../S/6357.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/IPAcl/JJTParserState.java.">rootNode</a> = <a href="../S/6357.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/IPAcl/JJTParserState.java.">rootNode</a>;
 <a id="L98" name="L98"></a>  98         <strong class="reserved">this</strong>.tagName  = tagName;
 <a id="L99" name="L99"></a>  99         nodes = <strong class="reserved">new</strong> <a href="../S/846.html#L83" title="Defined at 83 in src/java/util/Vector.java.">Vector</a>();
 <a id="L100" name="L100"></a> 100     <em class="brace">}</em>
 <a id="L101" name="L101"></a> 101 
-<a id="L102" name="L102"></a> 102     <em class="comment">/** Constructor for Namespace support. */</em>
+<div class="comment">
+     /** Constructor for Namespace support. */</div>
 <a id="L103" name="L103"></a> 103     <strong class="reserved">public</strong> DeepNodeListImpl(<a href="../D/6088.html" title="Multiple defined in 3 places.">NodeImpl</a> <a href="../S/6357.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/IPAcl/JJTParserState.java.">rootNode</a>,
 <a id="L104" name="L104"></a> 104                             <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> nsName, <a href="../D/8419.html" title="Multiple defined in 2 places.">String</a> tagName) <em class="brace">{</em>
 <a id="L105" name="L105"></a> 105         <strong class="reserved">this</strong>(<a href="../S/6357.html#L63" title="Defined at 63 in src/com/sun/jmx/snmp/IPAcl/JJTParserState.java.">rootNode</a>, tagName);
@@ -130,14 +125,16 @@ This source file includes following definitions.
 <a id="L111" name="L111"></a> 111     <em class="comment">// NodeList methods</em>
 <a id="L112" name="L112"></a> 112     <em class="comment">//</em>
 <a id="L113" name="L113"></a> 113 
-<a id="L114" name="L114"></a> 114     <em class="comment">/** Returns the length of the node list. */</em>
+<div class="comment">
+     /** Returns the length of the node list. */</div>
 <a id="L115" name="L115"></a> 115     <strong class="reserved">public</strong> <strong class="reserved">int</strong> <a href="../R/17335.html" title="Multiple referred from 644 places.">getLength</a>() <em class="brace">{</em>
 <a id="L116" name="L116"></a> 116         <em class="comment">// Preload all matching elements. (Stops when we run out of subtree!)</em>
 <a id="L117" name="L117"></a> 117         <a href="../D/26564.html" title="Multiple defined in 60 places.">item</a>(<a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.lang.<a href="../D/4299.html" title="Multiple defined in 4 places.">Integer</a>.MAX_VALUE);
 <a id="L118" name="L118"></a> 118         <strong class="reserved">return</strong> nodes.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>();
 <a id="L119" name="L119"></a> 119     <em class="brace">}</em>
 <a id="L120" name="L120"></a> 120 
-<a id="L121" name="L121"></a> 121     <em class="comment">/** Returns the node at the specified index. */</em>
+<div class="comment">
+     /** Returns the node at the specified index. */</div>
 <a id="L122" name="L122"></a> 122     <strong class="reserved">public</strong> <a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a> <a href="../R/22287.html" title="Multiple referred from 822 places.">item</a>(<strong class="reserved">int</strong> <a href="../D/24461.html" title="Multiple defined in 6 places.">index</a>) <em class="brace">{</em>
 <a id="L123" name="L123"></a> 123         <a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a> thisNode;
 <a id="L124" name="L124"></a> 124 
@@ -177,11 +174,10 @@ This source file includes following definitions.
 <a id="L158" name="L158"></a> 158     <em class="comment">// Protected methods (might be overridden by an extending DOM)</em>
 <a id="L159" name="L159"></a> 159     <em class="comment">//</em>
 <a id="L160" name="L160"></a> 160 
-<a id="L161" name="L161"></a> 161     <em class="comment">/**</em>
-<a id="L162" name="L162"></a> 162 <em class="comment">     * Iterative tree-walker. When you have a Parent link, there's often no</em>
-<a id="L163" name="L163"></a> 163 <em class="comment">     * need to resort to recursion. NOTE THAT only Element nodes are matched</em>
-<a id="L164" name="L164"></a> 164 <em class="comment">     * since we're specifically supporting getElementsByTagName().</em>
-<a id="L165" name="L165"></a> 165 <em class="comment">     */</em>
+<div class="comment">
+      Iterative tree-walker. When you have a Parent link, there's often no
+      need to resort to recursion. NOTE THAT only Element nodes are matched
+      since we're specifically supporting getElementsByTagName().</div>
 <a id="L166" name="L166"></a> 166     <strong class="reserved">protected</strong> <a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a> <a href="../S/5480.html#L146" title="Referred from 146 in src/com/sun/org/apache/xerces/internal/dom/DeepNodeListImpl.java.">nextMatchingElementAfter</a>(<a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a> <a href="../D/14417.html" title="Multiple defined in 10 places.">current</a>) <em class="brace">{</em>
 <a id="L167" name="L167"></a> 167 
 <a id="L168" name="L168"></a> 168             <a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a> <a href="../D/28131.html" title="Multiple defined in 273 places.">next</a>;
@@ -266,8 +262,6 @@ This source file includes following definitions.
 <a id="L247" name="L247"></a> 247 <em class="brace">}</em> <em class="comment">// class DeepNodeListImpl</em>
 </pre>
 <hr>
-<a id="BOTTOM" name="BOTTOM"></a>
-<em class="comment">/* [&lt;][&gt;]<a href="#L115">[^]</a><a href="#L166">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
-
-
+<div class="comment">
+/* [&lt;][&gt;]<a href="#L115">[^]</a><a href="#L166">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 </body></html>

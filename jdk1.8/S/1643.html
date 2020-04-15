@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8003.html">lang</a>/<a href="../files/8009.html">reflect</a>/WeakCache.java</h2>
-<em class="comment">/* [&lt;][&gt;]<a href="#L100">[^]</a><a href="#L365">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<a id="TOP" name="TOP"></a><div class="comment">
+/* [&lt;][&gt;]<a href="#L100">[^]</a><a href="#L365">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 <hr>
 <h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
@@ -28,30 +28,10 @@ This source file includes following definitions.
 <li><a href="#L365" title="Defined at 365.">expungeFrom</a></li>
 </ol>
 <hr>
-<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
-<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
-<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
-<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
-<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
-<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
-<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
-<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
-<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
-<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
-<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
-<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
-<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
-<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
-<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
-<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
-<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
-<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
-<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
-<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
-<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
-<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<pre>
+<div class="comment">
+  Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+  ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</div>
 <a id="L25" name="L25"></a>  25 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.lang.reflect;
 <a id="L26" name="L26"></a>  26 
 <a id="L27" name="L27"></a>  27 <strong class="reserved">import</strong> java.lang.ref.ReferenceQueue;
@@ -62,28 +42,26 @@ This source file includes following definitions.
 <a id="L32" name="L32"></a>  32 <strong class="reserved">import</strong> java.util.function.BiFunction;
 <a id="L33" name="L33"></a>  33 <strong class="reserved">import</strong> java.util.function.Supplier;
 <a id="L34" name="L34"></a>  34 
-<a id="L35" name="L35"></a>  35 <em class="comment">/**</em>
-<a id="L36" name="L36"></a>  36 <em class="comment"> * Cache mapping pairs of {@code (key, sub-key) -&gt; value}. Keys and values are</em>
-<a id="L37" name="L37"></a>  37 <em class="comment"> * weakly but sub-keys are strongly referenced.  Keys are passed directly to</em>
-<a id="L38" name="L38"></a>  38 <em class="comment"> * {@link #get} method which also takes a {@code parameter}. Sub-keys are</em>
-<a id="L39" name="L39"></a>  39 <em class="comment"> * calculated from keys and parameters using the {@code subKeyFactory} function</em>
-<a id="L40" name="L40"></a>  40 <em class="comment"> * passed to the constructor. Values are calculated from keys and parameters</em>
-<a id="L41" name="L41"></a>  41 <em class="comment"> * using the {@code valueFactory} function passed to the constructor.</em>
-<a id="L42" name="L42"></a>  42 <em class="comment"> * Keys can be {@code null} and are compared by identity while sub-keys returned by</em>
-<a id="L43" name="L43"></a>  43 <em class="comment"> * {@code subKeyFactory} or values returned by {@code valueFactory}</em>
-<a id="L44" name="L44"></a>  44 <em class="comment"> * can not be null. Sub-keys are compared using their {@link #equals} method.</em>
-<a id="L45" name="L45"></a>  45 <em class="comment"> * Entries are expunged from cache lazily on each invocation to {@link #get},</em>
-<a id="L46" name="L46"></a>  46 <em class="comment"> * {@link #containsValue} or {@link #size} methods when the WeakReferences to</em>
-<a id="L47" name="L47"></a>  47 <em class="comment"> * keys are cleared. Cleared WeakReferences to individual values don't cause</em>
-<a id="L48" name="L48"></a>  48 <em class="comment"> * expunging, but such entries are logically treated as non-existent and</em>
-<a id="L49" name="L49"></a>  49 <em class="comment"> * trigger re-evaluation of {@code valueFactory} on request for their</em>
-<a id="L50" name="L50"></a>  50 <em class="comment"> * key/subKey.</em>
-<a id="L51" name="L51"></a>  51 <em class="comment"> *</em>
-<a id="L52" name="L52"></a>  52 <em class="comment"> * @author Peter Levart</em>
-<a id="L53" name="L53"></a>  53 <em class="comment"> * @param <k> type of keys</k></em>
-<a id="L54" name="L54"></a>  54 <em class="comment"> * @param <p> type of parameters</p></em>
-<a id="L55" name="L55"></a>  55 <em class="comment"> * @param <v> type of values</v></em>
-<a id="L56" name="L56"></a>  56 <em class="comment"> */</em>
+<div class="comment">
+  Cache mapping pairs of <code>(key, sub-key) -&gt; value</code>. Keys and values are
+  weakly but sub-keys are strongly referenced.  Keys are passed directly to
+  {@link #get} method which also takes a <code>parameter</code>. Sub-keys are
+  calculated from keys and parameters using the <code>subKeyFactory</code> function
+  passed to the constructor. Values are calculated from keys and parameters
+  using the <code>valueFactory</code> function passed to the constructor.
+  Keys can be <code>null</code> and are compared by identity while sub-keys returned by
+  <code>subKeyFactory</code> or values returned by <code>valueFactory</code>
+  can not be null. Sub-keys are compared using their {@link #equals} method.
+  Entries are expunged from cache lazily on each invocation to {@link #get},
+  {@link #containsValue} or {@link #size} methods when the WeakReferences to
+  keys are cleared. Cleared WeakReferences to individual values don't cause
+  expunging, but such entries are logically treated as non-existent and
+  trigger re-evaluation of <code>valueFactory</code> on request for their
+  key/subKey.
+  @author Peter Levart
+  @param <k> type of keys
+  @param <p> type of parameters
+  @param <v> type of values</v></p></k></div>
 <a id="L57" name="L57"></a>  57 <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../R/8731.html" title="Multiple referred from 4 places.">WeakCache</a>&lt;K, P, V&gt; <em class="brace">{</em>
 <a id="L58" name="L58"></a>  58 
 <a id="L59" name="L59"></a>  59     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/1565.html#L36" title="Defined at 36 in src/java/lang/ref/ReferenceQueue.java.">ReferenceQueue</a>&lt;K&gt; refQueue
@@ -96,37 +74,33 @@ This source file includes following definitions.
 <a id="L66" name="L66"></a>  66     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/975.html#L44" title="Defined at 44 in src/java/util/function/BiFunction.java.">BiFunction</a>&lt;K, P, ?&gt; subKeyFactory;
 <a id="L67" name="L67"></a>  67     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <a href="../S/975.html#L44" title="Defined at 44 in src/java/util/function/BiFunction.java.">BiFunction</a>&lt;K, P, V&gt; valueFactory;
 <a id="L68" name="L68"></a>  68 
-<a id="L69" name="L69"></a>  69     <em class="comment">/**</em>
-<a id="L70" name="L70"></a>  70 <em class="comment">     * Construct an instance of {@code WeakCache}</em>
-<a id="L71" name="L71"></a>  71 <em class="comment">     *</em>
-<a id="L72" name="L72"></a>  72 <em class="comment">     * @param subKeyFactory a function mapping a pair of</em>
-<a id="L73" name="L73"></a>  73 <em class="comment">     *                      {@code (key, parameter) -&gt; sub-key}</em>
-<a id="L74" name="L74"></a>  74 <em class="comment">     * @param valueFactory  a function mapping a pair of</em>
-<a id="L75" name="L75"></a>  75 <em class="comment">     *                      {@code (key, parameter) -&gt; value}</em>
-<a id="L76" name="L76"></a>  76 <em class="comment">     * @throws NullPointerException if {@code subKeyFactory} or</em>
-<a id="L77" name="L77"></a>  77 <em class="comment">     *                              {@code valueFactory} is null.</em>
-<a id="L78" name="L78"></a>  78 <em class="comment">     */</em>
+<div class="comment">
+      Construct an instance of <code>WeakCache</code>
+      @param subKeyFactory a function mapping a pair of
+                           <code>(key, parameter) -&gt; sub-key</code>
+      @param valueFactory  a function mapping a pair of
+                           <code>(key, parameter) -&gt; value</code>
+      @throws NullPointerException if <code>subKeyFactory</code> or
+                                   <code>valueFactory</code> is null.</div>
 <a id="L79" name="L79"></a>  79     <strong class="reserved">public</strong> WeakCache(<a href="../S/975.html#L44" title="Defined at 44 in src/java/util/function/BiFunction.java.">BiFunction</a>&lt;K, P, ?&gt; subKeyFactory,
 <a id="L80" name="L80"></a>  80                      <a href="../S/975.html#L44" title="Defined at 44 in src/java/util/function/BiFunction.java.">BiFunction</a>&lt;K, P, V&gt; valueFactory) <em class="brace">{</em>
 <a id="L81" name="L81"></a>  81         <strong class="reserved">this</strong>.subKeyFactory = <a href="../S/859.html#L38" title="Defined at 38 in src/java/util/Objects.java.">Objects</a>.<a href="../D/31141.html" title="Multiple defined in 4 places.">requireNonNull</a>(subKeyFactory);
 <a id="L82" name="L82"></a>  82         <strong class="reserved">this</strong>.valueFactory = <a href="../S/859.html#L38" title="Defined at 38 in src/java/util/Objects.java.">Objects</a>.<a href="../D/31141.html" title="Multiple defined in 4 places.">requireNonNull</a>(valueFactory);
 <a id="L83" name="L83"></a>  83     <em class="brace">}</em>
 <a id="L84" name="L84"></a>  84 
-<a id="L85" name="L85"></a>  85     <em class="comment">/**</em>
-<a id="L86" name="L86"></a>  86 <em class="comment">     * Look-up the value through the cache. This always evaluates the</em>
-<a id="L87" name="L87"></a>  87 <em class="comment">     * {@code subKeyFactory} function and optionally evaluates</em>
-<a id="L88" name="L88"></a>  88 <em class="comment">     * {@code valueFactory} function if there is no entry in the cache for given</em>
-<a id="L89" name="L89"></a>  89 <em class="comment">     * pair of (key, subKey) or the entry has already been cleared.</em>
-<a id="L90" name="L90"></a>  90 <em class="comment">     *</em>
-<a id="L91" name="L91"></a>  91 <em class="comment">     * @param key       possibly null key</em>
-<a id="L92" name="L92"></a>  92 <em class="comment">     * @param parameter parameter used together with key to create sub-key and</em>
-<a id="L93" name="L93"></a>  93 <em class="comment">     *                  value (should not be null)</em>
-<a id="L94" name="L94"></a>  94 <em class="comment">     * @return the cached value (never null)</em>
-<a id="L95" name="L95"></a>  95 <em class="comment">     * @throws NullPointerException if {@code parameter} passed in or</em>
-<a id="L96" name="L96"></a>  96 <em class="comment">     *                              {@code sub-key} calculated by</em>
-<a id="L97" name="L97"></a>  97 <em class="comment">     *                              {@code subKeyFactory} or {@code value}</em>
-<a id="L98" name="L98"></a>  98 <em class="comment">     *                              calculated by {@code valueFactory} is null.</em>
-<a id="L99" name="L99"></a>  99 <em class="comment">     */</em>
+<div class="comment">
+      Look-up the value through the cache. This always evaluates the
+      <code>subKeyFactory</code> function and optionally evaluates
+      <code>valueFactory</code> function if there is no entry in the cache for given
+      pair of (key, subKey) or the entry has already been cleared.
+      @param key       possibly null key
+      @param parameter parameter used together with key to create sub-key and
+                       value (should not be null)
+      @return the cached value (never null)
+      @throws NullPointerException if <code>parameter</code> passed in or
+                                   <code>sub-key</code> calculated by
+                                   <code>subKeyFactory</code> or <code>value</code>
+                                   calculated by <code>valueFactory</code> is null.</div>
 <a id="L100" name="L100"></a> 100     <strong class="reserved">public</strong> V <a href="../R/14874.html" title="Multiple referred from 4230 places.">get</a>(K <a href="../D/26706.html" title="Multiple defined in 2 places.">key</a>, P <a href="../S/1626.html#L504" title="Defined at 504 in src/java/lang/invoke/LambdaForm.java.">parameter</a>) <em class="brace">{</em>
 <a id="L101" name="L101"></a> 101         <a href="../S/859.html#L38" title="Defined at 38 in src/java/util/Objects.java.">Objects</a>.<a href="../D/31141.html" title="Multiple defined in 4 places.">requireNonNull</a>(<a href="../S/1626.html#L504" title="Defined at 504 in src/java/lang/invoke/LambdaForm.java.">parameter</a>);
 <a id="L102" name="L102"></a> 102 
@@ -145,7 +119,7 @@ This source file includes following definitions.
 <a id="L115" name="L115"></a> 115             <em class="brace">}</em>
 <a id="L116" name="L116"></a> 116         <em class="brace">}</em>
 <a id="L117" name="L117"></a> 117 
-<a id="L118" name="L118"></a> 118         <em class="comment">// create subKey and retrieve the possible Supplier<v> stored by that</v></em>
+<a id="L118" name="L118"></a> 118         <em class="comment">// create subKey and retrieve the possible Supplier&lt;V&gt; stored by that</em>
 <a id="L119" name="L119"></a> 119         <em class="comment">// subKey from valuesMap</em>
 <a id="L120" name="L120"></a> 120         <a href="../D/6272.html" title="Multiple defined in 7 places.">Object</a> subKey = <a href="../S/859.html#L38" title="Defined at 38 in src/java/util/Objects.java.">Objects</a>.<a href="../D/31141.html" title="Multiple defined in 4 places.">requireNonNull</a>(subKeyFactory.<a href="../D/11441.html" title="Multiple defined in 32 places.">apply</a>(<a href="../D/26706.html" title="Multiple defined in 2 places.">key</a>, <a href="../S/1626.html#L504" title="Defined at 504 in src/java/lang/invoke/LambdaForm.java.">parameter</a>));
 <a id="L121" name="L121"></a> 121         <a href="../S/949.html#L41" title="Defined at 41 in src/java/util/function/Supplier.java.">Supplier</a>&lt;V&gt; <a href="../D/35051.html" title="Multiple defined in 2 places.">supplier</a> = valuesMap.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>(subKey);
@@ -153,7 +127,7 @@ This source file includes following definitions.
 <a id="L123" name="L123"></a> 123 
 <a id="L124" name="L124"></a> 124         <strong class="reserved">while</strong> (<strong class="reserved">true</strong>) <em class="brace">{</em>
 <a id="L125" name="L125"></a> 125             <strong class="reserved">if</strong> (<a href="../D/35051.html" title="Multiple defined in 2 places.">supplier</a> != <strong class="reserved">null</strong>) <em class="brace">{</em>
-<a id="L126" name="L126"></a> 126                 <em class="comment">// supplier might be a Factory or a CacheValue<v> instance</v></em>
+<a id="L126" name="L126"></a> 126                 <em class="comment">// supplier might be a Factory or a CacheValue&lt;V&gt; instance</em>
 <a id="L127" name="L127"></a> 127                 V <a href="../D/36360.html" title="Multiple defined in 73 places.">value</a> = <a href="../D/35051.html" title="Multiple defined in 2 places.">supplier</a>.<a href="../D/16676.html" title="Multiple defined in 434 places.">get</a>();
 <a id="L128" name="L128"></a> 128                 <strong class="reserved">if</strong> (<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a> != <strong class="reserved">null</strong>) <em class="brace">{</em>
 <a id="L129" name="L129"></a> 129                     <strong class="reserved">return</strong> <a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>;
@@ -189,15 +163,13 @@ This source file includes following definitions.
 <a id="L159" name="L159"></a> 159         <em class="brace">}</em>
 <a id="L160" name="L160"></a> 160     <em class="brace">}</em>
 <a id="L161" name="L161"></a> 161 
-<a id="L162" name="L162"></a> 162     <em class="comment">/**</em>
-<a id="L163" name="L163"></a> 163 <em class="comment">     * Checks whether the specified non-null value is already present in this</em>
-<a id="L164" name="L164"></a> 164 <em class="comment">     * {@code WeakCache}. The check is made using identity comparison regardless</em>
-<a id="L165" name="L165"></a> 165 <em class="comment">     * of whether value's class overrides {@link Object#equals} or not.</em>
-<a id="L166" name="L166"></a> 166 <em class="comment">     *</em>
-<a id="L167" name="L167"></a> 167 <em class="comment">     * @param value the non-null value to check</em>
-<a id="L168" name="L168"></a> 168 <em class="comment">     * @return true if given {@code value} is already cached</em>
-<a id="L169" name="L169"></a> 169 <em class="comment">     * @throws NullPointerException if value is null</em>
-<a id="L170" name="L170"></a> 170 <em class="comment">     */</em>
+<div class="comment">
+      Checks whether the specified non-null value is already present in this
+      <code>WeakCache</code>. The check is made using identity comparison regardless
+      of whether value's class overrides {@link Object#equals} or not.
+      @param value the non-null value to check
+      @return true if given <code>value</code> is already cached
+      @throws NullPointerException if value is null</div>
 <a id="L171" name="L171"></a> 171     <strong class="reserved">public</strong> <strong class="reserved">boolean</strong> <a href="../R/11980.html" title="Multiple referred from 28 places.">containsValue</a>(V <a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>) <em class="brace">{</em>
 <a id="L172" name="L172"></a> 172         <a href="../S/859.html#L38" title="Defined at 38 in src/java/util/Objects.java.">Objects</a>.<a href="../D/31141.html" title="Multiple defined in 4 places.">requireNonNull</a>(<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>);
 <a id="L173" name="L173"></a> 173 
@@ -205,10 +177,9 @@ This source file includes following definitions.
 <a id="L175" name="L175"></a> 175         <strong class="reserved">return</strong> reverseMap.<a href="../D/13333.html" title="Multiple defined in 42 places.">containsKey</a>(<strong class="reserved">new</strong> <a href="../S/1643.html#L268" title="Defined at 268 in src/java/lang/reflect/WeakCache.java.">LookupValue</a>&lt;&gt;(<a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>));
 <a id="L176" name="L176"></a> 176     <em class="brace">}</em>
 <a id="L177" name="L177"></a> 177 
-<a id="L178" name="L178"></a> 178     <em class="comment">/**</em>
-<a id="L179" name="L179"></a> 179 <em class="comment">     * Returns the current number of cached entries that</em>
-<a id="L180" name="L180"></a> 180 <em class="comment">     * can decrease over time when keys/values are GC-ed.</em>
-<a id="L181" name="L181"></a> 181 <em class="comment">     */</em>
+<div class="comment">
+      Returns the current number of cached entries that
+      can decrease over time when keys/values are GC-ed.</div>
 <a id="L182" name="L182"></a> 182     <strong class="reserved">public</strong> <strong class="reserved">int</strong> <a href="../R/28639.html" title="Multiple referred from 5617 places.">size</a>() <em class="brace">{</em>
 <a id="L183" name="L183"></a> 183         <a href="../D/15897.html" title="Multiple defined in 3 places.">expungeStaleEntries</a>();
 <a id="L184" name="L184"></a> 184         <strong class="reserved">return</strong> reverseMap.<a href="../D/34593.html" title="Multiple defined in 204 places.">size</a>();
@@ -221,10 +192,9 @@ This source file includes following definitions.
 <a id="L191" name="L191"></a> 191         <em class="brace">}</em>
 <a id="L192" name="L192"></a> 192     <em class="brace">}</em>
 <a id="L193" name="L193"></a> 193 
-<a id="L194" name="L194"></a> 194     <em class="comment">/**</em>
-<a id="L195" name="L195"></a> 195 <em class="comment">     * A factory {@link Supplier} that implements the lazy synchronized</em>
-<a id="L196" name="L196"></a> 196 <em class="comment">     * construction of the value and installment of it into the cache.</em>
-<a id="L197" name="L197"></a> 197 <em class="comment">     */</em>
+<div class="comment">
+      A factory {@link Supplier} that implements the lazy synchronized
+      construction of the value and installment of it into the cache.</div>
 <a id="L198" name="L198"></a> 198     <strong class="reserved">private</strong> <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../R/2859.html" title="Multiple referred from 20 places.">Factory</a> <strong class="reserved">implements</strong> <a href="../S/949.html#L41" title="Defined at 41 in src/java/util/function/Supplier.java.">Supplier</a>&lt;V&gt; <em class="brace">{</em>
 <a id="L199" name="L199"></a> 199 
 <a id="L200" name="L200"></a> 200         <strong class="reserved">private</strong> <strong class="reserved">final</strong> K <a href="../D/26706.html" title="Multiple defined in 2 places.">key</a>;
@@ -283,18 +253,16 @@ This source file includes following definitions.
 <a id="L253" name="L253"></a> 253         <em class="brace">}</em>
 <a id="L254" name="L254"></a> 254     <em class="brace">}</em>
 <a id="L255" name="L255"></a> 255 
-<a id="L256" name="L256"></a> 256     <em class="comment">/**</em>
-<a id="L257" name="L257"></a> 257 <em class="comment">     * Common type of value suppliers that are holding a referent.</em>
-<a id="L258" name="L258"></a> 258 <em class="comment">     * The {@link #equals} and {@link #hashCode} of implementations is defined</em>
-<a id="L259" name="L259"></a> 259 <em class="comment">     * to compare the referent by identity.</em>
-<a id="L260" name="L260"></a> 260 <em class="comment">     */</em>
+<div class="comment">
+      Common type of value suppliers that are holding a referent.
+      The {@link #equals} and {@link #hashCode} of implementations is defined
+      to compare the referent by identity.</div>
 <a id="L261" name="L261"></a> 261     <strong class="reserved">private</strong> <strong class="reserved">interface</strong> <a href="../R/8614.html" title="Multiple referred from 121 places.">Value</a>&lt;V&gt; <strong class="reserved">extends</strong> <a href="../S/949.html#L41" title="Defined at 41 in src/java/util/function/Supplier.java.">Supplier</a>&lt;V&gt; <em class="brace">{</em><em class="brace">}</em>
 <a id="L262" name="L262"></a> 262 
-<a id="L263" name="L263"></a> 263     <em class="comment">/**</em>
-<a id="L264" name="L264"></a> 264 <em class="comment">     * An optimized {@link Value} used to look-up the value in</em>
-<a id="L265" name="L265"></a> 265 <em class="comment">     * {@link WeakCache#containsValue} method so that we are not</em>
-<a id="L266" name="L266"></a> 266 <em class="comment">     * constructing the whole {@link CacheValue} just to look-up the referent.</em>
-<a id="L267" name="L267"></a> 267 <em class="comment">     */</em>
+<div class="comment">
+      An optimized {@link Value} used to look-up the value in
+      {@link WeakCache#containsValue} method so that we are not
+      constructing the whole {@link CacheValue} just to look-up the referent.</div>
 <a id="L268" name="L268"></a> 268     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../S/1643.html#L175" title="Referred from 175 in src/java/lang/reflect/WeakCache.java.">LookupValue</a>&lt;V&gt; <strong class="reserved">implements</strong> <a href="../D/9487.html" title="Multiple defined in 2 places.">Value</a>&lt;V&gt; <em class="brace">{</em>
 <a id="L269" name="L269"></a> 269         <strong class="reserved">private</strong> <strong class="reserved">final</strong> V <a href="../D/36360.html" title="Multiple defined in 73 places.">value</a>;
 <a id="L270" name="L270"></a> 270 
@@ -320,9 +288,8 @@ This source file includes following definitions.
 <a id="L290" name="L290"></a> 290         <em class="brace">}</em>
 <a id="L291" name="L291"></a> 291     <em class="brace">}</em>
 <a id="L292" name="L292"></a> 292 
-<a id="L293" name="L293"></a> 293     <em class="comment">/**</em>
-<a id="L294" name="L294"></a> 294 <em class="comment">     * A {@link Value} that weakly references the referent.</em>
-<a id="L295" name="L295"></a> 295 <em class="comment">     */</em>
+<div class="comment">
+      A {@link Value} that weakly references the referent.</div>
 <a id="L296" name="L296"></a> 296     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../S/1643.html#L240" title="Referred from 240 in src/java/lang/reflect/WeakCache.java.">CacheValue</a>&lt;V&gt;
 <a id="L297" name="L297"></a> 297         <strong class="reserved">extends</strong> <a href="../S/1569.html#L48" title="Defined at 48 in src/java/lang/ref/WeakReference.java.">WeakReference</a>&lt;V&gt; <strong class="reserved">implements</strong> <a href="../D/9487.html" title="Multiple defined in 2 places.">Value</a>&lt;V&gt;
 <a id="L298" name="L298"></a> 298     <em class="brace">{</em>
@@ -349,11 +316,10 @@ This source file includes following definitions.
 <a id="L319" name="L319"></a> 319         <em class="brace">}</em>
 <a id="L320" name="L320"></a> 320     <em class="brace">}</em>
 <a id="L321" name="L321"></a> 321 
-<a id="L322" name="L322"></a> 322     <em class="comment">/**</em>
-<a id="L323" name="L323"></a> 323 <em class="comment">     * CacheKey containing a weakly referenced {@code key}. It registers</em>
-<a id="L324" name="L324"></a> 324 <em class="comment">     * itself with the {@code refQueue} so that it can be used to expunge</em>
-<a id="L325" name="L325"></a> 325 <em class="comment">     * the entry when the {@link WeakReference} is cleared.</em>
-<a id="L326" name="L326"></a> 326 <em class="comment">     */</em>
+<div class="comment">
+      CacheKey containing a weakly referenced <code>key</code>. It registers
+      itself with the <code>refQueue</code> so that it can be used to expunge
+      the entry when the {@link WeakReference} is cleared.</div>
 <a id="L327" name="L327"></a> 327     <strong class="reserved">private</strong> <strong class="reserved">static</strong> <strong class="reserved">final</strong> <strong class="reserved">class</strong> <a href="../R/1125.html" title="Multiple referred from 39 places.">CacheKey</a>&lt;K&gt; <strong class="reserved">extends</strong> <a href="../S/1569.html#L48" title="Defined at 48 in src/java/lang/ref/WeakReference.java.">WeakReference</a>&lt;K&gt; <em class="brace">{</em>
 <a id="L328" name="L328"></a> 328 
 <a id="L329" name="L329"></a> 329         <em class="comment">// a replacement for null keys</em>
@@ -409,8 +375,6 @@ This source file includes following definitions.
 <a id="L379" name="L379"></a> 379 <em class="brace">}</em>
 </pre>
 <hr>
-<a id="BOTTOM" name="BOTTOM"></a>
-<em class="comment">/* [&lt;][&gt;]<a href="#L100">[^]</a><a href="#L365">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
-
-
+<div class="comment">
+/* [&lt;][&gt;]<a href="#L100">[^]</a><a href="#L365">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 </body></html>

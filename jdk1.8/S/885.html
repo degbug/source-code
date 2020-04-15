@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-<a id="TOP" name="TOP"></a><h2 class="header"><a href="../mains.html">root</a>/<a href="../files/7725.html">src</a>/<a href="../files/7984.html">java</a>/<a href="../files/8038.html">util</a>/<a href="../files/8048.html">stream</a>/PipelineHelper.java</h2>
-<em class="comment">/* [&lt;][&gt;]<a href="#L62">[^]</a><a href="#L200">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
+<a id="TOP" name="TOP"></a><div class="comment">
+/* [&lt;][&gt;]<a href="#L62">[^]</a><a href="#L200">[v]</a>[top]<a href="#BOTTOM">[bottom]</a><a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 <hr>
 <h2 class="header">DEFINITIONS</h2>
 This source file includes following definitions.
@@ -24,213 +24,163 @@ This source file includes following definitions.
 <li><a href="#L200" title="Defined at 200.">evaluate</a></li>
 </ol>
 <hr>
-<pre><a id="L1" name="L1"></a>   1 <em class="comment">/*</em>
-<a id="L2" name="L2"></a>   2 <em class="comment"> * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.</em>
-<a id="L3" name="L3"></a>   3 <em class="comment"> * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</em>
-<a id="L4" name="L4"></a>   4 <em class="comment"> *</em>
-<a id="L5" name="L5"></a>   5 <em class="comment"> *</em>
-<a id="L6" name="L6"></a>   6 <em class="comment"> *</em>
-<a id="L7" name="L7"></a>   7 <em class="comment"> *</em>
-<a id="L8" name="L8"></a>   8 <em class="comment"> *</em>
-<a id="L9" name="L9"></a>   9 <em class="comment"> *</em>
-<a id="L10" name="L10"></a>  10 <em class="comment"> *</em>
-<a id="L11" name="L11"></a>  11 <em class="comment"> *</em>
-<a id="L12" name="L12"></a>  12 <em class="comment"> *</em>
-<a id="L13" name="L13"></a>  13 <em class="comment"> *</em>
-<a id="L14" name="L14"></a>  14 <em class="comment"> *</em>
-<a id="L15" name="L15"></a>  15 <em class="comment"> *</em>
-<a id="L16" name="L16"></a>  16 <em class="comment"> *</em>
-<a id="L17" name="L17"></a>  17 <em class="comment"> *</em>
-<a id="L18" name="L18"></a>  18 <em class="comment"> *</em>
-<a id="L19" name="L19"></a>  19 <em class="comment"> *</em>
-<a id="L20" name="L20"></a>  20 <em class="comment"> *</em>
-<a id="L21" name="L21"></a>  21 <em class="comment"> *</em>
-<a id="L22" name="L22"></a>  22 <em class="comment"> *</em>
-<a id="L23" name="L23"></a>  23 <em class="comment"> *</em>
-<a id="L24" name="L24"></a>  24 <em class="comment"> */</em>
+<pre>
+<div class="comment">
+  Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+  ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.</div>
 <a id="L25" name="L25"></a>  25 <strong class="reserved">package</strong> <a href="../S/3625.html#L43" title="Defined at 43 in src/javax/management/remote/rmi/RMIConnectionImpl_Stub.java.">java</a>.util.<a href="../D/34926.html" title="Multiple defined in 21 places.">stream</a>;
 <a id="L26" name="L26"></a>  26 
 <a id="L27" name="L27"></a>  27 <strong class="reserved">import</strong> java.util.Spliterator;
 <a id="L28" name="L28"></a>  28 <strong class="reserved">import</strong> java.util.function.IntFunction;
 <a id="L29" name="L29"></a>  29 
-<a id="L30" name="L30"></a>  30 <em class="comment">/**</em>
-<a id="L31" name="L31"></a>  31 <em class="comment"> * Helper class for executing <a href="package-summary.html#StreamOps"></a></em>
-<a id="L32" name="L32"></a>  32 <em class="comment"> * stream pipelines, capturing all of the information about a stream</em>
-<a id="L33" name="L33"></a>  33 <em class="comment"> * pipeline (output shape, intermediate operations, stream flags, parallelism,</em>
-<a id="L34" name="L34"></a>  34 <em class="comment"> * etc) in one place.</em>
-<a id="L35" name="L35"></a>  35 <em class="comment"> *</em>
-<a id="L36" name="L36"></a>  36 <em class="comment"> * </em>
-<a id="L37" name="L37"></a>  37 <em class="comment"> * A {@code PipelineHelper} describes the initial segment of a stream pipeline,</em>
-<a id="L38" name="L38"></a>  38 <em class="comment"> * including its source, intermediate operations, and may additionally</em>
-<a id="L39" name="L39"></a>  39 <em class="comment"> * incorporate information about the terminal (or stateful) operation which</em>
-<a id="L40" name="L40"></a>  40 <em class="comment"> * follows the last intermediate operation described by this</em>
-<a id="L41" name="L41"></a>  41 <em class="comment"> * {@code PipelineHelper}. The {@code PipelineHelper} is passed to the</em>
-<a id="L42" name="L42"></a>  42 <em class="comment"> * {@link TerminalOp#evaluateParallel(PipelineHelper, java.util.Spliterator)},</em>
-<a id="L43" name="L43"></a>  43 <em class="comment"> * {@link TerminalOp#evaluateSequential(PipelineHelper, java.util.Spliterator)},</em>
-<a id="L44" name="L44"></a>  44 <em class="comment"> * and {@link AbstractPipeline#opEvaluateParallel(PipelineHelper, java.util.Spliterator,</em>
-<a id="L45" name="L45"></a>  45 <em class="comment"> * java.util.function.IntFunction)}, methods, which can use the</em>
-<a id="L46" name="L46"></a>  46 <em class="comment"> * {@code PipelineHelper} to access information about the pipeline such as</em>
-<a id="L47" name="L47"></a>  47 <em class="comment"> * head shape, stream flags, and size, and use the helper methods</em>
-<a id="L48" name="L48"></a>  48 <em class="comment"> * such as {@link #wrapAndCopyInto(Sink, Spliterator)},</em>
-<a id="L49" name="L49"></a>  49 <em class="comment"> * {@link #copyInto(Sink, Spliterator)}, and {@link #wrapSink(Sink)} to execute</em>
-<a id="L50" name="L50"></a>  50 <em class="comment"> * pipeline operations.</em>
-<a id="L51" name="L51"></a>  51 <em class="comment"> *</em>
-<a id="L52" name="L52"></a>  52 <em class="comment"> * @param <p_out> type of output elements from the pipeline</p_out></em>
-<a id="L53" name="L53"></a>  53 <em class="comment"> * @since 1.8</em>
-<a id="L54" name="L54"></a>  54 <em class="comment"> */</em>
+<div class="comment">
+  Helper class for executing <a href="package-summary.html#StreamOps">
+  stream pipelines</a>, capturing all of the information about a stream
+  pipeline (output shape, intermediate operations, stream flags, parallelism,
+  etc) in one place.
+  <p>
+  A <code>PipelineHelper</code> describes the initial segment of a stream pipeline,
+  including its source, intermediate operations, and may additionally
+  incorporate information about the terminal (or stateful) operation which
+  follows the last intermediate operation described by this
+  <code>PipelineHelper</code>. The <code>PipelineHelper</code> is passed to the
+  {@link TerminalOp#evaluateParallel(PipelineHelper, java.util.Spliterator)},
+  {@link TerminalOp#evaluateSequential(PipelineHelper, java.util.Spliterator)},
+  and {@link AbstractPipeline#opEvaluateParallel(PipelineHelper, java.util.Spliterator,
+  java.util.function.IntFunction)}, methods, which can use the
+  <code>PipelineHelper</code> to access information about the pipeline such as
+  head shape, stream flags, and size, and use the helper methods
+  such as {@link #wrapAndCopyInto(Sink, Spliterator)},
+  {@link #copyInto(Sink, Spliterator)}, and {@link #wrapSink(Sink)} to execute
+  pipeline operations.
+  @param <p_out> type of output elements from the pipeline
+  @since 1.8</p_out></p></div>
 <a id="L55" name="L55"></a>  55 <strong class="reserved">abstract</strong> <strong class="reserved">class</strong> <a href="../R/6112.html" title="Multiple referred from 80 places.">PipelineHelper</a>&lt;P_OUT&gt; <em class="brace">{</em>
 <a id="L56" name="L56"></a>  56 
-<a id="L57" name="L57"></a>  57     <em class="comment">/**</em>
-<a id="L58" name="L58"></a>  58 <em class="comment">     * Gets the stream shape for the source of the pipeline segment.</em>
-<a id="L59" name="L59"></a>  59 <em class="comment">     *</em>
-<a id="L60" name="L60"></a>  60 <em class="comment">     * @return the stream shape for the source of the pipeline segment.</em>
-<a id="L61" name="L61"></a>  61 <em class="comment">     */</em>
+<div class="comment">
+      Gets the stream shape for the source of the pipeline segment.
+      @return the stream shape for the source of the pipeline segment.</div>
 <a id="L62" name="L62"></a>  62     <strong class="reserved">abstract</strong> <a href="../S/900.html#L49" title="Defined at 49 in src/java/util/stream/StreamShape.java.">StreamShape</a> <a href="../R/19105.html" title="Multiple referred from 4 places.">getSourceShape</a>();
 <a id="L63" name="L63"></a>  63 
-<a id="L64" name="L64"></a>  64     <em class="comment">/**</em>
-<a id="L65" name="L65"></a>  65 <em class="comment">     * Gets the combined stream and operation flags for the output of the described</em>
-<a id="L66" name="L66"></a>  66 <em class="comment">     * pipeline.  This will incorporate stream flags from the stream source, all</em>
-<a id="L67" name="L67"></a>  67 <em class="comment">     * the intermediate operations and the terminal operation.</em>
-<a id="L68" name="L68"></a>  68 <em class="comment">     *</em>
-<a id="L69" name="L69"></a>  69 <em class="comment">     * @return the combined stream and operation flags</em>
-<a id="L70" name="L70"></a>  70 <em class="comment">     * @see StreamOpFlag</em>
-<a id="L71" name="L71"></a>  71 <em class="comment">     */</em>
+<div class="comment">
+      Gets the combined stream and operation flags for the output of the described
+      pipeline.  This will incorporate stream flags from the stream source, all
+      the intermediate operations and the terminal operation.
+      @return the combined stream and operation flags
+      @see StreamOpFlag</div>
 <a id="L72" name="L72"></a>  72     <strong class="reserved">abstract</strong> <strong class="reserved">int</strong> <a href="../R/19200.html" title="Multiple referred from 22 places.">getStreamAndOpFlags</a>();
 <a id="L73" name="L73"></a>  73 
-<a id="L74" name="L74"></a>  74     <em class="comment">/**</em>
-<a id="L75" name="L75"></a>  75 <em class="comment">     * Returns the exact output size of the portion of the output resulting from</em>
-<a id="L76" name="L76"></a>  76 <em class="comment">     * applying the pipeline stages described by this {@code PipelineHelper} to</em>
-<a id="L77" name="L77"></a>  77 <em class="comment">     * the the portion of the input described by the provided</em>
-<a id="L78" name="L78"></a>  78 <em class="comment">     * {@code Spliterator}, if known.  If not known or known infinite, will</em>
-<a id="L79" name="L79"></a>  79 <em class="comment">     * return {@code -1}.</em>
-<a id="L80" name="L80"></a>  80 <em class="comment">     *</em>
-<a id="L81" name="L81"></a>  81 <em class="comment">     * @apiNote</em>
-<a id="L82" name="L82"></a>  82 <em class="comment">     * The exact output size is known if the {@code Spliterator} has the</em>
-<a id="L83" name="L83"></a>  83 <em class="comment">     * {@code SIZED} characteristic, and the operation flags</em>
-<a id="L84" name="L84"></a>  84 <em class="comment">     * {@link StreamOpFlag#SIZED} is known on the combined stream and operation</em>
-<a id="L85" name="L85"></a>  85 <em class="comment">     * flags.</em>
-<a id="L86" name="L86"></a>  86 <em class="comment">     *</em>
-<a id="L87" name="L87"></a>  87 <em class="comment">     * @param spliterator the spliterator describing the relevant portion of the</em>
-<a id="L88" name="L88"></a>  88 <em class="comment">     *        source data</em>
-<a id="L89" name="L89"></a>  89 <em class="comment">     * @return the exact size if known, or -1 if infinite or unknown</em>
-<a id="L90" name="L90"></a>  90 <em class="comment">     */</em>
+<div class="comment">
+      Returns the exact output size of the portion of the output resulting from
+      applying the pipeline stages described by this <code>PipelineHelper</code> to
+      the the portion of the input described by the provided
+      <code>Spliterator</code>, if known.  If not known or known infinite, will
+      return <code>-1</code>.
+      @apiNote
+      The exact output size is known if the <code>Spliterator</code> has the
+      <code>SIZED</code> characteristic, and the operation flags
+      {@link StreamOpFlag#SIZED} is known on the combined stream and operation
+      flags.
+      @param spliterator the spliterator describing the relevant portion of the
+             source data
+      @return the exact size if known, or -1 if infinite or unknown</div>
 <a id="L91" name="L91"></a>  91     <strong class="reserved">abstract</strong>&lt;P_IN&gt; <strong class="reserved">long</strong> <a href="../R/14063.html" title="Multiple referred from 16 places.">exactOutputSizeIfKnown</a>(<a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
 <a id="L92" name="L92"></a>  92 
-<a id="L93" name="L93"></a>  93     <em class="comment">/**</em>
-<a id="L94" name="L94"></a>  94 <em class="comment">     * Applies the pipeline stages described by this {@code PipelineHelper} to</em>
-<a id="L95" name="L95"></a>  95 <em class="comment">     * the provided {@code Spliterator} and send the results to the provided</em>
-<a id="L96" name="L96"></a>  96 <em class="comment">     * {@code Sink}.</em>
-<a id="L97" name="L97"></a>  97 <em class="comment">     *</em>
-<a id="L98" name="L98"></a>  98 <em class="comment">     * @implSpec</em>
-<a id="L99" name="L99"></a>  99 <em class="comment">     * The implementation behaves as if:</em>
-<a id="L100" name="L100"></a> 100 <em class="comment">     * <pre>{@code</pre></em>
-<a id="L101" name="L101"></a> 101 <em class="comment">     *     intoWrapped(wrapSink(sink), spliterator);</em>
-<a id="L102" name="L102"></a> 102 <em class="comment">     * }</em>
-<a id="L103" name="L103"></a> 103 <em class="comment">     *</em>
-<a id="L104" name="L104"></a> 104 <em class="comment">     * @param sink the {@code Sink} to receive the results</em>
-<a id="L105" name="L105"></a> 105 <em class="comment">     * @param spliterator the spliterator describing the source input to process</em>
-<a id="L106" name="L106"></a> 106 <em class="comment">     */</em>
+<div class="comment">
+      Applies the pipeline stages described by this <code>PipelineHelper</code> to
+      the provided <code>Spliterator</code> and send the results to the provided
+      <code>Sink</code>.
+      @implSpec
+      The implementation behaves as if:
+      <pre>{@code
+          intoWrapped(wrapSink(sink), spliterator);
+      }</pre>
+      @param sink the <code>Sink</code> to receive the results
+      @param spliterator the spliterator describing the source input to process</div>
 <a id="L107" name="L107"></a> 107     <strong class="reserved">abstract</strong>&lt;P_IN, S <strong class="reserved">extends</strong> <a href="../S/896.html#L117" title="Defined at 117 in src/java/util/stream/Sink.java.">Sink</a>&lt;P_OUT&gt;&gt; S <a href="../R/30536.html" title="Multiple referred from 17 places.">wrapAndCopyInto</a>(S <a href="../S/2041.html#L139" title="Defined at 139 in src/java/nio/channels/Pipe.java.">sink</a>, <a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
 <a id="L108" name="L108"></a> 108 
-<a id="L109" name="L109"></a> 109     <em class="comment">/**</em>
-<a id="L110" name="L110"></a> 110 <em class="comment">     * Pushes elements obtained from the {@code Spliterator} into the provided</em>
-<a id="L111" name="L111"></a> 111 <em class="comment">     * {@code Sink}.  If the stream pipeline is known to have short-circuiting</em>
-<a id="L112" name="L112"></a> 112 <em class="comment">     * stages in it (see {@link StreamOpFlag#SHORT_CIRCUIT}), the</em>
-<a id="L113" name="L113"></a> 113 <em class="comment">     * {@link Sink#cancellationRequested()} is checked after each</em>
-<a id="L114" name="L114"></a> 114 <em class="comment">     * element, stopping if cancellation is requested.</em>
-<a id="L115" name="L115"></a> 115 <em class="comment">     *</em>
-<a id="L116" name="L116"></a> 116 <em class="comment">     * @implSpec</em>
-<a id="L117" name="L117"></a> 117 <em class="comment">     * This method conforms to the {@code Sink} protocol of calling</em>
-<a id="L118" name="L118"></a> 118 <em class="comment">     * {@code Sink.begin} before pushing elements, via {@code Sink.accept}, and</em>
-<a id="L119" name="L119"></a> 119 <em class="comment">     * calling {@code Sink.end} after all elements have been pushed.</em>
-<a id="L120" name="L120"></a> 120 <em class="comment">     *</em>
-<a id="L121" name="L121"></a> 121 <em class="comment">     * @param wrappedSink the destination {@code Sink}</em>
-<a id="L122" name="L122"></a> 122 <em class="comment">     * @param spliterator the source {@code Spliterator}</em>
-<a id="L123" name="L123"></a> 123 <em class="comment">     */</em>
+<div class="comment">
+      Pushes elements obtained from the <code>Spliterator</code> into the provided
+      <code>Sink</code>.  If the stream pipeline is known to have short-circuiting
+      stages in it (see {@link StreamOpFlag#SHORT_CIRCUIT}), the
+      {@link Sink#cancellationRequested()} is checked after each
+      element, stopping if cancellation is requested.
+      @implSpec
+      This method conforms to the <code>Sink</code> protocol of calling
+      <code>Sink.begin</code> before pushing elements, via <code>Sink.accept</code>, and
+      calling <code>Sink.end</code> after all elements have been pushed.
+      @param wrappedSink the destination <code>Sink</code>
+      @param spliterator the source <code>Spliterator</code></div>
 <a id="L124" name="L124"></a> 124     <strong class="reserved">abstract</strong>&lt;P_IN&gt; <strong class="reserved">void</strong> <a href="../R/12112.html" title="Multiple referred from 72 places.">copyInto</a>(<a href="../S/896.html#L117" title="Defined at 117 in src/java/util/stream/Sink.java.">Sink</a>&lt;P_IN&gt; wrappedSink, <a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
 <a id="L125" name="L125"></a> 125 
-<a id="L126" name="L126"></a> 126     <em class="comment">/**</em>
-<a id="L127" name="L127"></a> 127 <em class="comment">     * Pushes elements obtained from the {@code Spliterator} into the provided</em>
-<a id="L128" name="L128"></a> 128 <em class="comment">     * {@code Sink}, checking {@link Sink#cancellationRequested()} after each</em>
-<a id="L129" name="L129"></a> 129 <em class="comment">     * element, and stopping if cancellation is requested.</em>
-<a id="L130" name="L130"></a> 130 <em class="comment">     *</em>
-<a id="L131" name="L131"></a> 131 <em class="comment">     * @implSpec</em>
-<a id="L132" name="L132"></a> 132 <em class="comment">     * This method conforms to the {@code Sink} protocol of calling</em>
-<a id="L133" name="L133"></a> 133 <em class="comment">     * {@code Sink.begin} before pushing elements, via {@code Sink.accept}, and</em>
-<a id="L134" name="L134"></a> 134 <em class="comment">     * calling {@code Sink.end} after all elements have been pushed or if</em>
-<a id="L135" name="L135"></a> 135 <em class="comment">     * cancellation is requested.</em>
-<a id="L136" name="L136"></a> 136 <em class="comment">     *</em>
-<a id="L137" name="L137"></a> 137 <em class="comment">     * @param wrappedSink the destination {@code Sink}</em>
-<a id="L138" name="L138"></a> 138 <em class="comment">     * @param spliterator the source {@code Spliterator}</em>
-<a id="L139" name="L139"></a> 139 <em class="comment">     */</em>
+<div class="comment">
+      Pushes elements obtained from the <code>Spliterator</code> into the provided
+      <code>Sink</code>, checking {@link Sink#cancellationRequested()} after each
+      element, and stopping if cancellation is requested.
+      @implSpec
+      This method conforms to the <code>Sink</code> protocol of calling
+      <code>Sink.begin</code> before pushing elements, via <code>Sink.accept</code>, and
+      calling <code>Sink.end</code> after all elements have been pushed or if
+      cancellation is requested.
+      @param wrappedSink the destination <code>Sink</code>
+      @param spliterator the source <code>Spliterator</code></div>
 <a id="L140" name="L140"></a> 140     <strong class="reserved">abstract</strong> &lt;P_IN&gt; <strong class="reserved">void</strong> <a href="../R/12113.html" title="Multiple referred from 2 places.">copyIntoWithCancel</a>(<a href="../S/896.html#L117" title="Defined at 117 in src/java/util/stream/Sink.java.">Sink</a>&lt;P_IN&gt; wrappedSink, <a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
 <a id="L141" name="L141"></a> 141 
-<a id="L142" name="L142"></a> 142     <em class="comment">/**</em>
-<a id="L143" name="L143"></a> 143 <em class="comment">     * Takes a {@code Sink} that accepts elements of the output type of the</em>
-<a id="L144" name="L144"></a> 144 <em class="comment">     * {@code PipelineHelper}, and wrap it with a {@code Sink} that accepts</em>
-<a id="L145" name="L145"></a> 145 <em class="comment">     * elements of the input type and implements all the intermediate operations</em>
-<a id="L146" name="L146"></a> 146 <em class="comment">     * described by this {@code PipelineHelper}, delivering the result into the</em>
-<a id="L147" name="L147"></a> 147 <em class="comment">     * provided {@code Sink}.</em>
-<a id="L148" name="L148"></a> 148 <em class="comment">     *</em>
-<a id="L149" name="L149"></a> 149 <em class="comment">     * @param sink the {@code Sink} to receive the results</em>
-<a id="L150" name="L150"></a> 150 <em class="comment">     * @return a {@code Sink} that implements the pipeline stages and sends</em>
-<a id="L151" name="L151"></a> 151 <em class="comment">     *         results to the provided {@code Sink}</em>
-<a id="L152" name="L152"></a> 152 <em class="comment">     */</em>
+<div class="comment">
+      Takes a <code>Sink</code> that accepts elements of the output type of the
+      <code>PipelineHelper</code>, and wrap it with a <code>Sink</code> that accepts
+      elements of the input type and implements all the intermediate operations
+      described by this <code>PipelineHelper</code>, delivering the result into the
+      provided <code>Sink</code>.
+      @param sink the <code>Sink</code> to receive the results
+      @return a <code>Sink</code> that implements the pipeline stages and sends
+              results to the provided <code>Sink</code></div>
 <a id="L153" name="L153"></a> 153     <strong class="reserved">abstract</strong>&lt;P_IN&gt; <a href="../S/896.html#L117" title="Defined at 117 in src/java/util/stream/Sink.java.">Sink</a>&lt;P_IN&gt; <a href="../R/30539.html" title="Multiple referred from 7 places.">wrapSink</a>(<a href="../S/896.html#L117" title="Defined at 117 in src/java/util/stream/Sink.java.">Sink</a>&lt;P_OUT&gt; <a href="../S/2041.html#L139" title="Defined at 139 in src/java/nio/channels/Pipe.java.">sink</a>);
 <a id="L154" name="L154"></a> 154 
-<a id="L155" name="L155"></a> 155     <em class="comment">/**</em>
-<a id="L156" name="L156"></a> 156 <em class="comment">     *</em>
-<a id="L157" name="L157"></a> 157 <em class="comment">     * @param spliterator</em>
-<a id="L158" name="L158"></a> 158 <em class="comment">     * @param <p_in></p_in></em>
-<a id="L159" name="L159"></a> 159 <em class="comment">     * @return</em>
-<a id="L160" name="L160"></a> 160 <em class="comment">     */</em>
+<div class="comment">
+      @param spliterator
+      @param <p_in>
+      @return</p_in></div>
 <a id="L161" name="L161"></a> 161     <strong class="reserved">abstract</strong>&lt;P_IN&gt; <a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_OUT&gt; <a href="../R/30540.html" title="Multiple referred from 14 places.">wrapSpliterator</a>(<a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>);
 <a id="L162" name="L162"></a> 162 
-<a id="L163" name="L163"></a> 163     <em class="comment">/**</em>
-<a id="L164" name="L164"></a> 164 <em class="comment">     * Constructs a @{link Node.Builder} compatible with the output shape of</em>
-<a id="L165" name="L165"></a> 165 <em class="comment">     * this {@code PipelineHelper}.</em>
-<a id="L166" name="L166"></a> 166 <em class="comment">     *</em>
-<a id="L167" name="L167"></a> 167 <em class="comment">     * @param exactSizeIfKnown if &gt;=0 then a builder will be created that has a</em>
-<a id="L168" name="L168"></a> 168 <em class="comment">     *        fixed capacity of exactly sizeIfKnown elements; if &lt; 0 then the</em>
-<a id="L169" name="L169"></a> 169 <em class="comment">     *        builder has variable capacity.  A fixed capacity builder will fail</em>
-<a id="L170" name="L170"></a> 170 <em class="comment">     *        if an element is added after the builder has reached capacity.</em>
-<a id="L171" name="L171"></a> 171 <em class="comment">     * @param generator a factory function for array instances</em>
-<a id="L172" name="L172"></a> 172 <em class="comment">     * @return a {@code Node.Builder} compatible with the output shape of this</em>
-<a id="L173" name="L173"></a> 173 <em class="comment">     *         {@code PipelineHelper}</em>
-<a id="L174" name="L174"></a> 174 <em class="comment">     */</em>
+<div class="comment">
+      Constructs a @{link Node.Builder} compatible with the output shape of
+      this <code>PipelineHelper</code>.
+      @param exactSizeIfKnown if &gt;=0 then a builder will be created that has a
+             fixed capacity of exactly sizeIfKnown elements; if &lt; 0 then the
+             builder has variable capacity.  A fixed capacity builder will fail
+             if an element is added after the builder has reached capacity.
+      @param generator a factory function for array instances
+      @return a <code>Node.Builder</code> compatible with the output shape of this
+              <code>PipelineHelper</code></div>
 <a id="L175" name="L175"></a> 175     <strong class="reserved">abstract</strong> <a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a>.<a href="../D/1017.html" title="Multiple defined in 9 places.">Builder</a>&lt;P_OUT&gt; <a href="../R/22949.html" title="Multiple referred from 4 places.">makeNodeBuilder</a>(<strong class="reserved">long</strong> exactSizeIfKnown,
 <a id="L176" name="L176"></a> 176                                                  <a href="../S/980.html#L41" title="Defined at 41 in src/java/util/function/IntFunction.java.">IntFunction</a>&lt;P_OUT[]&gt; generator);
 <a id="L177" name="L177"></a> 177 
-<a id="L178" name="L178"></a> 178     <em class="comment">/**</em>
-<a id="L179" name="L179"></a> 179 <em class="comment">     * Collects all output elements resulting from applying the pipeline stages</em>
-<a id="L180" name="L180"></a> 180 <em class="comment">     * to the source {@code Spliterator} into a {@code Node}.</em>
-<a id="L181" name="L181"></a> 181 <em class="comment">     *</em>
-<a id="L182" name="L182"></a> 182 <em class="comment">     * @implNote</em>
-<a id="L183" name="L183"></a> 183 <em class="comment">     * If the pipeline has no intermediate operations and the source is backed</em>
-<a id="L184" name="L184"></a> 184 <em class="comment">     * by a {@code Node} then that {@code Node} will be returned (or flattened</em>
-<a id="L185" name="L185"></a> 185 <em class="comment">     * and then returned). This reduces copying for a pipeline consisting of a</em>
-<a id="L186" name="L186"></a> 186 <em class="comment">     * stateful operation followed by a terminal operation that returns an</em>
-<a id="L187" name="L187"></a> 187 <em class="comment">     * array, such as:</em>
-<a id="L188" name="L188"></a> 188 <em class="comment">     * <pre>{@code</pre></em>
-<a id="L189" name="L189"></a> 189 <em class="comment">     *     stream.sorted().toArray();</em>
-<a id="L190" name="L190"></a> 190 <em class="comment">     * }</em>
-<a id="L191" name="L191"></a> 191 <em class="comment">     *</em>
-<a id="L192" name="L192"></a> 192 <em class="comment">     * @param spliterator the source {@code Spliterator}</em>
-<a id="L193" name="L193"></a> 193 <em class="comment">     * @param flatten if true and the pipeline is a parallel pipeline then the</em>
-<a id="L194" name="L194"></a> 194 <em class="comment">     *        {@code Node} returned will contain no children, otherwise the</em>
-<a id="L195" name="L195"></a> 195 <em class="comment">     *        {@code Node} may represent the root in a tree that reflects the</em>
-<a id="L196" name="L196"></a> 196 <em class="comment">     *        shape of the computation tree.</em>
-<a id="L197" name="L197"></a> 197 <em class="comment">     * @param generator a factory function for array instances</em>
-<a id="L198" name="L198"></a> 198 <em class="comment">     * @return the {@code Node} containing all output elements</em>
-<a id="L199" name="L199"></a> 199 <em class="comment">     */</em>
+<div class="comment">
+      Collects all output elements resulting from applying the pipeline stages
+      to the source <code>Spliterator</code> into a <code>Node</code>.
+      @implNote
+      If the pipeline has no intermediate operations and the source is backed
+      by a <code>Node</code> then that <code>Node</code> will be returned (or flattened
+      and then returned). This reduces copying for a pipeline consisting of a
+      stateful operation followed by a terminal operation that returns an
+      array, such as:
+      <pre>{@code
+          stream.sorted().toArray();
+      }</pre>
+      @param spliterator the source <code>Spliterator</code>
+      @param flatten if true and the pipeline is a parallel pipeline then the
+             <code>Node</code> returned will contain no children, otherwise the
+             <code>Node</code> may represent the root in a tree that reflects the
+             shape of the computation tree.
+      @param generator a factory function for array instances
+      @return the <code>Node</code> containing all output elements</div>
 <a id="L200" name="L200"></a> 200     <strong class="reserved">abstract</strong>&lt;P_IN&gt; <a href="../D/6077.html" title="Multiple defined in 24 places.">Node</a>&lt;P_OUT&gt; <a href="../R/14049.html" title="Multiple referred from 144 places.">evaluate</a>(<a href="../S/1151.html#L296" title="Defined at 296 in src/java/util/Spliterator.java.">Spliterator</a>&lt;P_IN&gt; <a href="../D/34729.html" title="Multiple defined in 111 places.">spliterator</a>,
 <a id="L201" name="L201"></a> 201                                         <strong class="reserved">boolean</strong> <a href="../D/16451.html" title="Multiple defined in 2 places.">flatten</a>,
 <a id="L202" name="L202"></a> 202                                         <a href="../S/980.html#L41" title="Defined at 41 in src/java/util/function/IntFunction.java.">IntFunction</a>&lt;P_OUT[]&gt; generator);
 <a id="L203" name="L203"></a> 203 <em class="brace">}</em>
 </pre>
 <hr>
-<a id="BOTTOM" name="BOTTOM"></a>
-<em class="comment">/* [&lt;][&gt;]<a href="#L62">[^]</a><a href="#L200">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</em>
-
-
+<div class="comment">
+/* [&lt;][&gt;]<a href="#L62">[^]</a><a href="#L200">[v]</a><a href="#TOP">[top]</a>[bottom]<a href="../mains.html">[index]</a><a href="../help.html">[help]</a> */</div>
 </body></html>
